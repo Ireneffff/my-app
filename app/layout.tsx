@@ -1,30 +1,41 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import ThemeToggle from "../components/ThemeToggle";
 
 export const metadata: Metadata = {
-  title: "La mia PWA",
-  description: "Un sito responsive + PWA",
+  title: "Trading Journal",
+  description: "Calm mind, strong trade",
+  manifest: "/manifest.json",
+  themeColor: "#0ea5e9",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="it">
+    <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Per PWA installabile */}
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#2563eb" />
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
-        {/* Responsive */}
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {/* iOS PWA full-screen */}
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <link rel="apple-touch-icon" href="/icon-192x192.png" />
       </head>
-      <body className="bg-gray-100">{children}</body>
+      <body className="min-h-dvh bg-bg text-fg antialiased">
+        {/* Toggle tema flottante (in alto a destra) */}
+        <div className="pointer-events-none fixed right-4 top-4 z-50">
+          <ThemeToggle />
+        </div>
+
+        <main id="main">{children}</main>
+
+        {/* Registra il Service Worker (PWA) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(console.error);
+              });
+            }`,
+          }}
+        />
+      </body>
     </html>
   );
 }
