@@ -1,5 +1,5 @@
 /* Versiona la cache per gestire gli update */
-const CACHE_NAME = "pwa-cache-v1";
+const CACHE_NAME = "pwa-cache-v2";
 const PRECACHE_URLS = [
   "/",
   "/offline.html",
