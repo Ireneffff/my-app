@@ -7,7 +7,10 @@ import SwUpdateBanner from "@/components/SwUpdateBanner";
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0ea5e9",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f5f5" }, // bg chiaro
+    { media: "(prefers-color-scheme: dark)",  color: "#111827" }, // bg scuro
+  ],
 };
 
 export const metadata: Metadata = {
@@ -15,6 +18,8 @@ export const metadata: Metadata = {
   description: "Calm mind, strong trade",
   manifest: "/manifest.json",
   icons: [{ rel: "apple-touch-icon", url: "/icon-192x192.png" }],
+  // (facoltativo) PWA installata: status bar scura/trasparente
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent" },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
