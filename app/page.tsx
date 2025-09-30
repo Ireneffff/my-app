@@ -9,9 +9,20 @@ import { supabase } from "@/lib/supabaseClient";
 export default function Home() {
   useEffect(() => {
     async function checkSupabase() {
-      const { data, error } = await supabase.auth.getSession();
-      console.log("Supabase session:", data, "Error:", error);
+      // Controllo sessione
+      const { data: session, error: sessionError } =
+        await supabase.auth.getSession();
+      console.log("Supabase session:", session, "Error:", sessionError);
+
+      // Test lettura tabella "profiles"
+      const { data, error } = await supabase.from("profiles").select("*").limit(5);
+      if (error) {
+        console.error("Supabase error:", error.message);
+      } else {
+        console.log("Supabase profiles:", data);
+      }
     }
+
     checkSupabase();
   }, []);
 
