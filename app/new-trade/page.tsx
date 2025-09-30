@@ -1,11 +1,29 @@
 "use client";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import ImageGallery from "@/components/ImageGallery";
 import BottomNav from "@/components/BottomNav";
+import { supabase } from "@/lib/supabaseClient"; // perché: verifica connessione lato client
 
 export default function NewTradePage() {
   const router = useRouter();
+
+  useEffect(() => {
+    // perché: forzare chiamate a supabase.co e verificare env/connessione
+    (async () => {
+      const { data: session, error: sessionError } = await supabase.auth.getSession();
+      console.log("[new-trade] session:", session, "error:", sessionError);
+
+      const { data, error } = await supabase.from("profiles").select("*").limit(5);
+      if (error) {
+        console.error("[new-trade] profiles error:", error.message);
+      } else {
+        console.log("[new-trade] profiles data:", data);
+      }
+    })();
+  }, []);
 
   return (
     <section className="mx-auto flex min-h-dvh max-w-screen-sm flex-col px-4 pb-28 pt-6">
@@ -22,7 +40,6 @@ export default function NewTradePage() {
         <button
           className="text-sm font-medium text-accent hover:underline"
           onClick={() => {
-            // Per ora: scrolla all’inizio (o potremmo aprire una nuova route / modal)
             window.alert("TODO: aprire tutte le immagini in una galleria full-screen");
           }}
         >
@@ -37,7 +54,6 @@ export default function NewTradePage() {
       <BottomNav
         onHome={() => router.push("/")}
         onAdd={() => {
-          // Re-usa il picker della gallery tramite evento custom
           document.getElementById("image-picker-input")?.click();
         }}
       />
