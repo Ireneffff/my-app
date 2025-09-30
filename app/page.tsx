@@ -1,8 +1,21 @@
+// path: app/page.tsx
+"use client";
+
+import { useEffect } from "react";
+import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
-import Link from "next/link";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Home() {
+  useEffect(() => {
+    async function checkSupabase() {
+      const { data, error } = await supabase.auth.getSession();
+      console.log("Supabase session:", data, "Error:", error);
+    }
+    checkSupabase();
+  }, []);
+
   return (
     <section className="mx-auto flex min-h-dvh max-w-3xl items-center justify-center px-5">
       <Card className="max-w-2xl">
