@@ -9,6 +9,11 @@ import { supabase } from "@/lib/supabaseClient";
 export default function Home() {
   useEffect(() => {
     async function checkSupabase() {
+      if (!supabase) {
+        console.warn("Supabase client is not configured.");
+        return;
+      }
+
       // Controllo sessione
       const { data: session, error: sessionError } =
         await supabase.auth.getSession();
