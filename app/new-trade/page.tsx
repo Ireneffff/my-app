@@ -13,6 +13,11 @@ export default function NewTradePage() {
   useEffect(() => {
     // perché: forzare chiamate a supabase.co e verificare env/connessione
     (async () => {
+      if (!supabase) {
+        console.warn("[new-trade] Supabase client is not configured.");
+        return;
+      }
+
       const { data: session, error: sessionError } = await supabase.auth.getSession();
       console.log("[new-trade] session:", session, "error:", sessionError);
 
