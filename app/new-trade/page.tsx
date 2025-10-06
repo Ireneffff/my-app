@@ -5,23 +5,31 @@ import { useMemo, useState } from "react";
 
 export default function NewTradePage() {
   const router = useRouter();
-  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const today = useMemo(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return now;
+  }, []);
 
-  const weekDays = useMemo(() => {
-    const baseDate = new Date(selectedDate);
+  const currentWeekDays = useMemo(() => {
+    const baseDate = new Date(today);
     const baseDay = baseDate.getDay();
-    // Convert Sunday (0) to 6 to align Monday as the first day
     const diffFromMonday = (baseDay + 6) % 7;
     const monday = new Date(baseDate);
-    monday.setHours(0, 0, 0, 0);
     monday.setDate(baseDate.getDate() - diffFromMonday);
 
-    return Array.from({ length: 7 }, (_, index) => {
+    return Array.from({ length: 5 }, (_, index) => {
       const date = new Date(monday);
       date.setDate(monday.getDate() + index);
       return date;
     });
-  }, [selectedDate]);
+  }, [today]);
+
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const dayIndex = Math.min((today.getDay() + 6) % 7, 4);
+    const initialDate = currentWeekDays.at(dayIndex) ?? currentWeekDays[0] ?? today;
+    return new Date(initialDate);
+  });
 
   const dayOfWeekLabel = useMemo(
     () =>
@@ -77,7 +85,7 @@ export default function NewTradePage() {
 
           <div className="w-full rounded-[2.5rem] border border-border/60 bg-white/80 px-4 py-8 shadow-lg shadow-black/10 backdrop-blur">
             <div className="mx-auto flex max-w-xl items-center gap-2 overflow-x-auto rounded-full bg-transparent px-2 py-1">
-              {weekDays.map((date) => {
+              {currentWeekDays.map((date) => {
                 const isSelected = date.toDateString() === selectedDate.toDateString();
                 const dayNumber = date.getDate();
                 const monthLabel = date
@@ -111,8 +119,9 @@ export default function NewTradePage() {
                 type="button"
                 className="ml-auto flex h-14 w-14 flex-none items-center justify-center rounded-full border border-border/70 bg-white text-muted-fg shadow-sm transition hover:text-fg"
                 onClick={() => {
-                  const today = new Date();
-                  setSelectedDate(today);
+                  const dayIndex = Math.min((today.getDay() + 6) % 7, 4);
+                  const targetDate = currentWeekDays.at(dayIndex) ?? currentWeekDays[0] ?? today;
+                  setSelectedDate(new Date(targetDate));
                 }}
                 aria-label="Select today"
                 title="Select today"
