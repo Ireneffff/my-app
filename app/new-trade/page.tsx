@@ -3,6 +3,20 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+type SymbolOption = {
+  code: string;
+  flag: string;
+};
+
+const availableSymbols: SymbolOption[] = [
+  { code: "EURUSD", flag: "🇪🇺🇺🇸" },
+  { code: "GBPUSD", flag: "🇬🇧🇺🇸" },
+  { code: "EURGBP", flag: "🇪🇺🇬🇧" },
+  { code: "EURCAD", flag: "🇪🇺🇨🇦" },
+  { code: "USDCAD", flag: "🇺🇸🇨🇦" },
+  { code: "AUDUSD", flag: "🇦🇺🇺🇸" },
+];
+
 export default function NewTradePage() {
   const router = useRouter();
   const today = useMemo(() => {
@@ -31,6 +45,9 @@ export default function NewTradePage() {
     return new Date(initialDate);
   });
 
+  const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[0]);
+  const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
+
   const dayOfWeekLabel = useMemo(
     () =>
       selectedDate.toLocaleDateString(undefined, {
@@ -38,6 +55,11 @@ export default function NewTradePage() {
       }),
     [selectedDate]
   );
+
+  const handleSelectSymbol = (symbol: SymbolOption) => {
+    setSelectedSymbol(symbol);
+    setIsSymbolListOpen(false);
+  };
 
   return (
     <section className="relative flex min-h-dvh flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-6 py-10 text-fg">
@@ -148,6 +170,81 @@ export default function NewTradePage() {
             <p className="mt-6 text-sm font-medium text-muted-fg md:text-base">
               Day of the week: <span className="font-semibold capitalize text-fg">{dayOfWeekLabel}</span>
             </p>
+          </div>
+
+          <div className="w-full rounded-[2.5rem] border border-border/60 bg-white/80 px-6 py-8 shadow-lg shadow-black/10 backdrop-blur">
+            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+              <div className="flex flex-col items-start gap-4">
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Symbol</span>
+                <button
+                  type="button"
+                  onClick={() => setIsSymbolListOpen((prev) => !prev)}
+                  className="flex items-center gap-4 rounded-full border border-border/60 bg-white/70 px-6 py-4 text-left shadow-sm transition hover:shadow md:min-w-[220px]"
+                  aria-haspopup="listbox"
+                  aria-expanded={isSymbolListOpen}
+                >
+                  <div className="flex flex-col">
+                    <span className="text-lg font-semibold tracking-[0.2em] text-muted-fg">{selectedSymbol.code}</span>
+                    <span className="text-sm text-muted-fg">Tap to choose</span>
+                  </div>
+                  <span className="ml-auto text-4xl leading-none" aria-hidden="true">
+                    {selectedSymbol.flag}
+                  </span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={`h-5 w-5 text-muted-fg transition-transform ${isSymbolListOpen ? "rotate-180" : ""}`}
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+              </div>
+
+              <div
+                className={`grid w-full transition-[grid-template-rows] duration-300 ease-out md:w-auto ${
+                  isSymbolListOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <div
+                    className="flex flex-col gap-2 rounded-3xl border border-border/50 bg-white/70 p-2 shadow-inner shadow-black/5"
+                    role="listbox"
+                    aria-activedescendant={`symbol-${selectedSymbol.code}`}
+                  >
+                    {availableSymbols.map((symbol) => {
+                      const isActive = symbol.code === selectedSymbol.code;
+
+                      return (
+                        <button
+                          key={symbol.code}
+                          id={`symbol-${symbol.code}`}
+                          type="button"
+                          className={`flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                            isActive
+                              ? "bg-accent text-white shadow"
+                              : "bg-transparent text-fg hover:bg-muted/40"
+                          }`}
+                          onClick={() => handleSelectSymbol(symbol)}
+                          aria-selected={isActive}
+                          role="option"
+                        >
+                          <span className="tracking-[0.2em]">{symbol.code}</span>
+                          <span className="text-2xl" aria-hidden="true">
+                            {symbol.flag}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
