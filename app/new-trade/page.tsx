@@ -9,6 +9,18 @@ import { supabase } from "@/lib/supabaseClient"; // perché: verifica connession
 export default function NewTradePage() {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const availableSymbols = useMemo(
+    () => [
+      { code: "EURUSD", flag: "🇪🇺🇺🇸" },
+      { code: "GBPUSD", flag: "🇬🇧🇺🇸" },
+      { code: "USDJPY", flag: "🇺🇸🇯🇵" },
+      { code: "AUDUSD", flag: "🇦🇺🇺🇸" },
+      { code: "USDCAD", flag: "🇺🇸🇨🇦" },
+    ],
+    []
+  );
+  const [selectedSymbol, setSelectedSymbol] = useState(availableSymbols[0]);
+  const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
 
   const weekDays = useMemo(() => {
     const baseDate = new Date(selectedDate);
@@ -134,10 +146,75 @@ export default function NewTradePage() {
                 <circle cx="12" cy="16" r="1.5" />
               </svg>
             </button>
-          </div>
+        </div>
           <p className="text-sm text-muted-fg md:text-base">
             Day of the week: <span className="font-semibold capitalize">{dayOfWeekLabel}</span>
           </p>
+        </div>
+
+        <div className="mt-6 w-full rounded-3xl border border-border bg-bg px-6 py-5 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">Symbol</p>
+              <p className="mt-1 text-xl font-bold text-fg">
+                <span className="mr-2" aria-hidden>
+                  {selectedSymbol.flag}
+                </span>
+                {selectedSymbol.code}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="self-start rounded-full border border-border px-4 py-2 text-sm font-semibold text-fg transition hover:border-accent hover:text-accent sm:self-center"
+              onClick={() => setIsSymbolListOpen((prev) => !prev)}
+              aria-expanded={isSymbolListOpen}
+              aria-controls="symbol-options"
+            >
+              {isSymbolListOpen ? "Hide symbols" : "Choose symbol"}
+            </button>
+          </div>
+
+          {isSymbolListOpen && (
+            <div
+              id="symbol-options"
+              role="listbox"
+              aria-label="Available trading symbols"
+              className="mt-4 flex flex-col gap-2"
+            >
+              {availableSymbols.map((symbol) => {
+                const isActive = symbol.code === selectedSymbol.code;
+
+                return (
+                  <button
+                    key={symbol.code}
+                    type="button"
+                    role="option"
+                    aria-selected={isActive}
+                    aria-pressed={isActive}
+                    onClick={() => {
+                      setSelectedSymbol(symbol);
+                      setIsSymbolListOpen(false);
+                    }}
+                    className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                      isActive
+                        ? "border-transparent bg-accent text-white shadow"
+                        : "border-border bg-subtle text-muted-fg hover:border-accent hover:text-fg"
+                    }`}
+                  >
+                    <span className="flex items-center gap-3">
+                      <span className="text-xl" aria-hidden>
+                        {symbol.flag}
+                      </span>
+                      <span>{symbol.code}</span>
+                    </span>
+                    {isActive && (
+                      <span className="text-xs uppercase tracking-widest text-white/80">Selected</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </header>
 
