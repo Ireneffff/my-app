@@ -9,12 +9,12 @@ type SymbolOption = {
 };
 
 const availableSymbols: SymbolOption[] = [
-  { code: "EURUSD", flag: "🇪🇺🇺🇸" },
-  { code: "GBPUSD", flag: "🇬🇧🇺🇸" },
-  { code: "EURGBP", flag: "🇪🇺🇬🇧" },
-  { code: "EURCAD", flag: "🇪🇺🇨🇦" },
-  { code: "USDCAD", flag: "🇺🇸🇨🇦" },
-  { code: "AUDUSD", flag: "🇦🇺🇺🇸" },
+  { code: "EURUSD", flag: "🇪🇺 🇺🇸" },
+  { code: "GBPUSD", flag: "🇬🇧 🇺🇸" },
+  { code: "USDJPY", flag: "🇺🇸 🇯🇵" },
+  { code: "AUDUSD", flag: "🇦🇺 🇺🇸" },
+  { code: "USDCAD", flag: "🇺🇸 🇨🇦" },
+  { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
 ];
 
 export default function NewTradePage() {
@@ -45,8 +45,8 @@ export default function NewTradePage() {
     return new Date(initialDate);
   });
 
-  const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[0]);
-  const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
+  const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
+  const [isSymbolListOpen, setIsSymbolListOpen] = useState(true);
 
   const dayOfWeekLabel = useMemo(
     () =>
@@ -58,7 +58,6 @@ export default function NewTradePage() {
 
   const handleSelectSymbol = (symbol: SymbolOption) => {
     setSelectedSymbol(symbol);
-    setIsSymbolListOpen(false);
   };
 
   return (
@@ -173,23 +172,27 @@ export default function NewTradePage() {
           </div>
 
           <div className="w-full rounded-[2.5rem] border border-border/60 bg-white/80 px-6 py-8 shadow-lg shadow-black/10 backdrop-blur">
-            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-              <div className="flex flex-col items-start gap-4">
-                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Symbol</span>
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-col gap-3">
+                  <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Symbol</span>
+                  <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-white px-4 py-3 shadow-sm">
+                    <span className="text-2xl" aria-hidden="true">
+                      {selectedSymbol.flag}
+                    </span>
+                    <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                      {selectedSymbol.code}
+                    </span>
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                  className="flex items-center gap-4 rounded-full border border-border/60 bg-white/70 px-6 py-4 text-left shadow-sm transition hover:shadow md:min-w-[220px]"
+                  className="ml-auto flex items-center gap-2 rounded-full border border-border/70 bg-white px-4 py-2 text-sm font-semibold text-muted-fg transition hover:border-border hover:text-fg"
                   aria-haspopup="listbox"
                   aria-expanded={isSymbolListOpen}
                 >
-                  <div className="flex flex-col">
-                    <span className="text-lg font-semibold tracking-[0.2em] text-muted-fg">{selectedSymbol.code}</span>
-                    <span className="text-sm text-muted-fg">Tap to choose</span>
-                  </div>
-                  <span className="ml-auto text-4xl leading-none" aria-hidden="true">
-                    {selectedSymbol.flag}
-                  </span>
+                  {isSymbolListOpen ? "Hide symbols" : "Show symbols"}
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
@@ -198,7 +201,7 @@ export default function NewTradePage() {
                     strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className={`h-5 w-5 text-muted-fg transition-transform ${isSymbolListOpen ? "rotate-180" : ""}`}
+                    className={`h-4 w-4 transition-transform ${isSymbolListOpen ? "rotate-180" : ""}`}
                     aria-hidden="true"
                   >
                     <path d="m6 9 6 6 6-6" />
@@ -207,13 +210,13 @@ export default function NewTradePage() {
               </div>
 
               <div
-                className={`grid w-full transition-[grid-template-rows] duration-300 ease-out md:w-auto ${
+                className={`grid transition-[grid-template-rows] duration-300 ease-out ${
                   isSymbolListOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
                 }`}
               >
                 <div className="overflow-hidden">
                   <div
-                    className="flex flex-col gap-2 rounded-3xl border border-border/50 bg-white/70 p-2 shadow-inner shadow-black/5"
+                    className="flex flex-col gap-2 rounded-[1.75rem] border border-border/40 bg-white/80 p-2 shadow-inner shadow-black/5"
                     role="listbox"
                     aria-activedescendant={`symbol-${selectedSymbol.code}`}
                   >
@@ -225,19 +228,24 @@ export default function NewTradePage() {
                           key={symbol.code}
                           id={`symbol-${symbol.code}`}
                           type="button"
-                          className={`flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                          className={`flex w-full items-center gap-4 rounded-2xl px-5 py-3 text-sm font-semibold transition md:text-base ${
                             isActive
-                              ? "bg-accent text-white shadow"
+                              ? "bg-accent text-white shadow-lg shadow-accent/30"
                               : "bg-transparent text-fg hover:bg-muted/40"
                           }`}
                           onClick={() => handleSelectSymbol(symbol)}
                           aria-selected={isActive}
                           role="option"
                         >
-                          <span className="tracking-[0.2em]">{symbol.code}</span>
                           <span className="text-2xl" aria-hidden="true">
                             {symbol.flag}
                           </span>
+                          <span className="tracking-[0.2em]">{symbol.code}</span>
+                          {isActive ? (
+                            <span className="ml-auto text-xs font-bold uppercase tracking-[0.3em] text-white/80">
+                              Selected
+                            </span>
+                          ) : null}
                         </button>
                       );
                     })}
