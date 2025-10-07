@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { loadTrades, type StoredTrade } from "@/lib/tradesStorage";
+import {
+  deleteTrade,
+  loadTrades,
+  REGISTERED_TRADES_UPDATED_EVENT,
+  type StoredTrade,
+} from "@/lib/tradesStorage";
 
 type TradeState = {
   status: "loading" | "ready" | "missing";
@@ -50,10 +55,24 @@ export default function RegisteredTradePage() {
       return;
     }
 
-    const trades = loadTrades();
-    const match = trades.find((storedTrade) => storedTrade.id === tradeId) ?? null;
+    function refreshTrade() {
+      const trades = loadTrades();
+      const match = trades.find((storedTrade) => storedTrade.id === tradeId) ?? null;
 
-    setState({ status: match ? "ready" : "missing", trade: match });
+      setState({ status: match ? "ready" : "missing", trade: match });
+    }
+
+    refreshTrade();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrade);
+
+    return () => {
+      window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrade);
+    };
   }, [tradeId]);
 
   const selectedDate = useMemo(() => {
@@ -124,25 +143,58 @@ export default function RegisteredTradePage() {
     year: "numeric",
   });
 
+  const handleEditTrade = () => {
+    if (!state.trade) {
+      return;
+    }
+
+    router.push(`/new-trade?tradeId=${state.trade.id}`);
+  };
+
+  const handleDeleteTrade = () => {
+    if (!state.trade) {
+      return;
+    }
+
+    const shouldDelete = window.confirm("Sei sicuro di voler eliminare questa operazione?");
+    if (!shouldDelete) {
+      return;
+    }
+
+    deleteTrade(state.trade.id);
+    setState({ status: "missing", trade: null });
+    router.push("/");
+  };
+
   return (
     <section className="relative flex min-h-dvh flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-6 py-10 text-fg">
-      <div className="absolute right-6 top-6 flex items-center gap-3">
-        <Link
-          href="/"
-          className="rounded-full border border-border/60 bg-white/70 px-6 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-muted-fg shadow-sm transition hover:scale-105 hover:text-fg"
-        >
-          Back
-        </Link>
-        <button
-          type="button"
-          className="flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-white/70 text-lg font-semibold text-muted-fg shadow-sm transition hover:scale-105 hover:text-fg"
-          onClick={() => {
-            router.back();
-          }}
-          aria-label="Close"
-        >
-          ×
-        </button>
+      <div className="absolute right-6 top-6 flex flex-wrap items-center justify-end gap-2 text-right md:flex-row md:items-center md:gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={handleEditTrade}
+            className="rounded-full bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition hover:scale-105"
+          >
+            Modifica
+          </button>
+          <button
+            type="button"
+            onClick={handleDeleteTrade}
+            className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-red-600 shadow-sm transition hover:scale-105"
+          >
+            Elimina
+          </button>
+          <button
+            type="button"
+            className="flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-white/70 text-lg font-semibold text-muted-fg shadow-sm transition hover:scale-105 hover:text-fg"
+            onClick={() => {
+              router.back();
+            }}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
       </div>
 
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-12 text-center">
@@ -217,29 +269,17 @@ export default function RegisteredTradePage() {
           </div>
 
           <div className="w-full rounded-[2.5rem] border border-border/60 bg-white/80 px-6 py-8 shadow-lg shadow-black/10 backdrop-blur">
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex flex-col gap-3">
-                  <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Symbol</span>
-                  <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-white px-4 py-3 shadow-sm">
-                    <span className="text-2xl" aria-hidden="true">
-                      {activeSymbol.flag}
-                    </span>
-                    <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
-                      {activeSymbol.code}
-                    </span>
-                  </div>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-col gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Symbol</span>
+                <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-white px-4 py-3 shadow-sm">
+                  <span className="text-2xl" aria-hidden="true">
+                    {activeSymbol.flag}
+                  </span>
+                  <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                    {activeSymbol.code}
+                  </span>
                 </div>
-                <span className="ml-auto rounded-full border border-border/70 bg-white px-4 py-2 text-sm font-semibold text-muted-fg">
-                  Saved trade
-                </span>
-              </div>
-
-              <div className="rounded-[1.75rem] border border-border/40 bg-white/80 p-4 text-left shadow-inner shadow-black/5">
-                <h2 className="text-sm font-semibold uppercase tracking-[0.3em] text-muted-fg">Notes</h2>
-                <p className="mt-3 text-sm text-muted-fg">
-                  This trade was registered from the quick entry page. Additional performance or mindset notes can be stored in upcoming updates.
-                </p>
               </div>
             </div>
           </div>

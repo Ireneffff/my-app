@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
-import { saveTrade, type StoredTrade } from "@/lib/tradesStorage";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState, useTransition } from "react";
+import { loadTrades, saveTrade, updateTrade, type StoredTrade } from "@/lib/tradesStorage";
 
 type SymbolOption = {
   code: string;
@@ -18,8 +18,11 @@ const availableSymbols: SymbolOption[] = [
   { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
 ];
 
-export default function NewTradePage() {
+function NewTradePageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editingTradeId = searchParams.get("tradeId");
+  const isEditing = Boolean(editingTradeId);
   const today = useMemo(() => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -50,6 +53,33 @@ export default function NewTradePage() {
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(true);
   const [, startNavigation] = useTransition();
 
+  useEffect(() => {
+    if (!isEditing || !editingTradeId) {
+      return;
+    }
+
+    const trades = loadTrades();
+    const match = trades.find((trade) => trade.id === editingTradeId);
+
+    if (!match) {
+      router.replace("/");
+      return;
+    }
+
+    const matchedSymbol =
+      availableSymbols.find((symbol) => symbol.code === match.symbolCode) ?? {
+        code: match.symbolCode,
+        flag: match.symbolFlag,
+      };
+
+    setSelectedSymbol(matchedSymbol);
+
+    const parsedDate = new Date(match.date);
+    if (!Number.isNaN(parsedDate.getTime())) {
+      setSelectedDate(parsedDate);
+    }
+  }, [editingTradeId, isEditing, router]);
+
   const dayOfWeekLabel = useMemo(
     () =>
       selectedDate.toLocaleDateString(undefined, {
@@ -69,27 +99,34 @@ export default function NewTradePage() {
           type="button"
           className="rounded-full bg-accent px-6 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition hover:scale-105"
           onClick={() => {
+            const targetTradeId = editingTradeId ?? Date.now().toString(36);
             const trade: StoredTrade = {
-              id: Date.now().toString(36),
+              id: targetTradeId,
               symbolCode: selectedSymbol.code,
               symbolFlag: selectedSymbol.flag,
               date: selectedDate.toISOString(),
             };
 
-            saveTrade(trade);
+            if (isEditing && editingTradeId) {
+              updateTrade(trade);
+            } else {
+              saveTrade(trade);
+            }
+
+            const destination = isEditing && editingTradeId ? `/registered-trades/${editingTradeId}` : "/";
 
             startNavigation(() => {
-              router.push("/");
+              router.push(destination);
             });
 
             window.setTimeout(() => {
-              if (window.location.pathname === "/new-trade") {
-                window.location.href = "/";
+              if (window.location.pathname.startsWith("/new-trade")) {
+                window.location.href = destination;
               }
             }, 150);
           }}
         >
-          Save
+          {isEditing ? "Update" : "Save"}
         </button>
 
         <button
@@ -288,5 +325,13 @@ export default function NewTradePage() {
         </div>
       </div>
     </section>
+  );
+}
+
+export default function NewTradePage() {
+  return (
+    <Suspense fallback={null}>
+      <NewTradePageContent />
+    </Suspense>
   );
 }

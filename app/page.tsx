@@ -5,7 +5,11 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { supabase } from "@/lib/supabaseClient";
-import { loadTrades, type StoredTrade } from "@/lib/tradesStorage";
+import {
+  loadTrades,
+  REGISTERED_TRADES_UPDATED_EVENT,
+  type StoredTrade,
+} from "@/lib/tradesStorage";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -58,7 +62,21 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    setTrades(loadTrades());
+    function refreshTrades() {
+      setTrades(loadTrades());
+    }
+
+    refreshTrades();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrades);
+
+    return () => {
+      window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrades);
+    };
   }, []);
 
   const monthDays = useMemo(() => getCalendarDays(currentDate), [currentDate]);
