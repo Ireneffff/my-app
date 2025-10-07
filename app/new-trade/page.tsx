@@ -9,15 +9,9 @@ import {
   type SymbolOption,
   type StoredTrade,
 } from "@/lib/tradesStorage";
+import { SYMBOL_OPTIONS } from "@/lib/symbols";
 
-const availableSymbols: SymbolOption[] = [
-  { code: "EURUSD", flag: "🇪🇺 🇺🇸" },
-  { code: "GBPUSD", flag: "🇬🇧 🇺🇸" },
-  { code: "USDJPY", flag: "🇺🇸 🇯🇵" },
-  { code: "AUDUSD", flag: "🇦🇺 🇺🇸" },
-  { code: "USDCAD", flag: "🇺🇸 🇨🇦" },
-  { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
-];
+const availableSymbols: SymbolOption[] = SYMBOL_OPTIONS;
 
 export default function NewTradePage() {
   const router = useRouter();

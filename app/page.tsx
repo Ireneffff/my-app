@@ -8,7 +8,9 @@ import {
   readStoredTrades,
   TRADES_STORAGE_KEY,
   type StoredTrade,
+  updateStoredTrade,
 } from "@/lib/tradesStorage";
+import { SYMBOL_OPTIONS } from "@/lib/symbols";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -42,6 +44,27 @@ function getCalendarDays(activeDate: Date) {
 export default function Home() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [trades, setTrades] = useState<StoredTrade[]>([]);
+  const [editingTrade, setEditingTrade] = useState<StoredTrade | null>(null);
+  const [editDate, setEditDate] = useState<string>("");
+  const [editSymbolCode, setEditSymbolCode] = useState<string>("");
+  const [isUpdatingTrade, setIsUpdatingTrade] = useState(false);
+
+  const dateToInputValue = (isoDate: string) => {
+    const parsed = new Date(isoDate);
+    if (Number.isNaN(parsed.getTime())) return "";
+    const year = parsed.getFullYear();
+    const month = `${parsed.getMonth() + 1}`.padStart(2, "0");
+    const day = `${parsed.getDate()}`.padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const inputValueToISODate = (value: string) => {
+    if (!value) return "";
+    const normalized = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(normalized.getTime())) return "";
+    normalized.setHours(0, 0, 0, 0);
+    return normalized.toISOString();
+  };
 
   useEffect(() => {
     setTrades(readStoredTrades());
@@ -98,6 +121,44 @@ export default function Home() {
       return bTime - aTime;
     });
   }, [trades]);
+
+  const activeEditSymbol = useMemo(() => {
+    return SYMBOL_OPTIONS.find((symbol) => symbol.code === editSymbolCode) ?? null;
+  }, [editSymbolCode]);
+
+  const beginEditingTrade = (trade: StoredTrade) => {
+    setEditingTrade(trade);
+    setEditDate(dateToInputValue(trade.date));
+    setEditSymbolCode(trade.symbol.code);
+  };
+
+  const closeEditing = () => {
+    setEditingTrade(null);
+    setEditDate("");
+    setEditSymbolCode("");
+    setIsUpdatingTrade(false);
+  };
+
+  const requestCloseEditing = () => {
+    if (isUpdatingTrade) return;
+    closeEditing();
+  };
+
+  const handleUpdateTrade = () => {
+    if (!editingTrade || !editDate || !activeEditSymbol) return;
+    const isoDate = inputValueToISODate(editDate);
+    if (!isoDate) return;
+
+    setIsUpdatingTrade(true);
+    updateStoredTrade(editingTrade.id, {
+      date: isoDate,
+      symbol: activeEditSymbol,
+    });
+    const latestTrades = readStoredTrades();
+    setTrades(latestTrades);
+    setIsUpdatingTrade(false);
+    closeEditing();
+  };
 
   const formatTradeDate = (isoDate: string) => {
     const parsed = new Date(isoDate);
@@ -217,6 +278,13 @@ export default function Home() {
                       {formatTradeDate(trade.date)}
                     </span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => beginEditingTrade(trade)}
+                    className="ml-auto flex items-center gap-2 rounded-full border border-border/70 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg transition hover:border-border hover:text-fg"
+                  >
+                    Edit
+                  </button>
                 </li>
               ))}
             </ul>
@@ -227,6 +295,124 @@ export default function Home() {
           )}
         </div>
       </div>
+      {editingTrade ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-10 backdrop-blur-sm"
+          onClick={requestCloseEditing}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-trade-title"
+            className="w-full max-w-lg rounded-3xl border border-border/60 bg-white p-6 shadow-2xl shadow-black/20"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                  Edit trade
+                </p>
+                <h3 id="edit-trade-title" className="text-2xl font-bold text-fg">
+                  Update registered data
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={requestCloseEditing}
+                className="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-border/70 text-lg font-semibold text-muted-fg transition hover:border-border hover:text-fg"
+                aria-label="Close editor"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-6">
+              <label className="flex flex-col gap-2 text-left">
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                  Date
+                </span>
+                <input
+                  type="date"
+                  value={editDate}
+                  onChange={(event) => setEditDate(event.target.value)}
+                  className="rounded-2xl border border-border/70 px-4 py-3 text-sm font-semibold text-fg shadow-inner shadow-black/5"
+                />
+              </label>
+
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                    Symbol
+                  </span>
+                  {activeEditSymbol ? (
+                    <div className="flex items-center gap-2 rounded-full bg-subtle px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                      <span className="text-lg" aria-hidden="true">
+                        {activeEditSymbol.flag}
+                      </span>
+                      {activeEditSymbol.code}
+                    </div>
+                  ) : null}
+                </div>
+
+                <div
+                  className="flex flex-col gap-2 rounded-[1.75rem] border border-border/40 bg-white/80 p-2 shadow-inner shadow-black/5"
+                  role="listbox"
+                  aria-activedescendant={activeEditSymbol ? `edit-symbol-${activeEditSymbol.code}` : undefined}
+                >
+                  {SYMBOL_OPTIONS.map((symbol) => {
+                    const isActive = symbol.code === editSymbolCode;
+                    return (
+                      <button
+                        key={symbol.code}
+                        id={`edit-symbol-${symbol.code}`}
+                        type="button"
+                        onClick={() => setEditSymbolCode(symbol.code)}
+                        className={`flex w-full items-center gap-4 rounded-2xl px-5 py-3 text-sm font-semibold transition md:text-base ${
+                          isActive
+                            ? "bg-accent text-white shadow-lg shadow-accent/30"
+                            : "bg-transparent text-fg hover:bg-muted/40"
+                        }`}
+                        aria-selected={isActive}
+                        role="option"
+                      >
+                        <span className="text-2xl" aria-hidden="true">
+                          {symbol.flag}
+                        </span>
+                        <span className="tracking-[0.2em]">{symbol.code}</span>
+                        {isActive ? (
+                          <span className="ml-auto text-xs font-bold uppercase tracking-[0.3em] text-white/80">
+                            Selected
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={requestCloseEditing}
+                className="rounded-full border border-border/70 px-6 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-muted-fg transition hover:border-border hover:text-fg"
+                disabled={isUpdatingTrade}
+              >
+                Cancel
+              </button>
+              <Button
+                type="button"
+                variant="primary"
+                className="rounded-full px-6"
+                onClick={handleUpdateTrade}
+                disabled={isUpdatingTrade || !editDate || !activeEditSymbol}
+              >
+                {isUpdatingTrade ? "Saving..." : "Save changes"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

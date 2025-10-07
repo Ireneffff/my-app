@@ -58,3 +58,27 @@ export function appendStoredTrade(trade: StoredTrade) {
   trades.push(trade);
   writeStoredTrades(trades);
 }
+
+export function updateStoredTrade(
+  id: string,
+  updates: Partial<Omit<StoredTrade, "id">>,
+): StoredTrade | undefined {
+  if (typeof window === "undefined") return undefined;
+
+  const trades = readStoredTrades();
+  const index = trades.findIndex((trade) => trade.id === id);
+
+  if (index === -1) {
+    return undefined;
+  }
+
+  const updatedTrade: StoredTrade = {
+    ...trades[index],
+    ...updates,
+  };
+
+  trades[index] = updatedTrade;
+  writeStoredTrades(trades);
+
+  return updatedTrade;
+}
