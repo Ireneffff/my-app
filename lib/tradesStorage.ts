@@ -61,4 +61,20 @@ export function saveTrade(trade: StoredTrade) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTrades));
 }
 
+export function getTradeById(id: string): StoredTrade | null {
+  const trades = loadTrades();
+  return trades.find((trade) => trade.id === id) ?? null;
+}
+
+export function deleteTrade(id: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const currentTrades = loadTrades();
+  const updatedTrades = currentTrades.filter((trade) => trade.id !== id);
+
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTrades));
+}
+
 export const REGISTERED_TRADES_STORAGE_KEY = STORAGE_KEY;
