@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { loadTrades, type StoredTrade } from "@/lib/tradesStorage";
+import { deleteTrade, loadTrades, type StoredTrade } from "@/lib/tradesStorage";
 
 type TradeState = {
   status: "loading" | "ready" | "missing";
@@ -124,6 +124,28 @@ export default function RegisteredTradePage() {
     year: "numeric",
   });
 
+  const handleEditTrade = () => {
+    if (!state.trade) {
+      return;
+    }
+
+    router.push(`/new-trade?tradeId=${state.trade.id}`);
+  };
+
+  const handleDeleteTrade = () => {
+    if (!state.trade) {
+      return;
+    }
+
+    const shouldDelete = window.confirm("Sei sicuro di voler eliminare questa operazione?");
+    if (!shouldDelete) {
+      return;
+    }
+
+    deleteTrade(state.trade.id);
+    router.push("/");
+  };
+
   return (
     <section className="relative flex min-h-dvh flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-6 py-10 text-fg">
       <div className="absolute right-6 top-6 flex items-center gap-3">
@@ -230,9 +252,27 @@ export default function RegisteredTradePage() {
                     </span>
                   </div>
                 </div>
-                <span className="ml-auto rounded-full border border-border/70 bg-white px-4 py-2 text-sm font-semibold text-muted-fg">
-                  Saved trade
-                </span>
+                <div className="ml-auto flex flex-wrap items-center gap-3">
+                  <span className="rounded-full border border-border/70 bg-white px-4 py-2 text-sm font-semibold text-muted-fg">
+                    Saved trade
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleEditTrade}
+                      className="rounded-full bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition hover:scale-105"
+                    >
+                      Modifica
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDeleteTrade}
+                      className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-red-600 shadow-sm transition hover:scale-105"
+                    >
+                      Elimina
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="rounded-[1.75rem] border border-border/40 bg-white/80 p-4 text-left shadow-inner shadow-black/5">

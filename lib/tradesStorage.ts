@@ -61,4 +61,28 @@ export function saveTrade(trade: StoredTrade) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTrades));
 }
 
+export function updateTrade(trade: StoredTrade) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const currentTrades = loadTrades();
+  const updatedTrades = currentTrades.map((storedTrade) =>
+    storedTrade.id === trade.id ? trade : storedTrade,
+  );
+
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTrades));
+}
+
+export function deleteTrade(tradeId: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const currentTrades = loadTrades();
+  const updatedTrades = currentTrades.filter((trade) => trade.id !== tradeId);
+
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTrades));
+}
+
 export const REGISTERED_TRADES_STORAGE_KEY = STORAGE_KEY;
