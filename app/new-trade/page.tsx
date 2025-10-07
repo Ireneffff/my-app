@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { Suspense, useEffect, useMemo, useState, useTransition } from "react";
 import { loadTrades, saveTrade, updateTrade, type StoredTrade } from "@/lib/tradesStorage";
 
 type SymbolOption = {
@@ -18,7 +18,7 @@ const availableSymbols: SymbolOption[] = [
   { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
 ];
 
-export default function NewTradePage() {
+function NewTradePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editingTradeId = searchParams.get("tradeId");
@@ -325,5 +325,13 @@ export default function NewTradePage() {
         </div>
       </div>
     </section>
+  );
+}
+
+export default function NewTradePage() {
+  return (
+    <Suspense fallback={null}>
+      <NewTradePageContent />
+    </Suspense>
   );
 }
