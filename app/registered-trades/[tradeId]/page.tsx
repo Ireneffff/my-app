@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { deleteTrade, loadTrades, type StoredTrade } from "@/lib/tradesStorage";
+import {
+  deleteTrade,
+  loadTrades,
+  REGISTERED_TRADES_UPDATED_EVENT,
+  type StoredTrade,
+} from "@/lib/tradesStorage";
 
 type TradeState = {
   status: "loading" | "ready" | "missing";
@@ -50,10 +55,24 @@ export default function RegisteredTradePage() {
       return;
     }
 
-    const trades = loadTrades();
-    const match = trades.find((storedTrade) => storedTrade.id === tradeId) ?? null;
+    function refreshTrade() {
+      const trades = loadTrades();
+      const match = trades.find((storedTrade) => storedTrade.id === tradeId) ?? null;
 
-    setState({ status: match ? "ready" : "missing", trade: match });
+      setState({ status: match ? "ready" : "missing", trade: match });
+    }
+
+    refreshTrade();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrade);
+
+    return () => {
+      window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrade);
+    };
   }, [tradeId]);
 
   const selectedDate = useMemo(() => {
@@ -143,6 +162,7 @@ export default function RegisteredTradePage() {
     }
 
     deleteTrade(state.trade.id);
+    setState({ status: "missing", trade: null });
     router.push("/");
   };
 

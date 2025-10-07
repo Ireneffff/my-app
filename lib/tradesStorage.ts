@@ -6,6 +6,15 @@ export type StoredTrade = {
 };
 
 const STORAGE_KEY = "registeredTrades";
+const TRADES_UPDATED_EVENT = "registered-trades-changed";
+
+function notifyTradesChanged() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(new Event(TRADES_UPDATED_EVENT));
+}
 
 function parseTrades(raw: string | null): StoredTrade[] {
   if (!raw) {
@@ -59,6 +68,7 @@ export function saveTrade(trade: StoredTrade) {
   const updatedTrades = [trade, ...currentTrades];
 
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTrades));
+  notifyTradesChanged();
 }
 
 export function updateTrade(trade: StoredTrade) {
@@ -72,6 +82,7 @@ export function updateTrade(trade: StoredTrade) {
   );
 
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTrades));
+  notifyTradesChanged();
 }
 
 export function deleteTrade(tradeId: string) {
@@ -83,6 +94,8 @@ export function deleteTrade(tradeId: string) {
   const updatedTrades = currentTrades.filter((trade) => trade.id !== tradeId);
 
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTrades));
+  notifyTradesChanged();
 }
 
 export const REGISTERED_TRADES_STORAGE_KEY = STORAGE_KEY;
+export const REGISTERED_TRADES_UPDATED_EVENT = TRADES_UPDATED_EVENT;
