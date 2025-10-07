@@ -5,6 +5,7 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { supabase } from "@/lib/supabaseClient";
+import { loadTrades, type StoredTrade } from "@/lib/tradesStorage";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -37,6 +38,7 @@ function getCalendarDays(activeDate: Date) {
 
 export default function Home() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
+  const [trades, setTrades] = useState<StoredTrade[]>([]);
 
   useEffect(() => {
     async function checkSupabase() {
@@ -53,6 +55,10 @@ export default function Home() {
     }
 
     checkSupabase();
+  }, []);
+
+  useEffect(() => {
+    setTrades(loadTrades());
   }, []);
 
   const monthDays = useMemo(() => getCalendarDays(currentDate), [currentDate]);
@@ -141,6 +147,50 @@ export default function Home() {
             })}
           </div>
         </Card>
+
+        <div className="mt-10 w-full max-w-lg text-left">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">
+            Registered Trades
+          </h2>
+
+          {trades.length === 0 ? (
+            <p className="mt-4 rounded-3xl border border-dashed border-border/70 bg-white/50 px-6 py-8 text-center text-sm font-medium text-muted-fg">
+              No trades saved yet. Use the Add new button to register your first trade.
+            </p>
+          ) : (
+            <ol className="mt-4 space-y-3">
+              {trades.map((trade, index) => {
+                const formattedDate = new Date(trade.date).toLocaleDateString(undefined, {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                });
+
+                return (
+                  <li
+                    key={trade.id}
+                    className="flex items-center gap-4 rounded-3xl border border-border/60 bg-white/80 px-5 py-4 shadow-sm shadow-black/5"
+                  >
+                    <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
+                      {index + 1}
+                    </span>
+                    <span className="text-2xl" aria-hidden="true">
+                      {trade.symbolFlag}
+                    </span>
+                    <div className="flex flex-1 flex-col">
+                      <span className="text-sm font-semibold tracking-[0.2em] text-fg">
+                        {trade.symbolCode}
+                      </span>
+                    </div>
+                    <time className="text-sm font-medium text-muted-fg" dateTime={trade.date}>
+                      {formattedDate}
+                    </time>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </div>
       </div>
     </section>
   );

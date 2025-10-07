@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { saveTrade, type StoredTrade } from "@/lib/tradesStorage";
 
 type SymbolOption = {
   code: string;
@@ -47,6 +48,7 @@ export default function NewTradePage() {
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(true);
+  const [, startNavigation] = useTransition();
 
   const dayOfWeekLabel = useMemo(
     () =>
@@ -62,16 +64,45 @@ export default function NewTradePage() {
 
   return (
     <section className="relative flex min-h-dvh flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-6 py-10 text-fg">
-      <button
-        type="button"
-        className="absolute right-6 top-6 flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-white/70 text-lg font-semibold text-muted-fg shadow-sm transition hover:scale-105 hover:text-fg"
-        onClick={() => {
-          router.back();
-        }}
-        aria-label="Close"
-      >
-        ×
-      </button>
+      <div className="absolute right-6 top-6 flex items-center gap-3">
+        <button
+          type="button"
+          className="rounded-full bg-accent px-6 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition hover:scale-105"
+          onClick={() => {
+            const trade: StoredTrade = {
+              id: Date.now().toString(36),
+              symbolCode: selectedSymbol.code,
+              symbolFlag: selectedSymbol.flag,
+              date: selectedDate.toISOString(),
+            };
+
+            saveTrade(trade);
+
+            startNavigation(() => {
+              router.push("/");
+            });
+
+            window.setTimeout(() => {
+              if (window.location.pathname === "/new-trade") {
+                window.location.href = "/";
+              }
+            }, 150);
+          }}
+        >
+          Save
+        </button>
+
+        <button
+          type="button"
+          className="flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-white/70 text-lg font-semibold text-muted-fg shadow-sm transition hover:scale-105 hover:text-fg"
+          onClick={() => {
+            router.back();
+          }}
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
 
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-12 text-center">
         <header className="space-y-3">
