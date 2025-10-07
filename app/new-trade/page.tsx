@@ -1,49 +1,85 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 import Button from "@/components/ui/Button";
 import {
   appendStoredTrade,
+  findStoredTrade,
   type SymbolOption,
   type StoredTrade,
+  updateStoredTrade,
 } from "@/lib/tradesStorage";
 import { SYMBOL_OPTIONS } from "@/lib/symbols";
 
 const availableSymbols: SymbolOption[] = SYMBOL_OPTIONS;
 
+function getWeekDays(baseDate: Date) {
+  const reference = new Date(baseDate);
+  reference.setHours(0, 0, 0, 0);
+  const diffFromMonday = (reference.getDay() + 6) % 7;
+  const monday = new Date(reference);
+  monday.setDate(reference.getDate() - diffFromMonday);
+
+  return Array.from({ length: 5 }, (_, index) => {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + index);
+    return date;
+  });
+}
+
 export default function NewTradePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const today = useMemo(() => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     return now;
   }, []);
 
-  const currentWeekDays = useMemo(() => {
-    const baseDate = new Date(today);
-    const baseDay = baseDate.getDay();
-    const diffFromMonday = (baseDay + 6) % 7;
-    const monday = new Date(baseDate);
-    monday.setDate(baseDate.getDate() - diffFromMonday);
-
-    return Array.from({ length: 5 }, (_, index) => {
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + index);
-      return date;
-    });
-  }, [today]);
-
+  const [weekReference, setWeekReference] = useState<Date>(() => today);
+  const currentWeekDays = useMemo(() => getWeekDays(weekReference), [weekReference]);
   const [selectedDate, setSelectedDate] = useState(() => {
+    const initialWeek = getWeekDays(today);
     const dayIndex = Math.min((today.getDay() + 6) % 7, 4);
-    const initialDate = currentWeekDays.at(dayIndex) ?? currentWeekDays[0] ?? today;
+    const initialDate = initialWeek.at(dayIndex) ?? initialWeek[0] ?? today;
     return new Date(initialDate);
   });
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [existingTrade, setExistingTrade] = useState<StoredTrade | null>(null);
+  const [isEditing, setIsEditing] = useState(() => !searchParams.get("tradeId"));
+
+  const tradeId = searchParams.get("tradeId");
+
+  useEffect(() => {
+    if (!tradeId) {
+      setExistingTrade(null);
+      setIsEditing(true);
+      setWeekReference(today);
+      return;
+    }
+
+    const storedTrade = findStoredTrade(tradeId);
+    if (storedTrade) {
+      const storedDate = new Date(storedTrade.date);
+      if (!Number.isNaN(storedDate.getTime())) {
+        storedDate.setHours(0, 0, 0, 0);
+        setWeekReference(storedDate);
+        setSelectedDate(new Date(storedDate));
+      }
+      setSelectedSymbol(storedTrade.symbol);
+      setExistingTrade(storedTrade);
+      setIsEditing(false);
+    } else {
+      setExistingTrade(null);
+      setIsEditing(true);
+      setWeekReference(today);
+    }
+  }, [tradeId, today]);
 
   const dayOfWeekLabel = useMemo(
     () =>
@@ -64,31 +100,77 @@ export default function NewTradePage() {
     const normalizedDate = new Date(selectedDate);
     normalizedDate.setHours(0, 0, 0, 0);
 
-    const trade: StoredTrade = {
-      id:
-        typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : Date.now().toString(),
-      date: normalizedDate.toISOString(),
-      symbol: selectedSymbol,
-    };
+    if (existingTrade) {
+      updateStoredTrade(existingTrade.id, {
+        date: normalizedDate.toISOString(),
+        symbol: selectedSymbol,
+      });
+    } else {
+      const trade: StoredTrade = {
+        id:
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : Date.now().toString(),
+        date: normalizedDate.toISOString(),
+        symbol: selectedSymbol,
+      };
 
-    appendStoredTrade(trade);
+      appendStoredTrade(trade);
+    }
+
     router.push("/");
+    setIsSaving(false);
   };
 
   return (
     <section className="relative flex min-h-dvh flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-6 py-10 text-fg">
-      <button
-        type="button"
-        className="absolute right-6 top-6 flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-white/70 text-lg font-semibold text-muted-fg shadow-sm transition hover:scale-105 hover:text-fg"
-        onClick={() => {
-          router.back();
-        }}
-        aria-label="Close"
-      >
-        ×
-      </button>
+      <div className="absolute right-6 top-6 flex flex-col items-end gap-3">
+        {existingTrade ? (
+          <button
+            type="button"
+            onClick={() => {
+              setIsEditing((prev) => {
+                if (prev && existingTrade) {
+                  const storedDate = new Date(existingTrade.date);
+                  if (!Number.isNaN(storedDate.getTime())) {
+                    storedDate.setHours(0, 0, 0, 0);
+                    setWeekReference(storedDate);
+                    setSelectedDate(new Date(storedDate));
+                  }
+                  setSelectedSymbol(existingTrade.symbol);
+                }
+                return !prev;
+              });
+            }}
+            className="flex items-center gap-2 rounded-full border border-border/70 bg-white/80 px-4 py-2 text-sm font-semibold text-muted-fg shadow-sm transition hover:border-border hover:text-fg"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+              aria-hidden="true"
+            >
+              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 3 21l.5-4.5Z" />
+            </svg>
+            {isEditing ? "Annulla" : "Modifica"}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className="flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-white/70 text-lg font-semibold text-muted-fg shadow-sm transition hover:scale-105 hover:text-fg"
+          onClick={() => {
+            router.back();
+          }}
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
 
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-12 text-center">
         <header className="space-y-3">
@@ -137,6 +219,7 @@ export default function NewTradePage() {
                     key={date.toISOString()}
                     type="button"
                     onClick={() => setSelectedDate(new Date(date))}
+                    disabled={Boolean(existingTrade) && !isEditing}
                     className={`flex min-w-[66px] flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold transition md:min-w-[88px] md:text-sm ${
                       isSelected
                         ? "bg-accent text-white shadow"
@@ -157,12 +240,16 @@ export default function NewTradePage() {
                 type="button"
                 className="ml-auto flex h-14 w-14 flex-none items-center justify-center rounded-full border border-border/70 bg-white text-muted-fg shadow-sm transition hover:text-fg"
                 onClick={() => {
+                  const newReference = new Date(today);
+                  setWeekReference(newReference);
+                  const freshWeek = getWeekDays(newReference);
                   const dayIndex = Math.min((today.getDay() + 6) % 7, 4);
-                  const targetDate = currentWeekDays.at(dayIndex) ?? currentWeekDays[0] ?? today;
+                  const targetDate = freshWeek.at(dayIndex) ?? freshWeek[0] ?? newReference;
                   setSelectedDate(new Date(targetDate));
                 }}
                 aria-label="Select today"
                 title="Select today"
+                disabled={Boolean(existingTrade) && !isEditing}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -208,6 +295,7 @@ export default function NewTradePage() {
                   className="ml-auto flex items-center gap-2 rounded-full border border-border/70 bg-white px-4 py-2 text-sm font-semibold text-muted-fg transition hover:border-border hover:text-fg"
                   aria-haspopup="listbox"
                   aria-expanded={isSymbolListOpen}
+                  disabled={Boolean(existingTrade) && !isEditing}
                 >
                   {isSymbolListOpen ? "Hide symbols" : "Show symbols"}
                   <svg
@@ -250,10 +338,11 @@ export default function NewTradePage() {
                               ? "bg-accent text-white shadow-lg shadow-accent/30"
                               : "bg-transparent text-fg hover:bg-muted/40"
                           }`}
-                          onClick={() => handleSelectSymbol(symbol)}
-                          aria-selected={isActive}
-                          role="option"
-                        >
+                        onClick={() => handleSelectSymbol(symbol)}
+                        disabled={Boolean(existingTrade) && !isEditing}
+                        aria-selected={isActive}
+                        role="option"
+                      >
                           <span className="text-2xl" aria-hidden="true">
                             {symbol.flag}
                           </span>
@@ -272,24 +361,28 @@ export default function NewTradePage() {
             </div>
           </div>
 
-          <div className="w-full rounded-[2.5rem] border border-border/60 bg-white/80 px-6 py-6 shadow-lg shadow-black/10 backdrop-blur">
-            <div className="flex flex-col items-center gap-4 text-center">
-              <h2 className="text-xl font-semibold text-fg">Ready to save this trade?</h2>
-              <p className="text-sm text-muted-fg">
-                We’ll add the selected symbol and date to your journal overview on the home page.
-              </p>
-              <Button
-                type="button"
-                variant="primary"
-                size="lg"
-                className="rounded-full px-8"
-                onClick={handleSaveTrade}
-                disabled={isSaving}
-              >
-                {isSaving ? "Saving..." : "Save"}
-              </Button>
+          {isEditing ? (
+            <div className="w-full rounded-[2.5rem] border border-border/60 bg-white/80 px-6 py-6 shadow-lg shadow-black/10 backdrop-blur">
+              <div className="flex flex-col items-center gap-4 text-center">
+                <h2 className="text-xl font-semibold text-fg">
+                  {existingTrade ? "Ready to update this trade?" : "Ready to save this trade?"}
+                </h2>
+                <p className="text-sm text-muted-fg">
+                  We’ll {existingTrade ? "refresh" : "add"} the selected symbol and date in your journal overview on the home page.
+                </p>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="lg"
+                  className="rounded-full px-8"
+                  onClick={handleSaveTrade}
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Saving..." : existingTrade ? "Save changes" : "Save"}
+                </Button>
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
       </div>
     </section>
