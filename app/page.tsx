@@ -167,24 +167,26 @@ export default function Home() {
                 });
 
                 return (
-                  <li
-                    key={trade.id}
-                    className="flex items-center gap-4 rounded-3xl border border-border/60 bg-white/80 px-5 py-4 shadow-sm shadow-black/5"
-                  >
-                    <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
-                      {index + 1}
-                    </span>
-                    <span className="text-2xl" aria-hidden="true">
-                      {trade.symbolFlag}
-                    </span>
-                    <div className="flex flex-1 flex-col">
-                      <span className="text-sm font-semibold tracking-[0.2em] text-fg">
-                        {trade.symbolCode}
+                  <li key={trade.id}>
+                    <Link
+                      href={`/new-trade?id=${trade.id}`}
+                      className="flex items-center gap-4 rounded-3xl border border-border/60 bg-white/80 px-5 py-4 shadow-sm shadow-black/5 transition hover:border-border hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                    >
+                      <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
+                        {index + 1}
                       </span>
-                    </div>
-                    <time className="text-sm font-medium text-muted-fg" dateTime={trade.date}>
-                      {formattedDate}
-                    </time>
+                      <span className="text-2xl" aria-hidden="true">
+                        {trade.symbolFlag}
+                      </span>
+                      <div className="flex flex-1 flex-col">
+                        <span className="text-sm font-semibold tracking-[0.2em] text-fg">
+                          {trade.symbolCode}
+                        </span>
+                      </div>
+                      <time className="text-sm font-medium text-muted-fg" dateTime={trade.date}>
+                        {formattedDate}
+                      </time>
+                    </Link>
                   </li>
                 );
               })}

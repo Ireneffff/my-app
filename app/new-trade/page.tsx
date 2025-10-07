@@ -1,8 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
-import { saveTrade, type StoredTrade } from "@/lib/tradesStorage";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import {
+  findTradeById,
+  saveTrade,
+  type StoredTrade,
+  updateTrade,
+} from "@/lib/tradesStorage";
 
 type SymbolOption = {
   code: string;
@@ -20,6 +25,7 @@ const availableSymbols: SymbolOption[] = [
 
 export default function NewTradePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const today = useMemo(() => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -40,14 +46,19 @@ export default function NewTradePage() {
     });
   }, [today]);
 
-  const [selectedDate, setSelectedDate] = useState(() => {
+  const defaultDate = useMemo(() => {
     const dayIndex = Math.min((today.getDay() + 6) % 7, 4);
     const initialDate = currentWeekDays.at(dayIndex) ?? currentWeekDays[0] ?? today;
     return new Date(initialDate);
-  });
+  }, [currentWeekDays, today]);
 
-  const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
+  const defaultSymbol = availableSymbols[2];
+
+  const [selectedDate, setSelectedDate] = useState(() => new Date(defaultDate));
+
+  const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(defaultSymbol);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(true);
+  const [editingTradeId, setEditingTradeId] = useState<string | null>(null);
   const [, startNavigation] = useTransition();
 
   const dayOfWeekLabel = useMemo(
@@ -62,6 +73,41 @@ export default function NewTradePage() {
     setSelectedSymbol(symbol);
   };
 
+  const tradeIdFromUrl = searchParams.get("id");
+
+  useEffect(() => {
+    if (!tradeIdFromUrl) {
+      setEditingTradeId(null);
+      setSelectedDate(new Date(defaultDate));
+      setSelectedSymbol(defaultSymbol);
+      return;
+    }
+
+    const trade = findTradeById(tradeIdFromUrl);
+
+    if (!trade) {
+      setEditingTradeId(null);
+      setSelectedDate(new Date(defaultDate));
+      setSelectedSymbol(defaultSymbol);
+      return;
+    }
+
+    setEditingTradeId(trade.id);
+    setSelectedDate(new Date(trade.date));
+
+    const matchingSymbol = availableSymbols.find(
+      (symbol) => symbol.code === trade.symbolCode
+    );
+
+    setSelectedSymbol(
+      matchingSymbol ?? { code: trade.symbolCode, flag: trade.symbolFlag }
+    );
+  }, [tradeIdFromUrl, defaultDate, defaultSymbol]);
+
+  const isEditing = editingTradeId !== null;
+  const pageTitle = isEditing ? "Edit Trade" : "Register a Trade";
+  const primaryActionLabel = isEditing ? "Update" : "Save";
+
   return (
     <section className="relative flex min-h-dvh flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-6 py-10 text-fg">
       <div className="absolute right-6 top-6 flex items-center gap-3">
@@ -70,13 +116,17 @@ export default function NewTradePage() {
           className="rounded-full bg-accent px-6 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition hover:scale-105"
           onClick={() => {
             const trade: StoredTrade = {
-              id: Date.now().toString(36),
+              id: editingTradeId ?? Date.now().toString(36),
               symbolCode: selectedSymbol.code,
               symbolFlag: selectedSymbol.flag,
               date: selectedDate.toISOString(),
             };
 
-            saveTrade(trade);
+            if (isEditing) {
+              updateTrade(trade);
+            } else {
+              saveTrade(trade);
+            }
 
             startNavigation(() => {
               router.push("/");
@@ -89,7 +139,7 @@ export default function NewTradePage() {
             }, 150);
           }}
         >
-          Save
+          {primaryActionLabel}
         </button>
 
         <button
@@ -108,7 +158,7 @@ export default function NewTradePage() {
         <header className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Trading Journal</p>
           <h1 className="text-4xl font-black tracking-tight text-fg drop-shadow-sm md:text-5xl">
-            Register a Trade
+            {pageTitle}
           </h1>
         </header>
 
