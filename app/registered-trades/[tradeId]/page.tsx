@@ -237,12 +237,12 @@ export default function RegisteredTradePage() {
         </header>
 
         <div className="flex w-full flex-col items-center gap-8">
-          <nav className="flex w-full flex-wrap items-center justify-center gap-2 rounded-full bg-white/90 px-2 py-2 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.28)] backdrop-blur">
+          <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-2 py-2">
             {[{ label: "Main data", isActive: true }, { label: "Performance", isActive: false }, { label: "Mindset", isActive: false }].map((tab) => (
               <span
                 key={tab.label}
                 className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                  tab.isActive ? "bg-zinc-200 text-fg shadow-inner shadow-black/5" : "text-muted-fg"
+                  tab.isActive ? "text-fg" : "text-muted-fg"
                 }`}
               >
                 {tab.label}

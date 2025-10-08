@@ -255,7 +255,7 @@ function NewTradePageContent() {
         </header>
 
         <div className="flex w-full flex-col items-center gap-8">
-          <nav className="flex w-full flex-wrap items-center justify-center gap-2 rounded-full bg-white/90 px-2 py-2 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.28)] backdrop-blur">
+          <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-2 py-2">
             {[
               { label: "Main data", isActive: true },
               { label: "Performance", isActive: false },
@@ -265,9 +265,7 @@ function NewTradePageContent() {
                 key={label}
                 type="button"
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  isActive
-                    ? "bg-zinc-200 text-fg shadow-inner shadow-black/5"
-                    : "text-muted-fg hover:text-fg"
+                  isActive ? "text-fg" : "text-muted-fg hover:text-fg"
                 }`}
                 aria-pressed={isActive}
                 disabled={!isActive}
