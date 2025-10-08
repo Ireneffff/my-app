@@ -387,13 +387,13 @@ export default function RegisteredTradePage() {
 
               {imageData ? (
                 <div className="flex flex-col gap-3">
-                  <div className="relative flex items-center justify-center overflow-hidden rounded-[1.75rem] bg-white shadow-[0_18px_45px_-28px_rgba(15,23,42,0.28)]" style={{ minHeight: "240px" }}>
+                  <div className="relative flex min-h-[240px] w-full items-center justify-center overflow-hidden rounded-[1.75rem] bg-white shadow-[0_18px_45px_-28px_rgba(15,23,42,0.28)] aspect-video">
                     <Image
                       src={imageData}
                       alt="Trade context attachment"
                       fill
                       sizes="(min-width: 768px) 560px, 90vw"
-                      className="object-contain"
+                      className="object-cover"
                       unoptimized
                     />
                   </div>

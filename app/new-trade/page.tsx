@@ -640,7 +640,7 @@ function NewTradePageContent() {
                   imageData
                     ? "border-transparent bg-white shadow-[0_18px_45px_-28px_rgba(15,23,42,0.28)]"
                     : "border-border/70 bg-white/60 text-muted-fg transition hover:border-accent/60 hover:text-accent"
-                }`}
+                } aspect-video`}
               >
                 {imageData ? (
                   <Image
@@ -648,7 +648,7 @@ function NewTradePageContent() {
                     alt="Selected trade context"
                     fill
                     sizes="(min-width: 768px) 480px, 90vw"
-                    className="object-contain"
+                    className="object-cover"
                     unoptimized
                   />
                 ) : (
