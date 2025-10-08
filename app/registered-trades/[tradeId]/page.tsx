@@ -197,7 +197,7 @@ export default function RegisteredTradePage() {
       className="relative flex min-h-dvh flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-4 pb-10 text-fg sm:px-6 md:px-10"
       style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
     >
-      <div className="mx-auto mb-6 flex w-full max-w-3xl flex-wrap items-center gap-2 rounded-full bg-white/85 px-3 py-2 shadow-[0_12px_30px_-18px_rgba(15,23,42,0.25)] backdrop-blur">
+      <div className="mx-auto mb-6 flex w-full max-w-3xl flex-wrap items-center gap-2 rounded-full bg-transparent px-3 py-2">
         <button
           type="button"
           className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/80 text-lg font-semibold text-muted-fg shadow-[0_10px_24px_-16px_rgba(15,23,42,0.3)] transition hover:scale-105 hover:text-fg"
