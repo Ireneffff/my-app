@@ -5,6 +5,7 @@ export type StoredTrade = {
   date: string;
   openTime?: string | null;
   closeTime?: string | null;
+  imageData?: string | null;
 };
 
 const STORAGE_KEY = "registeredTrades";
@@ -59,6 +60,18 @@ function parseTrades(raw: string | null): StoredTrade[] {
           typeof storedItem.closeTime !== "string"
         ) {
           storedItem.closeTime = null;
+        }
+
+        if (
+          storedItem.imageData !== undefined &&
+          storedItem.imageData !== null &&
+          typeof storedItem.imageData !== "string"
+        ) {
+          storedItem.imageData = null;
+        }
+
+        if (storedItem.imageData === undefined) {
+          storedItem.imageData = null;
         }
 
         return storedItem;

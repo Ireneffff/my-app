@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import {
   Suspense,
   useCallback,
@@ -9,6 +10,7 @@ import {
   useRef,
   useState,
   useTransition,
+  type ChangeEvent,
 } from "react";
 import { loadTrades, saveTrade, updateTrade, type StoredTrade } from "@/lib/tradesStorage";
 
@@ -112,9 +114,12 @@ function NewTradePageContent() {
 
   const openTimeInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimeInputRef = useRef<HTMLInputElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
+  const [imageData, setImageData] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   const [, startNavigation] = useTransition();
 
   const handleSelectDate = useCallback(
@@ -177,7 +182,14 @@ function NewTradePageContent() {
     } else {
       setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate, 17));
     }
-  }, [editingTradeId, handleSelectDate, isEditing, router, selectedDate]);
+
+    setImageData(match.imageData ?? null);
+    setImageError(null);
+
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+  }, [editingTradeId, handleSelectDate, imageInputRef, isEditing, router, selectedDate]);
 
   const dayOfWeekLabel = useMemo(
     () =>
@@ -214,6 +226,49 @@ function NewTradePageContent() {
   const openTimeDisplay = getDateTimeDisplayParts(openTime);
   const closeTimeDisplay = getDateTimeDisplayParts(closeTime);
 
+  const handleImageChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+
+    if (!file) {
+      setImageError(null);
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError("The selected file is too large. Choose an image under 5 MB.");
+      event.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setImageData(reader.result);
+        setImageError(null);
+      }
+    };
+
+    reader.onerror = () => {
+      setImageError("Failed to load the selected image. Please try another file.");
+      setImageData(null);
+    };
+
+    reader.readAsDataURL(file);
+  }, []);
+
+  const openImagePicker = useCallback(() => {
+    imageInputRef.current?.click();
+  }, []);
+
+  const handleRemoveImage = useCallback(() => {
+    setImageData(null);
+    setImageError(null);
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+  }, []);
+
   return (
     <section
       className="relative flex min-h-dvh flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-4 pb-10 text-fg sm:px-6 md:px-10"
@@ -243,6 +298,7 @@ function NewTradePageContent() {
               date: selectedDate.toISOString(),
               openTime: openTime ? openTime.toISOString() : null,
               closeTime: closeTime ? closeTime.toISOString() : null,
+              imageData: imageData ?? null,
             };
 
             if (isEditing && editingTradeId) {
@@ -565,6 +621,76 @@ function NewTradePageContent() {
                   />
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="w-full rounded-[2.5rem] bg-white/85 px-5 py-6 shadow-[0_20px_55px_-28px_rgba(15,23,42,0.32)] backdrop-blur md:px-6 md:py-8">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Images</span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg/80">
+                  Before the position
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={openImagePicker}
+                className={`group relative flex min-h-[220px] w-full items-center justify-center overflow-hidden rounded-[1.75rem] border border-dashed ${
+                  imageData
+                    ? "border-transparent bg-white shadow-[0_18px_45px_-28px_rgba(15,23,42,0.28)]"
+                    : "border-border/70 bg-white/60 text-muted-fg transition hover:border-accent/60 hover:text-accent"
+                }`}
+              >
+                {imageData ? (
+                  <Image
+                    src={imageData}
+                    alt="Selected trade context"
+                    fill
+                    sizes="(min-width: 768px) 480px, 90vw"
+                    className="object-contain"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-2 px-4 text-center text-sm font-medium">
+                    <span className="rounded-full bg-bg px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                      Enter image
+                    </span>
+                    <span className="text-xs text-muted-fg/80">PNG, JPG or WEBP · max 5 MB</span>
+                    <span className="text-xs text-muted-fg/70">
+                      Tap to upload a snapshot of your setup before entering the trade.
+                    </span>
+                  </div>
+                )}
+              </button>
+
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={handleImageChange}
+                aria-label="Upload trade image"
+              />
+
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-fg">
+                <p className="max-w-[70%]">
+                  {imageData ? "Tap the preview to replace the image." : "Tap the area above to select or capture an image."}
+                </p>
+                {imageData ? (
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="text-[11px] font-semibold uppercase tracking-[0.3em] text-accent transition hover:text-accent/80"
+                  >
+                    Remove
+                  </button>
+                ) : null}
+              </div>
+
+              {imageError ? (
+                <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-medium text-red-600">{imageError}</p>
+              ) : null}
             </div>
           </div>
         </div>

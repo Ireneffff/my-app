@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import {
   deleteTrade,
@@ -168,6 +169,7 @@ export default function RegisteredTradePage() {
 
   const openTimeDisplay = getDateTimeDisplay(state.trade.openTime);
   const closeTimeDisplay = getDateTimeDisplay(state.trade.closeTime);
+  const imageData = state.trade.imageData ?? null;
 
   const handleEditTrade = () => {
     if (!state.trade) {
@@ -371,6 +373,39 @@ export default function RegisteredTradePage() {
                   </svg>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="w-full rounded-[2.5rem] bg-white/85 px-5 py-6 shadow-[0_20px_55px_-28px_rgba(15,23,42,0.32)] backdrop-blur md:px-6 md:py-8">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Images</span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg/80">
+                  Before the position
+                </span>
+              </div>
+
+              {imageData ? (
+                <div className="flex flex-col gap-3">
+                  <div className="relative flex items-center justify-center overflow-hidden rounded-[1.75rem] bg-white shadow-[0_18px_45px_-28px_rgba(15,23,42,0.28)]" style={{ minHeight: "240px" }}>
+                    <Image
+                      src={imageData}
+                      alt="Trade context attachment"
+                      fill
+                      sizes="(min-width: 768px) 560px, 90vw"
+                      className="object-contain"
+                      unoptimized
+                    />
+                  </div>
+                  <p className="text-xs text-muted-fg">
+                    This is the snapshot you saved when registering the trade.
+                  </p>
+                </div>
+              ) : (
+                <p className="rounded-3xl border border-dashed border-border/70 bg-white/60 px-5 py-6 text-center text-xs font-medium text-muted-fg">
+                  No image was attached to this trade.
+                </p>
+              )}
             </div>
           </div>
         </div>
