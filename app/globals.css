@@ -28,6 +28,14 @@
 .border-border{ border-color: color-mix(in oklab, currentColor 0%, rgba(var(--border))); }
 .bg-accent{ background-color: rgb(var(--accent)); }
 .text-accent{ color: rgb(var(--accent)); }
+.pill-date{
+  background-color: rgb(var(--muted-fg) / 0.12);
+  color: rgb(var(--muted-fg));
+}
+.pill-time{
+  background-color: rgb(var(--accent) / 0.14);
+  color: rgb(var(--accent));
+}
 
 /* ---- Layout helpers ---- */
 .container{ max-width: 1200px; margin-inline: auto; }

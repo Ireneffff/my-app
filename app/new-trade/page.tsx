@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
 } from "react";
@@ -51,22 +52,20 @@ function alignTimeWithDate(time: Date | null, baseDate: Date, fallbackHour: numb
 
 function getDateTimeDisplayParts(date: Date | null) {
   if (!date || Number.isNaN(date.getTime())) {
-    return { dateLabel: "-- ---", timeLabel: "--:--" };
+    return { dateLabel: "-- --, ----", timeLabel: "--:--" };
   }
 
-  const dayLabel = date.toLocaleDateString(undefined, { day: "numeric" });
-  const monthLabel = date
-    .toLocaleDateString(undefined, {
-      month: "short",
-    })
-    .toUpperCase();
-  const timeLabel = date.toLocaleTimeString(undefined, {
-    hour: "2-digit",
+  const dateLabel = date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const timeLabel = date.toLocaleTimeString("en-US", {
+    hour: "numeric",
     minute: "2-digit",
-    hour12: false,
   });
 
-  return { dateLabel: `${dayLabel} ${monthLabel}`, timeLabel };
+  return { dateLabel, timeLabel };
 }
 
 function NewTradePageContent() {
@@ -111,8 +110,11 @@ function NewTradePageContent() {
     return initial;
   });
 
+  const openTimeInputRef = useRef<HTMLInputElement | null>(null);
+  const closeTimeInputRef = useRef<HTMLInputElement | null>(null);
+
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
-  const [isSymbolListOpen, setIsSymbolListOpen] = useState(true);
+  const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
   const [, startNavigation] = useTransition();
 
   const handleSelectDate = useCallback(
@@ -188,6 +190,26 @@ function NewTradePageContent() {
   const handleSelectSymbol = (symbol: SymbolOption) => {
     setSelectedSymbol(symbol);
   };
+
+  const openDateTimePicker = useCallback((input: HTMLInputElement | null) => {
+    if (!input) {
+      return;
+    }
+
+    const pickerInput = input as HTMLInputElement & { showPicker?: () => void };
+
+    try {
+      if (typeof pickerInput.showPicker === "function") {
+        pickerInput.showPicker();
+        return;
+      }
+    } catch {
+      // Some browsers may throw if showPicker fails; fall back to focus + click
+    }
+
+    input.focus();
+    input.click();
+  }, []);
 
   const openTimeDisplay = getDateTimeDisplayParts(openTime);
   const closeTimeDisplay = getDateTimeDisplayParts(closeTime);
@@ -425,14 +447,23 @@ function NewTradePageContent() {
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="flex flex-col gap-3">
-                  <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Open Time</span>
-                  <div className="relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                <div className="flex flex-col gap-3">
+                  <label
+                    htmlFor="open-time-input"
+                    className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                  >
+                    Open Time
+                  </label>
+                  <button
+                    type="button"
+                    className="relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]"
+                    onClick={() => openDateTimePicker(openTimeInputRef.current)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
                         {openTimeDisplay.dateLabel}
                       </span>
-                      <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                      <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
                         {openTimeDisplay.timeLabel}
                       </span>
                     </div>
@@ -450,37 +481,48 @@ function NewTradePageContent() {
                       <circle cx="12" cy="12" r="9" />
                       <polyline points="12 7 12 12 15 15" />
                     </svg>
-                    <input
-                      type="datetime-local"
-                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                      value={openTime ? formatDateTimeLocal(openTime) : ""}
-                      onChange={(event) => {
-                        const { value } = event.target;
-                        if (!value) {
-                          setOpenTime(null);
-                          return;
-                        }
+                  </button>
+                  <input
+                    id="open-time-input"
+                    ref={openTimeInputRef}
+                    type="datetime-local"
+                    className="sr-only"
+                    value={openTime ? formatDateTimeLocal(openTime) : ""}
+                    onChange={(event) => {
+                      const { value } = event.target;
+                      if (!value) {
+                        setOpenTime(null);
+                        return;
+                      }
 
-                        const parsed = new Date(value);
-                        if (Number.isNaN(parsed.getTime())) {
-                          return;
-                        }
+                      const parsed = new Date(value);
+                      if (Number.isNaN(parsed.getTime())) {
+                        return;
+                      }
 
-                        setOpenTime(parsed);
-                      }}
-                      aria-label="Select open date and time"
-                    />
-                  </div>
-                </label>
+                      setOpenTime(parsed);
+                    }}
+                    aria-label="Select open date and time"
+                  />
+                </div>
 
-                <label className="flex flex-col gap-3">
-                  <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Close Time</span>
-                  <div className="relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                <div className="flex flex-col gap-3">
+                  <label
+                    htmlFor="close-time-input"
+                    className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                  >
+                    Close Time
+                  </label>
+                  <button
+                    type="button"
+                    className="relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]"
+                    onClick={() => openDateTimePicker(closeTimeInputRef.current)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
                         {closeTimeDisplay.dateLabel}
                       </span>
-                      <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                      <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
                         {closeTimeDisplay.timeLabel}
                       </span>
                     </div>
@@ -498,28 +540,30 @@ function NewTradePageContent() {
                       <circle cx="12" cy="12" r="9" />
                       <polyline points="12 7 12 12 15 15" />
                     </svg>
-                    <input
-                      type="datetime-local"
-                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                      value={closeTime ? formatDateTimeLocal(closeTime) : ""}
-                      onChange={(event) => {
-                        const { value } = event.target;
-                        if (!value) {
-                          setCloseTime(null);
-                          return;
-                        }
+                  </button>
+                  <input
+                    id="close-time-input"
+                    ref={closeTimeInputRef}
+                    type="datetime-local"
+                    className="sr-only"
+                    value={closeTime ? formatDateTimeLocal(closeTime) : ""}
+                    onChange={(event) => {
+                      const { value } = event.target;
+                      if (!value) {
+                        setCloseTime(null);
+                        return;
+                      }
 
-                        const parsed = new Date(value);
-                        if (Number.isNaN(parsed.getTime())) {
-                          return;
-                        }
+                      const parsed = new Date(value);
+                      if (Number.isNaN(parsed.getTime())) {
+                        return;
+                      }
 
-                        setCloseTime(parsed);
-                      }}
-                      aria-label="Select close date and time"
-                    />
-                  </div>
-                </label>
+                      setCloseTime(parsed);
+                    }}
+                    aria-label="Select close date and time"
+                  />
+                </div>
               </div>
             </div>
           </div>
