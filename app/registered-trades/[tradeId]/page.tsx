@@ -390,7 +390,7 @@ export default function RegisteredTradePage() {
 
             <div className="mt-6 flex flex-col gap-3">
               <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Conditions</span>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
                   <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">Position</span>
                   <div className="rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">

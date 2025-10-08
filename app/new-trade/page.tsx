@@ -637,7 +637,7 @@ function NewTradePageContent() {
 
               <div className="mt-6 flex flex-col gap-3">
                 <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Conditions</span>
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
                     <label
                       htmlFor="position-select"
