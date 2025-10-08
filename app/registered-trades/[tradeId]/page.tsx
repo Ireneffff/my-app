@@ -171,10 +171,10 @@ export default function RegisteredTradePage() {
       className="relative flex min-h-dvh flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-4 pb-10 text-fg sm:px-6 md:px-10"
       style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
     >
-      <div className="mx-auto mb-6 flex w-full max-w-3xl flex-wrap items-center gap-2 rounded-full border border-border/50 bg-white/80 px-3 py-2 shadow-sm shadow-black/5 backdrop-blur">
+      <div className="mx-auto mb-6 flex w-full max-w-3xl flex-wrap items-center gap-2 rounded-full bg-white/85 px-3 py-2 shadow-[0_12px_30px_-18px_rgba(15,23,42,0.25)] backdrop-blur">
         <button
           type="button"
-          className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border/60 bg-white/70 text-lg font-semibold text-muted-fg shadow-sm transition hover:scale-105 hover:text-fg"
+          className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/80 text-lg font-semibold text-muted-fg shadow-[0_10px_24px_-16px_rgba(15,23,42,0.3)] transition hover:scale-105 hover:text-fg"
           onClick={() => {
             router.back();
           }}
@@ -187,14 +187,14 @@ export default function RegisteredTradePage() {
           <button
             type="button"
             onClick={handleEditTrade}
-            className="rounded-full bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition hover:scale-105"
+            className="rounded-full bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white shadow-[0_14px_32px_-18px_rgba(15,23,42,0.3)] transition hover:scale-105"
           >
             Modifica
           </button>
           <button
             type="button"
             onClick={handleDeleteTrade}
-            className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-red-600 shadow-sm transition hover:scale-105"
+            className="rounded-full bg-red-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-red-600 shadow-[0_14px_32px_-18px_rgba(220,38,38,0.25)] transition hover:scale-105"
           >
             Elimina
           </button>
@@ -211,12 +211,12 @@ export default function RegisteredTradePage() {
         </header>
 
         <div className="flex w-full flex-col items-center gap-8">
-          <nav className="flex w-full flex-wrap items-center justify-center gap-2 rounded-full bg-white/90 px-2 py-2 shadow-[0_12px_35px_-15px_rgba(15,23,42,0.4)] backdrop-blur">
+          <nav className="flex w-full flex-wrap items-center justify-center gap-2 rounded-full bg-white/90 px-2 py-2 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.28)] backdrop-blur">
             {[{ label: "Main data", isActive: true }, { label: "Performance", isActive: false }, { label: "Mindset", isActive: false }].map((tab) => (
               <span
                 key={tab.label}
                 className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                  tab.isActive ? "bg-zinc-300 text-fg shadow-inner shadow-black/10" : "text-muted-fg"
+                  tab.isActive ? "bg-zinc-200 text-fg shadow-inner shadow-black/5" : "text-muted-fg"
                 }`}
               >
                 {tab.label}
@@ -224,7 +224,7 @@ export default function RegisteredTradePage() {
             ))}
           </nav>
 
-          <div className="w-full rounded-[2.5rem] bg-white/80 px-4 py-6 shadow-[0_25px_60px_-25px_rgba(15,23,42,0.55)] backdrop-blur md:px-6 md:py-8">
+          <div className="w-full rounded-[2.5rem] bg-white/85 px-4 py-6 shadow-[0_20px_55px_-28px_rgba(15,23,42,0.32)] backdrop-blur md:px-6 md:py-8">
             <div className="mx-auto flex w-full max-w-xl items-center gap-2 overflow-x-auto rounded-full bg-transparent px-1 py-1">
               {currentWeekDays.map((date) => {
                 const isSelected = date.toDateString() === selectedDate.toDateString();
@@ -239,7 +239,7 @@ export default function RegisteredTradePage() {
                   <div
                     key={date.toISOString()}
                     className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold md:min-w-[88px] md:text-sm ${
-                      isSelected ? "bg-accent text-white shadow" : "text-muted-fg"
+                      isSelected ? "bg-accent text-white shadow-[0_12px_26px_-18px_rgba(15,23,42,0.3)]" : "text-muted-fg"
                     }`}
                   >
                     <span className={`text-xl md:text-2xl ${isSelected ? "font-black" : "font-bold"}`}>{dayNumber}</span>
@@ -248,7 +248,7 @@ export default function RegisteredTradePage() {
                 );
               })}
 
-              <div className="ml-auto hidden h-14 w-14 flex-none items-center justify-center rounded-full bg-white/90 text-muted-fg shadow-md md:flex">
+              <div className="ml-auto hidden h-14 w-14 flex-none items-center justify-center rounded-full bg-white/90 text-muted-fg shadow-[0_12px_30px_-20px_rgba(15,23,42,0.3)] md:flex">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -274,11 +274,11 @@ export default function RegisteredTradePage() {
             </p>
           </div>
 
-          <div className="w-full rounded-[2.5rem] bg-white/80 px-5 py-6 shadow-[0_25px_60px_-25px_rgba(15,23,42,0.55)] backdrop-blur md:px-6 md:py-8">
+          <div className="w-full rounded-[2.5rem] bg-white/85 px-5 py-6 shadow-[0_20px_55px_-28px_rgba(15,23,42,0.32)] backdrop-blur md:px-6 md:py-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex flex-col gap-3">
                 <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Symbol</span>
-                <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-lg shadow-black/10">
+                <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
                   <span className="text-2xl" aria-hidden="true">
                     {activeSymbol.flag}
                   </span>

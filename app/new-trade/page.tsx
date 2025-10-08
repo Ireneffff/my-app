@@ -97,10 +97,10 @@ function NewTradePageContent() {
       className="relative flex min-h-dvh flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-4 pb-10 text-fg sm:px-6 md:px-10"
       style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
     >
-      <div className="mx-auto mb-6 flex w-full max-w-3xl flex-wrap items-center justify-between gap-3 rounded-full border border-border/50 bg-white/80 px-3 py-2 shadow-sm shadow-black/5 backdrop-blur">
+      <div className="mx-auto mb-6 flex w-full max-w-3xl flex-wrap items-center justify-between gap-3 rounded-full bg-white/85 px-3 py-2 shadow-[0_12px_30px_-18px_rgba(15,23,42,0.25)] backdrop-blur">
         <button
           type="button"
-          className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border/60 bg-white/70 text-lg font-semibold text-muted-fg shadow-sm transition hover:scale-105 hover:text-fg"
+          className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/80 text-lg font-semibold text-muted-fg shadow-[0_10px_24px_-16px_rgba(15,23,42,0.3)] transition hover:scale-105 hover:text-fg"
           onClick={() => {
             router.back();
           }}
@@ -111,7 +111,7 @@ function NewTradePageContent() {
 
         <button
           type="button"
-          className="ml-auto min-w-[140px] rounded-full bg-accent px-6 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition hover:scale-105"
+          className="ml-auto min-w-[140px] rounded-full bg-accent px-6 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-[0_14px_32px_-18px_rgba(15,23,42,0.3)] transition hover:scale-105"
           onClick={() => {
             const targetTradeId = editingTradeId ?? Date.now().toString(36);
             const trade: StoredTrade = {
@@ -153,7 +153,7 @@ function NewTradePageContent() {
         </header>
 
         <div className="flex w-full flex-col items-center gap-8">
-          <nav className="flex w-full flex-wrap items-center justify-center gap-2 rounded-full bg-white/90 px-2 py-2 shadow-[0_12px_35px_-15px_rgba(15,23,42,0.4)] backdrop-blur">
+          <nav className="flex w-full flex-wrap items-center justify-center gap-2 rounded-full bg-white/90 px-2 py-2 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.28)] backdrop-blur">
             {[
               { label: "Main data", isActive: true },
               { label: "Performance", isActive: false },
@@ -164,7 +164,7 @@ function NewTradePageContent() {
                 type="button"
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                   isActive
-                    ? "bg-zinc-300 text-fg shadow-inner shadow-black/10"
+                    ? "bg-zinc-200 text-fg shadow-inner shadow-black/5"
                     : "text-muted-fg hover:text-fg"
                 }`}
                 aria-pressed={isActive}
@@ -175,7 +175,7 @@ function NewTradePageContent() {
             ))}
           </nav>
 
-          <div className="w-full rounded-[2.5rem] bg-white/80 px-4 py-6 shadow-[0_25px_60px_-25px_rgba(15,23,42,0.55)] backdrop-blur md:px-6 md:py-8">
+          <div className="w-full rounded-[2.5rem] bg-white/85 px-4 py-6 shadow-[0_20px_55px_-28px_rgba(15,23,42,0.32)] backdrop-blur md:px-6 md:py-8">
             <div className="mx-auto flex w-full max-w-xl items-center gap-2 overflow-x-auto rounded-full bg-transparent px-1 py-1">
               {currentWeekDays.map((date) => {
                 const isSelected = date.toDateString() === selectedDate.toDateString();
@@ -193,7 +193,7 @@ function NewTradePageContent() {
                     onClick={() => setSelectedDate(new Date(date))}
                     className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold transition md:min-w-[88px] md:text-sm ${
                       isSelected
-                        ? "bg-accent text-white shadow"
+                        ? "bg-accent text-white shadow-[0_12px_26px_-18px_rgba(15,23,42,0.3)]"
                         : "text-muted-fg hover:text-fg"
                     }`}
                   >
@@ -209,7 +209,7 @@ function NewTradePageContent() {
 
               <button
                 type="button"
-                className="ml-auto flex h-14 w-14 flex-none items-center justify-center rounded-full bg-white/90 text-muted-fg shadow-md transition hover:text-fg"
+                className="ml-auto flex h-14 w-14 flex-none items-center justify-center rounded-full bg-white/90 text-muted-fg shadow-[0_12px_30px_-20px_rgba(15,23,42,0.3)] transition hover:text-fg"
                 onClick={() => {
                   const dayIndex = Math.min((today.getDay() + 6) % 7, 4);
                   const targetDate = currentWeekDays.at(dayIndex) ?? currentWeekDays[0] ?? today;
@@ -242,12 +242,12 @@ function NewTradePageContent() {
             </p>
           </div>
 
-          <div className="w-full rounded-[2.5rem] bg-white/80 px-5 py-6 shadow-[0_25px_60px_-25px_rgba(15,23,42,0.55)] backdrop-blur md:px-6 md:py-8">
+          <div className="w-full rounded-[2.5rem] bg-white/85 px-5 py-6 shadow-[0_20px_55px_-28px_rgba(15,23,42,0.32)] backdrop-blur md:px-6 md:py-8">
             <div className="flex flex-col gap-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex flex-col gap-3">
                   <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Symbol</span>
-                  <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-lg shadow-black/10">
+                  <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
                     <span className="text-2xl" aria-hidden="true">
                       {selectedSymbol.flag}
                     </span>
@@ -259,7 +259,7 @@ function NewTradePageContent() {
                 <button
                   type="button"
                   onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                  className="ml-auto flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-muted-fg shadow-md transition hover:text-fg"
+                  className="ml-auto flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-muted-fg shadow-[0_12px_30px_-20px_rgba(15,23,42,0.3)] transition hover:text-fg"
                   aria-haspopup="listbox"
                   aria-expanded={isSymbolListOpen}
                 >
@@ -287,7 +287,7 @@ function NewTradePageContent() {
               >
                 <div className="overflow-hidden">
                   <div
-                    className="flex flex-col gap-2 rounded-[1.75rem] bg-white/90 p-2 shadow-[0_18px_45px_-25px_rgba(15,23,42,0.6)]"
+                    className="flex flex-col gap-2 rounded-[1.75rem] bg-white/90 p-2 shadow-[0_18px_45px_-28px_rgba(15,23,42,0.3)]"
                     role="listbox"
                     aria-activedescendant={`symbol-${selectedSymbol.code}`}
                   >
@@ -301,8 +301,8 @@ function NewTradePageContent() {
                           type="button"
                           className={`flex w-full items-center gap-4 rounded-2xl px-5 py-3 text-sm font-semibold transition md:text-base ${
                             isActive
-                              ? "bg-accent text-white shadow-lg shadow-accent/30"
-                              : "bg-transparent text-fg hover:bg-muted/40"
+                              ? "bg-accent text-white shadow-[0_12px_28px_-16px_rgba(59,130,246,0.35)]"
+                              : "bg-transparent text-fg hover:bg-muted/30"
                           }`}
                           onClick={() => handleSelectSymbol(symbol)}
                           aria-selected={isActive}
