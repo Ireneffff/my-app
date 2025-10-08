@@ -120,6 +120,10 @@ function NewTradePageContent() {
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
   const [imageData, setImageData] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
+  const [riskReward, setRiskReward] = useState("");
+  const [risk, setRisk] = useState("");
+  const [pips, setPips] = useState("");
   const [, startNavigation] = useTransition();
 
   const handleSelectDate = useCallback(
@@ -185,6 +189,11 @@ function NewTradePageContent() {
 
     setImageData(match.imageData ?? null);
     setImageError(null);
+
+    setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
+    setRiskReward(match.riskReward ?? "");
+    setRisk(match.risk ?? "");
+    setPips(match.pips ?? "");
 
     if (imageInputRef.current) {
       imageInputRef.current.value = "";
@@ -299,6 +308,10 @@ function NewTradePageContent() {
               openTime: openTime ? openTime.toISOString() : null,
               closeTime: closeTime ? closeTime.toISOString() : null,
               imageData: imageData ?? null,
+              position,
+              riskReward: riskReward.trim() || null,
+              risk: risk.trim() || null,
+              pips: pips.trim() || null,
             };
 
             if (isEditing && editingTradeId) {
@@ -619,6 +632,80 @@ function NewTradePageContent() {
                     }}
                     aria-label="Select close date and time"
                   />
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Conditions</span>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="flex flex-col gap-2">
+                    <label
+                      htmlFor="position-select"
+                      className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                    >
+                      Position
+                    </label>
+                    <select
+                      id="position-select"
+                      value={position}
+                      onChange={(event) => setPosition(event.target.value === "SHORT" ? "SHORT" : "LONG")}
+                      className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-fg shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    >
+                      <option value="LONG">Long</option>
+                      <option value="SHORT">Short</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label
+                      htmlFor="risk-reward-input"
+                      className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                    >
+                      R/R
+                    </label>
+                    <input
+                      id="risk-reward-input"
+                      type="text"
+                      value={riskReward}
+                      onChange={(event) => setRiskReward(event.target.value)}
+                      placeholder="1:4"
+                      className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-fg shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] placeholder:text-muted-fg/60 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label
+                      htmlFor="risk-input"
+                      className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                    >
+                      Risk
+                    </label>
+                    <input
+                      id="risk-input"
+                      type="text"
+                      value={risk}
+                      onChange={(event) => setRisk(event.target.value)}
+                      placeholder="2%"
+                      className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-fg shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] placeholder:text-muted-fg/60 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label
+                      htmlFor="pips-input"
+                      className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                    >
+                      Nr. Pips
+                    </label>
+                    <input
+                      id="pips-input"
+                      type="text"
+                      value={pips}
+                      onChange={(event) => setPips(event.target.value)}
+                      placeholder="55"
+                      className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-fg shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] placeholder:text-muted-fg/60 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

@@ -64,6 +64,15 @@ function getWorkWeekDays(referenceDate: Date) {
   });
 }
 
+function formatOptionalText(value?: string | null) {
+  if (!value) {
+    return "—";
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : "—";
+}
+
 export default function RegisteredTradePage() {
   const params = useParams<{ tradeId: string }>();
   const router = useRouter();
@@ -170,6 +179,10 @@ export default function RegisteredTradePage() {
   const openTimeDisplay = getDateTimeDisplay(state.trade.openTime);
   const closeTimeDisplay = getDateTimeDisplay(state.trade.closeTime);
   const imageData = state.trade.imageData ?? null;
+  const positionLabel = state.trade.position === "SHORT" ? "Short" : "Long";
+  const riskRewardValue = formatOptionalText(state.trade.riskReward);
+  const riskValue = formatOptionalText(state.trade.risk);
+  const pipsValue = formatOptionalText(state.trade.pips);
 
   const handleEditTrade = () => {
     if (!state.trade) {
@@ -371,6 +384,39 @@ export default function RegisteredTradePage() {
                     <circle cx="12" cy="12" r="9" />
                     <polyline points="12 7 12 12 15 15" />
                   </svg>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3">
+              <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Conditions</span>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="flex flex-col gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">Position</span>
+                  <div className="rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                    <span className="text-sm font-semibold text-fg">{positionLabel}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">R/R</span>
+                  <div className="rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                    <span className="text-sm font-semibold text-fg">{riskRewardValue}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">Risk</span>
+                  <div className="rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                    <span className="text-sm font-semibold text-fg">{riskValue}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">Nr. Pips</span>
+                  <div className="rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                    <span className="text-sm font-semibold text-fg">{pipsValue}</span>
+                  </div>
                 </div>
               </div>
             </div>
