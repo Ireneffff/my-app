@@ -24,6 +24,29 @@ const availableSymbols = [
   { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
 ] as const;
 
+function getDateTimeDisplay(isoValue?: string | null) {
+  if (!isoValue) {
+    return { dateLabel: "-- ---", timeLabel: "--:--" };
+  }
+
+  const parsed = new Date(isoValue);
+  if (Number.isNaN(parsed.getTime())) {
+    return { dateLabel: "-- ---", timeLabel: "--:--" };
+  }
+
+  const dayLabel = parsed.toLocaleDateString(undefined, { day: "numeric" });
+  const monthLabel = parsed
+    .toLocaleDateString(undefined, { month: "short" })
+    .toUpperCase();
+  const timeLabel = parsed.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
+  return { dateLabel: `${dayLabel} ${monthLabel}`, timeLabel };
+}
+
 function getWorkWeekDays(referenceDate: Date) {
   const baseDate = new Date(referenceDate);
   baseDate.setHours(0, 0, 0, 0);
@@ -143,6 +166,9 @@ export default function RegisteredTradePage() {
     year: "numeric",
   });
 
+  const openTimeDisplay = getDateTimeDisplay(state.trade.openTime);
+  const closeTimeDisplay = getDateTimeDisplay(state.trade.closeTime);
+
   const handleEditTrade = () => {
     if (!state.trade) {
       return;
@@ -171,7 +197,7 @@ export default function RegisteredTradePage() {
       className="relative flex min-h-dvh flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-4 pb-10 text-fg sm:px-6 md:px-10"
       style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
     >
-      <div className="mx-auto mb-6 flex w-full max-w-3xl flex-wrap items-center gap-2 rounded-full bg-white/85 px-3 py-2 shadow-[0_12px_30px_-18px_rgba(15,23,42,0.25)] backdrop-blur">
+      <div className="mx-auto mb-6 flex w-full max-w-3xl flex-wrap items-center gap-2 rounded-full bg-transparent px-3 py-2">
         <button
           type="button"
           className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/80 text-lg font-semibold text-muted-fg shadow-[0_10px_24px_-16px_rgba(15,23,42,0.3)] transition hover:scale-105 hover:text-fg"
@@ -211,12 +237,12 @@ export default function RegisteredTradePage() {
         </header>
 
         <div className="flex w-full flex-col items-center gap-8">
-          <nav className="flex w-full flex-wrap items-center justify-center gap-2 rounded-full bg-white/90 px-2 py-2 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.28)] backdrop-blur">
+          <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-2 py-2">
             {[{ label: "Main data", isActive: true }, { label: "Performance", isActive: false }, { label: "Mindset", isActive: false }].map((tab) => (
               <span
                 key={tab.label}
                 className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                  tab.isActive ? "bg-zinc-200 text-fg shadow-inner shadow-black/5" : "text-muted-fg"
+                  tab.isActive ? "text-fg" : "text-muted-fg"
                 }`}
               >
                 {tab.label}
@@ -285,6 +311,64 @@ export default function RegisteredTradePage() {
                   <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
                     {activeSymbol.code}
                   </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <div className="flex flex-col gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Open Time</span>
+                <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                      {openTimeDisplay.dateLabel}
+                    </span>
+                    <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                      {openTimeDisplay.timeLabel}
+                    </span>
+                  </div>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="ml-auto h-6 w-6 text-muted-fg"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <polyline points="12 7 12 12 15 15" />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Close Time</span>
+                <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                      {closeTimeDisplay.dateLabel}
+                    </span>
+                    <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                      {closeTimeDisplay.timeLabel}
+                    </span>
+                  </div>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="ml-auto h-6 w-6 text-muted-fg"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <polyline points="12 7 12 12 15 15" />
+                  </svg>
                 </div>
               </div>
             </div>
