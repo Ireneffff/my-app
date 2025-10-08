@@ -114,7 +114,7 @@ function NewTradePageContent() {
   const closeTimeInputRef = useRef<HTMLInputElement | null>(null);
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
-  const [isSymbolListOpen, setIsSymbolListOpen] = useState(true);
+  const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
   const [, startNavigation] = useTransition();
 
   const handleSelectDate = useCallback(
