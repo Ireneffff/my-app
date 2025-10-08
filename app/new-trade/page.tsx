@@ -93,11 +93,25 @@ function NewTradePageContent() {
   };
 
   return (
-    <section className="relative flex min-h-dvh flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-6 py-10 text-fg">
-      <div className="absolute right-6 top-6 flex items-center gap-3">
+    <section
+      className="relative flex min-h-dvh flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-4 pb-10 text-fg sm:px-6 md:px-10"
+      style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
+    >
+      <div className="mx-auto mb-6 flex w-full max-w-3xl flex-wrap items-center justify-between gap-3 rounded-full border border-border/50 bg-white/80 px-3 py-2 shadow-sm shadow-black/5 backdrop-blur">
         <button
           type="button"
-          className="rounded-full bg-accent px-6 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition hover:scale-105"
+          className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border/60 bg-white/70 text-lg font-semibold text-muted-fg shadow-sm transition hover:scale-105 hover:text-fg"
+          onClick={() => {
+            router.back();
+          }}
+          aria-label="Close"
+        >
+          ×
+        </button>
+
+        <button
+          type="button"
+          className="ml-auto min-w-[140px] rounded-full bg-accent px-6 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition hover:scale-105"
           onClick={() => {
             const targetTradeId = editingTradeId ?? Date.now().toString(36);
             const trade: StoredTrade = {
@@ -128,20 +142,9 @@ function NewTradePageContent() {
         >
           {isEditing ? "Update" : "Save"}
         </button>
-
-        <button
-          type="button"
-          className="flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-white/70 text-lg font-semibold text-muted-fg shadow-sm transition hover:scale-105 hover:text-fg"
-          onClick={() => {
-            router.back();
-          }}
-          aria-label="Close"
-        >
-          ×
-        </button>
       </div>
 
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-12 text-center">
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-10 text-center">
         <header className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Trading Journal</p>
           <h1 className="text-4xl font-black tracking-tight text-fg drop-shadow-sm md:text-5xl">
@@ -149,8 +152,8 @@ function NewTradePageContent() {
           </h1>
         </header>
 
-        <div className="flex flex-col items-center gap-8">
-          <nav className="flex items-center gap-3 rounded-full border border-border/60 bg-white/60 px-2 py-2 shadow-lg shadow-black/5 backdrop-blur">
+        <div className="flex w-full flex-col items-center gap-8">
+          <nav className="flex w-full flex-wrap items-center justify-center gap-2 rounded-full bg-white/90 px-2 py-2 shadow-[0_12px_35px_-15px_rgba(15,23,42,0.4)] backdrop-blur">
             {[
               { label: "Main data", isActive: true },
               { label: "Performance", isActive: false },
@@ -161,7 +164,7 @@ function NewTradePageContent() {
                 type="button"
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                   isActive
-                    ? "bg-accent text-white shadow"
+                    ? "bg-zinc-300 text-fg shadow-inner shadow-black/10"
                     : "text-muted-fg hover:text-fg"
                 }`}
                 aria-pressed={isActive}
@@ -172,8 +175,8 @@ function NewTradePageContent() {
             ))}
           </nav>
 
-          <div className="w-full rounded-[2.5rem] border border-border/60 bg-white/80 px-4 py-8 shadow-lg shadow-black/10 backdrop-blur">
-            <div className="mx-auto flex max-w-xl items-center gap-2 overflow-x-auto rounded-full bg-transparent px-2 py-1">
+          <div className="w-full rounded-[2.5rem] bg-white/80 px-4 py-6 shadow-[0_25px_60px_-25px_rgba(15,23,42,0.55)] backdrop-blur md:px-6 md:py-8">
+            <div className="mx-auto flex w-full max-w-xl items-center gap-2 overflow-x-auto rounded-full bg-transparent px-1 py-1">
               {currentWeekDays.map((date) => {
                 const isSelected = date.toDateString() === selectedDate.toDateString();
                 const dayNumber = date.getDate();
@@ -188,7 +191,7 @@ function NewTradePageContent() {
                     key={date.toISOString()}
                     type="button"
                     onClick={() => setSelectedDate(new Date(date))}
-                    className={`flex min-w-[66px] flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold transition md:min-w-[88px] md:text-sm ${
+                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold transition md:min-w-[88px] md:text-sm ${
                       isSelected
                         ? "bg-accent text-white shadow"
                         : "text-muted-fg hover:text-fg"
@@ -206,7 +209,7 @@ function NewTradePageContent() {
 
               <button
                 type="button"
-                className="ml-auto flex h-14 w-14 flex-none items-center justify-center rounded-full border border-border/70 bg-white text-muted-fg shadow-sm transition hover:text-fg"
+                className="ml-auto flex h-14 w-14 flex-none items-center justify-center rounded-full bg-white/90 text-muted-fg shadow-md transition hover:text-fg"
                 onClick={() => {
                   const dayIndex = Math.min((today.getDay() + 6) % 7, 4);
                   const targetDate = currentWeekDays.at(dayIndex) ?? currentWeekDays[0] ?? today;
@@ -234,17 +237,17 @@ function NewTradePageContent() {
               </button>
             </div>
 
-            <p className="mt-6 text-sm font-medium text-muted-fg md:text-base">
+            <p className="mt-5 text-sm font-medium text-muted-fg md:text-base">
               Day of the week: <span className="font-semibold capitalize text-fg">{dayOfWeekLabel}</span>
             </p>
           </div>
 
-          <div className="w-full rounded-[2.5rem] border border-border/60 bg-white/80 px-6 py-8 shadow-lg shadow-black/10 backdrop-blur">
+          <div className="w-full rounded-[2.5rem] bg-white/80 px-5 py-6 shadow-[0_25px_60px_-25px_rgba(15,23,42,0.55)] backdrop-blur md:px-6 md:py-8">
             <div className="flex flex-col gap-6">
-              <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex flex-col gap-3">
                   <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Symbol</span>
-                  <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-white px-4 py-3 shadow-sm">
+                  <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-lg shadow-black/10">
                     <span className="text-2xl" aria-hidden="true">
                       {selectedSymbol.flag}
                     </span>
@@ -256,7 +259,7 @@ function NewTradePageContent() {
                 <button
                   type="button"
                   onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                  className="ml-auto flex items-center gap-2 rounded-full border border-border/70 bg-white px-4 py-2 text-sm font-semibold text-muted-fg transition hover:border-border hover:text-fg"
+                  className="ml-auto flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-muted-fg shadow-md transition hover:text-fg"
                   aria-haspopup="listbox"
                   aria-expanded={isSymbolListOpen}
                 >
@@ -284,7 +287,7 @@ function NewTradePageContent() {
               >
                 <div className="overflow-hidden">
                   <div
-                    className="flex flex-col gap-2 rounded-[1.75rem] border border-border/40 bg-white/80 p-2 shadow-inner shadow-black/5"
+                    className="flex flex-col gap-2 rounded-[1.75rem] bg-white/90 p-2 shadow-[0_18px_45px_-25px_rgba(15,23,42,0.6)]"
                     role="listbox"
                     aria-activedescendant={`symbol-${selectedSymbol.code}`}
                   >
