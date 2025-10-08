@@ -170,6 +170,10 @@ export default function RegisteredTradePage() {
   const openTimeDisplay = getDateTimeDisplay(state.trade.openTime);
   const closeTimeDisplay = getDateTimeDisplay(state.trade.closeTime);
   const imageData = state.trade.imageData ?? null;
+  const positionLabel = state.trade.position.toUpperCase();
+  const riskRewardLabel = state.trade.riskReward ?? "--";
+  const riskLabel = state.trade.risk ?? "--";
+  const pipsLabel = state.trade.pips ?? "--";
 
   const handleEditTrade = () => {
     if (!state.trade) {
@@ -312,6 +316,44 @@ export default function RegisteredTradePage() {
                   </span>
                   <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
                     {activeSymbol.code}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="flex flex-col gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Position</span>
+                <div className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                  <span className="text-lg font-semibold uppercase tracking-[0.3em] text-fg md:text-xl">
+                    {positionLabel}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">R/R</span>
+                <div className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                  <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                    {riskRewardLabel}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Risk</span>
+                <div className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                  <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                    {riskLabel}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Nr. Pips</span>
+                <div className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                  <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                    {pipsLabel}
                   </span>
                 </div>
               </div>

@@ -1,3 +1,5 @@
+export type TradePosition = "long" | "short";
+
 export type StoredTrade = {
   id: string;
   symbolCode: string;
@@ -6,6 +8,10 @@ export type StoredTrade = {
   openTime?: string | null;
   closeTime?: string | null;
   imageData?: string | null;
+  position: TradePosition;
+  riskReward: string | null;
+  risk: string | null;
+  pips: string | null;
 };
 
 const STORAGE_KEY = "registeredTrades";
@@ -33,48 +39,45 @@ function parseTrades(raw: string | null): StoredTrade[] {
 
     return parsed
       .map((item) => {
+        if (!item || typeof item !== "object") {
+          return null;
+        }
+
+        const raw = item as Record<string, unknown>;
+
         if (
-          !item ||
-          typeof item !== "object" ||
-          typeof (item as StoredTrade).id !== "string" ||
-          typeof (item as StoredTrade).symbolCode !== "string" ||
-          typeof (item as StoredTrade).symbolFlag !== "string" ||
-          typeof (item as StoredTrade).date !== "string"
+          typeof raw.id !== "string" ||
+          typeof raw.symbolCode !== "string" ||
+          typeof raw.symbolFlag !== "string" ||
+          typeof raw.date !== "string"
         ) {
           return null;
         }
 
-        const storedItem = item as StoredTrade;
+        const getIsoString = (value: unknown) =>
+          typeof value === "string" ? value : null;
 
-        if (
-          storedItem.openTime !== undefined &&
-          storedItem.openTime !== null &&
-          typeof storedItem.openTime !== "string"
-        ) {
-          storedItem.openTime = null;
-        }
+        const normalizedPosition =
+          typeof raw.position === "string"
+            ? (raw.position.toLowerCase() as TradePosition)
+            : null;
 
-        if (
-          storedItem.closeTime !== undefined &&
-          storedItem.closeTime !== null &&
-          typeof storedItem.closeTime !== "string"
-        ) {
-          storedItem.closeTime = null;
-        }
+        const position: TradePosition =
+          normalizedPosition === "short" ? "short" : "long";
 
-        if (
-          storedItem.imageData !== undefined &&
-          storedItem.imageData !== null &&
-          typeof storedItem.imageData !== "string"
-        ) {
-          storedItem.imageData = null;
-        }
-
-        if (storedItem.imageData === undefined) {
-          storedItem.imageData = null;
-        }
-
-        return storedItem;
+        return {
+          id: raw.id,
+          symbolCode: raw.symbolCode,
+          symbolFlag: raw.symbolFlag,
+          date: raw.date,
+          openTime: getIsoString(raw.openTime),
+          closeTime: getIsoString(raw.closeTime),
+          imageData: getIsoString(raw.imageData),
+          position,
+          riskReward: typeof raw.riskReward === "string" ? raw.riskReward : null,
+          risk: typeof raw.risk === "string" ? raw.risk : null,
+          pips: typeof raw.pips === "string" ? raw.pips : null,
+        } satisfies StoredTrade;
       })
       .filter((item): item is StoredTrade => item !== null);
   } catch (error) {

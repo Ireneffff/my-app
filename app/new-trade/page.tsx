@@ -12,7 +12,13 @@ import {
   useTransition,
   type ChangeEvent,
 } from "react";
-import { loadTrades, saveTrade, updateTrade, type StoredTrade } from "@/lib/tradesStorage";
+import {
+  loadTrades,
+  saveTrade,
+  updateTrade,
+  type StoredTrade,
+  type TradePosition,
+} from "@/lib/tradesStorage";
 
 type SymbolOption = {
   code: string;
@@ -120,6 +126,10 @@ function NewTradePageContent() {
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
   const [imageData, setImageData] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [position, setPosition] = useState<TradePosition>("long");
+  const [riskReward, setRiskReward] = useState("");
+  const [risk, setRisk] = useState("");
+  const [pips, setPips] = useState("");
   const [, startNavigation] = useTransition();
 
   const handleSelectDate = useCallback(
@@ -185,6 +195,10 @@ function NewTradePageContent() {
 
     setImageData(match.imageData ?? null);
     setImageError(null);
+    setPosition(match.position ?? "long");
+    setRiskReward(match.riskReward ?? "");
+    setRisk(match.risk ?? "");
+    setPips(match.pips ?? "");
 
     if (imageInputRef.current) {
       imageInputRef.current.value = "";
@@ -299,6 +313,10 @@ function NewTradePageContent() {
               openTime: openTime ? openTime.toISOString() : null,
               closeTime: closeTime ? closeTime.toISOString() : null,
               imageData: imageData ?? null,
+              position,
+              riskReward: riskReward.trim() ? riskReward.trim() : null,
+              risk: risk.trim() ? risk.trim() : null,
+              pips: pips.trim() ? pips.trim() : null,
             };
 
             if (isEditing && editingTradeId) {
@@ -456,6 +474,94 @@ function NewTradePageContent() {
                     <path d="m6 9 6 6 6-6" />
                   </svg>
                 </button>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="flex flex-col gap-3">
+                  <label
+                    htmlFor="position-select"
+                    className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                  >
+                    Position
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="position-select"
+                      value={position}
+                      onChange={(event) =>
+                        setPosition(event.target.value === "short" ? "short" : "long")
+                      }
+                      className="w-full appearance-none rounded-2xl bg-white px-4 py-3 text-lg font-semibold uppercase tracking-[0.3em] text-fg shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    >
+                      <option value="long">Long</option>
+                      <option value="short">Short</option>
+                    </select>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-fg"
+                      aria-hidden="true"
+                    >
+                      <path d="m6 8 4 4 4-4" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <label
+                    htmlFor="rr-input"
+                    className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                  >
+                    R/R
+                  </label>
+                  <input
+                    id="rr-input"
+                    type="text"
+                    value={riskReward}
+                    onChange={(event) => setRiskReward(event.target.value)}
+                    placeholder="1:2"
+                    className="rounded-2xl bg-white px-4 py-3 text-lg font-semibold tracking-[0.2em] text-fg shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] placeholder:text-muted-fg/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <label
+                    htmlFor="risk-input"
+                    className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                  >
+                    Risk
+                  </label>
+                  <input
+                    id="risk-input"
+                    type="text"
+                    value={risk}
+                    onChange={(event) => setRisk(event.target.value)}
+                    placeholder="2%"
+                    className="rounded-2xl bg-white px-4 py-3 text-lg font-semibold tracking-[0.2em] text-fg shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] placeholder:text-muted-fg/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <label
+                    htmlFor="pips-input"
+                    className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                  >
+                    Nr. Pips
+                  </label>
+                  <input
+                    id="pips-input"
+                    type="text"
+                    value={pips}
+                    onChange={(event) => setPips(event.target.value)}
+                    placeholder="55"
+                    className="rounded-2xl bg-white px-4 py-3 text-lg font-semibold tracking-[0.2em] text-fg shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] placeholder:text-muted-fg/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  />
+                </div>
               </div>
 
               <div
