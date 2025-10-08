@@ -1,7 +1,14 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState, useTransition } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import { loadTrades, saveTrade, updateTrade, type StoredTrade } from "@/lib/tradesStorage";
 
 type SymbolOption = {
@@ -17,6 +24,50 @@ const availableSymbols: SymbolOption[] = [
   { code: "USDCAD", flag: "🇺🇸 🇨🇦" },
   { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
 ];
+
+function formatDateTimeLocal(date: Date) {
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function alignTimeWithDate(time: Date | null, baseDate: Date, fallbackHour: number) {
+  const aligned = new Date(baseDate);
+  aligned.setHours(0, 0, 0, 0);
+
+  if (time && !Number.isNaN(time.getTime())) {
+    aligned.setHours(time.getHours(), time.getMinutes(), 0, 0);
+    return aligned;
+  }
+
+  aligned.setHours(fallbackHour, 0, 0, 0);
+  return aligned;
+}
+
+function getDateTimeDisplayParts(date: Date | null) {
+  if (!date || Number.isNaN(date.getTime())) {
+    return { dateLabel: "-- ---", timeLabel: "--:--" };
+  }
+
+  const dayLabel = date.toLocaleDateString(undefined, { day: "numeric" });
+  const monthLabel = date
+    .toLocaleDateString(undefined, {
+      month: "short",
+    })
+    .toUpperCase();
+  const timeLabel = date.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
+  return { dateLabel: `${dayLabel} ${monthLabel}`, timeLabel };
+}
 
 function NewTradePageContent() {
   const router = useRouter();
@@ -49,9 +100,38 @@ function NewTradePageContent() {
     return new Date(initialDate);
   });
 
+  const [openTime, setOpenTime] = useState<Date | null>(() => {
+    const initial = new Date(selectedDate);
+    initial.setHours(9, 0, 0, 0);
+    return initial;
+  });
+  const [closeTime, setCloseTime] = useState<Date | null>(() => {
+    const initial = new Date(selectedDate);
+    initial.setHours(17, 0, 0, 0);
+    return initial;
+  });
+
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(true);
   const [, startNavigation] = useTransition();
+
+  const handleSelectDate = useCallback(
+    (targetDate: Date) => {
+      const normalized = new Date(targetDate);
+      normalized.setHours(0, 0, 0, 0);
+
+      const shouldUpdateDate =
+        selectedDate.toDateString() !== normalized.toDateString();
+
+      if (shouldUpdateDate) {
+        setSelectedDate(normalized);
+      }
+
+      setOpenTime((prev) => alignTimeWithDate(prev, normalized, 9));
+      setCloseTime((prev) => alignTimeWithDate(prev, normalized, 17));
+    },
+    [selectedDate],
+  );
 
   useEffect(() => {
     if (!isEditing || !editingTradeId) {
@@ -75,10 +155,27 @@ function NewTradePageContent() {
     setSelectedSymbol(matchedSymbol);
 
     const parsedDate = new Date(match.date);
-    if (!Number.isNaN(parsedDate.getTime())) {
-      setSelectedDate(parsedDate);
+    const isDateValid = !Number.isNaN(parsedDate.getTime());
+    const effectiveDate = isDateValid ? parsedDate : selectedDate;
+
+    if (isDateValid) {
+      handleSelectDate(parsedDate);
     }
-  }, [editingTradeId, isEditing, router]);
+
+    if (match.openTime) {
+      const parsedOpen = new Date(match.openTime);
+      setOpenTime(!Number.isNaN(parsedOpen.getTime()) ? parsedOpen : alignTimeWithDate(null, effectiveDate, 9));
+    } else {
+      setOpenTime((prev) => alignTimeWithDate(prev, effectiveDate, 9));
+    }
+
+    if (match.closeTime) {
+      const parsedClose = new Date(match.closeTime);
+      setCloseTime(!Number.isNaN(parsedClose.getTime()) ? parsedClose : alignTimeWithDate(null, effectiveDate, 17));
+    } else {
+      setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate, 17));
+    }
+  }, [editingTradeId, handleSelectDate, isEditing, router, selectedDate]);
 
   const dayOfWeekLabel = useMemo(
     () =>
@@ -91,6 +188,9 @@ function NewTradePageContent() {
   const handleSelectSymbol = (symbol: SymbolOption) => {
     setSelectedSymbol(symbol);
   };
+
+  const openTimeDisplay = getDateTimeDisplayParts(openTime);
+  const closeTimeDisplay = getDateTimeDisplayParts(closeTime);
 
   return (
     <section
@@ -119,6 +219,8 @@ function NewTradePageContent() {
               symbolCode: selectedSymbol.code,
               symbolFlag: selectedSymbol.flag,
               date: selectedDate.toISOString(),
+              openTime: openTime ? openTime.toISOString() : null,
+              closeTime: closeTime ? closeTime.toISOString() : null,
             };
 
             if (isEditing && editingTradeId) {
@@ -190,7 +292,7 @@ function NewTradePageContent() {
                   <button
                     key={date.toISOString()}
                     type="button"
-                    onClick={() => setSelectedDate(new Date(date))}
+                    onClick={() => handleSelectDate(new Date(date))}
                     className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold transition md:min-w-[88px] md:text-sm ${
                       isSelected
                         ? "bg-accent text-white shadow-[0_12px_26px_-18px_rgba(15,23,42,0.3)]"
@@ -213,7 +315,7 @@ function NewTradePageContent() {
                 onClick={() => {
                   const dayIndex = Math.min((today.getDay() + 6) % 7, 4);
                   const targetDate = currentWeekDays.at(dayIndex) ?? currentWeekDays[0] ?? today;
-                  setSelectedDate(new Date(targetDate));
+                  handleSelectDate(new Date(targetDate));
                 }}
                 aria-label="Select today"
                 title="Select today"
@@ -322,6 +424,104 @@ function NewTradePageContent() {
                     })}
                   </div>
                 </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="flex flex-col gap-3">
+                  <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Open Time</span>
+                  <div className="relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                    <div className="flex flex-col">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                        {openTimeDisplay.dateLabel}
+                      </span>
+                      <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                        {openTimeDisplay.timeLabel}
+                      </span>
+                    </div>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="ml-auto h-6 w-6 text-muted-fg"
+                      aria-hidden="true"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                      <polyline points="12 7 12 12 15 15" />
+                    </svg>
+                    <input
+                      type="datetime-local"
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      value={openTime ? formatDateTimeLocal(openTime) : ""}
+                      onChange={(event) => {
+                        const { value } = event.target;
+                        if (!value) {
+                          setOpenTime(null);
+                          return;
+                        }
+
+                        const parsed = new Date(value);
+                        if (Number.isNaN(parsed.getTime())) {
+                          return;
+                        }
+
+                        setOpenTime(parsed);
+                      }}
+                      aria-label="Select open date and time"
+                    />
+                  </div>
+                </label>
+
+                <label className="flex flex-col gap-3">
+                  <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Close Time</span>
+                  <div className="relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                    <div className="flex flex-col">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                        {closeTimeDisplay.dateLabel}
+                      </span>
+                      <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                        {closeTimeDisplay.timeLabel}
+                      </span>
+                    </div>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="ml-auto h-6 w-6 text-muted-fg"
+                      aria-hidden="true"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                      <polyline points="12 7 12 12 15 15" />
+                    </svg>
+                    <input
+                      type="datetime-local"
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      value={closeTime ? formatDateTimeLocal(closeTime) : ""}
+                      onChange={(event) => {
+                        const { value } = event.target;
+                        if (!value) {
+                          setCloseTime(null);
+                          return;
+                        }
+
+                        const parsed = new Date(value);
+                        if (Number.isNaN(parsed.getTime())) {
+                          return;
+                        }
+
+                        setCloseTime(parsed);
+                      }}
+                      aria-label="Select close date and time"
+                    />
+                  </div>
+                </label>
               </div>
             </div>
           </div>

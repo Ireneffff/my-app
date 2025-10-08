@@ -3,6 +3,8 @@ export type StoredTrade = {
   symbolCode: string;
   symbolFlag: string;
   date: string;
+  openTime?: string | null;
+  closeTime?: string | null;
 };
 
 const STORAGE_KEY = "registeredTrades";
@@ -41,7 +43,25 @@ function parseTrades(raw: string | null): StoredTrade[] {
           return null;
         }
 
-        return item as StoredTrade;
+        const storedItem = item as StoredTrade;
+
+        if (
+          storedItem.openTime !== undefined &&
+          storedItem.openTime !== null &&
+          typeof storedItem.openTime !== "string"
+        ) {
+          storedItem.openTime = null;
+        }
+
+        if (
+          storedItem.closeTime !== undefined &&
+          storedItem.closeTime !== null &&
+          typeof storedItem.closeTime !== "string"
+        ) {
+          storedItem.closeTime = null;
+        }
+
+        return storedItem;
       })
       .filter((item): item is StoredTrade => item !== null);
   } catch (error) {

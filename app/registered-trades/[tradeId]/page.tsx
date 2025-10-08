@@ -24,6 +24,29 @@ const availableSymbols = [
   { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
 ] as const;
 
+function getDateTimeDisplay(isoValue?: string | null) {
+  if (!isoValue) {
+    return { dateLabel: "-- ---", timeLabel: "--:--" };
+  }
+
+  const parsed = new Date(isoValue);
+  if (Number.isNaN(parsed.getTime())) {
+    return { dateLabel: "-- ---", timeLabel: "--:--" };
+  }
+
+  const dayLabel = parsed.toLocaleDateString(undefined, { day: "numeric" });
+  const monthLabel = parsed
+    .toLocaleDateString(undefined, { month: "short" })
+    .toUpperCase();
+  const timeLabel = parsed.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
+  return { dateLabel: `${dayLabel} ${monthLabel}`, timeLabel };
+}
+
 function getWorkWeekDays(referenceDate: Date) {
   const baseDate = new Date(referenceDate);
   baseDate.setHours(0, 0, 0, 0);
@@ -142,6 +165,9 @@ export default function RegisteredTradePage() {
     month: "2-digit",
     year: "numeric",
   });
+
+  const openTimeDisplay = getDateTimeDisplay(state.trade.openTime);
+  const closeTimeDisplay = getDateTimeDisplay(state.trade.closeTime);
 
   const handleEditTrade = () => {
     if (!state.trade) {
@@ -285,6 +311,64 @@ export default function RegisteredTradePage() {
                   <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
                     {activeSymbol.code}
                   </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <div className="flex flex-col gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Open Time</span>
+                <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                      {openTimeDisplay.dateLabel}
+                    </span>
+                    <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                      {openTimeDisplay.timeLabel}
+                    </span>
+                  </div>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="ml-auto h-6 w-6 text-muted-fg"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <polyline points="12 7 12 12 15 15" />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Close Time</span>
+                <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                      {closeTimeDisplay.dateLabel}
+                    </span>
+                    <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                      {closeTimeDisplay.timeLabel}
+                    </span>
+                  </div>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="ml-auto h-6 w-6 text-muted-fg"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <polyline points="12 7 12 12 15 15" />
+                  </svg>
                 </div>
               </div>
             </div>
