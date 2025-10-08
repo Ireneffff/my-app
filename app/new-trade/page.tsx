@@ -51,22 +51,20 @@ function alignTimeWithDate(time: Date | null, baseDate: Date, fallbackHour: numb
 
 function getDateTimeDisplayParts(date: Date | null) {
   if (!date || Number.isNaN(date.getTime())) {
-    return { dateLabel: "-- ---", timeLabel: "--:--" };
+    return { dateLabel: "-- --, ----", timeLabel: "--:--" };
   }
 
-  const dayLabel = date.toLocaleDateString(undefined, { day: "numeric" });
-  const monthLabel = date
-    .toLocaleDateString(undefined, {
-      month: "short",
-    })
-    .toUpperCase();
-  const timeLabel = date.toLocaleTimeString(undefined, {
-    hour: "2-digit",
+  const dateLabel = date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const timeLabel = date.toLocaleTimeString("en-US", {
+    hour: "numeric",
     minute: "2-digit",
-    hour12: false,
   });
 
-  return { dateLabel: `${dayLabel} ${monthLabel}`, timeLabel };
+  return { dateLabel, timeLabel };
 }
 
 function NewTradePageContent() {
@@ -428,11 +426,11 @@ function NewTradePageContent() {
                 <label className="flex flex-col gap-3">
                   <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Open Time</span>
                   <div className="relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                    <div className="flex items-center gap-2">
+                      <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
                         {openTimeDisplay.dateLabel}
                       </span>
-                      <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                      <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
                         {openTimeDisplay.timeLabel}
                       </span>
                     </div>
@@ -476,11 +474,11 @@ function NewTradePageContent() {
                 <label className="flex flex-col gap-3">
                   <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Close Time</span>
                   <div className="relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                    <div className="flex items-center gap-2">
+                      <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
                         {closeTimeDisplay.dateLabel}
                       </span>
-                      <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                      <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
                         {closeTimeDisplay.timeLabel}
                       </span>
                     </div>
