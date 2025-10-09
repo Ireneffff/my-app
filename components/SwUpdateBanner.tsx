@@ -49,17 +49,17 @@ export default function SwUpdateBanner() {
   };
 
   return (
-    <div className="fixed inset-x-0 bottom-4 z-[60] mx-auto w-fit max-w-[calc(100%-1rem)]">
-      <div className="mx-auto flex items-center gap-3 rounded-2xl border border-border/60 bg-bg px-4 py-3 shadow-xl">
-        <span className="text-sm text-muted-fg">Nuova versione disponibile</span>
+    <div className="fixed inset-x-0 bottom-4 z-[60] mx-auto w-fit max-w-[calc(100%-1.5rem)] px-2">
+      <div className="mx-auto flex items-center gap-3 rounded-full border border-border bg-surface px-5 py-3 shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
+        <span className="text-sm font-medium text-muted-fg">Nuova versione disponibile</span>
         <button
-          className="rounded-xl bg-accent px-3 py-1.5 text-sm font-medium text-white shadow hover:opacity-90"
+          className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_25px_rgba(0,122,255,0.25)] transition hover:shadow-[0_14px_32px_rgba(0,122,255,0.3)]"
           onClick={refresh}
         >
           Aggiorna
         </button>
         <button
-          className="rounded-xl border px-3 py-1.5 text-sm hover:bg-muted/50"
+          className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-muted-fg transition hover:bg-subtle hover:text-fg"
           onClick={() => setWaiting(null)}
         >
           Più tardi

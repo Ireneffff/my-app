@@ -89,31 +89,30 @@ export default function Home() {
   });
 
   return (
-    <section className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-6 py-10">
-      <div className="flex justify-end">
-        <Link href="/new-trade">
-          <Button variant="primary" className="rounded-full px-5">
-            Add new
-          </Button>
-        </Link>
-      </div>
-
-      <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-fg sm:text-5xl">
+    <section className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col gap-12 px-6 py-12 sm:px-8">
+      <header className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-2">
+          <p className="text-sm text-muted-fg">Calm mind, strong trade</p>
+          <h1 className="text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
             Trading Journal
           </h1>
-          <p className="mt-3 text-lg text-muted-fg">Calm mind, strong trade</p>
         </div>
+        <Link href="/new-trade" className="self-start sm:self-auto">
+          <Button variant="primary" size="md">
+            Add trade
+          </Button>
+        </Link>
+      </header>
 
-        <Card className="mt-12 w-full max-w-lg bg-subtle p-8">
+      <div className="flex flex-1 flex-col items-center gap-12">
+        <Card className="w-full max-w-3xl self-center p-8 sm:max-w-4xl">
           <div className="flex items-center justify-between">
             <button
               type="button"
               onClick={() =>
                 setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
               }
-              className="rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-fg transition hover:bg-bg"
+              className="rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted-fg transition hover:bg-subtle hover:text-fg"
               aria-label="Previous month"
             >
               ‹
@@ -124,14 +123,14 @@ export default function Home() {
               onClick={() =>
                 setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
               }
-              className="rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-fg transition hover:bg-bg"
+              className="rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted-fg transition hover:bg-subtle hover:text-fg"
               aria-label="Next month"
             >
               ›
             </button>
           </div>
 
-          <div className="mt-6 grid grid-cols-7 gap-2 text-xs font-semibold uppercase tracking-wide text-muted-fg">
+          <div className="mt-6 grid grid-cols-7 gap-2 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg opacity-80">
             {WEEKDAYS.map((day) => (
               <div key={day} className="text-center">
                 {day}
@@ -146,10 +145,10 @@ export default function Home() {
               const isToday = day.toDateString() === todayKey;
 
               const baseClasses =
-                "flex h-10 items-center justify-center rounded-xl transition";
+                "flex h-10 items-center justify-center rounded-full transition";
               const stateClasses = isCurrentMonth
-                ? "text-fg hover:bg-bg"
-                : "text-muted-fg";
+                ? "text-fg hover:bg-subtle"
+                : "text-muted-fg opacity-60";
               const todayClasses = isToday
                 ? "bg-accent/10 text-accent font-semibold"
                 : "";
@@ -166,18 +165,21 @@ export default function Home() {
           </div>
         </Card>
 
-        <div className="mt-10 w-full max-w-lg text-left">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">
+        <div className="w-full max-w-3xl self-center text-left sm:max-w-4xl">
+          <h2 className="text-sm font-medium uppercase tracking-[0.28em] text-muted-fg">
             Registered Trades
           </h2>
 
-          {trades.length === 0 ? (
-            <p className="mt-4 rounded-3xl border border-dashed border-border/70 bg-white/50 px-6 py-8 text-center text-sm font-medium text-muted-fg">
-              No trades saved yet. Use the Add new button to register your first trade.
-            </p>
-          ) : (
-            <ol className="mt-4 space-y-3">
-              {trades.map((trade, index) => {
+            {trades.length === 0 ? (
+              <p
+                className="mt-4 rounded-2xl border border-dashed bg-surface px-6 py-8 text-center text-sm text-muted-fg"
+                style={{ borderColor: "color-mix(in srgb, rgba(var(--border)) 100%, transparent)" }}
+              >
+                No trades saved yet. Use the Add new button to register your first trade.
+              </p>
+            ) : (
+              <ol className="mt-4 space-y-3">
+                {trades.map((trade, index) => {
                 const formattedDate = new Date(trade.date).toLocaleDateString(undefined, {
                   day: "2-digit",
                   month: "2-digit",
@@ -188,16 +190,19 @@ export default function Home() {
                   <li key={trade.id}>
                     <Link
                       href={`/registered-trades/${trade.id}`}
-                      className="flex items-center gap-4 rounded-3xl border border-border/60 bg-white/80 px-5 py-4 shadow-sm shadow-black/5 transition hover:-translate-y-0.5 hover:bg-white"
+                      className="flex items-center gap-4 rounded-2xl border border-border bg-surface px-5 py-4 transition hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(15,23,42,0.12)]"
                     >
-                      <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
+                      <span
+                        className="flex h-10 w-10 flex-none items-center justify-center rounded-full text-sm font-semibold text-accent"
+                        style={{ backgroundColor: "rgb(var(--accent) / 0.12)" }}
+                      >
                         {index + 1}
                       </span>
                       <span className="text-2xl" aria-hidden="true">
                         {trade.symbolFlag}
                       </span>
                       <div className="flex flex-1 flex-col">
-                        <span className="text-sm font-semibold tracking-[0.2em] text-fg">
+                        <span className="text-sm font-semibold tracking-[0.18em] text-fg">
                           {trade.symbolCode}
                         </span>
                       </div>

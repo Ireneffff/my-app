@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import Button from "@/components/ui/Button";
 import {
   deleteTrade,
   loadTrades,
@@ -139,7 +140,7 @@ export default function RegisteredTradePage() {
 
   if (state.status === "loading") {
     return (
-      <section className="relative flex min-h-dvh flex-col items-center justify-center bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-6 py-10 text-fg">
+      <section className="relative flex min-h-dvh flex-col items-center justify-center bg-bg px-6 py-12 text-fg">
         <p className="text-sm font-medium text-muted-fg">Loading trade…</p>
       </section>
     );
@@ -147,17 +148,14 @@ export default function RegisteredTradePage() {
 
   if (state.status === "missing" || !state.trade || !selectedDate) {
     return (
-      <section className="relative flex min-h-dvh flex-col items-center justify-center bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-6 py-10 text-fg">
+      <section className="relative flex min-h-dvh flex-col items-center justify-center bg-bg px-6 py-12 text-fg">
         <div className="flex flex-col items-center gap-6 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-fg md:text-4xl">Trade not found</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-fg md:text-4xl">Trade not found</h1>
           <p className="max-w-md text-sm text-muted-fg md:text-base">
             We couldn&apos;t find the requested trade in your saved entries. It may have been removed or the link is incorrect.
           </p>
-          <Link
-            href="/"
-            className="rounded-full bg-accent px-6 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition hover:scale-105"
-          >
-            Back to dashboard
+          <Link href="/">
+            <Button variant="primary" size="md">Back to dashboard</Button>
           </Link>
         </div>
       </section>
@@ -209,55 +207,57 @@ export default function RegisteredTradePage() {
 
   return (
     <section
-      className="relative flex min-h-dvh flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-4 pb-10 text-fg sm:px-6 md:px-10"
+      className="relative flex min-h-dvh flex-col gap-12 bg-bg px-4 pb-16 text-fg sm:px-6 md:px-10"
       style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
     >
-      <div className="mx-auto mb-6 flex w-full max-w-3xl flex-wrap items-center gap-2 rounded-full bg-transparent px-3 py-2">
-        <button
+      <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 sm:max-w-4xl">
+        <Button
           type="button"
-          className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/80 text-lg font-semibold text-muted-fg shadow-[0_10px_24px_-16px_rgba(15,23,42,0.3)] transition hover:scale-105 hover:text-fg"
+          variant="ghost"
+          size="sm"
+          className="h-11 w-11 flex-none rounded-full p-0 text-lg text-muted-fg hover:text-fg"
           onClick={() => {
             router.back();
           }}
           aria-label="Close"
         >
           ×
-        </button>
+        </Button>
 
-        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-          <button
+        <div className="ml-auto flex items-center gap-2">
+          <Button type="button" variant="secondary" size="sm" onClick={handleEditTrade}>
+            Edit trade
+          </Button>
+          <Button
             type="button"
-            onClick={handleEditTrade}
-            className="rounded-full bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white shadow-[0_14px_32px_-18px_rgba(15,23,42,0.3)] transition hover:scale-105"
-          >
-            Modifica
-          </button>
-          <button
-            type="button"
+            variant="ghost"
+            size="sm"
+            className="border border-transparent text-red-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
             onClick={handleDeleteTrade}
-            className="rounded-full bg-red-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-red-600 shadow-[0_14px_32px_-18px_rgba(220,38,38,0.25)] transition hover:scale-105"
           >
-            Elimina
-          </button>
+            Delete
+          </Button>
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-10 text-center">
-        <header className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Trading Journal</p>
-          <h1 className="text-4xl font-black tracking-tight text-fg drop-shadow-sm md:text-5xl">
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-12 sm:max-w-4xl">
+        <header className="space-y-2">
+          <p className="text-sm text-muted-fg">Trading Journal</p>
+          <h1 className="text-4xl font-semibold tracking-tight text-fg md:text-5xl">
             Trade details
           </h1>
-          <p className="text-sm font-medium text-muted-fg md:text-base">Registered on {formattedDate}</p>
+          <p className="text-sm text-muted-fg md:text-base">Registered on {formattedDate}</p>
         </header>
 
-        <div className="flex w-full flex-col items-center gap-8">
-          <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-2 py-2">
+        <div className="flex w-full flex-col gap-8">
+          <nav className="flex w-full flex-wrap items-center gap-2 px-1 py-2 text-sm text-muted-fg">
             {[{ label: "Main data", isActive: true }, { label: "Performance", isActive: false }, { label: "Mindset", isActive: false }].map((tab) => (
               <span
                 key={tab.label}
-                className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                  tab.isActive ? "text-fg" : "text-muted-fg"
+                className={`rounded-full border px-4 py-2 ${
+                  tab.isActive
+                    ? "border-border bg-surface text-fg"
+                    : "border-transparent text-muted-fg"
                 }`}
               >
                 {tab.label}
@@ -265,8 +265,8 @@ export default function RegisteredTradePage() {
             ))}
           </nav>
 
-          <div className="w-full rounded-[2.5rem] bg-white/85 px-4 py-6 shadow-[0_20px_55px_-28px_rgba(15,23,42,0.32)] backdrop-blur md:px-6 md:py-8">
-            <div className="mx-auto flex w-full max-w-xl items-center gap-2 overflow-x-auto rounded-full bg-transparent px-1 py-1">
+          <div className="w-full surface-panel px-4 py-6 md:px-6 md:py-8">
+            <div className="mx-auto flex w-full max-w-xl items-center gap-2 overflow-x-auto rounded-full border border-border bg-surface px-1 py-1">
               {currentWeekDays.map((date) => {
                 const isSelected = date.toDateString() === selectedDate.toDateString();
                 const dayNumber = date.getDate();
@@ -279,17 +279,22 @@ export default function RegisteredTradePage() {
                 return (
                   <div
                     key={date.toISOString()}
-                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold md:min-w-[88px] md:text-sm ${
-                      isSelected ? "bg-accent text-white shadow-[0_12px_26px_-18px_rgba(15,23,42,0.3)]" : "text-muted-fg"
+                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-medium md:min-w-[88px] md:text-sm ${
+                      isSelected ? "text-accent" : "text-muted-fg"
                     }`}
+                    style={
+                      isSelected
+                        ? { backgroundColor: "rgb(var(--accent) / 0.1)" }
+                        : undefined
+                    }
                   >
-                    <span className={`text-xl md:text-2xl ${isSelected ? "font-black" : "font-bold"}`}>{dayNumber}</span>
+                    <span className={`text-xl md:text-2xl ${isSelected ? "font-semibold" : "font-medium"}`}>{dayNumber}</span>
                     <span className="text-[10px] tracking-[0.3em] md:text-xs">{monthLabel}</span>
                   </div>
                 );
               })}
 
-              <div className="ml-auto hidden h-14 w-14 flex-none items-center justify-center rounded-full bg-white/90 text-muted-fg shadow-[0_12px_30px_-20px_rgba(15,23,42,0.3)] md:flex">
+              <div className="ml-auto hidden h-12 w-12 flex-none items-center justify-center rounded-full border border-border text-muted-fg md:flex">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -310,20 +315,20 @@ export default function RegisteredTradePage() {
               </div>
             </div>
 
-            <p className="mt-5 text-sm font-medium text-muted-fg md:text-base">
-              Day of the week: <span className="font-semibold capitalize text-fg">{dayOfWeekLabel}</span>
+            <p className="mt-5 text-sm text-muted-fg md:text-base">
+              Day of the week: <span className="font-semibold text-fg">{dayOfWeekLabel}</span>
             </p>
           </div>
 
-          <div className="w-full rounded-[2.5rem] bg-white/85 px-5 py-6 shadow-[0_20px_55px_-28px_rgba(15,23,42,0.32)] backdrop-blur md:px-6 md:py-8">
+          <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex flex-col gap-3">
-                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Symbol</span>
-                <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
+                <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
                   <span className="text-2xl" aria-hidden="true">
                     {activeSymbol.flag}
                   </span>
-                  <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                  <span className="text-lg font-medium tracking-[0.18em] text-fg md:text-xl">
                     {activeSymbol.code}
                   </span>
                 </div>
@@ -332,13 +337,13 @@ export default function RegisteredTradePage() {
 
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               <div className="flex flex-col gap-3">
-                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Open Time</span>
-                <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Open Time</span>
+                <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
                   <div className="flex flex-col">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
                       {openTimeDisplay.dateLabel}
                     </span>
-                    <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                    <span className="text-lg font-medium tracking-[0.18em] text-fg md:text-xl">
                       {openTimeDisplay.timeLabel}
                     </span>
                   </div>
@@ -360,13 +365,13 @@ export default function RegisteredTradePage() {
               </div>
 
               <div className="flex flex-col gap-3">
-                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Close Time</span>
-                <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Close Time</span>
+                <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
                   <div className="flex flex-col">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
                       {closeTimeDisplay.dateLabel}
                     </span>
-                    <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                    <span className="text-lg font-medium tracking-[0.18em] text-fg md:text-xl">
                       {closeTimeDisplay.timeLabel}
                     </span>
                   </div>
@@ -389,51 +394,51 @@ export default function RegisteredTradePage() {
             </div>
 
             <div className="mt-6 flex flex-col gap-3">
-              <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Conditions</span>
+              <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Conditions</span>
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">Position</span>
-                  <div className="rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
-                    <span className="text-sm font-semibold text-fg">{positionLabel}</span>
+                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Position</span>
+                  <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                    <span className="text-sm font-medium text-fg">{positionLabel}</span>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">R/R</span>
-                  <div className="rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
-                    <span className="text-sm font-semibold text-fg">{riskRewardValue}</span>
+                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">R/R</span>
+                  <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                    <span className="text-sm font-medium text-fg">{riskRewardValue}</span>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">Risk</span>
-                  <div className="rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
-                    <span className="text-sm font-semibold text-fg">{riskValue}</span>
+                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Risk</span>
+                  <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                    <span className="text-sm font-medium text-fg">{riskValue}</span>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg">Nr. Pips</span>
-                  <div className="rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
-                    <span className="text-sm font-semibold text-fg">{pipsValue}</span>
+                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Nr. Pips</span>
+                  <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                    <span className="text-sm font-medium text-fg">{pipsValue}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="w-full rounded-[2.5rem] bg-white/85 px-5 py-6 shadow-[0_20px_55px_-28px_rgba(15,23,42,0.32)] backdrop-blur md:px-6 md:py-8">
+          <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Images</span>
-                <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg/80">
+                <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Images</span>
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg opacity-80">
                   Before the position
                 </span>
               </div>
 
               {imageData ? (
                 <div className="flex flex-col gap-3">
-                  <div className="relative flex min-h-[240px] w-full items-center justify-center overflow-hidden rounded-[1.75rem] bg-white shadow-[0_18px_45px_-28px_rgba(15,23,42,0.28)] aspect-video">
+                  <div className="relative flex min-h-[240px] w-full items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface aspect-video">
                     <Image
                       src={imageData}
                       alt="Trade context attachment"
@@ -448,7 +453,7 @@ export default function RegisteredTradePage() {
                   </p>
                 </div>
               ) : (
-                <p className="rounded-3xl border border-dashed border-border/70 bg-white/60 px-5 py-6 text-center text-xs font-medium text-muted-fg">
+                <p className="rounded-2xl border border-dashed bg-subtle px-5 py-6 text-center text-xs text-muted-fg">
                   No image was attached to this trade.
                 </p>
               )}
