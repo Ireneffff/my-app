@@ -25,7 +25,9 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
     const reader = new FileReader();
 
     reader.onload = () => {
-      if (typeof reader.result !== "string") {
+      const result = reader.result;
+
+      if (typeof result !== "string") {
         setUploadError("Caricamento non riuscito. Riprova con un'altra immagine.");
         return;
       }
@@ -42,10 +44,10 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
         }
 
         setUploadError(null);
-        setUploadedImage(reader.result);
+        setUploadedImage(result);
       };
 
-      image.src = reader.result;
+      image.src = result;
     };
 
     reader.readAsDataURL(file);
