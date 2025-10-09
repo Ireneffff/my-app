@@ -113,7 +113,7 @@ export default function Home() {
               onClick={() =>
                 setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
               }
-              className="rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-fg transition hover:bg-bg"
+              className="rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-fg transition hover:bg-black/10 interactive-surface"
               aria-label="Previous month"
             >
               ‹
@@ -124,7 +124,7 @@ export default function Home() {
               onClick={() =>
                 setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
               }
-              className="rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-fg transition hover:bg-bg"
+              className="rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-fg transition hover:bg-black/10 interactive-surface"
               aria-label="Next month"
             >
               ›
@@ -188,7 +188,7 @@ export default function Home() {
                   <li key={trade.id}>
                     <Link
                       href={`/registered-trades/${trade.id}`}
-                      className="flex items-center gap-4 rounded-3xl border border-border/60 bg-white/80 px-5 py-4 shadow-sm shadow-black/5 transition hover:-translate-y-0.5 hover:bg-white"
+                      className="flex items-center gap-4 rounded-3xl border border-border/60 bg-white/80 px-5 py-4 shadow-sm shadow-black/5 transition hover:-translate-y-0.5 interactive-surface"
                     >
                       <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
                         {index + 1}

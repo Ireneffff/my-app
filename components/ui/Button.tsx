@@ -5,11 +5,11 @@ type Variant = "primary" | "secondary" | "ghost";
 type Size = "sm" | "md" | "lg";
 
 const base =
-  "inline-flex items-center justify-center rounded-xl font-medium transition shadow-sm focus:outline-none focus:ring-2 focus:ring-accent/40";
+  "inline-flex items-center justify-center rounded-xl font-medium transition shadow-sm focus:outline-none focus:ring-2 focus:ring-accent/40 interactive-surface";
 const variants: Record<Variant, string> = {
-  primary: "bg-accent text-white hover:opacity-90 border border-transparent",
-  secondary: "border border-border bg-bg hover:bg-subtle",
-  ghost: "hover:bg-subtle border border-transparent",
+  primary: "bg-accent text-white border border-transparent",
+  secondary: "border border-border bg-bg hover:bg-black/10",
+  ghost: "border border-transparent hover:bg-black/5",
 };
 const sizes: Record<Size, string> = {
   sm: "px-3 py-1.5 text-sm",

@@ -292,7 +292,7 @@ function NewTradePageContent() {
       <div className="mx-auto mb-6 flex w-full max-w-3xl flex-wrap items-center justify-between gap-3 rounded-full bg-transparent px-3 py-2">
         <button
           type="button"
-          className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/80 text-lg font-semibold text-muted-fg shadow-[0_10px_24px_-16px_rgba(15,23,42,0.3)] transition hover:scale-105 hover:text-fg"
+          className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/80 text-lg font-semibold text-muted-fg shadow-[0_10px_24px_-16px_rgba(15,23,42,0.3)] transition hover:scale-105 hover:text-fg interactive-surface"
           onClick={() => {
             router.back();
           }}
@@ -303,7 +303,7 @@ function NewTradePageContent() {
 
         <button
           type="button"
-          className="ml-auto min-w-[140px] rounded-full bg-accent px-6 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-[0_14px_32px_-18px_rgba(15,23,42,0.3)] transition hover:scale-105"
+          className="ml-auto min-w-[140px] rounded-full bg-accent px-6 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-[0_14px_32px_-18px_rgba(15,23,42,0.3)] transition hover:scale-105 interactive-surface"
           onClick={() => {
             const targetTradeId = editingTradeId ?? Date.now().toString(36);
             const trade: StoredTrade = {
@@ -361,7 +361,7 @@ function NewTradePageContent() {
               <button
                 key={label}
                 type="button"
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition interactive-surface ${
                   isActive ? "text-fg" : "text-muted-fg hover:text-fg"
                 }`}
                 aria-pressed={isActive}
@@ -388,7 +388,7 @@ function NewTradePageContent() {
                     key={date.toISOString()}
                     type="button"
                     onClick={() => handleSelectDate(new Date(date))}
-                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold transition md:min-w-[88px] md:text-sm ${
+                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold transition interactive-surface md:min-w-[88px] md:text-sm ${
                       isSelected
                         ? "bg-accent text-white shadow-[0_12px_26px_-18px_rgba(15,23,42,0.3)]"
                         : "text-muted-fg hover:text-fg"
@@ -406,7 +406,7 @@ function NewTradePageContent() {
 
               <button
                 type="button"
-                className="ml-auto flex h-14 w-14 flex-none items-center justify-center rounded-full bg-white/90 text-muted-fg shadow-[0_12px_30px_-20px_rgba(15,23,42,0.3)] transition hover:text-fg"
+                className="ml-auto flex h-14 w-14 flex-none items-center justify-center rounded-full bg-white/90 text-muted-fg shadow-[0_12px_30px_-20px_rgba(15,23,42,0.3)] transition hover:text-fg interactive-surface"
                 onClick={() => {
                   const dayIndex = Math.min((today.getDay() + 6) % 7, 4);
                   const targetDate = currentWeekDays.at(dayIndex) ?? currentWeekDays[0] ?? today;
@@ -456,7 +456,7 @@ function NewTradePageContent() {
                 <button
                   type="button"
                   onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                  className="ml-auto flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-muted-fg shadow-[0_12px_30px_-20px_rgba(15,23,42,0.3)] transition hover:text-fg"
+                  className="ml-auto flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-muted-fg shadow-[0_12px_30px_-20px_rgba(15,23,42,0.3)] transition hover:text-fg interactive-surface"
                   aria-haspopup="listbox"
                   aria-expanded={isSymbolListOpen}
                 >
@@ -496,7 +496,7 @@ function NewTradePageContent() {
                           key={symbol.code}
                           id={`symbol-${symbol.code}`}
                           type="button"
-                          className={`flex w-full items-center gap-4 rounded-2xl px-5 py-3 text-sm font-semibold transition md:text-base ${
+                          className={`flex w-full items-center gap-4 rounded-2xl px-5 py-3 text-sm font-semibold transition interactive-surface md:text-base ${
                             isActive
                               ? "bg-accent text-white shadow-[0_12px_28px_-16px_rgba(59,130,246,0.35)]"
                               : "bg-transparent text-fg hover:bg-muted/30"
@@ -761,10 +761,10 @@ function NewTradePageContent() {
               <button
                 type="button"
                 onClick={openImagePicker}
-                className={`group relative flex min-h-[220px] w-full items-center justify-center overflow-hidden rounded-[1.75rem] border border-dashed ${
+                className={`group relative flex min-h-[220px] w-full items-center justify-center overflow-hidden rounded-[1.75rem] border border-dashed transition interactive-surface ${
                   imageData
                     ? "border-transparent bg-white shadow-[0_18px_45px_-28px_rgba(15,23,42,0.28)]"
-                    : "border-border/70 bg-white/60 text-muted-fg transition hover:border-accent/60 hover:text-accent"
+                    : "border-border/70 bg-white/60 text-muted-fg hover:border-accent/60 hover:text-accent"
                 } aspect-video`}
               >
                 {imageData ? (
@@ -806,7 +806,7 @@ function NewTradePageContent() {
                   <button
                     type="button"
                     onClick={handleRemoveImage}
-                    className="text-[11px] font-semibold uppercase tracking-[0.3em] text-accent transition hover:text-accent/80"
+                    className="text-[11px] font-semibold uppercase tracking-[0.3em] text-accent transition hover:text-accent/80 interactive-surface"
                   >
                     Remove
                   </button>

@@ -37,6 +37,12 @@
   color: rgb(var(--accent));
 }
 
+/* Effetto hover uniforme per superfici interattive */
+.interactive-surface:hover,
+.interactive-surface:focus-visible{
+  filter: brightness(0.92);
+}
+
 /* ---- Layout helpers ---- */
 .container{ max-width: 1200px; margin-inline: auto; }
 
