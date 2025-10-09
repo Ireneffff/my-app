@@ -125,6 +125,7 @@ function NewTradePageContent() {
   const [riskReward, setRiskReward] = useState("");
   const [risk, setRisk] = useState("");
   const [pips, setPips] = useState("");
+  const [activeTab, setActiveTab] = useState<"main" | "library">("main");
   const [, startNavigation] = useTransition();
 
   const triggerDateTimePicker = useCallback((input: HTMLInputElement | null) => {
@@ -373,28 +374,34 @@ function NewTradePageContent() {
         </header>
 
         <div className="flex w-full flex-col gap-8">
-          <nav className="flex w-full flex-wrap items-center gap-2 px-1 py-2 text-sm text-muted-fg">
+          <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-1 py-2 text-sm text-muted-fg">
             {[
-              { label: "Main data", isActive: true },
-              { label: "Performance", isActive: false },
-              { label: "Mindset", isActive: false },
-            ].map(({ label, isActive }) => (
-              <button
-                key={label}
-                type="button"
-                className={`rounded-full border px-4 py-2 transition ${
-                  isActive
-                    ? "border-border bg-surface text-fg"
-                    : "border-transparent text-muted-fg hover:border-border hover:text-fg"
-                }`}
-                aria-pressed={isActive}
-                disabled={!isActive}
-              >
-                {label}
-              </button>
-            ))}
+              { label: "Main Data", value: "main" as const },
+              { label: "Library", value: "library" as const },
+            ].map(({ label, value }) => {
+              const isActive = activeTab === value;
+
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  className={`rounded-full border px-4 py-2 transition ${
+                    isActive
+                      ? "border-border bg-surface text-fg"
+                      : "border-transparent text-muted-fg hover:border-border hover:text-fg"
+                  }`}
+                  aria-pressed={isActive}
+                  onClick={() => setActiveTab(value)}
+                  disabled={isActive}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </nav>
 
+          {activeTab === "main" ? (
+            <>
           <div className="w-full surface-panel px-4 py-6 md:px-6 md:py-8">
             <div className="mx-auto flex w-full max-w-xl items-center gap-2 overflow-x-auto rounded-full border border-border bg-surface px-1 py-1">
               {currentWeekDays.map((date) => {
@@ -872,6 +879,12 @@ function NewTradePageContent() {
               ) : null}
             </div>
           </div>
+            </>
+          ) : (
+            <div className="w-full surface-panel px-5 py-6 text-center text-sm text-muted-fg md:px-6 md:py-8">
+              Library gallery will be available soon.
+            </div>
+          )}
         </div>
       </div>
     </section>
