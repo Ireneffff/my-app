@@ -144,6 +144,7 @@ function NewTradePageContent() {
   const closeTimeInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const weekSwipeOriginRef = useRef<{ x: number; time: number } | null>(null);
+  const weekWheelCooldownRef = useRef<number>(0);
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
@@ -278,6 +279,15 @@ function NewTradePageContent() {
       if (Math.abs(primaryDelta) < 10) {
         return;
       }
+
+      const timestamp =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+
+      if (timestamp - weekWheelCooldownRef.current < 300) {
+        return;
+      }
+
+      weekWheelCooldownRef.current = timestamp;
 
       shiftWeek(primaryDelta > 0 ? 1 : -1);
     },
