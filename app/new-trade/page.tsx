@@ -147,6 +147,7 @@ function NewTradePageContent() {
   const weekSwipeOriginRef = useRef<
     { x: number; time: number } | null
   >(null);
+  const weekPointerTargetDateRef = useRef<string | null>(null);
   const weekWheelCooldownRef = useRef<number>(0);
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
@@ -304,10 +305,19 @@ function NewTradePageContent() {
 
   const handleWeekPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
-      try {
-        event.currentTarget.setPointerCapture(event.pointerId);
-      } catch {
-        // setPointerCapture may throw in unsupported environments; ignore.
+      const targetElement = event.target as HTMLElement | null;
+      const buttonTarget = targetElement?.closest(
+        "button[data-date]",
+      ) as HTMLButtonElement | null;
+
+      weekPointerTargetDateRef.current = buttonTarget?.dataset.date ?? null;
+
+      if (event.pointerType !== "mouse") {
+        try {
+          event.currentTarget.setPointerCapture(event.pointerId);
+        } catch {
+          // setPointerCapture may throw in unsupported environments; ignore.
+        }
       }
 
       const timestamp =
@@ -344,11 +354,22 @@ function NewTradePageContent() {
 
       if (shouldAdvance) {
         shiftWeek(deltaX < 0 ? 1 : -1);
+      } else if (event.pointerType !== "mouse") {
+        const targetDateIso = weekPointerTargetDateRef.current;
+
+        if (targetDateIso) {
+          const parsed = new Date(targetDateIso);
+
+          if (!Number.isNaN(parsed.getTime())) {
+            handleSelectDate(parsed);
+          }
+        }
       }
 
+      weekPointerTargetDateRef.current = null;
       weekSwipeOriginRef.current = null;
     },
-    [shiftWeek],
+    [handleSelectDate, shiftWeek],
   );
 
   const handleWeekPointerCancel = useCallback(
@@ -357,6 +378,7 @@ function NewTradePageContent() {
         event.currentTarget.releasePointerCapture(event.pointerId);
       }
 
+      weekPointerTargetDateRef.current = null;
       weekSwipeOriginRef.current = null;
     },
     [],
@@ -418,6 +440,7 @@ function NewTradePageContent() {
         aria-current={isSelected ? "date" : undefined}
         aria-label={`Select ${accessibleLabel}`}
         title={accessibleLabel}
+        data-date={date.toISOString()}
       >
         <span className={dayNumberClasses.join(" ")} style={dayNumberStyle}>
           {dayNumber}
