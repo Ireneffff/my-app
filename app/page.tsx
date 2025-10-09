@@ -89,8 +89,8 @@ export default function Home() {
   });
 
   return (
-    <section className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-6 pb-20 pt-28 sm:px-8 sm:pt-32">
-      <header className="flex min-h-[65vh] flex-1 flex-col items-center justify-center gap-4 text-center sm:min-h-[70vh]">
+    <section className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-6 pb-16 pt-24 sm:px-8 sm:pt-28">
+      <header className="flex min-h-[58vh] flex-1 flex-col items-center justify-center gap-4 text-center sm:min-h-[62vh]">
         <p className="text-sm text-muted-fg">Calm mind, strong trade</p>
         <h1 className="text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
           Trading Journal
@@ -102,7 +102,7 @@ export default function Home() {
         </Link>
       </header>
 
-      <div className="mt-24 flex w-full flex-col items-center gap-12 pb-16">
+      <div className="mt-16 flex w-full flex-col items-center gap-12 pb-16">
         <Card className="w-full max-w-3xl self-center p-8 sm:max-w-4xl">
           <div className="flex items-center justify-between">
             <button
