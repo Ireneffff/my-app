@@ -126,6 +126,32 @@ function NewTradePageContent() {
   const [pips, setPips] = useState("");
   const [, startNavigation] = useTransition();
 
+  const triggerDateTimePicker = useCallback((input: HTMLInputElement | null) => {
+    if (!input) {
+      return;
+    }
+
+    if (typeof input.showPicker === "function") {
+      try {
+        input.showPicker();
+        return;
+      } catch {
+        // Some browsers throw when invoking showPicker while the input is hidden.
+      }
+    }
+
+    input.focus({ preventScroll: true });
+    input.click();
+  }, []);
+
+  const openOpenTimePicker = useCallback(() => {
+    triggerDateTimePicker(openTimeInputRef.current);
+  }, [triggerDateTimePicker]);
+
+  const openCloseTimePicker = useCallback(() => {
+    triggerDateTimePicker(closeTimeInputRef.current);
+  }, [triggerDateTimePicker]);
+
   const handleSelectDate = useCallback(
     (targetDate: Date) => {
       const normalized = new Date(targetDate);
@@ -500,10 +526,28 @@ function NewTradePageContent() {
                   <label
                     htmlFor="open-time-input"
                     className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      openOpenTimePicker();
+                    }}
                   >
                     Open Time
                   </label>
-                  <div className="relative">
+                  <div
+                    className="relative"
+                    onPointerDown={(event) => {
+                      if (
+                        openTimeInputRef.current &&
+                        event.target instanceof Node &&
+                        openTimeInputRef.current.contains(event.target)
+                      ) {
+                        return;
+                      }
+
+                      event.preventDefault();
+                      openOpenTimePicker();
+                    }}
+                  >
                     <input
                       id="open-time-input"
                       ref={openTimeInputRef}
@@ -557,10 +601,28 @@ function NewTradePageContent() {
                   <label
                     htmlFor="close-time-input"
                     className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      openCloseTimePicker();
+                    }}
                   >
                     Close Time
                   </label>
-                  <div className="relative">
+                  <div
+                    className="relative"
+                    onPointerDown={(event) => {
+                      if (
+                        closeTimeInputRef.current &&
+                        event.target instanceof Node &&
+                        closeTimeInputRef.current.contains(event.target)
+                      ) {
+                        return;
+                      }
+
+                      event.preventDefault();
+                      openCloseTimePicker();
+                    }}
+                  >
                     <input
                       id="close-time-input"
                       ref={closeTimeInputRef}
