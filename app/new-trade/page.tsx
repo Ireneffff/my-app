@@ -11,6 +11,7 @@ import {
   useState,
   useTransition,
   type ChangeEvent,
+  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
@@ -393,8 +394,14 @@ function NewTradePageContent() {
       "flex h-10 w-10 items-center justify-center rounded-full text-lg font-medium transition-colors md:h-12 md:w-12 md:text-xl",
     ];
 
+    const dayNumberStyle: CSSProperties | undefined = isSelected
+      ? {
+          backgroundColor: "color-mix(in srgb, rgb(var(--muted-fg)) 20%, rgb(var(--surface)))",
+        }
+      : undefined;
+
     if (isSelected) {
-      dayNumberClasses.push("bg-muted text-fg font-semibold");
+      dayNumberClasses.push("text-fg font-semibold");
     } else if (isToday) {
       dayNumberClasses.push("border border-accent/60 text-accent");
     } else {
@@ -412,7 +419,7 @@ function NewTradePageContent() {
         aria-label={`Select ${accessibleLabel}`}
         title={accessibleLabel}
       >
-        <span className={dayNumberClasses.join(" ")}>
+        <span className={dayNumberClasses.join(" ")} style={dayNumberStyle}>
           {dayNumber}
         </span>
         <span

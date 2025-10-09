@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import Button from "@/components/ui/Button";
 import {
   deleteTrade,
@@ -290,20 +290,35 @@ export default function RegisteredTradePage() {
                   })
                   .toUpperCase();
 
+                const dayNumberClasses = [
+                  "flex h-10 w-10 items-center justify-center rounded-full text-lg font-medium transition-colors md:h-12 md:w-12 md:text-xl",
+                ];
+
+                const dayNumberStyle: CSSProperties | undefined = isSelected
+                  ? {
+                      backgroundColor: "color-mix(in srgb, rgb(var(--muted-fg)) 20%, rgb(var(--surface)))",
+                    }
+                  : undefined;
+
+                if (isSelected) {
+                  dayNumberClasses.push("text-fg font-semibold");
+                } else {
+                  dayNumberClasses.push("border border-border text-fg");
+                }
+
                 return (
                   <div
                     key={date.toISOString()}
-                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium md:min-w-[88px] md:text-sm ${
-                      isSelected ? "text-accent" : "text-muted-fg"
+                    className={`flex min-w-[62px] flex-col items-center gap-2 rounded-full px-3 py-2 text-xs font-medium md:min-w-[88px] md:text-sm ${
+                      isSelected ? "text-fg" : "text-muted-fg"
                     }`}
-                    style={
-                      isSelected
-                        ? { backgroundColor: "rgb(var(--accent) / 0.1)" }
-                        : undefined
-                    }
                   >
-                    <span className={`text-xl md:text-2xl ${isSelected ? "font-semibold" : "font-medium"}`}>{dayNumber}</span>
-                    <span className="text-[10px] tracking-[0.3em] md:text-xs">{monthLabel}</span>
+                    <span className={dayNumberClasses.join(" ")} style={dayNumberStyle}>
+                      {dayNumber}
+                    </span>
+                    <span className={`text-[10px] tracking-[0.3em] md:text-xs ${isSelected ? "text-fg" : "text-muted-fg"}`}>
+                      {monthLabel}
+                    </span>
                   </div>
                 );
               })}
