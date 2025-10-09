@@ -32,22 +32,8 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
         return;
       }
 
-      const image = new Image();
-
-      image.onload = () => {
-        const aspectRatio = image.width / image.height;
-        const targetAspectRatio = 19 / 6;
-
-        if (Math.abs(aspectRatio - targetAspectRatio) > 0.05) {
-          setUploadError("L'immagine deve avere un formato 19:6.");
-          return;
-        }
-
-        setUploadError(null);
-        setUploadedImage(result);
-      };
-
-      image.src = result;
+      setUploadError(null);
+      setUploadedImage(result);
     };
 
     reader.readAsDataURL(file);
@@ -87,7 +73,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                   className="h-full w-full object-cover"
                 />
               </div>
-              <p className="mt-4 text-xs text-muted-foreground">Rapporto richiesto: 19:6</p>
+              <p className="mt-4 text-xs text-muted-foreground">Formato consigliato: 19:6</p>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground">
@@ -98,6 +84,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
               <p className="max-w-[360px] text-xs text-foreground/50 sm:text-sm">
                 Tap to upload a snapshot of your setup before entering the trade.
               </p>
+              <p className="text-xs text-foreground/40 sm:text-sm">Formato consigliato: 19:6</p>
             </div>
           )}
 
