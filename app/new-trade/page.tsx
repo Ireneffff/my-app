@@ -11,6 +11,7 @@ import {
   useState,
   useTransition,
   type ChangeEvent,
+  type TransitionEvent as ReactTransitionEvent,
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
@@ -101,8 +102,6 @@ function isSameDay(a: Date, b: Date) {
   return a.toDateString() === b.toDateString();
 }
 
-const WEEK_SLIDE_OFFSET = 110;
-
 function NewTradePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -126,23 +125,18 @@ function NewTradePageContent() {
   const [visibleWeekStart, setVisibleWeekStart] = useState(() =>
     getStartOfWeek(initialSelectedDate),
   );
-  const [weekTransition, setWeekTransition] = useState<
-    | {
-        direction: "forward" | "backward";
-        targetWeekStart: Date;
-      }
-    | null
+  const [incomingWeekStart, setIncomingWeekStart] = useState<Date | null>(null);
+  const [weekSlideDirection, setWeekSlideDirection] = useState<
+    "forward" | "backward" | null
   >(null);
-  const [weekAnimationPhase, setWeekAnimationPhase] = useState<
-    "idle" | "enter" | "settle"
-  >("idle");
+  const [isWeekSliding, setIsWeekSliding] = useState(false);
   const visibleWeekDays = useMemo(
     () => getWeekDays(visibleWeekStart),
     [visibleWeekStart],
   );
   const incomingWeekDays = useMemo(
-    () => (weekTransition ? getWeekDays(weekTransition.targetWeekStart) : []),
-    [weekTransition],
+    () => (incomingWeekStart ? getWeekDays(incomingWeekStart) : []),
+    [incomingWeekStart],
   );
 
   const [openTime, setOpenTime] = useState<Date | null>(() => {
@@ -277,7 +271,7 @@ function NewTradePageContent() {
 
   const shiftWeek = useCallback(
     (delta: number) => {
-      if (!delta || weekTransition) {
+      if (!delta || isWeekSliding || weekSlideDirection) {
         return;
       }
 
@@ -285,14 +279,12 @@ function NewTradePageContent() {
       nextDate.setDate(selectedDate.getDate() + delta * 7);
       const nextWeekStart = getStartOfWeek(nextDate);
 
-      setWeekTransition({
-        direction: delta > 0 ? "forward" : "backward",
-        targetWeekStart: nextWeekStart,
-      });
-      setWeekAnimationPhase("enter");
+      setIncomingWeekStart(nextWeekStart);
+      setWeekSlideDirection(delta > 0 ? "forward" : "backward");
+      setIsWeekSliding(false);
       handleSelectDate(nextDate, { skipWeekUpdate: true });
     },
-    [handleSelectDate, selectedDate, weekTransition],
+    [handleSelectDate, isWeekSliding, selectedDate, weekSlideDirection],
   );
 
   const handleWeekWheel = useCallback(
@@ -304,7 +296,7 @@ function NewTradePageContent() {
             ? event.deltaY
             : 0;
 
-      if (Math.abs(primaryDelta) < 10 || weekTransition) {
+      if (Math.abs(primaryDelta) < 10 || isWeekSliding || weekSlideDirection) {
         return;
       }
 
@@ -319,12 +311,12 @@ function NewTradePageContent() {
 
       shiftWeek(primaryDelta > 0 ? 1 : -1);
     },
-    [shiftWeek, weekTransition],
+    [isWeekSliding, shiftWeek, weekSlideDirection],
   );
 
   const handleWeekPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
-      if (weekTransition) {
+      if (isWeekSliding || weekSlideDirection) {
         return;
       }
 
@@ -340,7 +332,7 @@ function NewTradePageContent() {
         time: timestamp,
       };
     },
-    [weekTransition],
+    [isWeekSliding, weekSlideDirection],
   );
 
   const handleWeekPointerUp = useCallback(
@@ -351,7 +343,7 @@ function NewTradePageContent() {
 
       const origin = weekSwipeOriginRef.current;
 
-      if (!origin || weekTransition) {
+      if (!origin || isWeekSliding || weekSlideDirection) {
         return;
       }
 
@@ -367,7 +359,7 @@ function NewTradePageContent() {
 
       weekSwipeOriginRef.current = null;
     },
-    [shiftWeek, weekTransition],
+    [isWeekSliding, shiftWeek, weekSlideDirection],
   );
 
   const handleWeekPointerCancel = useCallback(
@@ -382,39 +374,41 @@ function NewTradePageContent() {
   );
 
   useEffect(() => {
-    if (!weekTransition || weekAnimationPhase !== "enter") {
+    if (!incomingWeekStart || !weekSlideDirection) {
       return;
     }
 
     if (typeof window === "undefined") {
-      setWeekAnimationPhase("settle");
+      setIsWeekSliding(true);
       return;
     }
 
     const frame = window.requestAnimationFrame(() => {
-      setWeekAnimationPhase("settle");
+      setIsWeekSliding(true);
     });
 
     return () => {
       window.cancelAnimationFrame(frame);
     };
-  }, [weekAnimationPhase, weekTransition]);
+  }, [incomingWeekStart, weekSlideDirection]);
 
-  useEffect(() => {
-    if (!weekTransition || weekAnimationPhase !== "settle") {
-      return;
-    }
+  const handleWeekTransitionEnd = useCallback(
+    (event: ReactTransitionEvent<HTMLDivElement>) => {
+      if (event.propertyName !== "transform") {
+        return;
+      }
 
-    const timeout = window.setTimeout(() => {
-      setVisibleWeekStart(weekTransition.targetWeekStart);
-      setWeekTransition(null);
-      setWeekAnimationPhase("idle");
-    }, 280);
+      if (!incomingWeekStart || !weekSlideDirection) {
+        return;
+      }
 
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [weekAnimationPhase, weekTransition]);
+      setVisibleWeekStart(incomingWeekStart);
+      setIncomingWeekStart(null);
+      setWeekSlideDirection(null);
+      setIsWeekSliding(false);
+    },
+    [incomingWeekStart, weekSlideDirection],
+  );
 
   const renderWeekDayPill = (date: Date, context: "current" | "incoming") => {
     const isSelected = isSameDay(date, selectedDate);
@@ -448,7 +442,7 @@ function NewTradePageContent() {
         aria-current={isSelected ? "date" : undefined}
         aria-label={`Select ${accessibleLabel}`}
         title={accessibleLabel}
-        disabled={Boolean(weekTransition)}
+        disabled={isWeekSliding}
       >
         <span className={`text-xl md:text-2xl ${isSelected ? "font-semibold" : "font-medium"}`}>
           {dayNumber}
@@ -747,28 +741,29 @@ function NewTradePageContent() {
               >
                 <div
                   className="flex w-full items-center gap-2 transition-transform duration-300 ease-out"
+                  onTransitionEnd={handleWeekTransitionEnd}
                   style={{
                     transform:
-                      weekTransition && weekAnimationPhase === "settle"
-                        ? weekTransition.direction === "forward"
-                          ? `translateX(-${WEEK_SLIDE_OFFSET}%)`
-                          : `translateX(${WEEK_SLIDE_OFFSET}%)`
+                      isWeekSliding && weekSlideDirection
+                        ? weekSlideDirection === "forward"
+                          ? "translateX(-100%)"
+                          : "translateX(100%)"
                         : "translateX(0%)",
                   }}
                 >
                   {visibleWeekDays.map((date) => renderWeekDayPill(date, "current"))}
                 </div>
 
-                {weekTransition ? (
+                {incomingWeekStart && weekSlideDirection ? (
                   <div
                     className="pointer-events-none absolute inset-0 flex w-full items-center gap-2 transition-transform duration-300 ease-out"
                     style={{
                       transform:
-                        weekAnimationPhase === "enter"
-                          ? weekTransition.direction === "forward"
-                            ? `translateX(${WEEK_SLIDE_OFFSET}%)`
-                            : `translateX(-${WEEK_SLIDE_OFFSET}%)`
-                          : "translateX(0%)",
+                        isWeekSliding
+                          ? "translateX(0%)"
+                          : weekSlideDirection === "forward"
+                            ? "translateX(100%)"
+                            : "translateX(-100%)",
                     }}
                   >
                     {incomingWeekDays.map((date) => renderWeekDayPill(date, "incoming"))}
