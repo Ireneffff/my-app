@@ -212,26 +212,6 @@ function NewTradePageContent() {
     setSelectedSymbol(symbol);
   };
 
-  const openDateTimePicker = useCallback((input: HTMLInputElement | null) => {
-    if (!input) {
-      return;
-    }
-
-    const pickerInput = input as HTMLInputElement & { showPicker?: () => void };
-
-    try {
-      if (typeof pickerInput.showPicker === "function") {
-        pickerInput.showPicker();
-        return;
-      }
-    } catch {
-      // Some browsers may throw if showPicker fails; fall back to focus + click
-    }
-
-    input.focus();
-    input.click();
-  }, []);
-
   const openTimeDisplay = getDateTimeDisplayParts(openTime);
   const closeTimeDisplay = getDateTimeDisplayParts(closeTime);
 
@@ -523,56 +503,54 @@ function NewTradePageContent() {
                   >
                     Open Time
                   </label>
-                  <button
-                    type="button"
-                    className="relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]"
-                    onClick={() => openDateTimePicker(openTimeInputRef.current)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
-                        {openTimeDisplay.dateLabel}
-                      </span>
-                      <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
-                        {openTimeDisplay.timeLabel}
-                      </span>
+                  <div className="relative">
+                    <input
+                      id="open-time-input"
+                      ref={openTimeInputRef}
+                      type="datetime-local"
+                      className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40"
+                      value={openTime ? formatDateTimeLocal(openTime) : ""}
+                      onChange={(event) => {
+                        const { value } = event.target;
+                        if (!value) {
+                          setOpenTime(null);
+                          return;
+                        }
+
+                        const parsed = new Date(value);
+                        if (Number.isNaN(parsed.getTime())) {
+                          return;
+                        }
+
+                        setOpenTime(parsed);
+                      }}
+                      aria-label="Select open date and time"
+                    />
+                    <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                      <div className="flex items-center gap-2">
+                        <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
+                          {openTimeDisplay.dateLabel}
+                        </span>
+                        <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
+                          {openTimeDisplay.timeLabel}
+                        </span>
+                      </div>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="ml-auto h-6 w-6 text-muted-fg"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <polyline points="12 7 12 12 15 15" />
+                      </svg>
                     </div>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="ml-auto h-6 w-6 text-muted-fg"
-                      aria-hidden="true"
-                    >
-                      <circle cx="12" cy="12" r="9" />
-                      <polyline points="12 7 12 12 15 15" />
-                    </svg>
-                  </button>
-                  <input
-                    id="open-time-input"
-                    ref={openTimeInputRef}
-                    type="datetime-local"
-                    className="sr-only"
-                    value={openTime ? formatDateTimeLocal(openTime) : ""}
-                    onChange={(event) => {
-                      const { value } = event.target;
-                      if (!value) {
-                        setOpenTime(null);
-                        return;
-                      }
-
-                      const parsed = new Date(value);
-                      if (Number.isNaN(parsed.getTime())) {
-                        return;
-                      }
-
-                      setOpenTime(parsed);
-                    }}
-                    aria-label="Select open date and time"
-                  />
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-3">
@@ -582,56 +560,54 @@ function NewTradePageContent() {
                   >
                     Close Time
                   </label>
-                  <button
-                    type="button"
-                    className="relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]"
-                    onClick={() => openDateTimePicker(closeTimeInputRef.current)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
-                        {closeTimeDisplay.dateLabel}
-                      </span>
-                      <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
-                        {closeTimeDisplay.timeLabel}
-                      </span>
+                  <div className="relative">
+                    <input
+                      id="close-time-input"
+                      ref={closeTimeInputRef}
+                      type="datetime-local"
+                      className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40"
+                      value={closeTime ? formatDateTimeLocal(closeTime) : ""}
+                      onChange={(event) => {
+                        const { value } = event.target;
+                        if (!value) {
+                          setCloseTime(null);
+                          return;
+                        }
+
+                        const parsed = new Date(value);
+                        if (Number.isNaN(parsed.getTime())) {
+                          return;
+                        }
+
+                        setCloseTime(parsed);
+                      }}
+                      aria-label="Select close date and time"
+                    />
+                    <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                      <div className="flex items-center gap-2">
+                        <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
+                          {closeTimeDisplay.dateLabel}
+                        </span>
+                        <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
+                          {closeTimeDisplay.timeLabel}
+                        </span>
+                      </div>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="ml-auto h-6 w-6 text-muted-fg"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <polyline points="12 7 12 12 15 15" />
+                      </svg>
                     </div>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="ml-auto h-6 w-6 text-muted-fg"
-                      aria-hidden="true"
-                    >
-                      <circle cx="12" cy="12" r="9" />
-                      <polyline points="12 7 12 12 15 15" />
-                    </svg>
-                  </button>
-                  <input
-                    id="close-time-input"
-                    ref={closeTimeInputRef}
-                    type="datetime-local"
-                    className="sr-only"
-                    value={closeTime ? formatDateTimeLocal(closeTime) : ""}
-                    onChange={(event) => {
-                      const { value } = event.target;
-                      if (!value) {
-                        setCloseTime(null);
-                        return;
-                      }
-
-                      const parsed = new Date(value);
-                      if (Number.isNaN(parsed.getTime())) {
-                        return;
-                      }
-
-                      setCloseTime(parsed);
-                    }}
-                    aria-label="Select close date and time"
-                  />
+                  </div>
                 </div>
               </div>
 
