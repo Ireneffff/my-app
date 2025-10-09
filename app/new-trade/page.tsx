@@ -12,6 +12,7 @@ import {
   useTransition,
   type ChangeEvent,
 } from "react";
+import Button from "@/components/ui/Button";
 import { loadTrades, saveTrade, updateTrade, type StoredTrade } from "@/lib/tradesStorage";
 
 type SymbolOption = {
@@ -302,24 +303,28 @@ function NewTradePageContent() {
 
   return (
     <section
-      className="relative flex min-h-dvh flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f1f1)] px-4 pb-10 text-fg sm:px-6 md:px-10"
+      className="relative flex min-h-dvh flex-col gap-12 bg-bg px-4 pb-16 text-fg sm:px-6 md:px-10"
       style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
     >
-      <div className="mx-auto mb-6 flex w-full max-w-3xl flex-wrap items-center justify-between gap-3 rounded-full bg-transparent px-3 py-2">
-        <button
+      <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 sm:max-w-4xl">
+        <Button
           type="button"
-          className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/80 text-lg font-semibold text-muted-fg shadow-[0_10px_24px_-16px_rgba(15,23,42,0.3)] transition hover:scale-105 hover:text-fg"
+          variant="ghost"
+          size="sm"
+          className="h-11 w-11 flex-none rounded-full p-0 text-lg text-muted-fg hover:text-fg"
           onClick={() => {
             router.back();
           }}
           aria-label="Close"
         >
           ×
-        </button>
+        </Button>
 
-        <button
+        <Button
           type="button"
-          className="ml-auto min-w-[140px] rounded-full bg-accent px-6 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-[0_14px_32px_-18px_rgba(15,23,42,0.3)] transition hover:scale-105"
+          variant="primary"
+          size="md"
+          className="ml-auto min-w-[140px]"
           onClick={() => {
             const targetTradeId = editingTradeId ?? Date.now().toString(36);
             const trade: StoredTrade = {
@@ -356,19 +361,19 @@ function NewTradePageContent() {
           }}
         >
           {isEditing ? "Update" : "Save"}
-        </button>
+        </Button>
       </div>
 
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-10 text-center">
-        <header className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Trading Journal</p>
-          <h1 className="text-4xl font-black tracking-tight text-fg drop-shadow-sm md:text-5xl">
-            Register a Trade
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-12 sm:max-w-4xl">
+        <header className="space-y-2">
+          <p className="text-sm text-muted-fg">Trading Journal</p>
+          <h1 className="text-4xl font-semibold tracking-tight text-fg md:text-5xl">
+            Register a trade
           </h1>
         </header>
 
-        <div className="flex w-full flex-col items-center gap-8">
-          <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-2 py-2">
+        <div className="flex w-full flex-col gap-8">
+          <nav className="flex w-full flex-wrap items-center gap-2 px-1 py-2 text-sm text-muted-fg">
             {[
               { label: "Main data", isActive: true },
               { label: "Performance", isActive: false },
@@ -377,8 +382,10 @@ function NewTradePageContent() {
               <button
                 key={label}
                 type="button"
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  isActive ? "text-fg" : "text-muted-fg hover:text-fg"
+                className={`rounded-full border px-4 py-2 transition ${
+                  isActive
+                    ? "border-border bg-surface text-fg"
+                    : "border-transparent text-muted-fg hover:border-border hover:text-fg"
                 }`}
                 aria-pressed={isActive}
                 disabled={!isActive}
@@ -388,8 +395,8 @@ function NewTradePageContent() {
             ))}
           </nav>
 
-          <div className="w-full rounded-[2.5rem] bg-white/85 px-4 py-6 shadow-[0_20px_55px_-28px_rgba(15,23,42,0.32)] backdrop-blur md:px-6 md:py-8">
-            <div className="mx-auto flex w-full max-w-xl items-center gap-2 overflow-x-auto rounded-full bg-transparent px-1 py-1">
+          <div className="w-full surface-panel px-4 py-6 md:px-6 md:py-8">
+            <div className="mx-auto flex w-full max-w-xl items-center gap-2 overflow-x-auto rounded-full border border-border bg-surface px-1 py-1">
               {currentWeekDays.map((date) => {
                 const isSelected = date.toDateString() === selectedDate.toDateString();
                 const dayNumber = date.getDate();
@@ -404,13 +411,11 @@ function NewTradePageContent() {
                     key={date.toISOString()}
                     type="button"
                     onClick={() => handleSelectDate(new Date(date))}
-                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold transition md:min-w-[88px] md:text-sm ${
-                      isSelected
-                        ? "bg-accent text-white shadow-[0_12px_26px_-18px_rgba(15,23,42,0.3)]"
-                        : "text-muted-fg hover:text-fg"
+                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-medium transition md:min-w-[88px] md:text-sm ${
+                      isSelected ? "bg-accent text-white" : "text-muted-fg hover:text-fg"
                     }`}
                   >
-                    <span className={`text-xl md:text-2xl ${isSelected ? "font-black" : "font-bold"}`}>
+                    <span className={`text-xl md:text-2xl ${isSelected ? "font-semibold" : "font-medium"}`}>
                       {dayNumber}
                     </span>
                     <span className="text-[10px] tracking-[0.3em] md:text-xs">
@@ -422,7 +427,7 @@ function NewTradePageContent() {
 
               <button
                 type="button"
-                className="ml-auto flex h-14 w-14 flex-none items-center justify-center rounded-full bg-white/90 text-muted-fg shadow-[0_12px_30px_-20px_rgba(15,23,42,0.3)] transition hover:text-fg"
+                className="ml-auto flex h-12 w-12 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg"
                 onClick={() => {
                   const dayIndex = Math.min((today.getDay() + 6) % 7, 4);
                   const targetDate = currentWeekDays.at(dayIndex) ?? currentWeekDays[0] ?? today;
@@ -450,20 +455,20 @@ function NewTradePageContent() {
               </button>
             </div>
 
-            <p className="mt-5 text-sm font-medium text-muted-fg md:text-base">
-              Day of the week: <span className="font-semibold capitalize text-fg">{dayOfWeekLabel}</span>
+            <p className="mt-5 text-sm text-muted-fg md:text-base">
+              Day of the week: <span className="font-semibold text-fg">{dayOfWeekLabel}</span>
             </p>
           </div>
 
-          <div className="w-full rounded-[2.5rem] bg-white/85 px-5 py-6 shadow-[0_20px_55px_-28px_rgba(15,23,42,0.32)] backdrop-blur md:px-6 md:py-8">
+          <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
             <div className="flex flex-col gap-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex flex-col gap-3">
-                  <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Symbol</span>
+                  <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
                   <button
                     type="button"
                     onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                    className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] transition focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left transition focus:outline-none focus:ring-2 focus:ring-accent/40"
                     aria-haspopup="listbox"
                     aria-expanded={isSymbolListOpen}
                   >
@@ -475,10 +480,12 @@ function NewTradePageContent() {
                     </span>
                   </button>
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="ml-auto rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-muted-fg hover:text-fg"
                   onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                  className="ml-auto flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-muted-fg shadow-[0_12px_30px_-20px_rgba(15,23,42,0.3)] transition hover:text-fg"
                   aria-haspopup="listbox"
                   aria-expanded={isSymbolListOpen}
                 >
@@ -496,7 +503,7 @@ function NewTradePageContent() {
                   >
                     <path d="m6 9 6 6 6-6" />
                   </svg>
-                </button>
+                </Button>
               </div>
 
               <div
@@ -506,7 +513,7 @@ function NewTradePageContent() {
               >
                 <div className="overflow-hidden">
                   <div
-                    className="flex flex-col gap-2 rounded-[1.75rem] bg-white/90 p-2 shadow-[0_18px_45px_-28px_rgba(15,23,42,0.3)]"
+                    className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-2"
                     role="listbox"
                     aria-activedescendant={`symbol-${selectedSymbol.code}`}
                   >
@@ -518,11 +525,18 @@ function NewTradePageContent() {
                           key={symbol.code}
                           id={`symbol-${symbol.code}`}
                           type="button"
-                          className={`flex w-full items-center gap-4 rounded-2xl px-5 py-3 text-sm font-semibold transition md:text-base ${
+                          className={`flex w-full items-center gap-4 rounded-2xl px-4 py-3 text-sm font-medium transition md:text-base ${
                             isActive
-                              ? "bg-accent text-white shadow-[0_12px_28px_-16px_rgba(59,130,246,0.35)]"
-                              : "bg-transparent text-fg hover:bg-muted/30"
+                              ? "text-accent"
+                              : "text-muted-fg hover:bg-subtle hover:text-fg"
                           }`}
+                          style={
+                            isActive
+                              ? {
+                                  backgroundColor: "rgb(var(--accent) / 0.1)",
+                                }
+                              : undefined
+                          }
                           onClick={() => handleSelectSymbol(symbol)}
                           aria-selected={isActive}
                           role="option"
@@ -530,9 +544,12 @@ function NewTradePageContent() {
                           <span className="text-2xl" aria-hidden="true">
                             {symbol.flag}
                           </span>
-                          <span className="tracking-[0.2em]">{symbol.code}</span>
+                          <span className="tracking-[0.18em]">{symbol.code}</span>
                           {isActive ? (
-                            <span className="ml-auto text-xs font-bold uppercase tracking-[0.3em] text-white/80">
+                            <span
+                              className="ml-auto text-xs font-medium uppercase tracking-[0.24em]"
+                              style={{ color: "rgb(var(--accent) / 0.8)" }}
+                            >
                               Selected
                             </span>
                           ) : null}
@@ -547,7 +564,7 @@ function NewTradePageContent() {
                 <div className="flex flex-col gap-3">
                   <label
                     htmlFor="open-time-input"
-                    className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                    className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg"
                     onClick={(event) => {
                       event.preventDefault();
                       toggleOpenTimePicker();
@@ -597,7 +614,7 @@ function NewTradePageContent() {
                       }}
                       aria-label="Select open date and time"
                     />
-                    <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                    <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left">
                       <div className="flex items-center gap-2">
                         <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
                           {openTimeDisplay.dateLabel}
@@ -627,7 +644,7 @@ function NewTradePageContent() {
                 <div className="flex flex-col gap-3">
                   <label
                     htmlFor="close-time-input"
-                    className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                    className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg"
                     onClick={(event) => {
                       event.preventDefault();
                       toggleCloseTimePicker();
@@ -677,7 +694,7 @@ function NewTradePageContent() {
                       }}
                       aria-label="Select close date and time"
                     />
-                    <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                    <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left">
                       <div className="flex items-center gap-2">
                         <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
                           {closeTimeDisplay.dateLabel}
@@ -706,12 +723,12 @@ function NewTradePageContent() {
               </div>
 
               <div className="mt-6 flex flex-col gap-3">
-                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Conditions</span>
+                <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Conditions</span>
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
                     <label
                       htmlFor="position-select"
-                      className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                      className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                     >
                       Position
                     </label>
@@ -719,7 +736,7 @@ function NewTradePageContent() {
                       id="position-select"
                       value={position}
                       onChange={(event) => setPosition(event.target.value === "SHORT" ? "SHORT" : "LONG")}
-                      className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-fg shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] focus:outline-none focus:ring-2 focus:ring-accent/40"
+                      className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
                     >
                       <option value="LONG">Long</option>
                       <option value="SHORT">Short</option>
@@ -729,7 +746,7 @@ function NewTradePageContent() {
                   <div className="flex flex-col gap-2">
                     <label
                       htmlFor="risk-reward-input"
-                      className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                      className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                     >
                       R/R
                     </label>
@@ -739,14 +756,14 @@ function NewTradePageContent() {
                       value={riskReward}
                       onChange={(event) => setRiskReward(event.target.value)}
                       placeholder="1:4"
-                      className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-fg shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] placeholder:text-muted-fg/60 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                      className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
                     />
                   </div>
 
                   <div className="flex flex-col gap-2">
                     <label
                       htmlFor="risk-input"
-                      className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                      className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                     >
                       Risk
                     </label>
@@ -756,14 +773,14 @@ function NewTradePageContent() {
                       value={risk}
                       onChange={(event) => setRisk(event.target.value)}
                       placeholder="2%"
-                      className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-fg shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] placeholder:text-muted-fg/60 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                      className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
                     />
                   </div>
 
                   <div className="flex flex-col gap-2">
                     <label
                       htmlFor="pips-input"
-                      className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                      className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                     >
                       Nr. Pips
                     </label>
@@ -773,7 +790,7 @@ function NewTradePageContent() {
                       value={pips}
                       onChange={(event) => setPips(event.target.value)}
                       placeholder="55"
-                      className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-fg shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] placeholder:text-muted-fg/60 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                      className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
                     />
                   </div>
                 </div>
@@ -781,11 +798,11 @@ function NewTradePageContent() {
             </div>
           </div>
 
-          <div className="w-full rounded-[2.5rem] bg-white/85 px-5 py-6 shadow-[0_20px_55px_-28px_rgba(15,23,42,0.32)] backdrop-blur md:px-6 md:py-8">
+          <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Images</span>
-                <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg/80">
+                <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Images</span>
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg opacity-80">
                   Before the position
                 </span>
               </div>
@@ -793,11 +810,16 @@ function NewTradePageContent() {
               <button
                 type="button"
                 onClick={openImagePicker}
-                className={`group relative flex min-h-[220px] w-full items-center justify-center overflow-hidden rounded-[1.75rem] border border-dashed ${
+                className={`group relative flex min-h-[220px] w-full items-center justify-center overflow-hidden rounded-2xl border border-dashed ${
                   imageData
-                    ? "border-transparent bg-white shadow-[0_18px_45px_-28px_rgba(15,23,42,0.28)]"
-                    : "border-border/70 bg-white/60 text-muted-fg transition hover:border-accent/60 hover:text-accent"
+                    ? "border-transparent bg-surface"
+                    : "bg-subtle text-muted-fg transition hover:text-accent"
                 } aspect-video`}
+                style={
+                  imageData
+                    ? undefined
+                    : { borderColor: "color-mix(in srgb, rgba(var(--border)) 100%, transparent)" }
+                }
               >
                 {imageData ? (
                   <Image
@@ -810,11 +832,11 @@ function NewTradePageContent() {
                   />
                 ) : (
                   <div className="flex flex-col items-center gap-2 px-4 text-center text-sm font-medium">
-                    <span className="rounded-full bg-bg px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">
+                    <span className="rounded-full bg-bg px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-fg">
                       Enter image
                     </span>
-                    <span className="text-xs text-muted-fg/80">PNG, JPG or WEBP · max 5 MB</span>
-                    <span className="text-xs text-muted-fg/70">
+                    <span className="text-xs text-muted-fg opacity-80">PNG, JPG or WEBP · max 5 MB</span>
+                    <span className="text-xs text-muted-fg opacity-70">
                       Tap to upload a snapshot of your setup before entering the trade.
                     </span>
                   </div>
@@ -838,7 +860,7 @@ function NewTradePageContent() {
                   <button
                     type="button"
                     onClick={handleRemoveImage}
-                    className="text-[11px] font-semibold uppercase tracking-[0.3em] text-accent transition hover:text-accent/80"
+                    className="text-[11px] font-medium uppercase tracking-[0.24em] text-accent transition hover:opacity-80"
                   >
                     Remove
                   </button>
