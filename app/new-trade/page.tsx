@@ -101,6 +101,8 @@ function isSameDay(a: Date, b: Date) {
   return a.toDateString() === b.toDateString();
 }
 
+const WEEK_SLIDE_OFFSET = 110;
+
 function NewTradePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -124,9 +126,23 @@ function NewTradePageContent() {
   const [visibleWeekStart, setVisibleWeekStart] = useState(() =>
     getStartOfWeek(initialSelectedDate),
   );
+  const [weekTransition, setWeekTransition] = useState<
+    | {
+        direction: "forward" | "backward";
+        targetWeekStart: Date;
+      }
+    | null
+  >(null);
+  const [weekAnimationPhase, setWeekAnimationPhase] = useState<
+    "idle" | "enter" | "settle"
+  >("idle");
   const visibleWeekDays = useMemo(
     () => getWeekDays(visibleWeekStart),
     [visibleWeekStart],
+  );
+  const incomingWeekDays = useMemo(
+    () => (weekTransition ? getWeekDays(weekTransition.targetWeekStart) : []),
+    [weekTransition],
   );
 
   const [openTime, setOpenTime] = useState<Date | null>(() => {
@@ -231,40 +247,52 @@ function NewTradePageContent() {
     toggleDateTimePicker(closeTimeInputRef.current);
   }, [toggleDateTimePicker]);
 
-  const handleSelectDate = useCallback((targetDate: Date) => {
-    const normalized = new Date(targetDate);
-    normalized.setHours(0, 0, 0, 0);
-    const normalizedWeekStart = getStartOfWeek(normalized);
+  const handleSelectDate = useCallback(
+    (targetDate: Date, options?: { skipWeekUpdate?: boolean }) => {
+      const normalized = new Date(targetDate);
+      normalized.setHours(0, 0, 0, 0);
+      const normalizedWeekStart = getStartOfWeek(normalized);
 
-    setSelectedDate((prev) => {
-      if (isSameDay(prev, normalized)) {
-        return prev;
+      setSelectedDate((prev) => {
+        if (isSameDay(prev, normalized)) {
+          return prev;
+        }
+        return normalized;
+      });
+
+      if (!options?.skipWeekUpdate) {
+        setVisibleWeekStart((prev) => {
+          if (isSameDay(prev, normalizedWeekStart)) {
+            return prev;
+          }
+          return normalizedWeekStart;
+        });
       }
-      return normalized;
-    });
 
-    setVisibleWeekStart((prev) => {
-      if (isSameDay(prev, normalizedWeekStart)) {
-        return prev;
-      }
-      return normalizedWeekStart;
-    });
-
-    setOpenTime((prev) => alignTimeWithDate(prev, normalized, 9));
-    setCloseTime((prev) => alignTimeWithDate(prev, normalized, 17));
-  }, []);
+      setOpenTime((prev) => alignTimeWithDate(prev, normalized, 9));
+      setCloseTime((prev) => alignTimeWithDate(prev, normalized, 17));
+    },
+    [],
+  );
 
   const shiftWeek = useCallback(
     (delta: number) => {
-      if (!delta) {
+      if (!delta || weekTransition) {
         return;
       }
 
       const nextDate = new Date(selectedDate);
       nextDate.setDate(selectedDate.getDate() + delta * 7);
-      handleSelectDate(nextDate);
+      const nextWeekStart = getStartOfWeek(nextDate);
+
+      setWeekTransition({
+        direction: delta > 0 ? "forward" : "backward",
+        targetWeekStart: nextWeekStart,
+      });
+      setWeekAnimationPhase("enter");
+      handleSelectDate(nextDate, { skipWeekUpdate: true });
     },
-    [handleSelectDate, selectedDate],
+    [handleSelectDate, selectedDate, weekTransition],
   );
 
   const handleWeekWheel = useCallback(
@@ -276,7 +304,7 @@ function NewTradePageContent() {
             ? event.deltaY
             : 0;
 
-      if (Math.abs(primaryDelta) < 10) {
+      if (Math.abs(primaryDelta) < 10 || weekTransition) {
         return;
       }
 
@@ -291,11 +319,15 @@ function NewTradePageContent() {
 
       shiftWeek(primaryDelta > 0 ? 1 : -1);
     },
-    [shiftWeek],
+    [shiftWeek, weekTransition],
   );
 
   const handleWeekPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (weekTransition) {
+        return;
+      }
+
       if (event.pointerType !== "mouse") {
         event.currentTarget.setPointerCapture(event.pointerId);
       }
@@ -308,7 +340,7 @@ function NewTradePageContent() {
         time: timestamp,
       };
     },
-    [],
+    [weekTransition],
   );
 
   const handleWeekPointerUp = useCallback(
@@ -319,7 +351,7 @@ function NewTradePageContent() {
 
       const origin = weekSwipeOriginRef.current;
 
-      if (!origin) {
+      if (!origin || weekTransition) {
         return;
       }
 
@@ -335,7 +367,7 @@ function NewTradePageContent() {
 
       weekSwipeOriginRef.current = null;
     },
-    [shiftWeek],
+    [shiftWeek, weekTransition],
   );
 
   const handleWeekPointerCancel = useCallback(
@@ -348,6 +380,90 @@ function NewTradePageContent() {
     },
     [],
   );
+
+  useEffect(() => {
+    if (!weekTransition || weekAnimationPhase !== "enter") {
+      return;
+    }
+
+    if (typeof window === "undefined") {
+      setWeekAnimationPhase("settle");
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      setWeekAnimationPhase("settle");
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [weekAnimationPhase, weekTransition]);
+
+  useEffect(() => {
+    if (!weekTransition || weekAnimationPhase !== "settle") {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setVisibleWeekStart(weekTransition.targetWeekStart);
+      setWeekTransition(null);
+      setWeekAnimationPhase("idle");
+    }, 280);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [weekAnimationPhase, weekTransition]);
+
+  const renderWeekDayPill = (date: Date, context: "current" | "incoming") => {
+    const isSelected = isSameDay(date, selectedDate);
+    const isToday = isSameDay(date, today);
+    const dayNumber = date.getDate();
+    const monthLabel = date
+      .toLocaleDateString(undefined, {
+        month: "short",
+      })
+      .toUpperCase();
+    const accessibleLabel = date.toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+
+    return (
+      <button
+        key={`${date.toISOString()}-${context}`}
+        type="button"
+        onClick={() => handleSelectDate(new Date(date))}
+        className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition md:min-w-[88px] md:text-sm ${
+          isSelected
+            ? "border-transparent bg-accent text-white"
+            : isToday
+              ? "border-accent/60 text-accent"
+              : "border-transparent text-muted-fg hover:text-fg"
+        }`}
+        aria-pressed={isSelected}
+        aria-current={isSelected ? "date" : undefined}
+        aria-label={`Select ${accessibleLabel}`}
+        title={accessibleLabel}
+        disabled={Boolean(weekTransition)}
+      >
+        <span className={`text-xl md:text-2xl ${isSelected ? "font-semibold" : "font-medium"}`}>
+          {dayNumber}
+        </span>
+        <span
+          className={`text-[10px] tracking-[0.3em] md:text-xs ${
+            isSelected ? "opacity-100" : "opacity-80"
+          }`}
+        >
+          {monthLabel}
+        </span>
+        {isToday ? <span className="sr-only">Today</span> : null}
+      </button>
+    );
+  };
 
   const openCalendar = useCallback(() => {
     setCalendarMonth(getStartOfMonth(selectedDate));
@@ -622,60 +738,42 @@ function NewTradePageContent() {
           <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6">
             <div className="mx-auto flex w-full max-w-xl items-center gap-3">
               <div
-                className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-full border border-border bg-surface px-1 py-1"
+                className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1"
                 onWheel={handleWeekWheel}
                 onPointerDown={handleWeekPointerDown}
                 onPointerUp={handleWeekPointerUp}
                 onPointerCancel={handleWeekPointerCancel}
                 onPointerLeave={handleWeekPointerCancel}
               >
-                {visibleWeekDays.map((date) => {
-                  const isSelected = isSameDay(date, selectedDate);
-                  const isToday = isSameDay(date, today);
-                  const dayNumber = date.getDate();
-                  const monthLabel = date
-                    .toLocaleDateString(undefined, {
-                    month: "short",
-                  })
-                  .toUpperCase();
-                const accessibleLabel = date.toLocaleDateString(undefined, {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                });
+                <div
+                  className="flex w-full items-center gap-2 transition-transform duration-300 ease-out"
+                  style={{
+                    transform:
+                      weekTransition && weekAnimationPhase === "settle"
+                        ? weekTransition.direction === "forward"
+                          ? `translateX(-${WEEK_SLIDE_OFFSET}%)`
+                          : `translateX(${WEEK_SLIDE_OFFSET}%)`
+                        : "translateX(0%)",
+                  }}
+                >
+                  {visibleWeekDays.map((date) => renderWeekDayPill(date, "current"))}
+                </div>
 
-                  return (
-                    <button
-                      key={date.toISOString()}
-                      type="button"
-                      onClick={() => handleSelectDate(new Date(date))}
-                      className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition md:min-w-[88px] md:text-sm ${
-                        isSelected
-                          ? "border-transparent bg-accent text-white"
-                          : isToday
-                            ? "border-accent/60 text-accent"
-                            : "border-transparent text-muted-fg hover:text-fg"
-                      }`}
-                      aria-pressed={isSelected}
-                      aria-current={isSelected ? "date" : undefined}
-                      aria-label={`Select ${accessibleLabel}`}
-                      title={accessibleLabel}
-                    >
-                      <span className={`text-xl md:text-2xl ${isSelected ? "font-semibold" : "font-medium"}`}>
-                        {dayNumber}
-                      </span>
-                      <span
-                        className={`text-[10px] tracking-[0.3em] md:text-xs ${
-                          isSelected ? "opacity-100" : "opacity-80"
-                        }`}
-                      >
-                        {monthLabel}
-                      </span>
-                      {isToday ? <span className="sr-only">Today</span> : null}
-                    </button>
-                  );
-                })}
+                {weekTransition ? (
+                  <div
+                    className="pointer-events-none absolute inset-0 flex w-full items-center gap-2 transition-transform duration-300 ease-out"
+                    style={{
+                      transform:
+                        weekAnimationPhase === "enter"
+                          ? weekTransition.direction === "forward"
+                            ? `translateX(${WEEK_SLIDE_OFFSET}%)`
+                            : `translateX(-${WEEK_SLIDE_OFFSET}%)`
+                          : "translateX(0%)",
+                    }}
+                  >
+                    {incomingWeekDays.map((date) => renderWeekDayPill(date, "incoming"))}
+                  </div>
+                ) : null}
               </div>
 
               <button
