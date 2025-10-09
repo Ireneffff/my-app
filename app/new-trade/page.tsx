@@ -144,13 +144,29 @@ function NewTradePageContent() {
     input.click();
   }, []);
 
-  const openOpenTimePicker = useCallback(() => {
-    triggerDateTimePicker(openTimeInputRef.current);
-  }, [triggerDateTimePicker]);
+  const toggleDateTimePicker = useCallback(
+    (input: HTMLInputElement | null) => {
+      if (!input) {
+        return;
+      }
 
-  const openCloseTimePicker = useCallback(() => {
-    triggerDateTimePicker(closeTimeInputRef.current);
-  }, [triggerDateTimePicker]);
+      if (document.activeElement === input) {
+        input.blur();
+        return;
+      }
+
+      triggerDateTimePicker(input);
+    },
+    [triggerDateTimePicker],
+  );
+
+  const toggleOpenTimePicker = useCallback(() => {
+    toggleDateTimePicker(openTimeInputRef.current);
+  }, [toggleDateTimePicker]);
+
+  const toggleCloseTimePicker = useCallback(() => {
+    toggleDateTimePicker(closeTimeInputRef.current);
+  }, [toggleDateTimePicker]);
 
   const handleSelectDate = useCallback(
     (targetDate: Date) => {
@@ -446,7 +462,7 @@ function NewTradePageContent() {
                   <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Symbol</span>
                   <button
                     type="button"
-                    onClick={() => setIsSymbolListOpen(true)}
+                    onClick={() => setIsSymbolListOpen((prev) => !prev)}
                     className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] transition focus:outline-none focus:ring-2 focus:ring-accent/40"
                     aria-haspopup="listbox"
                     aria-expanded={isSymbolListOpen}
@@ -534,7 +550,7 @@ function NewTradePageContent() {
                     className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg"
                     onClick={(event) => {
                       event.preventDefault();
-                      openOpenTimePicker();
+                      toggleOpenTimePicker();
                     }}
                   >
                     Open Time
@@ -550,11 +566,13 @@ function NewTradePageContent() {
                       const clickedInsideInput =
                         event.target instanceof Node && input.contains(event.target);
 
-                      if (!clickedInsideInput) {
+                      const wasActive = document.activeElement === input;
+
+                      if (wasActive || !clickedInsideInput) {
                         event.preventDefault();
                       }
 
-                      openOpenTimePicker();
+                      toggleOpenTimePicker();
                     }}
                   >
                     <input
@@ -612,7 +630,7 @@ function NewTradePageContent() {
                     className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg"
                     onClick={(event) => {
                       event.preventDefault();
-                      openCloseTimePicker();
+                      toggleCloseTimePicker();
                     }}
                   >
                     Close Time
@@ -628,11 +646,13 @@ function NewTradePageContent() {
                       const clickedInsideInput =
                         event.target instanceof Node && input.contains(event.target);
 
-                      if (!clickedInsideInput) {
+                      const wasActive = document.activeElement === input;
+
+                      if (wasActive || !clickedInsideInput) {
                         event.preventDefault();
                       }
 
-                      openCloseTimePicker();
+                      toggleCloseTimePicker();
                     }}
                   >
                     <input
