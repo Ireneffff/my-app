@@ -82,7 +82,6 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                   className="max-h-[520px] w-full object-contain"
                 />
               </div>
-              <p className="mt-6 text-xs text-muted-foreground">Formato consigliato: 19:6 (senza ritaglio)</p>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground">
