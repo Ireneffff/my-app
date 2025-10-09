@@ -4,7 +4,13 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import LibraryGallery from "@/components/library/LibraryGallery";
 import Button from "@/components/ui/Button";
+import {
+  createEntryFromTrade,
+  curatedLibraryEntries,
+  type LibraryEntry,
+} from "@/lib/libraryGallery";
 import {
   deleteTrade,
   loadTrades,
@@ -79,6 +85,7 @@ export default function RegisteredTradePage() {
   const router = useRouter();
 
   const [state, setState] = useState<TradeState>({ status: "loading", trade: null });
+  const [libraryTrades, setLibraryTrades] = useState<StoredTrade[]>([]);
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
 
   const rawTradeId = params.tradeId;
@@ -95,6 +102,7 @@ export default function RegisteredTradePage() {
       const match = trades.find((storedTrade) => storedTrade.id === tradeId) ?? null;
 
       setState({ status: match ? "ready" : "missing", trade: match });
+      setLibraryTrades(trades.filter((storedTrade) => Boolean(storedTrade.imageData)));
     }
 
     refreshTrade();
@@ -138,6 +146,50 @@ export default function RegisteredTradePage() {
       weekday: "long",
     });
   }, [selectedDate]);
+
+  const highlightLibraryEntry = useMemo<LibraryEntry | null>(() => {
+    if (!state.trade) {
+      return null;
+    }
+
+    const entry = createEntryFromTrade(state.trade);
+    if (!entry) {
+      return null;
+    }
+
+    return {
+      ...entry,
+      id: "current-trade",
+      accent: state.trade.position === "SHORT" ? "Short trade" : "Long trade",
+      title: `${state.trade.symbolCode} review`,
+      imageAlt: `${state.trade.symbolCode} ${state.trade.position.toLowerCase()} trade snapshot`,
+    };
+  }, [state.trade]);
+
+  const libraryEntries = useMemo<LibraryEntry[]>(() => {
+    const entries: LibraryEntry[] = [];
+
+    if (highlightLibraryEntry) {
+      entries.push(highlightLibraryEntry);
+    }
+
+    const storedEntries = libraryTrades
+      .map((trade) => createEntryFromTrade(trade))
+      .filter((entry): entry is LibraryEntry => entry !== null)
+      .filter((entry) => !(state.trade && entry.id === `trade-${state.trade.id}`));
+
+    entries.push(...storedEntries);
+
+    const curatedEntriesToAdd = curatedLibraryEntries.filter(
+      (curatedEntry) => !entries.some((entry) => entry.id === curatedEntry.id),
+    );
+
+    if (!entries.length) {
+      return curatedEntriesToAdd;
+    }
+
+    return [...entries, ...curatedEntriesToAdd];
+  }, [highlightLibraryEntry, libraryTrades, state.trade]);
 
   if (state.status === "loading") {
     return (
@@ -490,8 +542,8 @@ export default function RegisteredTradePage() {
           </div>
             </>
           ) : (
-            <div className="w-full surface-panel px-5 py-6 text-center text-sm text-muted-fg md:px-6 md:py-8">
-              Library gallery will be available soon.
+            <div className="w-full surface-panel px-3 py-4 md:px-4 md:py-6">
+              <LibraryGallery entries={libraryEntries} />
             </div>
           )}
         </div>
