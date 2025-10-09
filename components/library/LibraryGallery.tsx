@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useMemo, useState } from "react";
 import type { LibraryEntry } from "@/lib/libraryGallery";
 
@@ -18,76 +17,35 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
   );
 
   if (!preparedEntries.length) {
-    return (
-      <div className="w-full rounded-3xl border border-dashed border-border/60 bg-surface/40 px-6 py-16 text-center text-sm text-muted-fg">
-        Upload or register trades with snapshots to populate your personal inspiration library.
-      </div>
-    );
+    return <div className="w-full rounded-3xl border border-dashed border-border/60 bg-surface/40 px-6 py-16" />;
   }
 
   return (
     <div className="flex w-full flex-col gap-8">
       <div className="relative overflow-hidden rounded-[32px] border border-border/60 bg-gradient-to-br from-surface via-bg to-subtle p-6 shadow-[0_30px_60px_rgba(15,23,42,0.16)] sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.32em] text-muted-fg">
-            <span className="rounded-full border border-border/60 bg-bg/60 px-4 py-1.5 text-[11px] text-muted-fg">
-              Library Deck
-            </span>
-            <span className="hidden text-muted-fg/70 sm:inline">Curated visual notes</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-fg">
-            <span className="inline-flex items-center gap-1 rounded-full bg-bg/70 px-3 py-1 font-medium uppercase tracking-[0.24em]">
-              {preparedEntries.length} entries
-            </span>
-            <span className="hidden sm:inline">Tap a card to switch highlight</span>
+          <div className="h-9 w-32 rounded-full border border-border/60 bg-bg/60" />
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-8 w-28 items-center rounded-full bg-bg/70" />
+            <span className="hidden h-6 w-40 rounded-full bg-bg/60 sm:inline" />
           </div>
         </div>
 
         {activeEntry ? (
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div className="relative min-h-[280px] overflow-hidden rounded-[28px] bg-black/20">
-              <Image
-                key={activeEntry.id}
-                src={activeEntry.imageSrc}
-                alt={activeEntry.imageAlt}
-                fill
-                sizes="(min-width: 1024px) 600px, (min-width: 640px) 80vw, 90vw"
-                className="h-full w-full object-cover transition duration-500"
-                priority
-                unoptimized={activeEntry.imageSrc.startsWith("data:")}
-              />
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-2 bg-gradient-to-t from-black/65 via-black/20 to-transparent px-6 pb-8 pt-16 text-white">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.32em] text-white/70">
-                  {activeEntry.accent}
-                </span>
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                  <div>
-                    <h3 className="text-2xl font-semibold tracking-tight sm:text-3xl">{activeEntry.title}</h3>
-                    <p className="text-sm text-white/70 sm:text-base">{activeEntry.subtitle}</p>
-                  </div>
-                  <div className="rounded-2xl bg-white/12 px-4 py-2 text-right text-xs uppercase tracking-[0.2em]">
-                    <span className="block text-[10px] text-white/60">{activeEntry.metricLabel}</span>
-                    <span className="text-base font-semibold text-white">{activeEntry.metricValue}</span>
-                  </div>
-                </div>
-              </div>
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
             </div>
 
             <div className="flex flex-col justify-between gap-5 rounded-[28px] border border-border/60 bg-surface/90 p-6 text-left shadow-[0_18px_38px_rgba(15,23,42,0.12)]">
-              <div className="space-y-2">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-fg">
-                  {activeEntry.accent}
-                </span>
-                <h3 className="text-2xl font-semibold tracking-tight text-fg sm:text-3xl">{activeEntry.title}</h3>
-                <p className="text-sm text-muted-fg/80 sm:text-base">{activeEntry.description}</p>
+              <div className="space-y-3">
+                <div className="h-4 w-20 rounded-full bg-muted/40" />
+                <div className="h-8 w-36 rounded-full bg-muted/40" />
+                <div className="h-16 w-full rounded-2xl bg-muted/20" />
               </div>
-              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-fg/70">
-                <span className="inline-flex items-center gap-1 rounded-full border border-border/70 px-3 py-1 uppercase tracking-[0.24em]">
-                  {activeEntry.subtitle}
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full border border-border/70 px-3 py-1 uppercase tracking-[0.24em]">
-                  {activeEntry.metricLabel}: {activeEntry.metricValue}
-                </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex h-8 w-28 items-center rounded-full border border-border/70" />
+                <span className="inline-flex h-8 w-32 items-center rounded-full border border-border/70" />
               </div>
             </div>
           </div>
@@ -108,29 +66,19 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                   : "border-border/60 bg-surface/80 hover:-translate-y-1 hover:border-accent/60 hover:bg-surface/90"
               }`}
             >
-              <div className="relative aspect-[5/4] w-full overflow-hidden rounded-[22px]">
-                <Image
-                  src={entry.imageSrc}
-                  alt={entry.imageAlt}
-                  fill
-                  sizes="240px"
-                  className="object-cover transition duration-300 group-hover:scale-[1.03]"
-                  unoptimized={entry.imageSrc.startsWith("data:")}
-                />
-                <span className="absolute left-3 top-3 rounded-full bg-black/55 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-white">
-                  {entry.accent}
-                </span>
+              <div className="relative aspect-[5/4] w-full overflow-hidden rounded-[22px] bg-black/20">
+                <span className="absolute left-3 top-3 h-6 w-20 rounded-full bg-black/55" />
               </div>
-              <div className="flex flex-col gap-2">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.28em] text-muted-fg/70">{entry.subtitle}</p>
-                  <h4 className="text-lg font-semibold text-fg">{entry.title}</h4>
+              <div className="flex flex-col gap-3">
+                <div className="space-y-2">
+                  <div className="h-3 w-24 rounded-full bg-muted/40" />
+                  <div className="h-5 w-32 rounded-full bg-muted/40" />
                 </div>
-                <p className="text-sm text-muted-fg/80">{entry.description}</p>
+                <div className="h-12 w-full rounded-2xl bg-muted/20" />
               </div>
-              <div className="flex items-center justify-between text-xs font-medium text-muted-fg/70">
-                <span>{entry.metricLabel}</span>
-                <span className="text-accent font-semibold">{entry.metricValue}</span>
+              <div className="flex items-center justify-between">
+                <span className="h-3 w-16 rounded-full bg-muted/40" />
+                <span className="h-3 w-12 rounded-full bg-accent/50" />
               </div>
             </button>
           );
