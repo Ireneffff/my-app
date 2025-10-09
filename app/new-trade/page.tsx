@@ -15,8 +15,20 @@ import {
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
+import LibraryGallery from "@/components/library/LibraryGallery";
 import Button from "@/components/ui/Button";
-import { loadTrades, saveTrade, updateTrade, type StoredTrade } from "@/lib/tradesStorage";
+import {
+  createEntryFromTrade,
+  curatedLibraryEntries,
+  type LibraryEntry,
+} from "@/lib/libraryGallery";
+import {
+  loadTrades,
+  saveTrade,
+  updateTrade,
+  REGISTERED_TRADES_UPDATED_EVENT,
+  type StoredTrade,
+} from "@/lib/tradesStorage";
 
 type SymbolOption = {
   code: string;
@@ -154,6 +166,7 @@ function NewTradePageContent() {
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
   const [imageData, setImageData] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [libraryTrades, setLibraryTrades] = useState<StoredTrade[]>([]);
   const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
   const [riskReward, setRiskReward] = useState("");
   const [risk, setRisk] = useState("");
@@ -514,6 +527,25 @@ function NewTradePageContent() {
   }, [isCalendarOpen]);
 
   useEffect(() => {
+    function refreshLibrary() {
+      const tradesWithImages = loadTrades().filter((trade) => Boolean(trade.imageData));
+      setLibraryTrades(tradesWithImages);
+    }
+
+    refreshLibrary();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshLibrary);
+
+    return () => {
+      window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshLibrary);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isEditing || !editingTradeId) {
       return;
     }
@@ -568,6 +600,86 @@ function NewTradePageContent() {
       imageInputRef.current.value = "";
     }
   }, [editingTradeId, handleSelectDate, imageInputRef, isEditing, router, selectedDate]);
+
+  const libraryEntries = useMemo<LibraryEntry[]>(() => {
+    const entries: LibraryEntry[] = [];
+
+    if (imageData) {
+      const cleanedRiskReward = riskReward.trim();
+      const cleanedRisk = risk.trim();
+      const cleanedPips = pips.trim();
+
+      const formattedDate = selectedDate.toLocaleDateString(undefined, {
+        weekday: "short",
+        day: "2-digit",
+        month: "short",
+      });
+
+      const descriptionParts = [
+        cleanedRisk ? `Risk ${cleanedRisk}` : null,
+        cleanedRiskReward ? `${cleanedRiskReward} R:R` : null,
+        cleanedPips ? `${cleanedPips} pips` : null,
+      ].filter(Boolean) as string[];
+
+      entries.push({
+        id: "current-draft",
+        accent: position === "LONG" ? "Long idea" : "Short idea",
+        title: `${selectedSymbol.code} ${position === "LONG" ? "long" : "short"} setup`,
+        subtitle: `${selectedSymbol.code} · ${formattedDate}`,
+        description:
+          descriptionParts.length > 0
+            ? descriptionParts.join(" · ")
+            : "Current draft reference snapshot ready to be saved.",
+        metricLabel: cleanedPips
+          ? "Target"
+          : cleanedRiskReward
+            ? "Plan"
+            : "Bias",
+        metricValue:
+          cleanedPips ||
+          (cleanedRiskReward ? `${cleanedRiskReward} R:R` : position === "LONG" ? "Long" : "Short"),
+        imageSrc: imageData,
+        imageAlt: `${selectedSymbol.code} ${position.toLowerCase()} setup preview`,
+      });
+    }
+
+    const storedEntries = libraryTrades
+      .map((trade) => {
+        const entry = createEntryFromTrade(trade);
+        if (!entry) {
+          return null;
+        }
+
+        if (editingTradeId && entry.id === `trade-${editingTradeId}`) {
+          return null;
+        }
+
+        return entry;
+      })
+      .filter((entry): entry is LibraryEntry => entry !== null);
+
+    entries.push(...storedEntries);
+
+    const curatedEntriesToAdd = curatedLibraryEntries.filter(
+      (curatedEntry) => !entries.some((entry) => entry.id === curatedEntry.id),
+    );
+
+    if (!entries.length) {
+      return curatedEntriesToAdd;
+    }
+
+    return [...entries, ...curatedEntriesToAdd];
+  }, [
+    editingTradeId,
+    imageData,
+    libraryTrades,
+    pips,
+    position,
+    risk,
+    riskReward,
+    selectedDate,
+    selectedSymbol.code,
+  ]);
 
   const dayOfWeekLabel = useMemo(
     () =>
@@ -1191,8 +1303,8 @@ function NewTradePageContent() {
           </div>
             </>
           ) : (
-            <div className="w-full surface-panel px-5 py-6 text-center text-sm text-muted-fg md:px-6 md:py-8">
-              Library gallery will be available soon.
+            <div className="w-full surface-panel px-3 py-4 md:px-4 md:py-6">
+              <LibraryGallery entries={libraryEntries} />
             </div>
           )}
         </div>
