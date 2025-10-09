@@ -155,7 +155,7 @@ export default function RegisteredTradePage() {
           </p>
           <Link
             href="/"
-            className="rounded-full bg-accent px-6 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition hover:scale-105"
+            className="rounded-full bg-accent px-6 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition hover:scale-105 interactive-surface"
           >
             Back to dashboard
           </Link>
@@ -215,7 +215,7 @@ export default function RegisteredTradePage() {
       <div className="mx-auto mb-6 flex w-full max-w-3xl flex-wrap items-center gap-2 rounded-full bg-transparent px-3 py-2">
         <button
           type="button"
-          className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/80 text-lg font-semibold text-muted-fg shadow-[0_10px_24px_-16px_rgba(15,23,42,0.3)] transition hover:scale-105 hover:text-fg"
+          className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/80 text-lg font-semibold text-muted-fg shadow-[0_10px_24px_-16px_rgba(15,23,42,0.3)] transition hover:scale-105 hover:text-fg interactive-surface"
           onClick={() => {
             router.back();
           }}
@@ -228,14 +228,14 @@ export default function RegisteredTradePage() {
           <button
             type="button"
             onClick={handleEditTrade}
-            className="rounded-full bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white shadow-[0_14px_32px_-18px_rgba(15,23,42,0.3)] transition hover:scale-105"
+            className="rounded-full bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white shadow-[0_14px_32px_-18px_rgba(15,23,42,0.3)] transition hover:scale-105 interactive-surface"
           >
             Modifica
           </button>
           <button
             type="button"
             onClick={handleDeleteTrade}
-            className="rounded-full bg-red-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-red-600 shadow-[0_14px_32px_-18px_rgba(220,38,38,0.25)] transition hover:scale-105"
+            className="rounded-full bg-red-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-red-600 shadow-[0_14px_32px_-18px_rgba(220,38,38,0.25)] transition hover:scale-105 interactive-surface"
           >
             Elimina
           </button>
