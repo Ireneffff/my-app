@@ -11,6 +11,8 @@ import {
   useState,
   useTransition,
   type ChangeEvent,
+  type PointerEvent as ReactPointerEvent,
+  type WheelEvent as ReactWheelEvent,
 } from "react";
 import Button from "@/components/ui/Button";
 import { loadTrades, saveTrade, updateTrade, type StoredTrade } from "@/lib/tradesStorage";
@@ -71,6 +73,34 @@ function getDateTimeDisplayParts(date: Date | null) {
   return { dateLabel, timeLabel };
 }
 
+function getStartOfWeek(date: Date) {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  const day = start.getDay();
+  const diffFromMonday = (day + 6) % 7;
+  start.setDate(start.getDate() - diffFromMonday);
+  return start;
+}
+
+function getStartOfMonth(date: Date) {
+  const start = new Date(date);
+  start.setDate(1);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
+
+function getWeekDays(weekStart: Date) {
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + index);
+    return date;
+  });
+}
+
+function isSameDay(a: Date, b: Date) {
+  return a.toDateString() === b.toDateString();
+}
+
 function NewTradePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -82,25 +112,22 @@ function NewTradePageContent() {
     return now;
   }, []);
 
-  const currentWeekDays = useMemo(() => {
-    const baseDate = new Date(today);
-    const baseDay = baseDate.getDay();
-    const diffFromMonday = (baseDay + 6) % 7;
-    const monday = new Date(baseDate);
-    monday.setDate(baseDate.getDate() - diffFromMonday);
-
-    return Array.from({ length: 5 }, (_, index) => {
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + index);
-      return date;
-    });
+  const initialSelectedDate = useMemo(() => {
+    const weekStart = getStartOfWeek(today);
+    const dayIndex = (today.getDay() + 6) % 7;
+    const initialDate = new Date(weekStart);
+    initialDate.setDate(weekStart.getDate() + dayIndex);
+    return initialDate;
   }, [today]);
 
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const dayIndex = Math.min((today.getDay() + 6) % 7, 4);
-    const initialDate = currentWeekDays.at(dayIndex) ?? currentWeekDays[0] ?? today;
-    return new Date(initialDate);
-  });
+  const [selectedDate, setSelectedDate] = useState(initialSelectedDate);
+  const [visibleWeekStart, setVisibleWeekStart] = useState(() =>
+    getStartOfWeek(initialSelectedDate),
+  );
+  const visibleWeekDays = useMemo(
+    () => getWeekDays(visibleWeekStart),
+    [visibleWeekStart],
+  );
 
   const [openTime, setOpenTime] = useState<Date | null>(() => {
     const initial = new Date(selectedDate);
@@ -116,6 +143,7 @@ function NewTradePageContent() {
   const openTimeInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimeInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const weekSwipeOriginRef = useRef<{ x: number; time: number } | null>(null);
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
@@ -126,7 +154,39 @@ function NewTradePageContent() {
   const [risk, setRisk] = useState("");
   const [pips, setPips] = useState("");
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() =>
+    getStartOfMonth(initialSelectedDate),
+  );
   const [, startNavigation] = useTransition();
+  const calendarDays = useMemo(() => {
+    const firstOfMonth = getStartOfMonth(calendarMonth);
+    const gridStart = getStartOfWeek(firstOfMonth);
+
+    return Array.from({ length: 42 }, (_, index) => {
+      const date = new Date(gridStart);
+      date.setDate(gridStart.getDate() + index);
+      return date;
+    });
+  }, [calendarMonth]);
+
+  const calendarMonthLabel = useMemo(
+    () =>
+      calendarMonth.toLocaleDateString(undefined, {
+        month: "long",
+        year: "numeric",
+      }),
+    [calendarMonth],
+  );
+
+  const weekdayHeadings = useMemo(() => {
+    const reference = getStartOfWeek(new Date());
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(reference);
+      date.setDate(reference.getDate() + index);
+      return date.toLocaleDateString(undefined, { weekday: "short" });
+    });
+  }, []);
 
   const triggerDateTimePicker = useCallback((input: HTMLInputElement | null) => {
     if (!input) {
@@ -170,23 +230,170 @@ function NewTradePageContent() {
     toggleDateTimePicker(closeTimeInputRef.current);
   }, [toggleDateTimePicker]);
 
-  const handleSelectDate = useCallback(
-    (targetDate: Date) => {
-      const normalized = new Date(targetDate);
-      normalized.setHours(0, 0, 0, 0);
+  const handleSelectDate = useCallback((targetDate: Date) => {
+    const normalized = new Date(targetDate);
+    normalized.setHours(0, 0, 0, 0);
+    const normalizedWeekStart = getStartOfWeek(normalized);
 
-      const shouldUpdateDate =
-        selectedDate.toDateString() !== normalized.toDateString();
+    setSelectedDate((prev) => {
+      if (isSameDay(prev, normalized)) {
+        return prev;
+      }
+      return normalized;
+    });
 
-      if (shouldUpdateDate) {
-        setSelectedDate(normalized);
+    setVisibleWeekStart((prev) => {
+      if (isSameDay(prev, normalizedWeekStart)) {
+        return prev;
+      }
+      return normalizedWeekStart;
+    });
+
+    setOpenTime((prev) => alignTimeWithDate(prev, normalized, 9));
+    setCloseTime((prev) => alignTimeWithDate(prev, normalized, 17));
+  }, []);
+
+  const shiftWeek = useCallback(
+    (delta: number) => {
+      if (!delta) {
+        return;
       }
 
-      setOpenTime((prev) => alignTimeWithDate(prev, normalized, 9));
-      setCloseTime((prev) => alignTimeWithDate(prev, normalized, 17));
+      const nextDate = new Date(selectedDate);
+      nextDate.setDate(selectedDate.getDate() + delta * 7);
+      handleSelectDate(nextDate);
     },
-    [selectedDate],
+    [handleSelectDate, selectedDate],
   );
+
+  const handleWeekWheel = useCallback(
+    (event: ReactWheelEvent<HTMLDivElement>) => {
+      const primaryDelta =
+        Math.abs(event.deltaX) > Math.abs(event.deltaY)
+          ? event.deltaX
+          : event.shiftKey
+            ? event.deltaY
+            : 0;
+
+      if (Math.abs(primaryDelta) < 10) {
+        return;
+      }
+
+      shiftWeek(primaryDelta > 0 ? 1 : -1);
+    },
+    [shiftWeek],
+  );
+
+  const handleWeekPointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.pointerType !== "mouse") {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }
+
+      const timestamp =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+
+      weekSwipeOriginRef.current = {
+        x: event.clientX,
+        time: timestamp,
+      };
+    },
+    [],
+  );
+
+  const handleWeekPointerUp = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+
+      const origin = weekSwipeOriginRef.current;
+
+      if (!origin) {
+        return;
+      }
+
+      const timestamp =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+
+      const deltaX = event.clientX - origin.x;
+      const duration = timestamp - origin.time;
+
+      if (Math.abs(deltaX) > 40 && duration < 600) {
+        shiftWeek(deltaX < 0 ? 1 : -1);
+      }
+
+      weekSwipeOriginRef.current = null;
+    },
+    [shiftWeek],
+  );
+
+  const handleWeekPointerCancel = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+
+      weekSwipeOriginRef.current = null;
+    },
+    [],
+  );
+
+  const openCalendar = useCallback(() => {
+    setCalendarMonth(getStartOfMonth(selectedDate));
+    setIsCalendarOpen(true);
+  }, [selectedDate]);
+
+  const closeCalendar = useCallback(() => {
+    setIsCalendarOpen(false);
+  }, []);
+
+  const goToPreviousMonth = useCallback(() => {
+    setCalendarMonth((prev) => {
+      const next = new Date(prev);
+      next.setMonth(prev.getMonth() - 1);
+      return getStartOfMonth(next);
+    });
+  }, []);
+
+  const goToNextMonth = useCallback(() => {
+    setCalendarMonth((prev) => {
+      const next = new Date(prev);
+      next.setMonth(prev.getMonth() + 1);
+      return getStartOfMonth(next);
+    });
+  }, []);
+
+  const handleCalendarDayClick = useCallback(
+    (date: Date) => {
+      handleSelectDate(date);
+      setIsCalendarOpen(false);
+    },
+    [handleSelectDate],
+  );
+
+  const handleCalendarToday = useCallback(() => {
+    handleSelectDate(today);
+    setCalendarMonth(getStartOfMonth(today));
+    setIsCalendarOpen(false);
+  }, [handleSelectDate, today]);
+
+  useEffect(() => {
+    if (!isCalendarOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsCalendarOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isCalendarOpen]);
 
   useEffect(() => {
     if (!isEditing || !editingTradeId) {
@@ -403,45 +610,72 @@ function NewTradePageContent() {
           {activeTab === "main" ? (
             <>
           <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6">
-            <div className="mx-auto flex w-full max-w-xl items-center gap-2 overflow-x-auto rounded-full border border-border bg-surface px-1 py-1">
-              {currentWeekDays.map((date) => {
-                const isSelected = date.toDateString() === selectedDate.toDateString();
+            <div
+              className="mx-auto flex w-full max-w-xl items-center gap-2 overflow-hidden rounded-full border border-border bg-surface px-1 py-1"
+              onWheel={handleWeekWheel}
+              onPointerDown={handleWeekPointerDown}
+              onPointerUp={handleWeekPointerUp}
+              onPointerCancel={handleWeekPointerCancel}
+              onPointerLeave={handleWeekPointerCancel}
+            >
+              {visibleWeekDays.map((date) => {
+                const isSelected = isSameDay(date, selectedDate);
+                const isToday = isSameDay(date, today);
                 const dayNumber = date.getDate();
                 const monthLabel = date
                   .toLocaleDateString(undefined, {
                     month: "short",
                   })
                   .toUpperCase();
+                const accessibleLabel = date.toLocaleDateString(undefined, {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                });
 
                 return (
                   <button
                     key={date.toISOString()}
                     type="button"
                     onClick={() => handleSelectDate(new Date(date))}
-                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition md:min-w-[88px] md:text-sm ${
-                      isSelected ? "bg-accent text-white" : "text-muted-fg hover:text-fg"
+                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition md:min-w-[88px] md:text-sm ${
+                      isSelected
+                        ? "border-transparent bg-accent text-white"
+                        : isToday
+                          ? "border-accent/60 text-accent"
+                          : "border-transparent text-muted-fg hover:text-fg"
                     }`}
+                    aria-pressed={isSelected}
+                    aria-current={isSelected ? "date" : undefined}
+                    aria-label={`Select ${accessibleLabel}`}
+                    title={accessibleLabel}
                   >
                     <span className={`text-xl md:text-2xl ${isSelected ? "font-semibold" : "font-medium"}`}>
                       {dayNumber}
                     </span>
-                    <span className="text-[10px] tracking-[0.3em] md:text-xs">
+                    <span
+                      className={`text-[10px] tracking-[0.3em] md:text-xs ${
+                        isSelected ? "opacity-100" : "opacity-80"
+                      }`}
+                    >
                       {monthLabel}
                     </span>
+                    {isToday ? <span className="sr-only">Today</span> : null}
                   </button>
                 );
               })}
 
               <button
                 type="button"
-                className="ml-auto flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg"
-                onClick={() => {
-                  const dayIndex = Math.min((today.getDay() + 6) % 7, 4);
-                  const targetDate = currentWeekDays.at(dayIndex) ?? currentWeekDays[0] ?? today;
-                  handleSelectDate(new Date(targetDate));
-                }}
-                aria-label="Select today"
-                title="Select today"
+                className={`ml-auto flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg ${
+                  isCalendarOpen ? "bg-subtle text-fg" : ""
+                }`}
+                onClick={openCalendar}
+                aria-haspopup="dialog"
+                aria-expanded={isCalendarOpen}
+                aria-label="Open calendar"
+                title="Open calendar"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -887,6 +1121,133 @@ function NewTradePageContent() {
           )}
         </div>
       </div>
+      {isCalendarOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8 backdrop-blur-sm"
+          role="presentation"
+          onClick={closeCalendar}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl border border-border bg-bg p-4 shadow-xl sm:p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Select a date"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="mb-4 grid grid-cols-[auto_1fr_auto] items-center gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg"
+                  onClick={goToPreviousMonth}
+                  aria-label="Previous month"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-5 w-5"
+                  >
+                    <path d="m15 6-6 6 6 6" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="flex flex-col items-center gap-1 text-center">
+                <span className="text-lg font-semibold capitalize text-fg sm:text-xl">
+                  {calendarMonthLabel}
+                </span>
+                <button
+                  type="button"
+                  className="text-[11px] font-medium uppercase tracking-[0.28em] text-muted-fg transition hover:text-fg"
+                  onClick={handleCalendarToday}
+                >
+                  Today
+                </button>
+              </div>
+
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg"
+                  onClick={goToNextMonth}
+                  aria-label="Next month"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-5 w-5"
+                  >
+                    <path d="m9 6 6 6-6 6" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg"
+                  onClick={closeCalendar}
+                  aria-label="Close calendar"
+                >
+                  ×
+                </button>
+              </div>
+            </header>
+
+            <div className="grid grid-cols-7 gap-2 text-center text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+              {weekdayHeadings.map((heading, index) => (
+                <span key={`${heading}-${index}`}>{heading}</span>
+              ))}
+            </div>
+
+            <div className="mt-2 grid grid-cols-7 gap-2">
+              {calendarDays.map((date) => {
+                const isCurrentMonth = date.getMonth() === calendarMonth.getMonth();
+                const isSelected = isSameDay(date, selectedDate);
+                const isToday = isSameDay(date, today);
+                const dayNumber = date.getDate();
+                const accessibleLabel = date.toLocaleDateString(undefined, {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                });
+
+                return (
+                  <button
+                    key={`${date.toISOString()}-calendar`}
+                    type="button"
+                    onClick={() => handleCalendarDayClick(new Date(date))}
+                    className={`flex h-10 items-center justify-center rounded-full border text-sm font-medium transition sm:h-11 ${
+                      isSelected
+                        ? "border-transparent bg-accent text-white"
+                        : isToday
+                          ? "border-accent/60 text-accent"
+                          : isCurrentMonth
+                            ? "border-transparent text-fg hover:bg-subtle"
+                            : "border-transparent text-muted-fg/50 hover:text-muted-fg"
+                    }`}
+                    aria-pressed={isSelected}
+                    aria-current={isSelected ? "date" : undefined}
+                    aria-label={`Select ${accessibleLabel}`}
+                    title={accessibleLabel}
+                  >
+                    <span className="text-sm font-medium">{dayNumber}</span>
+                    {isToday ? <span className="sr-only">Today</span> : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
