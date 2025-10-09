@@ -377,29 +377,47 @@ function NewTradePageContent() {
       year: "numeric",
     });
 
-      return (
-        <button
-          key={date.toISOString()}
-          type="button"
-          onClick={() => handleSelectDate(new Date(date))}
-        className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition md:min-w-[88px] md:text-sm ${
-          isSelected
-            ? "border-transparent bg-accent text-white"
-            : isToday
-              ? "border-accent/60 text-accent"
-              : "border-transparent text-muted-fg hover:text-fg"
-        }`}
+    const buttonClasses = [
+      "flex min-w-[62px] flex-col items-center gap-1 rounded-full border border-transparent px-2 py-2 text-xs font-medium transition md:min-w-[88px] md:text-sm",
+    ];
+
+    if (isSelected) {
+      buttonClasses.push("text-fg");
+    } else if (isToday) {
+      buttonClasses.push("text-accent hover:text-accent");
+    } else {
+      buttonClasses.push("text-muted-fg hover:text-fg");
+    }
+
+    const dayNumberClasses = [
+      "flex h-10 w-10 items-center justify-center rounded-full text-lg font-medium transition-colors md:h-12 md:w-12 md:text-xl",
+    ];
+
+    if (isSelected) {
+      dayNumberClasses.push("bg-muted text-fg font-semibold");
+    } else if (isToday) {
+      dayNumberClasses.push("border border-accent/60 text-accent");
+    } else {
+      dayNumberClasses.push("border border-transparent text-fg");
+    }
+
+    return (
+      <button
+        key={date.toISOString()}
+        type="button"
+        onClick={() => handleSelectDate(new Date(date))}
+        className={buttonClasses.join(" ")}
         aria-pressed={isSelected}
         aria-current={isSelected ? "date" : undefined}
-          aria-label={`Select ${accessibleLabel}`}
-          title={accessibleLabel}
-        >
-        <span className={`text-xl md:text-2xl ${isSelected ? "font-semibold" : "font-medium"}`}>
+        aria-label={`Select ${accessibleLabel}`}
+        title={accessibleLabel}
+      >
+        <span className={dayNumberClasses.join(" ")}>
           {dayNumber}
         </span>
         <span
           className={`text-[10px] tracking-[0.3em] md:text-xs ${
-            isSelected ? "opacity-100" : "opacity-80"
+            isSelected ? "text-fg" : "text-muted-fg"
           }`}
         >
           {monthLabel}
@@ -689,7 +707,7 @@ function NewTradePageContent() {
                 onPointerCancel={handleWeekPointerCancel}
                 onPointerLeave={handleWeekPointerCancel}
               >
-                <div className="flex w-full items-center gap-2">
+                <div className="flex w-full items-center justify-center gap-2">
                   {visibleWeekDays.map((date) => renderWeekDayPill(date))}
                 </div>
               </div>
