@@ -153,8 +153,15 @@ function NewTradePageContent() {
   const openTimeInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimeInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
-  const weekSwipeOriginRef = useRef<{ x: number; time: number } | null>(null);
+  const weekSwipeOriginRef = useRef<
+    { x: number; time: number; width: number } | null
+  >(null);
   const weekWheelCooldownRef = useRef<number>(0);
+  const [weekSlideOffset, setWeekSlideOffset] = useState(0);
+  const [isWeekDragging, setIsWeekDragging] = useState(false);
+  const [weekDragDirection, setWeekDragDirection] = useState<
+    "forward" | "backward" | null
+  >(null);
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
@@ -270,7 +277,7 @@ function NewTradePageContent() {
   );
 
   const shiftWeek = useCallback(
-    (delta: number) => {
+    (delta: number, options?: { initialOffset?: number }) => {
       if (!delta || isWeekSliding || weekSlideDirection) {
         return;
       }
@@ -279,6 +286,11 @@ function NewTradePageContent() {
       nextDate.setDate(selectedDate.getDate() + delta * 7);
       const nextWeekStart = getStartOfWeek(nextDate);
 
+      setWeekSlideOffset(
+        typeof options?.initialOffset === "number"
+          ? Math.max(-1, Math.min(1, options.initialOffset))
+          : 0,
+      );
       setIncomingWeekStart(nextWeekStart);
       setWeekSlideDirection(delta > 0 ? "forward" : "backward");
       setIsWeekSliding(false);
@@ -330,9 +342,53 @@ function NewTradePageContent() {
       weekSwipeOriginRef.current = {
         x: event.clientX,
         time: timestamp,
+        width: event.currentTarget.getBoundingClientRect().width || 1,
       };
+      setIsWeekDragging(true);
+      setWeekDragDirection(null);
+      setWeekSlideOffset(0);
     },
     [isWeekSliding, weekSlideDirection],
+  );
+
+  const handleWeekPointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      const origin = weekSwipeOriginRef.current;
+
+      if (!origin || isWeekSliding || weekSlideDirection) {
+        return;
+      }
+
+      const deltaX = event.clientX - origin.x;
+      const offsetRatio = deltaX / origin.width;
+
+      if (Math.abs(offsetRatio) < 0.005) {
+        setWeekSlideOffset(0);
+
+        if (weekDragDirection) {
+          setWeekDragDirection(null);
+          setIncomingWeekStart(null);
+        }
+
+        return;
+      }
+
+      const clampedRatio = Math.max(-1.5, Math.min(1.5, offsetRatio));
+      setWeekSlideOffset(clampedRatio);
+
+      const direction = clampedRatio < 0 ? "forward" : "backward";
+
+      if (weekDragDirection !== direction) {
+        const previewWeekStart = new Date(visibleWeekStart);
+        previewWeekStart.setDate(
+          visibleWeekStart.getDate() + (direction === "forward" ? 7 : -7),
+        );
+
+        setIncomingWeekStart(previewWeekStart);
+        setWeekDragDirection(direction);
+      }
+    },
+    [isWeekSliding, visibleWeekStart, weekDragDirection, weekSlideDirection],
   );
 
   const handleWeekPointerUp = useCallback(
@@ -353,8 +409,20 @@ function NewTradePageContent() {
       const deltaX = event.clientX - origin.x;
       const duration = timestamp - origin.time;
 
-      if (Math.abs(deltaX) > 40 && duration < 600) {
-        shiftWeek(deltaX < 0 ? 1 : -1);
+      const offsetRatio = deltaX / origin.width;
+      const clampedRatio = Math.max(-1, Math.min(1, offsetRatio));
+
+      setIsWeekDragging(false);
+
+      if (Math.abs(clampedRatio) > 0.2 && duration < 600) {
+        shiftWeek(clampedRatio < 0 ? 1 : -1, {
+          initialOffset: clampedRatio,
+        });
+        setWeekDragDirection(null);
+      } else {
+        setWeekSlideOffset(0);
+        setIncomingWeekStart(null);
+        setWeekDragDirection(null);
       }
 
       weekSwipeOriginRef.current = null;
@@ -368,9 +436,16 @@ function NewTradePageContent() {
         event.currentTarget.releasePointerCapture(event.pointerId);
       }
 
+      if (!isWeekSliding && !weekSlideDirection) {
+        setIsWeekDragging(false);
+        setWeekSlideOffset(0);
+        setIncomingWeekStart(null);
+        setWeekDragDirection(null);
+      }
+
       weekSwipeOriginRef.current = null;
     },
-    [],
+    [isWeekSliding, weekSlideDirection],
   );
 
   useEffect(() => {
@@ -385,6 +460,8 @@ function NewTradePageContent() {
 
     const frame = window.requestAnimationFrame(() => {
       setIsWeekSliding(true);
+      setIsWeekDragging(false);
+      setWeekSlideOffset(weekSlideDirection === "forward" ? -1 : 1);
     });
 
     return () => {
@@ -406,6 +483,7 @@ function NewTradePageContent() {
       setIncomingWeekStart(null);
       setWeekSlideDirection(null);
       setIsWeekSliding(false);
+      setWeekSlideOffset(0);
     },
     [incomingWeekStart, weekSlideDirection],
   );
@@ -735,35 +813,35 @@ function NewTradePageContent() {
                 className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1"
                 onWheel={handleWeekWheel}
                 onPointerDown={handleWeekPointerDown}
+                onPointerMove={handleWeekPointerMove}
                 onPointerUp={handleWeekPointerUp}
                 onPointerCancel={handleWeekPointerCancel}
                 onPointerLeave={handleWeekPointerCancel}
               >
                 <div
-                  className="flex w-full items-center gap-2 transition-transform duration-300 ease-out"
+                  className={`flex w-full items-center gap-2 transition-transform duration-300 ease-out ${
+                    isWeekDragging ? "transition-none" : ""
+                  }`}
                   onTransitionEnd={handleWeekTransitionEnd}
                   style={{
-                    transform:
-                      isWeekSliding && weekSlideDirection
-                        ? weekSlideDirection === "forward"
-                          ? "translateX(-100%)"
-                          : "translateX(100%)"
-                        : "translateX(0%)",
+                    transform: `translateX(${weekSlideOffset * 100}%)`,
                   }}
                 >
                   {visibleWeekDays.map((date) => renderWeekDayPill(date, "current"))}
                 </div>
 
-                {incomingWeekStart && weekSlideDirection ? (
+                {incomingWeekStart && (weekSlideDirection || weekDragDirection) ? (
                   <div
-                    className="pointer-events-none absolute inset-0 flex w-full items-center gap-2 transition-transform duration-300 ease-out"
+                    className={`pointer-events-none absolute inset-0 flex w-full items-center gap-2 transition-transform duration-300 ease-out ${
+                      isWeekDragging ? "transition-none" : ""
+                    }`}
                     style={{
-                      transform:
-                        isWeekSliding
-                          ? "translateX(0%)"
-                          : weekSlideDirection === "forward"
-                            ? "translateX(100%)"
-                            : "translateX(-100%)",
+                      transform: `translateX(${(weekSlideOffset +
+                        ((weekSlideDirection ?? weekDragDirection) === "forward"
+                          ? 1
+                          : (weekSlideDirection ?? weekDragDirection) === "backward"
+                            ? -1
+                            : 0)) * 100}%)`,
                     }}
                   >
                     {incomingWeekDays.map((date) => renderWeekDayPill(date, "incoming"))}
