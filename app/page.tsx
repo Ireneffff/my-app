@@ -89,8 +89,8 @@ export default function Home() {
   });
 
   return (
-    <section className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-6 py-12 sm:px-8">
-      <header className="flex flex-1 flex-col items-center justify-center gap-4 text-center min-h-[50vh]">
+    <section className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-6 pb-20 pt-28 sm:px-8 sm:pt-32">
+      <header className="flex min-h-[65vh] flex-1 flex-col items-center justify-center gap-4 text-center sm:min-h-[70vh]">
         <p className="text-sm text-muted-fg">Calm mind, strong trade</p>
         <h1 className="text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
           Trading Journal
@@ -102,7 +102,7 @@ export default function Home() {
         </Link>
       </header>
 
-      <div className="flex w-full flex-col items-center gap-12 pb-12 pt-16">
+      <div className="mt-24 flex w-full flex-col items-center gap-12 pb-16">
         <Card className="w-full max-w-3xl self-center p-8 sm:max-w-4xl">
           <div className="flex items-center justify-between">
             <button
@@ -110,7 +110,7 @@ export default function Home() {
               onClick={() =>
                 setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
               }
-              className="rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted-fg transition hover:bg-subtle hover:text-fg"
+              className="rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted-fg transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-subtle hover:text-fg hover:shadow-[0_12px_28px_rgba(15,23,42,0.12)]"
               aria-label="Previous month"
             >
               ‹
@@ -121,7 +121,7 @@ export default function Home() {
               onClick={() =>
                 setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
               }
-              className="rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted-fg transition hover:bg-subtle hover:text-fg"
+              className="rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted-fg transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-subtle hover:text-fg hover:shadow-[0_12px_28px_rgba(15,23,42,0.12)]"
               aria-label="Next month"
             >
               ›
