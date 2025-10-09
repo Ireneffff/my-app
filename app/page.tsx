@@ -89,22 +89,20 @@ export default function Home() {
   });
 
   return (
-    <section className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col gap-12 px-6 py-12 sm:px-8">
-      <header className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-2">
-          <p className="text-sm text-muted-fg">Calm mind, strong trade</p>
-          <h1 className="text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
-            Trading Journal
-          </h1>
-        </div>
-        <Link href="/new-trade" className="self-start sm:self-auto">
+    <section className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-6 py-12 sm:px-8">
+      <header className="flex flex-1 flex-col items-center justify-center gap-4 text-center min-h-[50vh]">
+        <p className="text-sm text-muted-fg">Calm mind, strong trade</p>
+        <h1 className="text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
+          Trading Journal
+        </h1>
+        <Link href="/new-trade" className="mt-2">
           <Button variant="primary" size="md">
             Add trade
           </Button>
         </Link>
       </header>
 
-      <div className="flex flex-1 flex-col items-center gap-12">
+      <div className="flex w-full flex-col items-center gap-12 pb-12 pt-16">
         <Card className="w-full max-w-3xl self-center p-8 sm:max-w-4xl">
           <div className="flex items-center justify-between">
             <button
@@ -170,16 +168,16 @@ export default function Home() {
             Registered Trades
           </h2>
 
-            {trades.length === 0 ? (
-              <p
-                className="mt-4 rounded-2xl border border-dashed bg-surface px-6 py-8 text-center text-sm text-muted-fg"
-                style={{ borderColor: "color-mix(in srgb, rgba(var(--border)) 100%, transparent)" }}
-              >
-                No trades saved yet. Use the Add new button to register your first trade.
-              </p>
-            ) : (
-              <ol className="mt-4 space-y-3">
-                {trades.map((trade, index) => {
+          {trades.length === 0 ? (
+            <p
+              className="mt-4 rounded-2xl border border-dashed bg-surface px-6 py-8 text-center text-sm text-muted-fg"
+              style={{ borderColor: "color-mix(in srgb, rgba(var(--border)) 100%, transparent)" }}
+            >
+              No trades saved yet. Use the Add new button to register your first trade.
+            </p>
+          ) : (
+            <ol className="mt-4 space-y-3">
+              {trades.map((trade, index) => {
                 const formattedDate = new Date(trade.date).toLocaleDateString(undefined, {
                   day: "2-digit",
                   month: "2-digit",
