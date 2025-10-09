@@ -120,7 +120,53 @@ function NewTradePageContent() {
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
   const [imageData, setImageData] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
+  const [riskReward, setRiskReward] = useState("");
+  const [risk, setRisk] = useState("");
+  const [pips, setPips] = useState("");
   const [, startNavigation] = useTransition();
+
+  const triggerDateTimePicker = useCallback((input: HTMLInputElement | null) => {
+    if (!input) {
+      return;
+    }
+
+    if (typeof input.showPicker === "function") {
+      try {
+        input.showPicker();
+        return;
+      } catch {
+        // Some browsers throw when invoking showPicker while the input is hidden.
+      }
+    }
+
+    input.focus({ preventScroll: true });
+    input.click();
+  }, []);
+
+  const toggleDateTimePicker = useCallback(
+    (input: HTMLInputElement | null) => {
+      if (!input) {
+        return;
+      }
+
+      if (document.activeElement === input) {
+        input.blur();
+        return;
+      }
+
+      triggerDateTimePicker(input);
+    },
+    [triggerDateTimePicker],
+  );
+
+  const toggleOpenTimePicker = useCallback(() => {
+    toggleDateTimePicker(openTimeInputRef.current);
+  }, [toggleDateTimePicker]);
+
+  const toggleCloseTimePicker = useCallback(() => {
+    toggleDateTimePicker(closeTimeInputRef.current);
+  }, [toggleDateTimePicker]);
 
   const handleSelectDate = useCallback(
     (targetDate: Date) => {
@@ -186,6 +232,11 @@ function NewTradePageContent() {
     setImageData(match.imageData ?? null);
     setImageError(null);
 
+    setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
+    setRiskReward(match.riskReward ?? "");
+    setRisk(match.risk ?? "");
+    setPips(match.pips ?? "");
+
     if (imageInputRef.current) {
       imageInputRef.current.value = "";
     }
@@ -202,26 +253,6 @@ function NewTradePageContent() {
   const handleSelectSymbol = (symbol: SymbolOption) => {
     setSelectedSymbol(symbol);
   };
-
-  const openDateTimePicker = useCallback((input: HTMLInputElement | null) => {
-    if (!input) {
-      return;
-    }
-
-    const pickerInput = input as HTMLInputElement & { showPicker?: () => void };
-
-    try {
-      if (typeof pickerInput.showPicker === "function") {
-        pickerInput.showPicker();
-        return;
-      }
-    } catch {
-      // Some browsers may throw if showPicker fails; fall back to focus + click
-    }
-
-    input.focus();
-    input.click();
-  }, []);
 
   const openTimeDisplay = getDateTimeDisplayParts(openTime);
   const closeTimeDisplay = getDateTimeDisplayParts(closeTime);
@@ -299,6 +330,10 @@ function NewTradePageContent() {
               openTime: openTime ? openTime.toISOString() : null,
               closeTime: closeTime ? closeTime.toISOString() : null,
               imageData: imageData ?? null,
+              position,
+              riskReward: riskReward.trim() || null,
+              risk: risk.trim() || null,
+              pips: pips.trim() || null,
             };
 
             if (isEditing && editingTradeId) {
@@ -425,14 +460,20 @@ function NewTradePageContent() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex flex-col gap-3">
                   <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Symbol</span>
-                  <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                  <button
+                    type="button"
+                    onClick={() => setIsSymbolListOpen((prev) => !prev)}
+                    className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] transition focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    aria-haspopup="listbox"
+                    aria-expanded={isSymbolListOpen}
+                  >
                     <span className="text-2xl" aria-hidden="true">
                       {selectedSymbol.flag}
                     </span>
                     <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
                       {selectedSymbol.code}
                     </span>
-                  </div>
+                  </button>
                 </div>
                 <button
                   type="button"
@@ -507,118 +548,234 @@ function NewTradePageContent() {
                   <label
                     htmlFor="open-time-input"
                     className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      toggleOpenTimePicker();
+                    }}
                   >
                     Open Time
                   </label>
-                  <button
-                    type="button"
-                    className="relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]"
-                    onClick={() => openDateTimePicker(openTimeInputRef.current)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
-                        {openTimeDisplay.dateLabel}
-                      </span>
-                      <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
-                        {openTimeDisplay.timeLabel}
-                      </span>
-                    </div>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="ml-auto h-6 w-6 text-muted-fg"
-                      aria-hidden="true"
-                    >
-                      <circle cx="12" cy="12" r="9" />
-                      <polyline points="12 7 12 12 15 15" />
-                    </svg>
-                  </button>
-                  <input
-                    id="open-time-input"
-                    ref={openTimeInputRef}
-                    type="datetime-local"
-                    className="sr-only"
-                    value={openTime ? formatDateTimeLocal(openTime) : ""}
-                    onChange={(event) => {
-                      const { value } = event.target;
-                      if (!value) {
-                        setOpenTime(null);
+                  <div
+                    className="relative"
+                    onPointerDown={(event) => {
+                      const input = openTimeInputRef.current;
+                      if (!input) {
                         return;
                       }
 
-                      const parsed = new Date(value);
-                      if (Number.isNaN(parsed.getTime())) {
-                        return;
+                      const clickedInsideInput =
+                        event.target instanceof Node && input.contains(event.target);
+
+                      const wasActive = document.activeElement === input;
+
+                      if (wasActive || !clickedInsideInput) {
+                        event.preventDefault();
                       }
 
-                      setOpenTime(parsed);
+                      toggleOpenTimePicker();
                     }}
-                    aria-label="Select open date and time"
-                  />
+                  >
+                    <input
+                      id="open-time-input"
+                      ref={openTimeInputRef}
+                      type="datetime-local"
+                      className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40"
+                      value={openTime ? formatDateTimeLocal(openTime) : ""}
+                      onChange={(event) => {
+                        const { value } = event.target;
+                        if (!value) {
+                          setOpenTime(null);
+                          return;
+                        }
+
+                        const parsed = new Date(value);
+                        if (Number.isNaN(parsed.getTime())) {
+                          return;
+                        }
+
+                        setOpenTime(parsed);
+                      }}
+                      aria-label="Select open date and time"
+                    />
+                    <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                      <div className="flex items-center gap-2">
+                        <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
+                          {openTimeDisplay.dateLabel}
+                        </span>
+                        <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
+                          {openTimeDisplay.timeLabel}
+                        </span>
+                      </div>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="ml-auto h-6 w-6 text-muted-fg"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <polyline points="12 7 12 12 15 15" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-3">
                   <label
                     htmlFor="close-time-input"
                     className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      toggleCloseTimePicker();
+                    }}
                   >
                     Close Time
                   </label>
-                  <button
-                    type="button"
-                    className="relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]"
-                    onClick={() => openDateTimePicker(closeTimeInputRef.current)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
-                        {closeTimeDisplay.dateLabel}
-                      </span>
-                      <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
-                        {closeTimeDisplay.timeLabel}
-                      </span>
-                    </div>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="ml-auto h-6 w-6 text-muted-fg"
-                      aria-hidden="true"
-                    >
-                      <circle cx="12" cy="12" r="9" />
-                      <polyline points="12 7 12 12 15 15" />
-                    </svg>
-                  </button>
-                  <input
-                    id="close-time-input"
-                    ref={closeTimeInputRef}
-                    type="datetime-local"
-                    className="sr-only"
-                    value={closeTime ? formatDateTimeLocal(closeTime) : ""}
-                    onChange={(event) => {
-                      const { value } = event.target;
-                      if (!value) {
-                        setCloseTime(null);
+                  <div
+                    className="relative"
+                    onPointerDown={(event) => {
+                      const input = closeTimeInputRef.current;
+                      if (!input) {
                         return;
                       }
 
-                      const parsed = new Date(value);
-                      if (Number.isNaN(parsed.getTime())) {
-                        return;
+                      const clickedInsideInput =
+                        event.target instanceof Node && input.contains(event.target);
+
+                      const wasActive = document.activeElement === input;
+
+                      if (wasActive || !clickedInsideInput) {
+                        event.preventDefault();
                       }
 
-                      setCloseTime(parsed);
+                      toggleCloseTimePicker();
                     }}
-                    aria-label="Select close date and time"
-                  />
+                  >
+                    <input
+                      id="close-time-input"
+                      ref={closeTimeInputRef}
+                      type="datetime-local"
+                      className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40"
+                      value={closeTime ? formatDateTimeLocal(closeTime) : ""}
+                      onChange={(event) => {
+                        const { value } = event.target;
+                        if (!value) {
+                          setCloseTime(null);
+                          return;
+                        }
+
+                        const parsed = new Date(value);
+                        if (Number.isNaN(parsed.getTime())) {
+                          return;
+                        }
+
+                        setCloseTime(parsed);
+                      }}
+                      aria-label="Select close date and time"
+                    />
+                    <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                      <div className="flex items-center gap-2">
+                        <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
+                          {closeTimeDisplay.dateLabel}
+                        </span>
+                        <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
+                          {closeTimeDisplay.timeLabel}
+                        </span>
+                      </div>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="ml-auto h-6 w-6 text-muted-fg"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <polyline points="12 7 12 12 15 15" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Conditions</span>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label
+                      htmlFor="position-select"
+                      className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                    >
+                      Position
+                    </label>
+                    <select
+                      id="position-select"
+                      value={position}
+                      onChange={(event) => setPosition(event.target.value === "SHORT" ? "SHORT" : "LONG")}
+                      className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-fg shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    >
+                      <option value="LONG">Long</option>
+                      <option value="SHORT">Short</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label
+                      htmlFor="risk-reward-input"
+                      className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                    >
+                      R/R
+                    </label>
+                    <input
+                      id="risk-reward-input"
+                      type="text"
+                      value={riskReward}
+                      onChange={(event) => setRiskReward(event.target.value)}
+                      placeholder="1:4"
+                      className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-fg shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] placeholder:text-muted-fg/60 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label
+                      htmlFor="risk-input"
+                      className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                    >
+                      Risk
+                    </label>
+                    <input
+                      id="risk-input"
+                      type="text"
+                      value={risk}
+                      onChange={(event) => setRisk(event.target.value)}
+                      placeholder="2%"
+                      className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-fg shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] placeholder:text-muted-fg/60 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label
+                      htmlFor="pips-input"
+                      className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-fg"
+                    >
+                      Nr. Pips
+                    </label>
+                    <input
+                      id="pips-input"
+                      type="text"
+                      value={pips}
+                      onChange={(event) => setPips(event.target.value)}
+                      placeholder="55"
+                      className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-fg shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] placeholder:text-muted-fg/60 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

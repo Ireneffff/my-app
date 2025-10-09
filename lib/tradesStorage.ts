@@ -6,6 +6,10 @@ export type StoredTrade = {
   openTime?: string | null;
   closeTime?: string | null;
   imageData?: string | null;
+  position: "LONG" | "SHORT";
+  riskReward?: string | null;
+  risk?: string | null;
+  pips?: string | null;
 };
 
 const STORAGE_KEY = "registeredTrades";
@@ -72,6 +76,38 @@ function parseTrades(raw: string | null): StoredTrade[] {
 
         if (storedItem.imageData === undefined) {
           storedItem.imageData = null;
+        }
+
+        if (storedItem.position !== "LONG" && storedItem.position !== "SHORT") {
+          storedItem.position = "LONG";
+        }
+
+        if (
+          storedItem.riskReward !== undefined &&
+          storedItem.riskReward !== null &&
+          typeof storedItem.riskReward !== "string"
+        ) {
+          storedItem.riskReward = null;
+        }
+
+        if (storedItem.riskReward === undefined) {
+          storedItem.riskReward = null;
+        }
+
+        if (storedItem.risk !== undefined && storedItem.risk !== null && typeof storedItem.risk !== "string") {
+          storedItem.risk = null;
+        }
+
+        if (storedItem.risk === undefined) {
+          storedItem.risk = null;
+        }
+
+        if (storedItem.pips !== undefined && storedItem.pips !== null && typeof storedItem.pips !== "string") {
+          storedItem.pips = null;
+        }
+
+        if (storedItem.pips === undefined) {
+          storedItem.pips = null;
         }
 
         return storedItem;
