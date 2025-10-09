@@ -444,14 +444,20 @@ function NewTradePageContent() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex flex-col gap-3">
                   <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-fg">Symbol</span>
-                  <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)]">
+                  <button
+                    type="button"
+                    onClick={() => setIsSymbolListOpen(true)}
+                    className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] transition focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    aria-haspopup="listbox"
+                    aria-expanded={isSymbolListOpen}
+                  >
                     <span className="text-2xl" aria-hidden="true">
                       {selectedSymbol.flag}
                     </span>
                     <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
                       {selectedSymbol.code}
                     </span>
-                  </div>
+                  </button>
                 </div>
                 <button
                   type="button"
