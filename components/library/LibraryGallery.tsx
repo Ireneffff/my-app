@@ -22,35 +22,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
 
   return (
     <div className="flex w-full flex-col gap-8">
-      <div className="relative overflow-hidden rounded-[32px] border border-border/60 bg-gradient-to-br from-surface via-bg to-subtle p-6 shadow-[0_30px_60px_rgba(15,23,42,0.16)] sm:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="h-9 w-32 rounded-full border border-border/60 bg-bg/60" />
-          <div className="flex items-center gap-2">
-            <span className="inline-flex h-8 w-28 items-center rounded-full bg-bg/70" />
-            <span className="hidden h-6 w-40 rounded-full bg-bg/60 sm:inline" />
-          </div>
-        </div>
-
-        {activeEntry ? (
-          <div className="mt-6 grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-            <div className="relative min-h-[280px] overflow-hidden rounded-[28px] bg-black/20">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
-            </div>
-
-            <div className="flex flex-col justify-between gap-5 rounded-[28px] border border-border/60 bg-surface/90 p-6 text-left shadow-[0_18px_38px_rgba(15,23,42,0.12)]">
-              <div className="space-y-3">
-                <div className="h-4 w-20 rounded-full bg-muted/40" />
-                <div className="h-8 w-36 rounded-full bg-muted/40" />
-                <div className="h-16 w-full rounded-2xl bg-muted/20" />
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex h-8 w-28 items-center rounded-full border border-border/70" />
-                <span className="inline-flex h-8 w-32 items-center rounded-full border border-border/70" />
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </div>
+      <div className="relative min-h-[360px] rounded-[32px] border border-border/60 bg-transparent p-6 sm:p-8" />
 
       <div className="flex w-full gap-4 overflow-x-auto pb-2">
         {preparedEntries.map((entry) => {
