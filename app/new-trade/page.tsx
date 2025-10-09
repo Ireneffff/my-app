@@ -32,6 +32,9 @@ const availableSymbols: SymbolOption[] = [
   { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
 ];
 
+const HORIZONTAL_SWIPE_ANIMATION_NAME =
+  "Horizontal swipe animation with smooth page transition between weeks";
+
 function formatDateTimeLocal(date: Date) {
   const pad = (value: number) => value.toString().padStart(2, "0");
   const year = date.getFullYear();
@@ -332,8 +335,10 @@ function NewTradePageContent() {
         return;
       }
 
-      if (event.pointerType !== "mouse") {
+      try {
         event.currentTarget.setPointerCapture(event.pointerId);
+      } catch {
+        // setPointerCapture may throw in unsupported environments; ignore.
       }
 
       const timestamp =
@@ -411,10 +416,17 @@ function NewTradePageContent() {
 
       const offsetRatio = deltaX / origin.width;
       const clampedRatio = Math.max(-1, Math.min(1, offsetRatio));
+      const offsetMagnitude = Math.abs(offsetRatio);
+      const velocity = offsetMagnitude / Math.max(duration, 1);
 
       setIsWeekDragging(false);
 
-      if (Math.abs(clampedRatio) > 0.2 && duration < 600) {
+      const shouldAdvance =
+        offsetMagnitude > 0.32 ||
+        velocity > 0.002 ||
+        (duration < 350 && offsetMagnitude > 0.12);
+
+      if (shouldAdvance) {
         shiftWeek(clampedRatio < 0 ? 1 : -1, {
           initialOffset: clampedRatio,
         });
@@ -811,6 +823,7 @@ function NewTradePageContent() {
             <div className="mx-auto flex w-full max-w-xl items-center gap-3">
               <div
                 className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1"
+                data-animation-name={HORIZONTAL_SWIPE_ANIMATION_NAME}
                 onWheel={handleWeekWheel}
                 onPointerDown={handleWeekPointerDown}
                 onPointerMove={handleWeekPointerMove}
@@ -822,6 +835,7 @@ function NewTradePageContent() {
                   className={`flex w-full items-center gap-2 transition-transform duration-300 ease-out ${
                     isWeekDragging ? "transition-none" : ""
                   }`}
+                  data-animation-name={HORIZONTAL_SWIPE_ANIMATION_NAME}
                   onTransitionEnd={handleWeekTransitionEnd}
                   style={{
                     transform: `translateX(${weekSlideOffset * 100}%)`,
@@ -835,6 +849,7 @@ function NewTradePageContent() {
                     className={`pointer-events-none absolute inset-0 flex w-full items-center gap-2 transition-transform duration-300 ease-out ${
                       isWeekDragging ? "transition-none" : ""
                     }`}
+                    data-animation-name={HORIZONTAL_SWIPE_ANIMATION_NAME}
                     style={{
                       transform: `translateX(${(weekSlideOffset +
                         ((weekSlideDirection ?? weekDragDirection) === "forward"
