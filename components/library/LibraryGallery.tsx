@@ -51,10 +51,18 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
 
   return (
     <div className="flex w-full flex-col gap-8">
-      <div className="relative min-h-[360px] rounded-[32px] border border-dashed border-border/60 bg-surface/30 p-2">
+      <div
+        className={`relative min-h-[360px] rounded-[32px] ${
+          uploadedImage ? "bg-transparent" : "border border-dashed border-border/60 bg-surface/30 p-2"
+        }`}
+      >
         <label
           htmlFor="library-hero-upload"
-          className="group flex h-full w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-[28px] bg-background/40 px-6 py-12 text-center transition hover:bg-background/60"
+          className={`group flex h-full w-full cursor-pointer flex-col items-center justify-center text-center transition ${
+            uploadedImage
+              ? "rounded-[32px] bg-transparent"
+              : "gap-3 rounded-[28px] bg-background/40 px-6 py-12 hover:bg-background/60"
+          }`}
         >
           <input
             id="library-hero-upload"
@@ -63,17 +71,18 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
             className="sr-only"
             onChange={handleImageChange}
           />
+          <span className="sr-only">Carica o sostituisci l&apos;immagine della libreria</span>
 
           {uploadedImage ? (
-            <div className="relative mx-auto w-full max-w-5xl">
-              <div className="mx-auto flex aspect-[19/6] w-full items-center justify-center overflow-hidden rounded-[28px] border border-border/40 bg-muted/20 p-2">
+            <div className="flex h-full w-full flex-col items-center justify-center">
+              <div className="flex h-full w-full max-w-5xl items-center justify-center px-6">
                 <img
                   src={uploadedImage}
                   alt="Anteprima immagine caricata"
-                  className="max-h-full max-w-full object-contain"
+                  className="max-h-[520px] w-full object-contain"
                 />
               </div>
-              <p className="mt-4 text-xs text-muted-foreground">Formato consigliato: 19:6 (senza ritaglio)</p>
+              <p className="mt-6 text-xs text-muted-foreground">Formato consigliato: 19:6 (senza ritaglio)</p>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground">
