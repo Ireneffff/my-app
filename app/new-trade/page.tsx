@@ -536,15 +536,18 @@ function NewTradePageContent() {
                   <div
                     className="relative"
                     onPointerDown={(event) => {
-                      if (
-                        openTimeInputRef.current &&
-                        event.target instanceof Node &&
-                        openTimeInputRef.current.contains(event.target)
-                      ) {
+                      const input = openTimeInputRef.current;
+                      if (!input) {
                         return;
                       }
 
-                      event.preventDefault();
+                      const clickedInsideInput =
+                        event.target instanceof Node && input.contains(event.target);
+
+                      if (!clickedInsideInput) {
+                        event.preventDefault();
+                      }
+
                       openOpenTimePicker();
                     }}
                   >
@@ -611,15 +614,18 @@ function NewTradePageContent() {
                   <div
                     className="relative"
                     onPointerDown={(event) => {
-                      if (
-                        closeTimeInputRef.current &&
-                        event.target instanceof Node &&
-                        closeTimeInputRef.current.contains(event.target)
-                      ) {
+                      const input = closeTimeInputRef.current;
+                      if (!input) {
                         return;
                       }
 
-                      event.preventDefault();
+                      const clickedInsideInput =
+                        event.target instanceof Node && input.contains(event.target);
+
+                      if (!clickedInsideInput) {
+                        event.preventDefault();
+                      }
+
                       openCloseTimePicker();
                     }}
                   >
