@@ -690,7 +690,7 @@ function NewTradePageContent() {
                 onPointerLeave={handleWeekPointerCancel}
               >
                 <div className="flex w-full items-center gap-2">
-                  {visibleWeekDays.map((date) => renderWeekDayPill(date, "current"))}
+                  {visibleWeekDays.map((date) => renderWeekDayPill(date))}
                 </div>
               </div>
 
