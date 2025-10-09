@@ -402,7 +402,7 @@ function NewTradePageContent() {
 
           {activeTab === "main" ? (
             <>
-          <div className="w-full surface-panel px-4 py-6 md:px-6 md:py-8">
+          <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6">
             <div className="mx-auto flex w-full max-w-xl items-center gap-2 overflow-x-auto rounded-full border border-border bg-surface px-1 py-1">
               {currentWeekDays.map((date) => {
                 const isSelected = date.toDateString() === selectedDate.toDateString();
@@ -418,7 +418,7 @@ function NewTradePageContent() {
                     key={date.toISOString()}
                     type="button"
                     onClick={() => handleSelectDate(new Date(date))}
-                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-medium transition md:min-w-[88px] md:text-sm ${
+                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition md:min-w-[88px] md:text-sm ${
                       isSelected ? "bg-accent text-white" : "text-muted-fg hover:text-fg"
                     }`}
                   >
@@ -434,7 +434,7 @@ function NewTradePageContent() {
 
               <button
                 type="button"
-                className="ml-auto flex h-12 w-12 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg"
+                className="ml-auto flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg"
                 onClick={() => {
                   const dayIndex = Math.min((today.getDay() + 6) % 7, 4);
                   const targetDate = currentWeekDays.at(dayIndex) ?? currentWeekDays[0] ?? today;
@@ -462,7 +462,7 @@ function NewTradePageContent() {
               </button>
             </div>
 
-            <p className="mt-5 text-sm text-muted-fg md:text-base">
+            <p className="mt-4 text-center text-sm text-muted-fg md:mt-5 md:text-base">
               Day of the week: <span className="font-semibold text-fg">{dayOfWeekLabel}</span>
             </p>
           </div>

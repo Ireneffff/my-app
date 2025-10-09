@@ -279,7 +279,7 @@ export default function RegisteredTradePage() {
 
           {activeTab === "main" ? (
             <>
-          <div className="w-full surface-panel px-4 py-6 md:px-6 md:py-8">
+          <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6">
             <div className="mx-auto flex w-full max-w-xl items-center gap-2 overflow-x-auto rounded-full border border-border bg-surface px-1 py-1">
               {currentWeekDays.map((date) => {
                 const isSelected = date.toDateString() === selectedDate.toDateString();
@@ -293,7 +293,7 @@ export default function RegisteredTradePage() {
                 return (
                   <div
                     key={date.toISOString()}
-                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-medium md:min-w-[88px] md:text-sm ${
+                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium md:min-w-[88px] md:text-sm ${
                       isSelected ? "text-accent" : "text-muted-fg"
                     }`}
                     style={
@@ -308,7 +308,7 @@ export default function RegisteredTradePage() {
                 );
               })}
 
-              <div className="ml-auto hidden h-12 w-12 flex-none items-center justify-center rounded-full border border-border text-muted-fg md:flex">
+              <div className="ml-auto hidden h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg md:flex">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -329,7 +329,7 @@ export default function RegisteredTradePage() {
               </div>
             </div>
 
-            <p className="mt-5 text-sm text-muted-fg md:text-base">
+            <p className="mt-4 text-center text-sm text-muted-fg md:mt-5 md:text-base">
               Day of the week: <span className="font-semibold text-fg">{dayOfWeekLabel}</span>
             </p>
           </div>
