@@ -11,6 +11,9 @@ import {
   useState,
   useTransition,
   type ChangeEvent,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+  type WheelEvent as ReactWheelEvent,
 } from "react";
 import Button from "@/components/ui/Button";
 import { loadTrades, saveTrade, updateTrade, type StoredTrade } from "@/lib/tradesStorage";
@@ -71,6 +74,34 @@ function getDateTimeDisplayParts(date: Date | null) {
   return { dateLabel, timeLabel };
 }
 
+function getStartOfWeek(date: Date) {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  const day = start.getDay();
+  const diffFromMonday = (day + 6) % 7;
+  start.setDate(start.getDate() - diffFromMonday);
+  return start;
+}
+
+function getStartOfMonth(date: Date) {
+  const start = new Date(date);
+  start.setDate(1);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
+
+function getWeekDays(weekStart: Date) {
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + index);
+    return date;
+  });
+}
+
+function isSameDay(a: Date, b: Date) {
+  return a.toDateString() === b.toDateString();
+}
+
 function NewTradePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -82,25 +113,22 @@ function NewTradePageContent() {
     return now;
   }, []);
 
-  const currentWeekDays = useMemo(() => {
-    const baseDate = new Date(today);
-    const baseDay = baseDate.getDay();
-    const diffFromMonday = (baseDay + 6) % 7;
-    const monday = new Date(baseDate);
-    monday.setDate(baseDate.getDate() - diffFromMonday);
-
-    return Array.from({ length: 5 }, (_, index) => {
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + index);
-      return date;
-    });
+  const initialSelectedDate = useMemo(() => {
+    const weekStart = getStartOfWeek(today);
+    const dayIndex = (today.getDay() + 6) % 7;
+    const initialDate = new Date(weekStart);
+    initialDate.setDate(weekStart.getDate() + dayIndex);
+    return initialDate;
   }, [today]);
 
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const dayIndex = Math.min((today.getDay() + 6) % 7, 4);
-    const initialDate = currentWeekDays.at(dayIndex) ?? currentWeekDays[0] ?? today;
-    return new Date(initialDate);
-  });
+  const [selectedDate, setSelectedDate] = useState(initialSelectedDate);
+  const [visibleWeekStart, setVisibleWeekStart] = useState(() =>
+    getStartOfWeek(initialSelectedDate),
+  );
+  const visibleWeekDays = useMemo(
+    () => getWeekDays(visibleWeekStart),
+    [visibleWeekStart],
+  );
 
   const [openTime, setOpenTime] = useState<Date | null>(() => {
     const initial = new Date(selectedDate);
@@ -116,6 +144,11 @@ function NewTradePageContent() {
   const openTimeInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimeInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const weekSwipeOriginRef = useRef<
+    { x: number; time: number } | null
+  >(null);
+  const weekPointerTargetDateRef = useRef<string | null>(null);
+  const weekWheelCooldownRef = useRef<number>(0);
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
@@ -125,7 +158,40 @@ function NewTradePageContent() {
   const [riskReward, setRiskReward] = useState("");
   const [risk, setRisk] = useState("");
   const [pips, setPips] = useState("");
+  const [activeTab, setActiveTab] = useState<"main" | "library">("main");
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() =>
+    getStartOfMonth(initialSelectedDate),
+  );
   const [, startNavigation] = useTransition();
+  const calendarDays = useMemo(() => {
+    const firstOfMonth = getStartOfMonth(calendarMonth);
+    const gridStart = getStartOfWeek(firstOfMonth);
+
+    return Array.from({ length: 42 }, (_, index) => {
+      const date = new Date(gridStart);
+      date.setDate(gridStart.getDate() + index);
+      return date;
+    });
+  }, [calendarMonth]);
+
+  const calendarMonthLabel = useMemo(
+    () =>
+      calendarMonth.toLocaleDateString(undefined, {
+        month: "long",
+        year: "numeric",
+      }),
+    [calendarMonth],
+  );
+
+  const weekdayHeadings = useMemo(() => {
+    const reference = getStartOfWeek(new Date());
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(reference);
+      date.setDate(reference.getDate() + index);
+      return date.toLocaleDateString(undefined, { weekday: "short" });
+    });
+  }, []);
 
   const triggerDateTimePicker = useCallback((input: HTMLInputElement | null) => {
     if (!input) {
@@ -170,22 +236,282 @@ function NewTradePageContent() {
   }, [toggleDateTimePicker]);
 
   const handleSelectDate = useCallback(
-    (targetDate: Date) => {
+    (targetDate: Date, options?: { skipWeekUpdate?: boolean }) => {
       const normalized = new Date(targetDate);
       normalized.setHours(0, 0, 0, 0);
+      const normalizedWeekStart = getStartOfWeek(normalized);
 
-      const shouldUpdateDate =
-        selectedDate.toDateString() !== normalized.toDateString();
+      setSelectedDate((prev) => {
+        if (isSameDay(prev, normalized)) {
+          return prev;
+        }
+        return normalized;
+      });
 
-      if (shouldUpdateDate) {
-        setSelectedDate(normalized);
+      if (!options?.skipWeekUpdate) {
+        setVisibleWeekStart((prev) => {
+          if (isSameDay(prev, normalizedWeekStart)) {
+            return prev;
+          }
+          return normalizedWeekStart;
+        });
       }
 
       setOpenTime((prev) => alignTimeWithDate(prev, normalized, 9));
       setCloseTime((prev) => alignTimeWithDate(prev, normalized, 17));
     },
-    [selectedDate],
+    [],
   );
+
+  const shiftWeek = useCallback(
+    (delta: number) => {
+      if (!delta) {
+        return;
+      }
+
+      const nextDate = new Date(selectedDate);
+      nextDate.setDate(selectedDate.getDate() + delta * 7);
+      handleSelectDate(nextDate);
+    },
+    [handleSelectDate, selectedDate],
+  );
+
+  const handleWeekWheel = useCallback(
+    (event: ReactWheelEvent<HTMLDivElement>) => {
+      const primaryDelta =
+        Math.abs(event.deltaX) > Math.abs(event.deltaY)
+          ? event.deltaX
+          : event.shiftKey
+            ? event.deltaY
+            : 0;
+
+      if (Math.abs(primaryDelta) < 10) {
+        return;
+      }
+
+      const timestamp =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+
+      if (timestamp - weekWheelCooldownRef.current < 300) {
+        return;
+      }
+
+      weekWheelCooldownRef.current = timestamp;
+
+      shiftWeek(primaryDelta > 0 ? 1 : -1);
+    },
+    [shiftWeek],
+  );
+
+  const handleWeekPointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      const targetElement = event.target as HTMLElement | null;
+      const buttonTarget = targetElement?.closest(
+        "button[data-date]",
+      ) as HTMLButtonElement | null;
+
+      weekPointerTargetDateRef.current = buttonTarget?.dataset.date ?? null;
+
+      if (event.pointerType !== "mouse") {
+        try {
+          event.currentTarget.setPointerCapture(event.pointerId);
+        } catch {
+          // setPointerCapture may throw in unsupported environments; ignore.
+        }
+      }
+
+      const timestamp =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+
+      weekSwipeOriginRef.current = {
+        x: event.clientX,
+        time: timestamp,
+      };
+    },
+    [],
+  );
+
+  const handleWeekPointerUp = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+
+      const origin = weekSwipeOriginRef.current;
+
+      if (!origin) {
+        return;
+      }
+
+      const timestamp =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+
+      const deltaX = event.clientX - origin.x;
+      const duration = timestamp - origin.time;
+
+      const deltaMagnitude = Math.abs(deltaX);
+      const shouldAdvance = deltaMagnitude > 30 || (duration < 200 && deltaMagnitude > 5);
+
+      if (shouldAdvance) {
+        shiftWeek(deltaX < 0 ? 1 : -1);
+      } else if (event.pointerType !== "mouse") {
+        const targetDateIso = weekPointerTargetDateRef.current;
+
+        if (targetDateIso) {
+          const parsed = new Date(targetDateIso);
+
+          if (!Number.isNaN(parsed.getTime())) {
+            handleSelectDate(parsed);
+          }
+        }
+      }
+
+      weekPointerTargetDateRef.current = null;
+      weekSwipeOriginRef.current = null;
+    },
+    [handleSelectDate, shiftWeek],
+  );
+
+  const handleWeekPointerCancel = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+
+      weekPointerTargetDateRef.current = null;
+      weekSwipeOriginRef.current = null;
+    },
+    [],
+  );
+
+  const renderWeekDayPill = (date: Date) => {
+    const isSelected = isSameDay(date, selectedDate);
+    const isToday = isSameDay(date, today);
+    const dayNumber = date.getDate();
+    const monthLabel = date
+      .toLocaleDateString(undefined, {
+        month: "short",
+      })
+      .toUpperCase();
+    const accessibleLabel = date.toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+
+    const buttonClasses = [
+      "flex min-w-[62px] flex-col items-center gap-1 rounded-full border border-transparent px-2 py-2 text-xs font-medium transition md:min-w-[88px] md:text-sm",
+    ];
+
+    if (isSelected) {
+      buttonClasses.push("text-fg");
+    } else if (isToday) {
+      buttonClasses.push("text-accent hover:text-accent");
+    } else {
+      buttonClasses.push("text-muted-fg hover:text-fg");
+    }
+
+    const dayNumberClasses = [
+      "flex h-10 w-10 items-center justify-center rounded-full text-lg font-medium transition-colors md:h-12 md:w-12 md:text-xl",
+    ];
+
+    const dayNumberStyle: CSSProperties | undefined = isSelected
+      ? {
+          backgroundColor: "color-mix(in srgb, rgb(var(--muted-fg)) 20%, rgb(var(--surface)))",
+        }
+      : undefined;
+
+    if (isSelected) {
+      dayNumberClasses.push("text-fg font-semibold");
+    } else if (isToday) {
+      dayNumberClasses.push("border border-accent/60 text-accent");
+    } else {
+      dayNumberClasses.push("border border-transparent text-fg");
+    }
+
+    return (
+      <button
+        key={date.toISOString()}
+        type="button"
+        onClick={() => handleSelectDate(new Date(date))}
+        className={buttonClasses.join(" ")}
+        aria-pressed={isSelected}
+        aria-current={isSelected ? "date" : undefined}
+        aria-label={`Select ${accessibleLabel}`}
+        title={accessibleLabel}
+        data-date={date.toISOString()}
+      >
+        <span className={dayNumberClasses.join(" ")} style={dayNumberStyle}>
+          {dayNumber}
+        </span>
+        <span
+          className={`text-[10px] tracking-[0.3em] md:text-xs ${
+            isSelected ? "text-fg" : "text-muted-fg"
+          }`}
+        >
+          {monthLabel}
+        </span>
+        {isToday ? <span className="sr-only">Today</span> : null}
+      </button>
+    );
+  };
+
+  const openCalendar = useCallback(() => {
+    setCalendarMonth(getStartOfMonth(selectedDate));
+    setIsCalendarOpen(true);
+  }, [selectedDate]);
+
+  const closeCalendar = useCallback(() => {
+    setIsCalendarOpen(false);
+  }, []);
+
+  const goToPreviousMonth = useCallback(() => {
+    setCalendarMonth((prev) => {
+      const next = new Date(prev);
+      next.setMonth(prev.getMonth() - 1);
+      return getStartOfMonth(next);
+    });
+  }, []);
+
+  const goToNextMonth = useCallback(() => {
+    setCalendarMonth((prev) => {
+      const next = new Date(prev);
+      next.setMonth(prev.getMonth() + 1);
+      return getStartOfMonth(next);
+    });
+  }, []);
+
+  const handleCalendarDayClick = useCallback(
+    (date: Date) => {
+      handleSelectDate(date);
+      setIsCalendarOpen(false);
+    },
+    [handleSelectDate],
+  );
+
+  const handleCalendarToday = useCallback(() => {
+    handleSelectDate(today);
+    setCalendarMonth(getStartOfMonth(today));
+    setIsCalendarOpen(false);
+  }, [handleSelectDate, today]);
+
+  useEffect(() => {
+    if (!isCalendarOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsCalendarOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isCalendarOpen]);
 
   useEffect(() => {
     if (!isEditing || !editingTradeId) {
@@ -373,68 +699,59 @@ function NewTradePageContent() {
         </header>
 
         <div className="flex w-full flex-col gap-8">
-          <nav className="flex w-full flex-wrap items-center gap-2 px-1 py-2 text-sm text-muted-fg">
+          <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-1 py-2 text-sm text-muted-fg">
             {[
-              { label: "Main data", isActive: true },
-              { label: "Performance", isActive: false },
-              { label: "Mindset", isActive: false },
-            ].map(({ label, isActive }) => (
-              <button
-                key={label}
-                type="button"
-                className={`rounded-full border px-4 py-2 transition ${
-                  isActive
-                    ? "border-border bg-surface text-fg"
-                    : "border-transparent text-muted-fg hover:border-border hover:text-fg"
-                }`}
-                aria-pressed={isActive}
-                disabled={!isActive}
-              >
-                {label}
-              </button>
-            ))}
+              { label: "Main Data", value: "main" as const },
+              { label: "Library", value: "library" as const },
+            ].map(({ label, value }) => {
+              const isActive = activeTab === value;
+
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  className={`rounded-full border px-4 py-2 transition ${
+                    isActive
+                      ? "border-border bg-surface text-fg"
+                      : "border-transparent text-muted-fg hover:border-border hover:text-fg"
+                  }`}
+                  aria-pressed={isActive}
+                  onClick={() => setActiveTab(value)}
+                  disabled={isActive}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </nav>
 
-          <div className="w-full surface-panel px-4 py-6 md:px-6 md:py-8">
-            <div className="mx-auto flex w-full max-w-xl items-center gap-2 overflow-x-auto rounded-full border border-border bg-surface px-1 py-1">
-              {currentWeekDays.map((date) => {
-                const isSelected = date.toDateString() === selectedDate.toDateString();
-                const dayNumber = date.getDate();
-                const monthLabel = date
-                  .toLocaleDateString(undefined, {
-                    month: "short",
-                  })
-                  .toUpperCase();
-
-                return (
-                  <button
-                    key={date.toISOString()}
-                    type="button"
-                    onClick={() => handleSelectDate(new Date(date))}
-                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-medium transition md:min-w-[88px] md:text-sm ${
-                      isSelected ? "bg-accent text-white" : "text-muted-fg hover:text-fg"
-                    }`}
-                  >
-                    <span className={`text-xl md:text-2xl ${isSelected ? "font-semibold" : "font-medium"}`}>
-                      {dayNumber}
-                    </span>
-                    <span className="text-[10px] tracking-[0.3em] md:text-xs">
-                      {monthLabel}
-                    </span>
-                  </button>
-                );
-              })}
+          {activeTab === "main" ? (
+            <>
+          <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6">
+            <div className="mx-auto flex w-full max-w-xl items-center gap-3">
+              <div
+                className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1"
+                onWheel={handleWeekWheel}
+                onPointerDown={handleWeekPointerDown}
+                onPointerUp={handleWeekPointerUp}
+                onPointerCancel={handleWeekPointerCancel}
+                onPointerLeave={handleWeekPointerCancel}
+              >
+                <div className="flex w-full items-center justify-center gap-2">
+                  {visibleWeekDays.map((date) => renderWeekDayPill(date))}
+                </div>
+              </div>
 
               <button
                 type="button"
-                className="ml-auto flex h-12 w-12 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg"
-                onClick={() => {
-                  const dayIndex = Math.min((today.getDay() + 6) % 7, 4);
-                  const targetDate = currentWeekDays.at(dayIndex) ?? currentWeekDays[0] ?? today;
-                  handleSelectDate(new Date(targetDate));
-                }}
-                aria-label="Select today"
-                title="Select today"
+                className={`flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg ${
+                  isCalendarOpen ? "bg-subtle text-fg" : ""
+                }`}
+                onClick={openCalendar}
+                aria-haspopup="dialog"
+                aria-expanded={isCalendarOpen}
+                aria-label="Open calendar"
+                title="Open calendar"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -455,7 +772,7 @@ function NewTradePageContent() {
               </button>
             </div>
 
-            <p className="mt-5 text-sm text-muted-fg md:text-base">
+            <p className="mt-4 text-center text-sm text-muted-fg md:mt-5 md:text-base">
               Day of the week: <span className="font-semibold text-fg">{dayOfWeekLabel}</span>
             </p>
           </div>
@@ -872,8 +1189,141 @@ function NewTradePageContent() {
               ) : null}
             </div>
           </div>
+            </>
+          ) : (
+            <div className="w-full surface-panel px-5 py-6 text-center text-sm text-muted-fg md:px-6 md:py-8">
+              Library gallery will be available soon.
+            </div>
+          )}
         </div>
       </div>
+      {isCalendarOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8 backdrop-blur-sm"
+          role="presentation"
+          onClick={closeCalendar}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl border border-border bg-bg p-4 shadow-xl sm:p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Select a date"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="mb-4 grid grid-cols-[auto_1fr_auto] items-center gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg"
+                  onClick={goToPreviousMonth}
+                  aria-label="Previous month"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-5 w-5"
+                  >
+                    <path d="m15 6-6 6 6 6" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="flex flex-col items-center gap-1 text-center">
+                <span className="text-lg font-semibold capitalize text-fg sm:text-xl">
+                  {calendarMonthLabel}
+                </span>
+                <button
+                  type="button"
+                  className="text-[11px] font-medium uppercase tracking-[0.28em] text-muted-fg transition hover:text-fg"
+                  onClick={handleCalendarToday}
+                >
+                  Today
+                </button>
+              </div>
+
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg"
+                  onClick={goToNextMonth}
+                  aria-label="Next month"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-5 w-5"
+                  >
+                    <path d="m9 6 6 6-6 6" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg"
+                  onClick={closeCalendar}
+                  aria-label="Close calendar"
+                >
+                  ×
+                </button>
+              </div>
+            </header>
+
+            <div className="grid grid-cols-7 gap-2 text-center text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+              {weekdayHeadings.map((heading, index) => (
+                <span key={`${heading}-${index}`}>{heading}</span>
+              ))}
+            </div>
+
+            <div className="mt-2 grid grid-cols-7 gap-2">
+              {calendarDays.map((date) => {
+                const isCurrentMonth = date.getMonth() === calendarMonth.getMonth();
+                const isSelected = isSameDay(date, selectedDate);
+                const isToday = isSameDay(date, today);
+                const dayNumber = date.getDate();
+                const accessibleLabel = date.toLocaleDateString(undefined, {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                });
+
+                return (
+                  <button
+                    key={`${date.toISOString()}-calendar`}
+                    type="button"
+                    onClick={() => handleCalendarDayClick(new Date(date))}
+                    className={`flex h-10 items-center justify-center rounded-full border text-sm font-medium transition sm:h-11 ${
+                      isSelected
+                        ? "border-transparent bg-accent text-white"
+                        : isToday
+                          ? "border-accent/60 text-accent"
+                          : isCurrentMonth
+                            ? "border-transparent text-fg hover:bg-subtle"
+                            : "border-transparent text-muted-fg/50 hover:text-muted-fg"
+                    }`}
+                    aria-pressed={isSelected}
+                    aria-current={isSelected ? "date" : undefined}
+                    aria-label={`Select ${accessibleLabel}`}
+                    title={accessibleLabel}
+                  >
+                    <span className="text-sm font-medium">{dayNumber}</span>
+                    {isToday ? <span className="sr-only">Today</span> : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

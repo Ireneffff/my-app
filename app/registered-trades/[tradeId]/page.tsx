@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import Button from "@/components/ui/Button";
 import {
   deleteTrade,
@@ -79,6 +79,7 @@ export default function RegisteredTradePage() {
   const router = useRouter();
 
   const [state, setState] = useState<TradeState>({ status: "loading", trade: null });
+  const [activeTab, setActiveTab] = useState<"main" | "library">("main");
 
   const rawTradeId = params.tradeId;
   const tradeId = Array.isArray(rawTradeId) ? rawTradeId[0] : rawTradeId;
@@ -250,22 +251,35 @@ export default function RegisteredTradePage() {
         </header>
 
         <div className="flex w-full flex-col gap-8">
-          <nav className="flex w-full flex-wrap items-center gap-2 px-1 py-2 text-sm text-muted-fg">
-            {[{ label: "Main data", isActive: true }, { label: "Performance", isActive: false }, { label: "Mindset", isActive: false }].map((tab) => (
-              <span
-                key={tab.label}
-                className={`rounded-full border px-4 py-2 ${
-                  tab.isActive
-                    ? "border-border bg-surface text-fg"
-                    : "border-transparent text-muted-fg"
-                }`}
-              >
-                {tab.label}
-              </span>
-            ))}
+          <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-1 py-2 text-sm text-muted-fg">
+            {[
+              { label: "Main Data", value: "main" as const },
+              { label: "Library", value: "library" as const },
+            ].map(({ label, value }) => {
+              const isActive = activeTab === value;
+
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  className={`rounded-full border px-4 py-2 transition ${
+                    isActive
+                      ? "border-border bg-surface text-fg"
+                      : "border-transparent text-muted-fg hover:border-border hover:text-fg"
+                  }`}
+                  aria-pressed={isActive}
+                  onClick={() => setActiveTab(value)}
+                  disabled={isActive}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </nav>
 
-          <div className="w-full surface-panel px-4 py-6 md:px-6 md:py-8">
+          {activeTab === "main" ? (
+            <>
+          <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6">
             <div className="mx-auto flex w-full max-w-xl items-center gap-2 overflow-x-auto rounded-full border border-border bg-surface px-1 py-1">
               {currentWeekDays.map((date) => {
                 const isSelected = date.toDateString() === selectedDate.toDateString();
@@ -276,25 +290,40 @@ export default function RegisteredTradePage() {
                   })
                   .toUpperCase();
 
+                const dayNumberClasses = [
+                  "flex h-10 w-10 items-center justify-center rounded-full text-lg font-medium transition-colors md:h-12 md:w-12 md:text-xl",
+                ];
+
+                const dayNumberStyle: CSSProperties | undefined = isSelected
+                  ? {
+                      backgroundColor: "color-mix(in srgb, rgb(var(--muted-fg)) 20%, rgb(var(--surface)))",
+                    }
+                  : undefined;
+
+                if (isSelected) {
+                  dayNumberClasses.push("text-fg font-semibold");
+                } else {
+                  dayNumberClasses.push("border border-border text-fg");
+                }
+
                 return (
                   <div
                     key={date.toISOString()}
-                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-medium md:min-w-[88px] md:text-sm ${
-                      isSelected ? "text-accent" : "text-muted-fg"
+                    className={`flex min-w-[62px] flex-col items-center gap-2 rounded-full px-3 py-2 text-xs font-medium md:min-w-[88px] md:text-sm ${
+                      isSelected ? "text-fg" : "text-muted-fg"
                     }`}
-                    style={
-                      isSelected
-                        ? { backgroundColor: "rgb(var(--accent) / 0.1)" }
-                        : undefined
-                    }
                   >
-                    <span className={`text-xl md:text-2xl ${isSelected ? "font-semibold" : "font-medium"}`}>{dayNumber}</span>
-                    <span className="text-[10px] tracking-[0.3em] md:text-xs">{monthLabel}</span>
+                    <span className={dayNumberClasses.join(" ")} style={dayNumberStyle}>
+                      {dayNumber}
+                    </span>
+                    <span className={`text-[10px] tracking-[0.3em] md:text-xs ${isSelected ? "text-fg" : "text-muted-fg"}`}>
+                      {monthLabel}
+                    </span>
                   </div>
                 );
               })}
 
-              <div className="ml-auto hidden h-12 w-12 flex-none items-center justify-center rounded-full border border-border text-muted-fg md:flex">
+              <div className="ml-auto hidden h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg md:flex">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -315,7 +344,7 @@ export default function RegisteredTradePage() {
               </div>
             </div>
 
-            <p className="mt-5 text-sm text-muted-fg md:text-base">
+            <p className="mt-4 text-center text-sm text-muted-fg md:mt-5 md:text-base">
               Day of the week: <span className="font-semibold text-fg">{dayOfWeekLabel}</span>
             </p>
           </div>
@@ -459,6 +488,12 @@ export default function RegisteredTradePage() {
               )}
             </div>
           </div>
+            </>
+          ) : (
+            <div className="w-full surface-panel px-5 py-6 text-center text-sm text-muted-fg md:px-6 md:py-8">
+              Library gallery will be available soon.
+            </div>
+          )}
         </div>
       </div>
     </section>
