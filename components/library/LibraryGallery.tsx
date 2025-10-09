@@ -110,26 +110,13 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
               key={entry.id}
               type="button"
               onClick={() => setActiveId(entry.id)}
-              className={`group relative flex min-w-[240px] max-w-[260px] flex-col gap-4 rounded-[28px] border p-4 text-left transition duration-200 ease-out ${
+              className={`group relative flex h-40 min-w-[320px] flex-1 items-center justify-center rounded-[28px] border text-left transition duration-200 ease-out ${
                 isActive
-                  ? "border-accent/70 bg-accent/5 shadow-[0_20px_36px_rgba(15,23,42,0.18)]"
-                  : "border-border/60 bg-surface/80 hover:-translate-y-1 hover:border-accent/60 hover:bg-surface/90"
+                  ? "border-accent/70 shadow-[0_20px_36px_rgba(15,23,42,0.18)]"
+                  : "border-border/60 hover:-translate-y-1 hover:border-accent/60"
               }`}
             >
-              <div className="relative aspect-[5/4] w-full overflow-hidden rounded-[22px] bg-black/20">
-                <span className="absolute left-3 top-3 h-6 w-20 rounded-full bg-black/55" />
-              </div>
-              <div className="flex flex-col gap-3">
-                <div className="space-y-2">
-                  <div className="h-3 w-24 rounded-full bg-muted/40" />
-                  <div className="h-5 w-32 rounded-full bg-muted/40" />
-                </div>
-                <div className="h-12 w-full rounded-2xl bg-muted/20" />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="h-3 w-16 rounded-full bg-muted/40" />
-                <span className="h-3 w-12 rounded-full bg-accent/50" />
-              </div>
+              <span className="sr-only">Visualizza {entry.title}</span>
             </button>
           );
         })}
