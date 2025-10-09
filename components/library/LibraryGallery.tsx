@@ -66,14 +66,14 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
 
           {uploadedImage ? (
             <div className="relative mx-auto w-full max-w-5xl">
-              <div className="mx-auto aspect-[19/6] w-full overflow-hidden rounded-[28px] border border-border/40 bg-muted/20">
+              <div className="mx-auto flex aspect-[19/6] w-full items-center justify-center overflow-hidden rounded-[28px] border border-border/40 bg-muted/20 p-2">
                 <img
                   src={uploadedImage}
                   alt="Anteprima immagine caricata"
-                  className="h-full w-full object-cover"
+                  className="max-h-full max-w-full object-contain"
                 />
               </div>
-              <p className="mt-4 text-xs text-muted-foreground">Formato consigliato: 19:6</p>
+              <p className="mt-4 text-xs text-muted-foreground">Formato consigliato: 19:6 (senza ritaglio)</p>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground">
