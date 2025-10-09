@@ -610,20 +610,21 @@ function NewTradePageContent() {
           {activeTab === "main" ? (
             <>
           <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6">
-            <div
-              className="mx-auto flex w-full max-w-xl items-center gap-2 overflow-hidden rounded-full border border-border bg-surface px-1 py-1"
-              onWheel={handleWeekWheel}
-              onPointerDown={handleWeekPointerDown}
-              onPointerUp={handleWeekPointerUp}
-              onPointerCancel={handleWeekPointerCancel}
-              onPointerLeave={handleWeekPointerCancel}
-            >
-              {visibleWeekDays.map((date) => {
-                const isSelected = isSameDay(date, selectedDate);
-                const isToday = isSameDay(date, today);
-                const dayNumber = date.getDate();
-                const monthLabel = date
-                  .toLocaleDateString(undefined, {
+            <div className="mx-auto flex w-full max-w-xl items-center gap-3">
+              <div
+                className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-full border border-border bg-surface px-1 py-1"
+                onWheel={handleWeekWheel}
+                onPointerDown={handleWeekPointerDown}
+                onPointerUp={handleWeekPointerUp}
+                onPointerCancel={handleWeekPointerCancel}
+                onPointerLeave={handleWeekPointerCancel}
+              >
+                {visibleWeekDays.map((date) => {
+                  const isSelected = isSameDay(date, selectedDate);
+                  const isToday = isSameDay(date, today);
+                  const dayNumber = date.getDate();
+                  const monthLabel = date
+                    .toLocaleDateString(undefined, {
                     month: "short",
                   })
                   .toUpperCase();
@@ -634,41 +635,42 @@ function NewTradePageContent() {
                   year: "numeric",
                 });
 
-                return (
-                  <button
-                    key={date.toISOString()}
-                    type="button"
-                    onClick={() => handleSelectDate(new Date(date))}
-                    className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition md:min-w-[88px] md:text-sm ${
-                      isSelected
-                        ? "border-transparent bg-accent text-white"
-                        : isToday
-                          ? "border-accent/60 text-accent"
-                          : "border-transparent text-muted-fg hover:text-fg"
-                    }`}
-                    aria-pressed={isSelected}
-                    aria-current={isSelected ? "date" : undefined}
-                    aria-label={`Select ${accessibleLabel}`}
-                    title={accessibleLabel}
-                  >
-                    <span className={`text-xl md:text-2xl ${isSelected ? "font-semibold" : "font-medium"}`}>
-                      {dayNumber}
-                    </span>
-                    <span
-                      className={`text-[10px] tracking-[0.3em] md:text-xs ${
-                        isSelected ? "opacity-100" : "opacity-80"
+                  return (
+                    <button
+                      key={date.toISOString()}
+                      type="button"
+                      onClick={() => handleSelectDate(new Date(date))}
+                      className={`flex min-w-[62px] flex-col items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition md:min-w-[88px] md:text-sm ${
+                        isSelected
+                          ? "border-transparent bg-accent text-white"
+                          : isToday
+                            ? "border-accent/60 text-accent"
+                            : "border-transparent text-muted-fg hover:text-fg"
                       }`}
+                      aria-pressed={isSelected}
+                      aria-current={isSelected ? "date" : undefined}
+                      aria-label={`Select ${accessibleLabel}`}
+                      title={accessibleLabel}
                     >
-                      {monthLabel}
-                    </span>
-                    {isToday ? <span className="sr-only">Today</span> : null}
-                  </button>
-                );
-              })}
+                      <span className={`text-xl md:text-2xl ${isSelected ? "font-semibold" : "font-medium"}`}>
+                        {dayNumber}
+                      </span>
+                      <span
+                        className={`text-[10px] tracking-[0.3em] md:text-xs ${
+                          isSelected ? "opacity-100" : "opacity-80"
+                        }`}
+                      >
+                        {monthLabel}
+                      </span>
+                      {isToday ? <span className="sr-only">Today</span> : null}
+                    </button>
+                  );
+                })}
+              </div>
 
               <button
                 type="button"
-                className={`ml-auto flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg ${
+                className={`flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg ${
                   isCalendarOpen ? "bg-subtle text-fg" : ""
                 }`}
                 onClick={openCalendar}
