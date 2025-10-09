@@ -65,10 +65,10 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
 
   return (
     <div className="flex w-full flex-col gap-8">
-      <div className="relative min-h-[360px] rounded-[32px] border border-border/60 bg-transparent p-6 sm:p-8">
+      <div className="relative min-h-[360px] rounded-[32px] border border-dashed border-border/60 bg-surface/30 p-2">
         <label
           htmlFor="library-hero-upload"
-          className="group relative mx-auto flex h-full w-full max-w-4xl cursor-pointer flex-col items-center justify-center rounded-[28px] border-2 border-dashed border-border/50 bg-surface/30 text-center transition hover:border-accent/50 hover:bg-surface/50"
+          className="group flex h-full w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-[28px] bg-background/40 px-6 py-12 text-center transition hover:bg-background/60"
         >
           <input
             id="library-hero-upload"
@@ -78,33 +78,32 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
             onChange={handleImageChange}
           />
 
-          <div className="relative w-full max-w-4xl px-6 py-10 sm:px-12">
-            <div className="relative mx-auto aspect-[19/6] w-full max-w-4xl overflow-hidden rounded-[24px] bg-muted/20 shadow-inner">
-              {uploadedImage ? (
+          {uploadedImage ? (
+            <div className="relative mx-auto w-full max-w-5xl">
+              <div className="mx-auto aspect-[19/6] w-full overflow-hidden rounded-[28px] border border-border/40 bg-muted/20">
                 <img
                   src={uploadedImage}
                   alt="Anteprima immagine caricata"
                   className="h-full w-full object-cover"
                 />
-              ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-muted-foreground">
-                  <span className="rounded-full border border-muted/70 bg-background/70 px-5 py-2 text-xs font-medium uppercase tracking-[0.3em] text-foreground/80">
-                    Enter Image
-                  </span>
-                  <p className="text-xs font-medium text-foreground/60 sm:text-sm">PNG, JPG o WEBP · max 5 MB</p>
-                  <p className="max-w-[360px] text-xs text-foreground/50 sm:text-sm">
-                    Tocca o trascina per caricare una foto nel formato 19:6 da mostrare in questo spazio.
-                  </p>
-                </div>
-              )}
+              </div>
+              <p className="mt-4 text-xs text-muted-foreground">Rapporto richiesto: 19:6</p>
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground">
+              <span className="rounded-full border border-dashed border-border/40 bg-background/80 px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/70">
+                Enter Image
+              </span>
+              <p className="text-xs font-medium text-foreground/60 sm:text-sm">PNG, JPG o WEBP · max 5 MB</p>
+              <p className="max-w-[360px] text-xs text-foreground/50 sm:text-sm">
+                Tap to upload a snapshot of your setup before entering the trade.
+              </p>
+            </div>
+          )}
 
           {uploadError ? (
-            <p className="pb-4 text-sm text-destructive">{uploadError}</p>
-          ) : (
-            <p className="pb-4 text-xs text-muted-foreground">Rapporto richiesto: 19:6</p>
-          )}
+            <p className="mt-6 text-sm text-destructive">{uploadError}</p>
+          ) : null}
         </label>
       </div>
 
