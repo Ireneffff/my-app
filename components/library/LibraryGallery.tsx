@@ -68,7 +68,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
       <div className="relative min-h-[360px] rounded-[32px] border border-border/60 bg-transparent p-6 sm:p-8">
         <label
           htmlFor="library-hero-upload"
-          className="group relative mx-auto flex h-full w-full max-w-4xl cursor-pointer flex-col items-center justify-center gap-4 rounded-[24px] border-2 border-dashed border-border/50 bg-surface/40 p-6 text-center transition hover:border-accent/60 hover:bg-surface/60"
+          className="group relative mx-auto flex h-full w-full max-w-4xl cursor-pointer flex-col items-center justify-center rounded-[28px] border-2 border-dashed border-border/50 bg-surface/30 text-center transition hover:border-accent/50 hover:bg-surface/50"
         >
           <input
             id="library-hero-upload"
@@ -78,8 +78,8 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
             onChange={handleImageChange}
           />
 
-          <div className="relative w-full">
-            <div className="relative mx-auto aspect-[19/6] w-full overflow-hidden rounded-[20px] bg-surface/70">
+          <div className="relative w-full max-w-4xl px-6 py-10 sm:px-12">
+            <div className="relative mx-auto aspect-[19/6] w-full max-w-4xl overflow-hidden rounded-[24px] bg-muted/20 shadow-inner">
               {uploadedImage ? (
                 <img
                   src={uploadedImage}
@@ -87,10 +87,13 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <span className="rounded-full bg-muted/40 px-4 py-1 text-xs uppercase tracking-wide">19 : 6</span>
-                  <p className="max-w-[320px] text-balance">
-                    Clicca o trascina qui una foto nel formato 19:6 per personalizzare questo spazio.
+                <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-muted-foreground">
+                  <span className="rounded-full border border-muted/70 bg-background/70 px-5 py-2 text-xs font-medium uppercase tracking-[0.3em] text-foreground/80">
+                    Enter Image
+                  </span>
+                  <p className="text-xs font-medium text-foreground/60 sm:text-sm">PNG, JPG o WEBP · max 5 MB</p>
+                  <p className="max-w-[360px] text-xs text-foreground/50 sm:text-sm">
+                    Tocca o trascina per caricare una foto nel formato 19:6 da mostrare in questo spazio.
                   </p>
                 </div>
               )}
@@ -98,9 +101,9 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
           </div>
 
           {uploadError ? (
-            <p className="text-sm text-destructive">{uploadError}</p>
+            <p className="pb-4 text-sm text-destructive">{uploadError}</p>
           ) : (
-            <p className="text-xs text-muted-foreground">Dimensioni consigliate: rapporto 19:6</p>
+            <p className="pb-4 text-xs text-muted-foreground">Rapporto richiesto: 19:6</p>
           )}
         </label>
       </div>
