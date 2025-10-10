@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import type { LibraryEntry } from "@/lib/libraryGallery";
 
 export type LibraryGalleryProps = {
@@ -8,169 +8,194 @@ export type LibraryGalleryProps = {
 };
 
 export default function LibraryGallery({ entries }: LibraryGalleryProps) {
-  const preparedEntries = useMemo(() => entries.filter((entry) => entry.imageSrc), [entries]);
-  const [activeId, setActiveId] = useState(() => preparedEntries[0]?.id ?? null);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [entryUploads, setEntryUploads] = useState<Record<string, string>>({});
-
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    setUploadError(null);
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      const result = reader.result;
-
-      if (typeof result !== "string") {
-        setUploadError("Caricamento non riuscito. Riprova con un'altra immagine.");
-        return;
-      }
-
-      setUploadError(null);
-      setUploadedImage(result);
-    };
-
-    reader.readAsDataURL(file);
-    event.target.value = "";
-  };
-
-  const handleEntryImageChange = (entryId: string) => (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      const result = reader.result;
-
-      if (typeof result !== "string") {
-        setUploadError("Caricamento non riuscito. Riprova con un'altra immagine.");
-        return;
-      }
-
-      setUploadError(null);
-      setEntryUploads((previous) => ({ ...previous, [entryId]: result }));
-    };
-
-    reader.readAsDataURL(file);
-    event.target.value = "";
-  };
-
-  const activeEntry = useMemo(
-    () => preparedEntries.find((entry) => entry.id === activeId) ?? preparedEntries[0],
-    [activeId, preparedEntries],
+  const preparedEntries = useMemo(
+    () => entries.filter((entry) => entry.imageSrc),
+    [entries],
   );
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [entryUploads, setEntryUploads] = useState<Record<string, string>>({});
+  const activeEntry = preparedEntries[activeIndex] ?? null;
 
-  if (!preparedEntries.length) {
-    return <div className="w-full rounded-3xl border border-dashed border-border/60 bg-surface/40 px-6 py-16" />;
-  }
+  useEffect(() => {
+    if (activeIndex >= preparedEntries.length) {
+      setActiveIndex(preparedEntries.length ? preparedEntries.length - 1 : 0);
+    }
+  }, [activeIndex, preparedEntries.length]);
+
+  const handleUploadForActiveEntry = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file || !activeEntry) {
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = reader.result;
+
+      if (typeof result !== "string") {
+        return;
+      }
+
+      setEntryUploads((previous) => ({ ...previous, [activeEntry.id]: result }));
+    };
+
+    reader.readAsDataURL(file);
+    event.target.value = "";
+  };
+
+  const goToPrevious = () => {
+    setActiveIndex((previous) =>
+      previous === 0 ? Math.max(preparedEntries.length - 1, 0) : previous - 1,
+    );
+  };
+
+  const goToNext = () => {
+    setActiveIndex((previous) =>
+      previous === Math.max(preparedEntries.length - 1, 0)
+        ? 0
+        : Math.min(previous + 1, preparedEntries.length - 1),
+    );
+  };
+
+  const activePreview = activeEntry
+    ? entryUploads[activeEntry.id] ?? activeEntry.imageSrc ?? null
+    : null;
+
+  const visibleEntries = useMemo(() => {
+    if (!preparedEntries.length) {
+      return [];
+    }
+
+    if (preparedEntries.length <= 3) {
+      return preparedEntries;
+    }
+
+    const start = Math.max(0, activeIndex - 1);
+    const end = Math.min(start + 3, preparedEntries.length);
+
+    if (end - start < 3 && start > 0) {
+      return preparedEntries.slice(end - 3, end);
+    }
+
+    return preparedEntries.slice(start, end);
+  }, [activeIndex, preparedEntries]);
+
+  const isUploadDisabled = !activeEntry;
 
   return (
     <div className="flex w-full flex-col gap-8">
-      <div
-        className={`relative min-h-[360px] rounded-[40px] ${
-          uploadedImage
-            ? "bg-transparent"
-            : "border border-dashed border-border/60 bg-background/50 p-4 sm:p-8"
+      <label
+        htmlFor="library-active-upload"
+        className={`group relative flex min-h-[420px] w-full flex-col items-center justify-center rounded-[40px] border border-dashed border-border/40 bg-background/80 text-center transition ${
+          isUploadDisabled
+            ? "cursor-default opacity-80"
+            : "cursor-pointer hover:border-border/60 hover:bg-background"
         }`}
       >
-        <label
-          htmlFor="library-hero-upload"
-          className={`group flex h-full w-full cursor-pointer flex-col items-center justify-center text-center transition ${
-            uploadedImage
-              ? "rounded-[40px] bg-transparent"
-              : "gap-4 rounded-[32px] border border-transparent px-8 py-16 hover:bg-background/70"
-          }`}
-        >
-          <input
-            id="library-hero-upload"
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            onChange={handleImageChange}
-          />
-          <span className="sr-only">Carica o sostituisci l&apos;immagine della libreria</span>
+        <input
+          id="library-active-upload"
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          disabled={!activeEntry}
+          onChange={handleUploadForActiveEntry}
+        />
 
-          {uploadedImage ? (
-            <div className="flex h-full w-full flex-col items-center justify-center">
-              <div className="flex h-full w-full max-w-5xl items-center justify-center px-6">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={uploadedImage}
-                  alt="Anteprima immagine caricata"
-                  className="max-h-[520px] w-full object-contain"
-                />
+        {activePreview ? (
+          <div className="flex h-full w-full items-center justify-center p-6 sm:p-10">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={activePreview}
+              alt="Anteprima immagine"
+              className="max-h-[520px] w-full rounded-[32px] object-contain"
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-4 text-foreground/60">
+            <span className="rounded-full border border-dashed border-border/40 bg-background px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em]">
+              Enter image
+            </span>
+            <p className="text-xs text-foreground/50">
+              Tap to upload a snapshot before entering the trade.
+            </p>
+          </div>
+        )}
+      </label>
+
+      <div className="flex flex-col items-center gap-8">
+        <div className="relative flex w-full items-center justify-center">
+          <div className="h-px w-full bg-border/40" />
+          <div className="absolute inset-0 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={goToPrevious}
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-border bg-background text-lg font-semibold text-foreground shadow-sm transition hover:border-accent/50 hover:text-accent disabled:opacity-50"
+              aria-label="Previous image"
+              disabled={!preparedEntries.length}
+            >
+              ‹
+            </button>
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-foreground text-lg text-background shadow">
+                ✓
               </div>
             </div>
+            <button
+              type="button"
+              onClick={goToNext}
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-border bg-background text-lg font-semibold text-foreground shadow-sm transition hover:border-accent/50 hover:text-accent disabled:opacity-50"
+              aria-label="Next image"
+              disabled={!preparedEntries.length}
+            >
+              ›
+            </button>
+          </div>
+        </div>
+
+        <div className="flex w-full flex-wrap items-center justify-center gap-6">
+          {visibleEntries.length ? (
+            visibleEntries.map((entry) => {
+              const isActive = entry.id === activeEntry?.id;
+              const previewImage = entryUploads[entry.id] ?? entry.imageSrc ?? null;
+
+              return (
+                <button
+                  key={entry.id}
+                  type="button"
+                  onClick={() => {
+                    const targetIndex = preparedEntries.findIndex(
+                      (preparedEntry) => preparedEntry.id === entry.id,
+                    );
+
+                    if (targetIndex !== -1) {
+                      setActiveIndex(targetIndex);
+                    }
+                  }}
+                  className={`flex h-40 w-[220px] flex-col items-center justify-center rounded-[32px] border bg-background transition ${
+                    isActive
+                      ? "border-accent/60 shadow-[0_24px_48px_rgba(15,23,42,0.12)]"
+                      : "border-border/60 hover:border-accent/50"
+                  }`}
+                >
+                  {previewImage ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={previewImage} alt="" className="h-full w-full rounded-[28px] object-cover" />
+                  ) : (
+                    <span className="text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
+                      Enter image
+                    </span>
+                  )}
+                </button>
+              );
+            })
           ) : (
-            <div className="flex flex-col items-center justify-center gap-4 text-foreground/60">
-              <span className="rounded-full border border-dashed border-border/40 bg-background px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/70">
-                Enter Image
-              </span>
-              <p className="text-xs font-medium sm:text-sm">PNG, JPG o WEBP · max 5 MB</p>
-              <p className="max-w-[360px] text-xs sm:text-sm">
-                Tap to upload a snapshot of your setup before entering the trade.
-              </p>
+            <div className="flex h-40 w-[220px] items-center justify-center rounded-[32px] border border-dashed border-border/60 bg-background/70 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/50">
+              Enter image
             </div>
           )}
-
-          {uploadError ? (
-            <p className="mt-6 text-sm text-destructive">{uploadError}</p>
-          ) : null}
-        </label>
-      </div>
-
-      <div className="flex w-full gap-4 overflow-x-auto pb-2">
-        {preparedEntries.map((entry) => {
-          const isActive = entry.id === activeEntry?.id;
-          const uploadedEntryImage = entryUploads[entry.id];
-          const previewImage = uploadedEntryImage ?? entry.imageSrc ?? null;
-          const hasEntryImage = Boolean(previewImage);
-          return (
-            <div key={entry.id} className="relative">
-              <input
-                id={`library-entry-upload-${entry.id}`}
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={handleEntryImageChange(entry.id)}
-              />
-              <label
-                htmlFor={`library-entry-upload-${entry.id}`}
-                onClick={() => setActiveId(entry.id)}
-                className={`group relative flex h-40 w-[260px] min-w-[220px] cursor-pointer items-center justify-center overflow-hidden rounded-[32px] border bg-background transition duration-200 ease-out ${
-                  isActive
-                    ? "border-accent/70 shadow-[0_20px_36px_rgba(15,23,42,0.18)]"
-                    : "border-border/60 hover:border-accent/60"
-                }`}
-              >
-                <span className="sr-only">
-                  {hasEntryImage
-                    ? `Sostituisci l'immagine per ${entry.title}`
-                    : `Carica un'immagine per ${entry.title}`}
-                </span>
-                {previewImage ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={previewImage} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center rounded-[28px] bg-foreground/5 px-6 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
-                    Enter Image
-                  </div>
-                )}
-              </label>
-            </div>
-          );
-        })}
+        </div>
       </div>
     </div>
   );
