@@ -8,10 +8,7 @@ export type LibraryGalleryProps = {
 };
 
 export default function LibraryGallery({ entries }: LibraryGalleryProps) {
-  const preparedEntries = useMemo(
-    () => entries.filter((entry) => entry.imageSrc),
-    [entries],
-  );
+  const preparedEntries = useMemo(() => entries, [entries]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [entryUploads, setEntryUploads] = useState<Record<string, string>>({});
   const activeEntry = preparedEntries[activeIndex] ?? null;
@@ -59,9 +56,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
     );
   };
 
-  const activePreview = activeEntry
-    ? entryUploads[activeEntry.id] ?? activeEntry.imageSrc ?? null
-    : null;
+  const activePreview = activeEntry ? entryUploads[activeEntry.id] ?? null : null;
 
   const visibleEntries = useMemo(() => {
     if (!preparedEntries.length) {
@@ -88,10 +83,8 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
     <div className="flex w-full flex-col gap-8">
       <label
         htmlFor="library-active-upload"
-        className={`group relative flex min-h-[420px] w-full flex-col items-center justify-center rounded-[40px] border border-dashed border-border/40 bg-background/80 text-center transition ${
-          isUploadDisabled
-            ? "cursor-default opacity-80"
-            : "cursor-pointer hover:border-border/60 hover:bg-background"
+        className={`group relative flex min-h-[420px] w-full flex-col items-center justify-center rounded-[40px] border border-dashed border-border/50 bg-[#f6f7f9] text-center transition ${
+          isUploadDisabled ? "cursor-default opacity-80" : "cursor-pointer hover:border-border/70"
         }`}
       >
         <input
@@ -108,17 +101,18 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={activePreview}
-              alt="Anteprima immagine"
+              alt="Anteprima immagine caricata"
               className="max-h-[520px] w-full rounded-[32px] object-contain"
             />
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center gap-4 text-foreground/60">
-            <span className="rounded-full border border-dashed border-border/40 bg-background px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em]">
+          <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-10 text-foreground/50">
+            <span className="rounded-full border border-dashed border-border/50 bg-white px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
               Enter image
             </span>
-            <p className="text-xs text-foreground/50">
-              Tap to upload a snapshot before entering the trade.
+            <p className="text-xs text-foreground/50">PNG, JPG or WEBP - max 5 MB</p>
+            <p className="text-xs text-foreground/40">
+              Tap to upload a snapshot of your setup before entering the trade.
             </p>
           </div>
         )}
@@ -158,7 +152,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
           {visibleEntries.length ? (
             visibleEntries.map((entry) => {
               const isActive = entry.id === activeEntry?.id;
-              const previewImage = entryUploads[entry.id] ?? entry.imageSrc ?? null;
+              const previewImage = entryUploads[entry.id] ?? null;
 
               return (
                 <button
@@ -173,10 +167,10 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                       setActiveIndex(targetIndex);
                     }
                   }}
-                  className={`flex h-40 w-[220px] flex-col items-center justify-center rounded-[32px] border bg-background transition ${
+                  className={`flex h-40 w-[220px] flex-col items-center justify-center rounded-[32px] border border-dashed bg-[#f6f7f9] transition ${
                     isActive
-                      ? "border-accent/60 shadow-[0_24px_48px_rgba(15,23,42,0.12)]"
-                      : "border-border/60 hover:border-accent/50"
+                      ? "border-accent/60 shadow-[0_24px_48px_rgba(15,23,42,0.08)]"
+                      : "border-border/60 hover:border-accent/40"
                   }`}
                 >
                   {previewImage ? (
@@ -191,8 +185,13 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
               );
             })
           ) : (
-            <div className="flex h-40 w-[220px] items-center justify-center rounded-[32px] border border-dashed border-border/60 bg-background/70 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/50">
-              Enter image
+            <div className="flex h-40 w-[220px] flex-col items-center justify-center gap-2 rounded-[32px] border border-dashed border-border/60 bg-[#f6f7f9] text-center">
+              <span className="text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
+                Enter image
+              </span>
+              <span className="text-[10px] uppercase tracking-[0.3em] text-foreground/40">
+                PNG / JPG / WEBP
+              </span>
             </div>
           )}
         </div>
