@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
 import type { LibraryEntry } from "@/lib/libraryGallery";
 
 export type LibraryGalleryProps = {
@@ -18,6 +24,9 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
       setActiveIndex(preparedEntries.length ? preparedEntries.length - 1 : 0);
     }
   }, [activeIndex, preparedEntries.length]);
+
+  const heroInputRef = useRef<HTMLInputElement | null>(null);
+  const thumbnailInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const handleUploadForEntry =
     (entryId: string) => (event: ChangeEvent<HTMLInputElement>) => {
@@ -80,22 +89,45 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
 
   const heroInputId = activeEntry ? `library-hero-${activeEntry.id}` : null;
 
+  const handleHeroClick = () => {
+    heroInputRef.current?.click();
+  };
+
+  const handleThumbnailClick = (entryId: string) => {
+    const targetIndex = preparedEntries.findIndex(
+      (preparedEntry) => preparedEntry.id === entryId,
+    );
+
+    if (targetIndex !== -1 && targetIndex !== activeIndex) {
+      setActiveIndex(targetIndex);
+    }
+
+    const input = thumbnailInputRefs.current[entryId];
+
+    if (input) {
+      input.click();
+    }
+  };
+
   return (
     <div className="flex w-full flex-col gap-8">
       {activeEntry ? (
         <>
           <input
+            ref={heroInputRef}
             id={heroInputId ?? undefined}
             type="file"
             accept="image/*"
             capture="environment"
-            className="sr-only"
+            className="hidden"
             onChange={handleUploadForEntry(activeEntry.id)}
             aria-label="Upload image"
           />
-          <label
-            htmlFor={heroInputId ?? undefined}
-            className="group relative flex min-h-[420px] w-full cursor-pointer flex-col items-center justify-center rounded-[40px] border border-dashed border-border/50 bg-[#f6f7f9] text-center transition hover:border-border/70 focus-within:border-border/70"
+          <button
+            type="button"
+            onClick={handleHeroClick}
+            className="group relative flex min-h-[420px] w-full cursor-pointer flex-col items-center justify-center rounded-[40px] border border-dashed border-border/50 bg-[#f6f7f9] text-center transition hover:border-border/70 focus:outline-none focus-visible:border-border/70"
+            aria-label="Upload image"
           >
             <div className="flex h-full w-full flex-col items-center justify-center">
               {activePreview ? (
@@ -119,7 +151,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                 </div>
               )}
             </div>
-          </label>
+          </button>
         </>
       ) : (
         <div className="relative flex min-h-[420px] w-full flex-col items-center justify-center rounded-[40px] border border-dashed border-border/50 bg-[#f6f7f9] text-center opacity-80">
@@ -174,30 +206,26 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
               return (
                 <div key={entry.id} className="flex flex-col items-center">
                   <input
+                    ref={(element) => {
+                      thumbnailInputRefs.current[entry.id] = element;
+                    }}
                     id={`library-thumb-${entry.id}`}
                     type="file"
                     accept="image/*"
                     capture="environment"
-                    className="sr-only"
+                    className="hidden"
                     aria-label="Upload image"
                     onChange={handleUploadForEntry(entry.id)}
                   />
-                  <label
-                    htmlFor={`library-thumb-${entry.id}`}
-                    onClick={() => {
-                      const targetIndex = preparedEntries.findIndex(
-                        (preparedEntry) => preparedEntry.id === entry.id,
-                      );
-
-                      if (targetIndex !== -1 && targetIndex !== activeIndex) {
-                        setActiveIndex(targetIndex);
-                      }
-                    }}
-                    className={`group relative flex h-40 w-[220px] cursor-pointer flex-col items-center justify-center rounded-[32px] border border-dashed bg-[#f6f7f9] transition hover:border-accent/40 focus-within:border-accent/60 ${
+                  <button
+                    type="button"
+                    onClick={() => handleThumbnailClick(entry.id)}
+                    className={`group relative flex h-40 w-[220px] cursor-pointer flex-col items-center justify-center rounded-[32px] border border-dashed bg-[#f6f7f9] transition hover:border-accent/40 focus:outline-none focus-visible:border-accent/60 ${
                       isActive
                         ? "border-accent/60 shadow-[0_24px_48px_rgba(15,23,42,0.08)]"
                         : "border-border/60"
                     }`}
+                    aria-label="Upload image"
                   >
                     <div className="flex h-full w-full items-center justify-center">
                       {previewImage ? (
@@ -209,7 +237,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                         </span>
                       )}
                     </div>
-                  </label>
+                  </button>
                 </div>
               );
             })
