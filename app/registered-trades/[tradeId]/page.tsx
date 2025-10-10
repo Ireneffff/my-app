@@ -4,6 +4,14 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { LibrarySection } from "@/components/library/LibrarySection";
+import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
+import {
+  LayersIcon,
+  NotebookIcon,
+  SparklesIcon,
+  UploadCloudIcon,
+} from "@/components/library/icons";
 import Button from "@/components/ui/Button";
 import {
   deleteTrade,
@@ -182,6 +190,37 @@ export default function RegisteredTradePage() {
   const riskRewardValue = formatOptionalText(state.trade.riskReward);
   const riskValue = formatOptionalText(state.trade.risk);
   const pipsValue = formatOptionalText(state.trade.pips);
+
+  const libraryCards: LibraryCarouselItem[] = [
+    {
+      id: "snapshot",
+      title: "Snapshot iniziale",
+      description: imageData
+        ? "Riferimento salvato al momento dell’operazione."
+        : "Nessun riferimento visivo salvato.",
+      icon: <UploadCloudIcon className="h-6 w-6" />,
+      disabled: !imageData,
+      "aria-disabled": !imageData,
+    },
+    {
+      id: "rr",
+      title: "R/R stimato",
+      description: riskRewardValue,
+      icon: <SparklesIcon className="h-6 w-6" />,
+    },
+    {
+      id: "risk",
+      title: "Rischio impostato",
+      description: riskValue,
+      icon: <LayersIcon className="h-6 w-6" />,
+    },
+    {
+      id: "pips",
+      title: "Pips attesi",
+      description: pipsValue,
+      icon: <NotebookIcon className="h-6 w-6" />,
+    },
+  ];
 
   const handleEditTrade = () => {
     if (!state.trade) {
@@ -457,38 +496,56 @@ export default function RegisteredTradePage() {
           </div>
             </>
           ) : (
-            <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Images</span>
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg opacity-80">
-                    Before the position
-                  </span>
-                </div>
-
-                {imageData ? (
-                  <div className="flex flex-col gap-3">
-                    <div className="relative flex min-h-[240px] w-full items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface aspect-video">
-                      <Image
-                        src={imageData}
-                        alt="Trade context attachment"
-                        fill
-                        sizes="(min-width: 768px) 560px, 90vw"
-                        className="object-cover"
-                        unoptimized
-                      />
-                    </div>
-                    <p className="text-xs text-muted-fg">
-                      This is the snapshot you saved when registering the trade.
-                    </p>
+            <LibrarySection
+              title="Library"
+              description="Consulta il materiale visivo collegato a questa operazione."
+              items={libraryCards}
+              highlight={
+                <div className="flex flex-col items-center gap-5 text-center">
+                  <div
+                    className={`relative aspect-[16/9] w-full overflow-hidden rounded-3xl border transition-all duration-500 ${
+                      imageData
+                        ? "border-border bg-white shadow-lg shadow-black/5"
+                        : "border-dashed border-border/70 bg-white/80"
+                    }`}
+                  >
+                    {imageData ? (
+                      <>
+                        <Image
+                          src={imageData}
+                          alt="Trade context attachment"
+                          fill
+                          sizes="(min-width: 768px) 560px, 90vw"
+                          className="object-cover"
+                          unoptimized
+                        />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent p-5 text-left">
+                          <span className="rounded-full bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-white backdrop-blur">
+                            Prima dell’operazione
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-muted-fg">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-accent">
+                          <UploadCloudIcon className="h-7 w-7" />
+                        </div>
+                        <p className="text-base font-semibold text-fg">Nessuna immagine disponibile</p>
+                        <p className="text-sm text-muted-fg">
+                          Non hai allegato riferimenti visivi a questa operazione.
+                        </p>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <p className="rounded-2xl border border-dashed bg-subtle px-5 py-6 text-center text-xs text-muted-fg">
-                    No image was attached to this trade.
+
+                  <p className="max-w-md text-xs text-muted-fg">
+                    {imageData
+                      ? "Questo è lo snapshot salvato quando hai registrato l’operazione."
+                      : "Aggiungi un’immagine modificando l’operazione dalla schermata di editing."}
                   </p>
-                )}
-              </div>
-            </div>
+                </div>
+              }
+            />
           )}
         </div>
       </div>

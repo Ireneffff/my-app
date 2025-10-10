@@ -15,6 +15,14 @@ import {
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
+import { LibrarySection } from "@/components/library/LibrarySection";
+import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
+import {
+  LayersIcon,
+  NotebookIcon,
+  SparklesIcon,
+  UploadCloudIcon,
+} from "@/components/library/icons";
 import Button from "@/components/ui/Button";
 import { loadTrades, saveTrade, updateTrade, type StoredTrade } from "@/lib/tradesStorage";
 
@@ -627,6 +635,41 @@ function NewTradePageContent() {
     }
   }, []);
 
+  const libraryCards = useMemo<LibraryCarouselItem[]>(
+    () => [
+      {
+        id: "upload",
+        title: imageData ? "Aggiorna immagine" : "Carica da dispositivo",
+        description: "Importa un nuovo scenario dalla tua libreria personale.",
+        icon: <UploadCloudIcon className="h-6 w-6" />,
+        onClick: openImagePicker,
+        active: Boolean(imageData),
+        "aria-label": imageData
+          ? "Aggiorna l’immagine caricata dalla libreria"
+          : "Carica una nuova immagine dalla libreria",
+      },
+      {
+        id: "setups",
+        title: "Setups salvati",
+        description: "Sfoglia gli schemi che utilizzi più spesso.",
+        icon: <LayersIcon className="h-6 w-6" />,
+      },
+      {
+        id: "patterns",
+        title: "Pattern di mercato",
+        description: "Esplora categorie e casi studio.",
+        icon: <SparklesIcon className="h-6 w-6" />,
+      },
+      {
+        id: "notes",
+        title: "Note operative",
+        description: "Accedi a check-list e annotazioni rapide.",
+        icon: <NotebookIcon className="h-6 w-6" />,
+      },
+    ],
+    [imageData, openImagePicker],
+  );
+
   return (
     <section
       className="relative flex min-h-dvh flex-col gap-12 bg-bg px-4 pb-16 text-fg sm:px-6 md:px-10"
@@ -1117,80 +1160,94 @@ function NewTradePageContent() {
 
             </>
           ) : (
-            <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Images</span>
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg opacity-80">
-                    Before the position
-                  </span>
-                </div>
+            <LibrarySection
+              title="Library"
+              description="Organizza e confronta i riferimenti visivi prima di aprire la posizione."
+              items={libraryCards}
+              highlight={
+                <div className="flex flex-col items-center gap-5 text-center">
+                  <button
+                    type="button"
+                    onClick={openImagePicker}
+                    className={`group relative flex aspect-[16/9] w-full items-center justify-center overflow-hidden rounded-3xl border transition-all duration-500 ease-out ${
+                      imageData
+                        ? "border-border bg-white shadow-lg shadow-black/5 hover:-translate-y-1 hover:shadow-xl"
+                        : "border-dashed border-border/70 bg-white/80 hover:-translate-y-1 hover:border-accent/40 hover:shadow-xl"
+                    }`}
+                    aria-label={
+                      imageData
+                        ? "Aggiorna l’immagine caricata"
+                        : "Carica un’immagine prima dell’operazione"
+                    }
+                    title={
+                      imageData
+                        ? "Aggiorna l’immagine caricata"
+                        : "Carica un’immagine prima dell’operazione"
+                    }
+                  >
+                    {imageData ? (
+                      <>
+                        <Image
+                          src={imageData}
+                          alt="Selected trade context"
+                          fill
+                          sizes="(min-width: 768px) 540px, 90vw"
+                          className="object-cover"
+                          unoptimized
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                        <span className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.26em] text-muted-fg shadow-lg transition group-hover:bg-white group-hover:text-fg">
+                          Tocca per aggiornare
+                        </span>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3 px-6">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+                          <UploadCloudIcon className="h-8 w-8" />
+                        </div>
+                        <p className="text-lg font-semibold tracking-tight text-fg">Carica un’anteprima</p>
+                        <p className="text-sm text-muted-fg">PNG, JPG o WEBP · max 5 MB</p>
+                        <p className="text-xs text-muted-fg">
+                          Tocca per caricare uno snapshot del setup prima di entrare a mercato.
+                        </p>
+                      </div>
+                    )}
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={openImagePicker}
-                  className={`group relative flex min-h-[220px] w-full items-center justify-center overflow-hidden rounded-2xl border border-dashed ${
-                    imageData
-                      ? "border-transparent bg-surface"
-                      : "bg-subtle text-muted-fg transition hover:text-accent"
-                  } aspect-video`}
-                  style={
-                    imageData
-                      ? undefined
-                      : { borderColor: "color-mix(in srgb, rgba(var(--border)) 100%, transparent)" }
-                  }
-                >
-                  {imageData ? (
-                    <Image
-                      src={imageData}
-                      alt="Selected trade context"
-                      fill
-                      sizes="(min-width: 768px) 480px, 90vw"
-                      className="object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 px-4 text-center text-sm font-medium">
-                      <span className="rounded-full bg-bg px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-fg">
-                        Enter image
-                      </span>
-                      <span className="text-xs text-muted-fg opacity-80">PNG, JPG or WEBP · max 5 MB</span>
-                      <span className="text-xs text-muted-fg opacity-70">
-                        Tap to upload a snapshot of your setup before entering the trade.
-                      </span>
-                    </div>
-                  )}
-                </button>
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={handleImageChange}
+                    aria-label="Carica immagine del trade"
+                  />
 
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={handleImageChange}
-                  aria-label="Upload trade image"
-                />
+                  <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-fg">
+                    <span className="max-w-[320px]">
+                      {imageData
+                        ? "Tocca l’anteprima per sostituire l’immagine."
+                        : "Tocca l’area qui sopra per selezionare o catturare un’immagine."}
+                    </span>
+                    {imageData ? (
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="rounded-full border border-transparent px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-accent transition hover:border-accent/40 hover:bg-accent/10"
+                      >
+                        Rimuovi
+                      </button>
+                    ) : null}
+                  </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-fg">
-                  <p className="max-w-[70%]">
-                    {imageData ? "Tap the preview to replace the image." : "Tap the area above to select or capture an image."}
-                  </p>
-                  {imageData ? (
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="text-[11px] font-medium uppercase tracking-[0.24em] text-accent transition hover:opacity-80"
-                    >
-                      Remove
-                    </button>
+                  {imageError ? (
+                    <p className="w-full max-w-md rounded-2xl bg-red-50 px-4 py-3 text-xs font-medium text-red-600">
+                      {imageError}
+                    </p>
                   ) : null}
                 </div>
-
-                {imageError ? (
-                  <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-medium text-red-600">{imageError}</p>
-                ) : null}
-              </div>
-            </div>
+              }
+            />
           )}
         </div>
       </div>
