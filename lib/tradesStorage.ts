@@ -1,3 +1,5 @@
+import { supabase } from "./supabaseClient";
+
 export type StoredTrade = {
   id: string;
   symbolCode: string;
@@ -6,6 +8,7 @@ export type StoredTrade = {
   openTime?: string | null;
   closeTime?: string | null;
   imageData?: string | null;
+  imageUrl?: string | null;
   position: "LONG" | "SHORT";
   riskReward?: string | null;
   risk?: string | null;
@@ -14,6 +17,29 @@ export type StoredTrade = {
 
 const STORAGE_KEY = "registeredTrades";
 const TRADES_UPDATED_EVENT = "registered-trades-changed";
+
+const TRADES_TABLE =
+  process.env.NEXT_PUBLIC_SUPABASE_TRADES_TABLE?.trim() || "registered_trades";
+
+type SupabaseTradeRow = {
+  id: string;
+  symbol_code?: string;
+  symbolCode?: string;
+  symbol_flag?: string;
+  symbolFlag?: string;
+  date: string;
+  open_time?: string | null;
+  openTime?: string | null;
+  close_time?: string | null;
+  closeTime?: string | null;
+  image_url?: string | null;
+  imageUrl?: string | null;
+  position: "LONG" | "SHORT";
+  risk_reward?: string | null;
+  riskReward?: string | null;
+  risk?: string | null;
+  pips?: string | null;
+};
 
 function notifyTradesChanged() {
   if (typeof window === "undefined") {
@@ -74,8 +100,23 @@ function parseTrades(raw: string | null): StoredTrade[] {
           storedItem.imageData = null;
         }
 
+        if (
+          storedItem.imageUrl !== undefined &&
+          storedItem.imageUrl !== null &&
+          typeof storedItem.imageUrl !== "string"
+        ) {
+          storedItem.imageUrl = null;
+        }
+
+        const normalizedImageUrl =
+          storedItem.imageUrl ?? storedItem.imageData ?? null;
+
         if (storedItem.imageData === undefined) {
-          storedItem.imageData = null;
+          storedItem.imageData = normalizedImageUrl;
+        }
+
+        if (storedItem.imageUrl === undefined) {
+          storedItem.imageUrl = normalizedImageUrl;
         }
 
         if (storedItem.position !== "LONG" && storedItem.position !== "SHORT") {
@@ -126,6 +167,97 @@ export function loadTrades(): StoredTrade[] {
 
   const raw = window.localStorage.getItem(STORAGE_KEY);
   return parseTrades(raw);
+}
+
+function mapSupabaseRowToStoredTrade(row: SupabaseTradeRow): StoredTrade {
+  const imageUrl = row.image_url ?? row.imageUrl ?? null;
+
+  const symbolCode = row.symbol_code ?? row.symbolCode ?? "";
+  const symbolFlag = row.symbol_flag ?? row.symbolFlag ?? "";
+  const openTime = row.open_time ?? row.openTime ?? null;
+  const closeTime = row.close_time ?? row.closeTime ?? null;
+  const riskReward = row.risk_reward ?? row.riskReward ?? null;
+
+  return {
+    id: row.id,
+    symbolCode,
+    symbolFlag,
+    date: row.date,
+    openTime,
+    closeTime,
+    imageUrl,
+    imageData: imageUrl,
+    position: row.position === "SHORT" ? "SHORT" : "LONG",
+    riskReward,
+    risk: row.risk ?? null,
+    pips: row.pips ?? null,
+  };
+}
+
+function mapStoredTradeToSupabaseRow(trade: StoredTrade): SupabaseTradeRow {
+  return {
+    id: trade.id,
+    symbol_code: trade.symbolCode,
+    symbol_flag: trade.symbolFlag,
+    date: trade.date,
+    open_time: trade.openTime ?? null,
+    close_time: trade.closeTime ?? null,
+    image_url: trade.imageUrl ?? trade.imageData ?? null,
+    position: trade.position === "SHORT" ? "SHORT" : "LONG",
+    risk_reward: trade.riskReward ?? null,
+    risk: trade.risk ?? null,
+    pips: trade.pips ?? null,
+  };
+}
+
+export async function fetchTradesFromSupabase(): Promise<StoredTrade[]> {
+  const { data, error } = await supabase
+    .from<SupabaseTradeRow>(TRADES_TABLE)
+    .select("*")
+    .order("date", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    return [];
+  }
+
+  return data.map(mapSupabaseRowToStoredTrade);
+}
+
+export async function syncTradesFromSupabase(): Promise<StoredTrade[]> {
+  const trades = await fetchTradesFromSupabase();
+
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+    notifyTradesChanged();
+  }
+
+  return trades;
+}
+
+export async function persistTradeRecord(trade: StoredTrade) {
+  const row = mapStoredTradeToSupabaseRow(trade);
+  const { error } = await supabase
+    .from<SupabaseTradeRow>(TRADES_TABLE)
+    .upsert(row, { onConflict: "id" });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function deleteTradeRecord(tradeId: string) {
+  const { error } = await supabase
+    .from<SupabaseTradeRow>(TRADES_TABLE)
+    .delete()
+    .eq("id", tradeId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
 export function saveTrade(trade: StoredTrade) {

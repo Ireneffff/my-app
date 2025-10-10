@@ -27,6 +27,8 @@ import {
   saveTrade,
   updateTrade,
   REGISTERED_TRADES_UPDATED_EVENT,
+  persistTradeRecord,
+  syncTradesFromSupabase,
   type StoredTrade,
 } from "@/lib/tradesStorage";
 import { supabase } from "@/lib/supabaseClient";
@@ -638,21 +640,51 @@ function NewTradePageContent() {
   }, [isCalendarOpen]);
 
   useEffect(() => {
-    function refreshLibrary() {
-      const tradesWithImages = loadTrades().filter((trade) => Boolean(trade.imageData));
-      setLibraryTrades(tradesWithImages);
-    }
+    let isMounted = true;
+
+    const refreshLibrary = () => {
+      const tradesWithImages = loadTrades().filter((trade) =>
+        Boolean(trade.imageUrl ?? trade.imageData),
+      );
+
+      if (isMounted) {
+        setLibraryTrades(tradesWithImages);
+      }
+    };
 
     refreshLibrary();
 
-    if (typeof window === "undefined") {
-      return;
+    let unsubscribe: (() => void) | undefined;
+
+    if (typeof window !== "undefined") {
+      const handleUpdate = () => {
+        refreshLibrary();
+      };
+
+      window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleUpdate);
+      unsubscribe = () => {
+        window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleUpdate);
+      };
     }
 
-    window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshLibrary);
+    (async () => {
+      try {
+        const trades = await syncTradesFromSupabase();
+        if (isMounted) {
+          setLibraryTrades(
+            trades.filter((trade) => Boolean(trade.imageUrl ?? trade.imageData)),
+          );
+        }
+      } catch (error) {
+        console.error("Failed to synchronise trades from Supabase", error);
+      }
+    })();
 
     return () => {
-      window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshLibrary);
+      isMounted = false;
+      if (unsubscribe) {
+        unsubscribe();
+      }
     };
   }, []);
 
@@ -699,8 +731,10 @@ function NewTradePageContent() {
       setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate, 17));
     }
 
+    const storedImage = match.imageUrl ?? match.imageData ?? null;
+
     releasePreviewUrl();
-    setImageData(match.imageData ?? null);
+    setImageData(storedImage);
     setImageError(null);
     setSelectedImageFile(null);
 
@@ -955,6 +989,8 @@ function NewTradePageContent() {
                 }
               }
 
+              const normalizedImageUrl = resolvedImageUrl ?? null;
+
               const trade: StoredTrade = {
                 id: targetTradeId,
                 symbolCode: selectedSymbol.code,
@@ -962,12 +998,15 @@ function NewTradePageContent() {
                 date: selectedDate.toISOString(),
                 openTime: openTime ? openTime.toISOString() : null,
                 closeTime: closeTime ? closeTime.toISOString() : null,
-                imageData: resolvedImageUrl ?? null,
+                imageData: normalizedImageUrl,
+                imageUrl: normalizedImageUrl,
                 position,
                 riskReward: riskReward.trim() || null,
                 risk: risk.trim() || null,
                 pips: pips.trim() || null,
               };
+
+              await persistTradeRecord(trade);
 
               if (isEditing && editingTradeId) {
                 updateTrade(trade);
@@ -982,7 +1021,7 @@ function NewTradePageContent() {
 
               releasePreviewUrl();
               setSelectedImageFile(null);
-              setImageData(resolvedImageUrl ?? null);
+              setImageData(normalizedImageUrl);
 
               if (imageInputRef.current) {
                 imageInputRef.current.value = "";
@@ -999,7 +1038,7 @@ function NewTradePageContent() {
               }, 150);
             } catch (error) {
               console.error("Failed to save trade", error);
-              setImageError("Failed to upload the trade image. Please try again.");
+              setImageError("Failed to save the trade. Please try again.");
               return;
             } finally {
               setIsSaving(false);
