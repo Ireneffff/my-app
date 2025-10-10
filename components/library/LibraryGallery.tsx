@@ -78,46 +78,62 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
     return preparedEntries.slice(start, end);
   }, [activeIndex, preparedEntries]);
 
+  const heroInputId = activeEntry ? `library-hero-${activeEntry.id}` : null;
+
   return (
     <div className="flex w-full flex-col gap-8">
-      <div
-        className={`group relative flex min-h-[420px] w-full flex-col items-center justify-center rounded-[40px] border border-dashed border-border/50 bg-[#f6f7f9] text-center transition focus-within:border-border/70 ${
-          activeEntry ? "cursor-pointer hover:border-border/70" : "cursor-default opacity-80"
-        }`}
-      >
-        {activeEntry ? (
+      {activeEntry ? (
+        <>
           <input
+            id={heroInputId ?? undefined}
             type="file"
             accept="image/*"
             capture="environment"
-            className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+            className="sr-only"
             onChange={handleUploadForEntry(activeEntry.id)}
             aria-label="Upload image"
           />
-        ) : null}
-        <div className="pointer-events-none flex h-full w-full flex-col items-center justify-center">
-          {activePreview ? (
-            <div className="flex h-full w-full items-center justify-center p-6 sm:p-10">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={activePreview}
-                alt="Anteprima immagine caricata"
-                className="max-h-[520px] w-full rounded-[32px] object-contain"
-              />
+          <label
+            htmlFor={heroInputId ?? undefined}
+            className="group relative flex min-h-[420px] w-full cursor-pointer flex-col items-center justify-center rounded-[40px] border border-dashed border-border/50 bg-[#f6f7f9] text-center transition hover:border-border/70 focus-within:border-border/70"
+          >
+            <div className="flex h-full w-full flex-col items-center justify-center">
+              {activePreview ? (
+                <div className="flex h-full w-full items-center justify-center p-6 sm:p-10">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={activePreview}
+                    alt="Anteprima immagine caricata"
+                    className="max-h-[520px] w-full rounded-[32px] object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-10 text-foreground/50">
+                  <span className="rounded-full border border-dashed border-border/50 bg-white px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
+                    Enter image
+                  </span>
+                  <p className="text-xs text-foreground/50">PNG, JPG or WEBP - max 5 MB</p>
+                  <p className="text-xs text-foreground/40">
+                    Tap to upload a snapshot of your setup before entering the trade.
+                  </p>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-10 text-foreground/50">
-              <span className="rounded-full border border-dashed border-border/50 bg-white px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
-                Enter image
-              </span>
-              <p className="text-xs text-foreground/50">PNG, JPG or WEBP - max 5 MB</p>
-              <p className="text-xs text-foreground/40">
-                Tap to upload a snapshot of your setup before entering the trade.
-              </p>
-            </div>
-          )}
+          </label>
+        </>
+      ) : (
+        <div className="relative flex min-h-[420px] w-full flex-col items-center justify-center rounded-[40px] border border-dashed border-border/50 bg-[#f6f7f9] text-center opacity-80">
+          <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-10 text-foreground/50">
+            <span className="rounded-full border border-dashed border-border/50 bg-white px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
+              Enter image
+            </span>
+            <p className="text-xs text-foreground/50">PNG, JPG or WEBP - max 5 MB</p>
+            <p className="text-xs text-foreground/40">
+              Tap to upload a snapshot of your setup before entering the trade.
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="flex flex-col items-center gap-8">
         <div className="relative flex w-full items-center justify-center">
@@ -156,20 +172,18 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
               const previewImage = entryUploads[entry.id] ?? null;
 
               return (
-                <div
-                  key={entry.id}
-                  className={`group relative flex h-40 w-[220px] flex-col items-center justify-center rounded-[32px] border border-dashed bg-[#f6f7f9] transition focus-within:border-accent/60 ${
-                    isActive
-                      ? "border-accent/60 shadow-[0_24px_48px_rgba(15,23,42,0.08)]"
-                      : "border-border/60 hover:border-accent/40"
-                  }`}
-                >
+                <div key={entry.id} className="flex flex-col items-center">
                   <input
+                    id={`library-thumb-${entry.id}`}
                     type="file"
                     accept="image/*"
                     capture="environment"
-                    className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                    className="sr-only"
                     aria-label="Upload image"
+                    onChange={handleUploadForEntry(entry.id)}
+                  />
+                  <label
+                    htmlFor={`library-thumb-${entry.id}`}
                     onClick={() => {
                       const targetIndex = preparedEntries.findIndex(
                         (preparedEntry) => preparedEntry.id === entry.id,
@@ -179,18 +193,23 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                         setActiveIndex(targetIndex);
                       }
                     }}
-                    onChange={handleUploadForEntry(entry.id)}
-                  />
-                  <div className="pointer-events-none flex h-full w-full items-center justify-center">
-                    {previewImage ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={previewImage} alt="" className="h-full w-full rounded-[28px] object-cover" />
-                    ) : (
-                      <span className="text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
-                        Enter image
-                      </span>
-                    )}
-                  </div>
+                    className={`group relative flex h-40 w-[220px] cursor-pointer flex-col items-center justify-center rounded-[32px] border border-dashed bg-[#f6f7f9] transition hover:border-accent/40 focus-within:border-accent/60 ${
+                      isActive
+                        ? "border-accent/60 shadow-[0_24px_48px_rgba(15,23,42,0.08)]"
+                        : "border-border/60"
+                    }`}
+                  >
+                    <div className="flex h-full w-full items-center justify-center">
+                      {previewImage ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={previewImage} alt="" className="h-full w-full rounded-[28px] object-cover" />
+                      ) : (
+                        <span className="text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
+                          Enter image
+                        </span>
+                      )}
+                    </div>
+                  </label>
                 </div>
               );
             })
