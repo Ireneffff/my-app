@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type KeyboardEvent,
 } from "react";
 import type { LibraryEntry } from "@/lib/libraryGallery";
 
@@ -93,6 +94,13 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
     heroInputRef.current?.click();
   };
 
+  const handleHeroKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      heroInputRef.current?.click();
+    }
+  };
+
   const handleThumbnailClick = (entryId: string) => {
     const targetIndex = preparedEntries.findIndex(
       (preparedEntry) => preparedEntry.id === entryId,
@@ -104,8 +112,16 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
 
     const input = thumbnailInputRefs.current[entryId];
 
-    if (input) {
-      input.click();
+    input?.click();
+  };
+
+  const handleThumbnailKeyDown = (
+    event: KeyboardEvent<HTMLDivElement>,
+    entryId: string,
+  ) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleThumbnailClick(entryId);
     }
   };
 
@@ -119,13 +135,15 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
             type="file"
             accept="image/*"
             capture="environment"
-            className="hidden"
+            className="sr-only"
             onChange={handleUploadForEntry(activeEntry.id)}
             aria-label="Upload image"
           />
-          <button
-            type="button"
+          <div
             onClick={handleHeroClick}
+            onKeyDown={handleHeroKeyDown}
+            role="button"
+            tabIndex={0}
             className="group relative flex min-h-[420px] w-full cursor-pointer flex-col items-center justify-center rounded-[40px] border border-dashed border-border/50 bg-[#f6f7f9] text-center transition hover:border-border/70 focus:outline-none focus-visible:border-border/70"
             aria-label="Upload image"
           >
@@ -151,7 +169,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                 </div>
               )}
             </div>
-          </button>
+          </div>
         </>
       ) : (
         <div className="relative flex min-h-[420px] w-full flex-col items-center justify-center rounded-[40px] border border-dashed border-border/50 bg-[#f6f7f9] text-center opacity-80">
@@ -213,13 +231,15 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                     type="file"
                     accept="image/*"
                     capture="environment"
-                    className="hidden"
+                    className="sr-only"
                     aria-label="Upload image"
                     onChange={handleUploadForEntry(entry.id)}
                   />
-                  <button
-                    type="button"
+                  <div
                     onClick={() => handleThumbnailClick(entry.id)}
+                    onKeyDown={(event) => handleThumbnailKeyDown(event, entry.id)}
+                    role="button"
+                    tabIndex={0}
                     className={`group relative flex h-40 w-[220px] cursor-pointer flex-col items-center justify-center rounded-[32px] border border-dashed bg-[#f6f7f9] transition hover:border-accent/40 focus:outline-none focus-visible:border-accent/60 ${
                       isActive
                         ? "border-accent/60 shadow-[0_24px_48px_rgba(15,23,42,0.08)]"
@@ -237,7 +257,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                         </span>
                       )}
                     </div>
-                  </button>
+                  </div>
                 </div>
               );
             })
