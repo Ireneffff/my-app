@@ -212,7 +212,7 @@ function mapStoredTradeToSupabaseRow(trade: StoredTrade): SupabaseTradeRow {
 
 export async function fetchTradesFromSupabase(): Promise<StoredTrade[]> {
   const { data, error } = await supabase
-    .from<SupabaseTradeRow>(TRADES_TABLE)
+    .from(TRADES_TABLE)
     .select("*")
     .order("date", { ascending: false });
 
@@ -241,7 +241,7 @@ export async function syncTradesFromSupabase(): Promise<StoredTrade[]> {
 export async function persistTradeRecord(trade: StoredTrade) {
   const row = mapStoredTradeToSupabaseRow(trade);
   const { error } = await supabase
-    .from<SupabaseTradeRow>(TRADES_TABLE)
+    .from(TRADES_TABLE)
     .upsert(row, { onConflict: "id" });
 
   if (error) {
@@ -251,7 +251,7 @@ export async function persistTradeRecord(trade: StoredTrade) {
 
 export async function deleteTradeRecord(tradeId: string) {
   const { error } = await supabase
-    .from<SupabaseTradeRow>(TRADES_TABLE)
+    .from(TRADES_TABLE)
     .delete()
     .eq("id", tradeId);
 
