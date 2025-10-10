@@ -61,7 +61,9 @@ export const curatedLibraryEntries: LibraryEntry[] = [
 ];
 
 export function createEntryFromTrade(trade: StoredTrade): LibraryEntry | null {
-  if (!trade.imageData) {
+  const imageSrc = trade.imageUrl ?? trade.imageData;
+
+  if (!imageSrc) {
     return null;
   }
 
@@ -106,7 +108,7 @@ export function createEntryFromTrade(trade: StoredTrade): LibraryEntry | null {
     description,
     metricLabel,
     metricValue,
-    imageSrc: trade.imageData,
+    imageSrc,
     imageAlt: `${trade.symbolCode} ${trade.position.toLowerCase()} setup screenshot`,
   };
 }

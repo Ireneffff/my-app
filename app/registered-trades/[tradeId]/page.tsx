@@ -15,6 +15,8 @@ import {
   deleteTrade,
   loadTrades,
   REGISTERED_TRADES_UPDATED_EVENT,
+  syncTradesFromSupabase,
+  deleteTradeRecord,
   type StoredTrade,
 } from "@/lib/tradesStorage";
 
@@ -97,24 +99,55 @@ export default function RegisteredTradePage() {
       return;
     }
 
-    function refreshTrade() {
+    let isMounted = true;
+
+    const refreshTrade = () => {
+      if (!isMounted) {
+        return;
+      }
+
       const trades = loadTrades();
       const match = trades.find((storedTrade) => storedTrade.id === tradeId) ?? null;
 
       setState({ status: match ? "ready" : "missing", trade: match });
-      setLibraryTrades(trades.filter((storedTrade) => Boolean(storedTrade.imageData)));
-    }
+      setLibraryTrades(
+        trades.filter((storedTrade) => Boolean(storedTrade.imageUrl ?? storedTrade.imageData)),
+      );
+    };
 
     refreshTrade();
 
-    if (typeof window === "undefined") {
-      return;
+    let unsubscribe: (() => void) | undefined;
+
+    if (typeof window !== "undefined") {
+      window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrade);
+      unsubscribe = () => {
+        window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrade);
+      };
     }
 
-    window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrade);
+    (async () => {
+      try {
+        const trades = await syncTradesFromSupabase();
+        if (!isMounted) {
+          return;
+        }
+
+        const match = trades.find((storedTrade) => storedTrade.id === tradeId) ?? null;
+        setState({ status: match ? "ready" : "missing", trade: match });
+        setLibraryTrades(
+          trades.filter((storedTrade) => Boolean(storedTrade.imageUrl ?? storedTrade.imageData)),
+        );
+      } catch (error) {
+        console.error("Failed to synchronise trade from Supabase", error);
+      }
+    })();
 
     return () => {
-      window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrade);
+      isMounted = false;
+      if (unsubscribe) {
+        unsubscribe();
+      }
     };
   }, [tradeId]);
 
@@ -229,7 +262,7 @@ export default function RegisteredTradePage() {
 
   const openTimeDisplay = getDateTimeDisplay(state.trade.openTime);
   const closeTimeDisplay = getDateTimeDisplay(state.trade.closeTime);
-  const imageData = state.trade.imageData ?? null;
+  const imageData = state.trade?.imageUrl ?? state.trade?.imageData ?? null;
   const positionLabel = state.trade.position === "SHORT" ? "Short" : "Long";
   const riskRewardValue = formatOptionalText(state.trade.riskReward);
   const riskValue = formatOptionalText(state.trade.risk);
@@ -243,7 +276,7 @@ export default function RegisteredTradePage() {
     router.push(`/new-trade?tradeId=${state.trade.id}`);
   };
 
-  const handleDeleteTrade = () => {
+  const handleDeleteTrade = async () => {
     if (!state.trade) {
       return;
     }
@@ -251,6 +284,12 @@ export default function RegisteredTradePage() {
     const shouldDelete = window.confirm("Sei sicuro di voler eliminare questa operazione?");
     if (!shouldDelete) {
       return;
+    }
+
+    try {
+      await deleteTradeRecord(state.trade.id);
+    } catch (error) {
+      console.error("Failed to delete trade from Supabase", error);
     }
 
     deleteTrade(state.trade.id);

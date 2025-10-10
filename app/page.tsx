@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabaseClient";
 import {
   loadTrades,
   REGISTERED_TRADES_UPDATED_EVENT,
+  syncTradesFromSupabase,
   type StoredTrade,
 } from "@/lib/tradesStorage";
 
@@ -62,20 +63,43 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    function refreshTrades() {
+    let isMounted = true;
+
+    const refreshTrades = () => {
+      if (!isMounted) {
+        return;
+      }
+
       setTrades(loadTrades());
-    }
+    };
 
     refreshTrades();
 
-    if (typeof window === "undefined") {
-      return;
+    let unsubscribe: (() => void) | undefined;
+
+    if (typeof window !== "undefined") {
+      window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrades);
+      unsubscribe = () => {
+        window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrades);
+      };
     }
 
-    window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrades);
+    (async () => {
+      try {
+        const tradesFromSupabase = await syncTradesFromSupabase();
+        if (isMounted) {
+          setTrades(tradesFromSupabase);
+        }
+      } catch (error) {
+        console.error("Failed to fetch trades from Supabase", error);
+      }
+    })();
 
     return () => {
-      window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrades);
+      isMounted = false;
+      if (unsubscribe) {
+        unsubscribe();
+      }
     };
   }, []);
 
