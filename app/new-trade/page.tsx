@@ -1115,84 +1115,81 @@ function NewTradePageContent() {
             </div>
           </div>
 
-          <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Images</span>
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg opacity-80">
-                  Before the position
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={openImagePicker}
-                className={`group relative flex min-h-[220px] w-full items-center justify-center overflow-hidden rounded-2xl border border-dashed ${
-                  imageData
-                    ? "border-transparent bg-surface"
-                    : "bg-subtle text-muted-fg transition hover:text-accent"
-                } aspect-video`}
-                style={
-                  imageData
-                    ? undefined
-                    : { borderColor: "color-mix(in srgb, rgba(var(--border)) 100%, transparent)" }
-                }
-              >
-                {imageData ? (
-                  <Image
-                    src={imageData}
-                    alt="Selected trade context"
-                    fill
-                    sizes="(min-width: 768px) 480px, 90vw"
-                    className="object-cover"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="flex flex-col items-center gap-2 px-4 text-center text-sm font-medium">
-                    <span className="rounded-full bg-bg px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Enter image
-                    </span>
-                    <span className="text-xs text-muted-fg opacity-80">PNG, JPG or WEBP · max 5 MB</span>
-                    <span className="text-xs text-muted-fg opacity-70">
-                      Tap to upload a snapshot of your setup before entering the trade.
-                    </span>
-                  </div>
-                )}
-              </button>
-
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={handleImageChange}
-                aria-label="Upload trade image"
-              />
-
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-fg">
-                <p className="max-w-[70%]">
-                  {imageData ? "Tap the preview to replace the image." : "Tap the area above to select or capture an image."}
-                </p>
-                {imageData ? (
-                  <button
-                    type="button"
-                    onClick={handleRemoveImage}
-                    className="text-[11px] font-medium uppercase tracking-[0.24em] text-accent transition hover:opacity-80"
-                  >
-                    Remove
-                  </button>
-                ) : null}
-              </div>
-
-              {imageError ? (
-                <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-medium text-red-600">{imageError}</p>
-              ) : null}
-            </div>
-          </div>
             </>
           ) : (
-            <div className="w-full surface-panel px-5 py-6 text-center text-sm text-muted-fg md:px-6 md:py-8">
-              Library gallery will be available soon.
+            <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Images</span>
+                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg opacity-80">
+                    Before the position
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={openImagePicker}
+                  className={`group relative flex min-h-[220px] w-full items-center justify-center overflow-hidden rounded-2xl border border-dashed ${
+                    imageData
+                      ? "border-transparent bg-surface"
+                      : "bg-subtle text-muted-fg transition hover:text-accent"
+                  } aspect-video`}
+                  style={
+                    imageData
+                      ? undefined
+                      : { borderColor: "color-mix(in srgb, rgba(var(--border)) 100%, transparent)" }
+                  }
+                >
+                  {imageData ? (
+                    <Image
+                      src={imageData}
+                      alt="Selected trade context"
+                      fill
+                      sizes="(min-width: 768px) 480px, 90vw"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 px-4 text-center text-sm font-medium">
+                      <span className="rounded-full bg-bg px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-fg">
+                        Enter image
+                      </span>
+                      <span className="text-xs text-muted-fg opacity-80">PNG, JPG or WEBP · max 5 MB</span>
+                      <span className="text-xs text-muted-fg opacity-70">
+                        Tap to upload a snapshot of your setup before entering the trade.
+                      </span>
+                    </div>
+                  )}
+                </button>
+
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={handleImageChange}
+                  aria-label="Upload trade image"
+                />
+
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-fg">
+                  <p className="max-w-[70%]">
+                    {imageData ? "Tap the preview to replace the image." : "Tap the area above to select or capture an image."}
+                  </p>
+                  {imageData ? (
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="text-[11px] font-medium uppercase tracking-[0.24em] text-accent transition hover:opacity-80"
+                    >
+                      Remove
+                    </button>
+                  ) : null}
+                </div>
+
+                {imageError ? (
+                  <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-medium text-red-600">{imageError}</p>
+                ) : null}
+              </div>
             </div>
           )}
         </div>
