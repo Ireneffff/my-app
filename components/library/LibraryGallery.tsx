@@ -12,6 +12,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
   const [activeId, setActiveId] = useState(() => preparedEntries[0]?.id ?? null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [entryUploads, setEntryUploads] = useState<Record<string, string>>({});
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -34,6 +35,31 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
 
       setUploadError(null);
       setUploadedImage(result);
+    };
+
+    reader.readAsDataURL(file);
+    event.target.value = "";
+  };
+
+  const handleEntryImageChange = (entryId: string) => (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = reader.result;
+
+      if (typeof result !== "string") {
+        setUploadError("Caricamento non riuscito. Riprova con un'altra immagine.");
+        return;
+      }
+
+      setUploadError(null);
+      setEntryUploads((previous) => ({ ...previous, [entryId]: result }));
     };
 
     reader.readAsDataURL(file);
@@ -76,6 +102,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
           {uploadedImage ? (
             <div className="flex h-full w-full flex-col items-center justify-center">
               <div className="flex h-full w-full max-w-5xl items-center justify-center px-6">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={uploadedImage}
                   alt="Anteprima immagine caricata"
@@ -105,19 +132,34 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
       <div className="flex w-full gap-4 overflow-x-auto pb-2">
         {preparedEntries.map((entry) => {
           const isActive = entry.id === activeEntry?.id;
+          const uploadedEntryImage = entryUploads[entry.id];
+          const previewImage = uploadedEntryImage ?? entry.imageSrc ?? null;
+
           return (
-            <button
-              key={entry.id}
-              type="button"
-              onClick={() => setActiveId(entry.id)}
-              className={`group relative flex h-40 min-w-[320px] flex-1 items-center justify-center rounded-[28px] border text-left transition duration-200 ease-out ${
-                isActive
-                  ? "border-accent/70 shadow-[0_20px_36px_rgba(15,23,42,0.18)]"
-                  : "border-border/60 hover:-translate-y-1 hover:border-accent/60"
-              }`}
-            >
-              <span className="sr-only">Visualizza {entry.title}</span>
-            </button>
+            <div key={entry.id} className="relative">
+              <input
+                id={`library-entry-upload-${entry.id}`}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={handleEntryImageChange(entry.id)}
+              />
+              <label
+                htmlFor={`library-entry-upload-${entry.id}`}
+                onClick={() => setActiveId(entry.id)}
+                className={`group relative flex h-40 min-w-[320px] flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-[28px] border transition duration-200 ease-out ${
+                  isActive
+                    ? "border-accent/70 shadow-[0_20px_36px_rgba(15,23,42,0.18)]"
+                    : "border-border/60 hover:-translate-y-1 hover:border-accent/60"
+                }`}
+              >
+                <span className="sr-only">Carica o sostituisci l&apos;immagine per {entry.title}</span>
+                {previewImage ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={previewImage} alt="" className="h-full w-full object-contain" />
+                ) : null}
+              </label>
+            </div>
           );
         })}
       </div>
