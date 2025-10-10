@@ -150,8 +150,8 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                 onClick={() => setActiveId(entry.id)}
                 className={`group relative flex h-40 w-[260px] min-w-[220px] cursor-pointer items-center justify-center overflow-hidden rounded-[32px] border bg-background transition duration-200 ease-out ${
                   isActive
-                    ? "border-accent/70 shadow-[0_20px_36px_rgba(15,23,42,0.18)]"
-                    : "border-border/60 hover:-translate-y-1 hover:border-accent/60"
+                    ? "-translate-y-0.5 border-accent/70 shadow-[0_20px_36px_rgba(15,23,42,0.18)]"
+                    : "border-border/60 hover:-translate-y-0.5 hover:border-accent/60"
                 }`}
               >
                 <span className="sr-only">Carica o sostituisci l&apos;immagine per {entry.title}</span>
