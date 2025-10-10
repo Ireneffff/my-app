@@ -12,13 +12,36 @@ import type { LibraryEntry } from "@/lib/libraryGallery";
 
 export type LibraryGalleryProps = {
   entries: LibraryEntry[];
+  onEntryImageChange?: (entryId: string, imageData: string) => void;
 };
 
-export default function LibraryGallery({ entries }: LibraryGalleryProps) {
+export default function LibraryGallery({ entries, onEntryImageChange }: LibraryGalleryProps) {
   const preparedEntries = useMemo(() => entries, [entries]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [entryUploads, setEntryUploads] = useState<Record<string, string>>({});
   const activeEntry = preparedEntries[activeIndex] ?? null;
+
+  useEffect(() => {
+    setEntryUploads((previous) => {
+      const nextEntries = { ...previous };
+      const validIds = new Set(preparedEntries.map((entry) => entry.id));
+
+      Object.keys(nextEntries).forEach((entryId) => {
+        if (!validIds.has(entryId)) {
+          delete nextEntries[entryId];
+        }
+      });
+
+      preparedEntries.forEach((entry) => {
+        const shouldSeed = !nextEntries[entry.id] && entry.imageSrc?.startsWith("data:");
+        if (shouldSeed) {
+          nextEntries[entry.id] = entry.imageSrc;
+        }
+      });
+
+      return nextEntries;
+    });
+  }, [preparedEntries]);
 
   useEffect(() => {
     if (activeIndex >= preparedEntries.length) {
@@ -47,6 +70,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
         }
 
         setEntryUploads((previous) => ({ ...previous, [entryId]: result }));
+        onEntryImageChange?.(entryId, result);
       };
 
       reader.readAsDataURL(file);
@@ -67,7 +91,9 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
     );
   };
 
-  const activePreview = activeEntry ? entryUploads[activeEntry.id] ?? null : null;
+  const activePreview = activeEntry
+    ? entryUploads[activeEntry.id] ?? (activeEntry.imageSrc?.startsWith("data:") ? activeEntry.imageSrc : null)
+    : null;
 
   const visibleEntries = useMemo(() => {
     if (!preparedEntries.length) {
@@ -238,7 +264,9 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
           {visibleEntries.length ? (
             visibleEntries.map((entry) => {
               const isActive = entry.id === activeEntry?.id;
-              const previewImage = entryUploads[entry.id] ?? null;
+              const previewImage =
+                entryUploads[entry.id] ??
+                (entry.imageSrc?.startsWith("data:") ? entry.imageSrc : null);
 
               return (
                 <div key={entry.id} className="flex flex-col items-center">

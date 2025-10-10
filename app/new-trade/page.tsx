@@ -739,6 +739,22 @@ function NewTradePageContent() {
     }
   }, []);
 
+  const handleLibraryImageChange = useCallback(
+    (entryId: string, imageDataValue: string) => {
+      if (entryId !== "current-draft") {
+        return;
+      }
+
+      setImageData(imageDataValue);
+      setImageError(null);
+
+      if (imageInputRef.current) {
+        imageInputRef.current.value = "";
+      }
+    },
+    [],
+  );
+
   return (
     <section
       className="relative flex min-h-dvh flex-col gap-12 bg-bg px-4 pb-16 text-fg sm:px-6 md:px-10"
@@ -1304,7 +1320,10 @@ function NewTradePageContent() {
             </>
           ) : (
             <div className="w-full surface-panel px-3 py-4 md:px-4 md:py-6">
-              <LibraryGallery entries={libraryEntries} />
+              <LibraryGallery
+                entries={libraryEntries}
+                onEntryImageChange={handleLibraryImageChange}
+              />
             </div>
           )}
         </div>
