@@ -103,12 +103,9 @@ async function uploadTradeImageFile(file: File, tradeId: string) {
     throw error;
   }
 
-  const { data: publicData, error: publicUrlError } =
-    supabase.storage.from(IMAGE_BUCKET).getPublicUrl(path);
-
-  if (publicUrlError) {
-    throw publicUrlError;
-  }
+  const { data: publicData } = supabase.storage
+    .from(IMAGE_BUCKET)
+    .getPublicUrl(path);
 
   if (!publicData?.publicUrl) {
     throw new Error("Failed to generate a public URL for the uploaded image.");
