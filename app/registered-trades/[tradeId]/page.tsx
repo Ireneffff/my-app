@@ -455,43 +455,39 @@ export default function RegisteredTradePage() {
               </div>
             </div>
           </div>
-
-          <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Images</span>
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg opacity-80">
-                  Before the position
-                </span>
-              </div>
-
-              {imageData ? (
-                <div className="flex flex-col gap-3">
-                  <div className="relative flex min-h-[240px] w-full items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface aspect-video">
-                    <Image
-                      src={imageData}
-                      alt="Trade context attachment"
-                      fill
-                      sizes="(min-width: 768px) 560px, 90vw"
-                      className="object-cover"
-                      unoptimized
-                    />
-                  </div>
-                  <p className="text-xs text-muted-fg">
-                    This is the snapshot you saved when registering the trade.
-                  </p>
-                </div>
-              ) : (
-                <p className="rounded-2xl border border-dashed bg-subtle px-5 py-6 text-center text-xs text-muted-fg">
-                  No image was attached to this trade.
-                </p>
-              )}
-            </div>
-          </div>
             </>
           ) : (
-            <div className="w-full surface-panel px-5 py-6 text-center text-sm text-muted-fg md:px-6 md:py-8">
-              Library gallery will be available soon.
+            <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Images</span>
+                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg opacity-80">
+                    Before the position
+                  </span>
+                </div>
+
+                {imageData ? (
+                  <div className="flex flex-col gap-3">
+                    <div className="relative flex min-h-[240px] w-full items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface aspect-video">
+                      <Image
+                        src={imageData}
+                        alt="Trade context attachment"
+                        fill
+                        sizes="(min-width: 768px) 560px, 90vw"
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                    <p className="text-xs text-muted-fg">
+                      This is the snapshot you saved when registering the trade.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="rounded-2xl border border-dashed bg-subtle px-5 py-6 text-center text-xs text-muted-fg">
+                    No image was attached to this trade.
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </div>
