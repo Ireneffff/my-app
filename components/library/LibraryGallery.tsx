@@ -133,7 +133,9 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
       <div className="flex w-full gap-4 overflow-x-auto pb-2">
         {preparedEntries.map((entry) => {
           const isActive = entry.id === activeEntry?.id;
-          const hasEntryImage = Boolean(entryUploads[entry.id] ?? entry.imageSrc);
+          const uploadedEntryImage = entryUploads[entry.id];
+          const previewImage = uploadedEntryImage ?? entry.imageSrc ?? null;
+          const hasEntryImage = Boolean(previewImage);
           return (
             <div key={entry.id} className="relative">
               <input
@@ -157,9 +159,14 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                     ? `Sostituisci l'immagine per ${entry.title}`
                     : `Carica un'immagine per ${entry.title}`}
                 </span>
-                <div className="flex h-full w-full items-center justify-center rounded-[28px] bg-foreground/5 px-6 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
-                  Enter Image
-                </div>
+                {previewImage ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={previewImage} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center rounded-[28px] bg-foreground/5 px-6 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
+                    Enter Image
+                  </div>
+                )}
               </label>
             </div>
           );
