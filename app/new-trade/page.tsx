@@ -29,6 +29,7 @@ import {
   REGISTERED_TRADES_UPDATED_EVENT,
   type StoredTrade,
 } from "@/lib/tradesStorage";
+import { supabase } from "@/lib/supabaseClient";
 
 type SymbolOption = {
   code: string;
@@ -43,6 +44,104 @@ const availableSymbols: SymbolOption[] = [
   { code: "USDCAD", flag: "🇺🇸 🇨🇦" },
   { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
 ];
+
+const IMAGE_BUCKET = "images";
+
+function sanitizeFileName(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48)
+    .trim() || "image";
+}
+
+function getExtensionFromMime(mimeType: string | undefined | null) {
+  if (!mimeType) {
+    return null;
+  }
+
+  const mapping: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+    "image/svg+xml": "svg",
+    "image/heic": "heic",
+    "image/heif": "heif",
+  };
+
+  return mapping[mimeType] ?? null;
+}
+
+function getFileExtension(fileName: string | undefined | null) {
+  if (!fileName) {
+    return null;
+  }
+
+  const match = /\.([a-zA-Z0-9]+)$/.exec(fileName);
+  return match ? match[1].toLowerCase() : null;
+}
+
+function createImagePath(tradeId: string, extension: string) {
+  const suffix = Math.random().toString(36).slice(2, 10);
+  return `${tradeId}/${Date.now()}-${suffix}.${extension}`;
+}
+
+async function uploadTradeImageFile(file: File, tradeId: string) {
+  const extension =
+    getFileExtension(file.name) ?? getExtensionFromMime(file.type) ?? "jpg";
+  const path = createImagePath(tradeId, extension);
+
+  const { error } = await supabase.storage.from(IMAGE_BUCKET).upload(path, file, {
+    cacheControl: "3600",
+    upsert: true,
+    contentType: file.type || undefined,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const { data: publicData, error: publicUrlError } =
+    supabase.storage.from(IMAGE_BUCKET).getPublicUrl(path);
+
+  if (publicUrlError) {
+    throw publicUrlError;
+  }
+
+  if (!publicData?.publicUrl) {
+    throw new Error("Failed to generate a public URL for the uploaded image.");
+  }
+
+  return publicData.publicUrl;
+}
+
+function dataUrlToFile(dataUrl: string, fileNameBase: string): File {
+  const match = /^data:(.+?);base64,(.+)$/.exec(dataUrl);
+
+  if (!match) {
+    throw new Error("Invalid data URL");
+  }
+
+  const [, mimeType, base64Data] = match;
+  const binaryString = atob(base64Data);
+  const length = binaryString.length;
+  const bytes = new Uint8Array(length);
+
+  for (let index = 0; index < length; index += 1) {
+    bytes[index] = binaryString.charCodeAt(index);
+  }
+
+  const extension = getExtensionFromMime(mimeType) ?? "png";
+  const fileName = `${sanitizeFileName(fileNameBase)}.${extension}`;
+
+  return new File([bytes], fileName, { type: mimeType });
+}
+
+function isDataUrl(value: string) {
+  return value.startsWith("data:");
+}
 
 function formatDateTimeLocal(date: Date) {
   const pad = (value: number) => value.toString().padStart(2, "0");
@@ -161,11 +260,13 @@ function NewTradePageContent() {
   >(null);
   const weekPointerTargetDateRef = useRef<string | null>(null);
   const weekWheelCooldownRef = useRef<number>(0);
+  const imagePreviewUrlRef = useRef<string | null>(null);
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
   const [imageData, setImageData] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [libraryTrades, setLibraryTrades] = useState<StoredTrade[]>([]);
   const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
   const [riskReward, setRiskReward] = useState("");
@@ -176,6 +277,13 @@ function NewTradePageContent() {
   const [calendarMonth, setCalendarMonth] = useState(() =>
     getStartOfMonth(initialSelectedDate),
   );
+  const [isSaving, setIsSaving] = useState(false);
+  const releasePreviewUrl = useCallback(() => {
+    if (imagePreviewUrlRef.current) {
+      URL.revokeObjectURL(imagePreviewUrlRef.current);
+      imagePreviewUrlRef.current = null;
+    }
+  }, []);
   const [, startNavigation] = useTransition();
   const calendarDays = useMemo(() => {
     const firstOfMonth = getStartOfMonth(calendarMonth);
@@ -205,6 +313,12 @@ function NewTradePageContent() {
       return date.toLocaleDateString(undefined, { weekday: "short" });
     });
   }, []);
+
+  useEffect(() => {
+    return () => {
+      releasePreviewUrl();
+    };
+  }, [releasePreviewUrl]);
 
   const triggerDateTimePicker = useCallback((input: HTMLInputElement | null) => {
     if (!input) {
@@ -588,8 +702,10 @@ function NewTradePageContent() {
       setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate, 17));
     }
 
+    releasePreviewUrl();
     setImageData(match.imageData ?? null);
     setImageError(null);
+    setSelectedImageFile(null);
 
     setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
     setRiskReward(match.riskReward ?? "");
@@ -599,7 +715,15 @@ function NewTradePageContent() {
     if (imageInputRef.current) {
       imageInputRef.current.value = "";
     }
-  }, [editingTradeId, handleSelectDate, imageInputRef, isEditing, router, selectedDate]);
+  }, [
+    editingTradeId,
+    handleSelectDate,
+    imageInputRef,
+    isEditing,
+    releasePreviewUrl,
+    router,
+    selectedDate,
+  ]);
 
   const libraryEntries = useMemo<LibraryEntry[]>(() => {
     const entries: LibraryEntry[] = [];
@@ -696,48 +820,52 @@ function NewTradePageContent() {
   const openTimeDisplay = getDateTimeDisplayParts(openTime);
   const closeTimeDisplay = getDateTimeDisplayParts(closeTime);
 
-  const handleImageChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] ?? null;
+  const handleImageChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0] ?? null;
 
-    if (!file) {
-      setImageError(null);
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setImageError("The selected file is too large. Choose an image under 5 MB.");
-      event.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setImageData(reader.result);
+      if (!file) {
         setImageError(null);
+        return;
       }
-    };
 
-    reader.onerror = () => {
-      setImageError("Failed to load the selected image. Please try another file.");
-      setImageData(null);
-    };
+      if (!file.type.startsWith("image/")) {
+        setImageError("Please select a valid image file.");
+        event.target.value = "";
+        return;
+      }
 
-    reader.readAsDataURL(file);
-  }, []);
+      if (file.size > 5 * 1024 * 1024) {
+        setImageError("The selected file is too large. Choose an image under 5 MB.");
+        event.target.value = "";
+        return;
+      }
+
+      releasePreviewUrl();
+
+      const objectUrl = URL.createObjectURL(file);
+      imagePreviewUrlRef.current = objectUrl;
+      setSelectedImageFile(file);
+      setImageData(objectUrl);
+      setImageError(null);
+      event.target.value = "";
+    },
+    [releasePreviewUrl],
+  );
 
   const openImagePicker = useCallback(() => {
     imageInputRef.current?.click();
   }, []);
 
   const handleRemoveImage = useCallback(() => {
+    releasePreviewUrl();
     setImageData(null);
     setImageError(null);
+    setSelectedImageFile(null);
     if (imageInputRef.current) {
       imageInputRef.current.value = "";
     }
-  }, []);
+  }, [imageInputRef, releasePreviewUrl]);
 
   const handleLibraryImageChange = useCallback(
     (entryId: string, imageDataValue: string) => {
@@ -745,6 +873,23 @@ function NewTradePageContent() {
         return;
       }
 
+      try {
+        if (isDataUrl(imageDataValue)) {
+          const generatedFile = dataUrlToFile(
+            imageDataValue,
+            `library-upload-${Date.now()}`,
+          );
+          setSelectedImageFile(generatedFile);
+        } else {
+          setSelectedImageFile(null);
+        }
+      } catch (error) {
+        console.error("Failed to process the selected library image", error);
+        setImageError("Failed to process the selected image. Please try again.");
+        return;
+      }
+
+      releasePreviewUrl();
       setImageData(imageDataValue);
       setImageError(null);
 
@@ -752,7 +897,7 @@ function NewTradePageContent() {
         imageInputRef.current.value = "";
       }
     },
-    [],
+    [imageInputRef, releasePreviewUrl],
   );
 
   return (
@@ -779,42 +924,92 @@ function NewTradePageContent() {
           variant="primary"
           size="md"
           className="ml-auto min-w-[140px]"
-          onClick={() => {
-            const targetTradeId = editingTradeId ?? Date.now().toString(36);
-            const trade: StoredTrade = {
-              id: targetTradeId,
-              symbolCode: selectedSymbol.code,
-              symbolFlag: selectedSymbol.flag,
-              date: selectedDate.toISOString(),
-              openTime: openTime ? openTime.toISOString() : null,
-              closeTime: closeTime ? closeTime.toISOString() : null,
-              imageData: imageData ?? null,
-              position,
-              riskReward: riskReward.trim() || null,
-              risk: risk.trim() || null,
-              pips: pips.trim() || null,
-            };
-
-            if (isEditing && editingTradeId) {
-              updateTrade(trade);
-            } else {
-              saveTrade(trade);
+          disabled={isSaving}
+          onClick={async () => {
+            if (isSaving) {
+              return;
             }
 
-            const destination = isEditing && editingTradeId ? `/registered-trades/${editingTradeId}` : "/";
+            setImageError(null);
+            setIsSaving(true);
 
-            startNavigation(() => {
-              router.push(destination);
-            });
+            const targetTradeId = editingTradeId ?? Date.now().toString(36);
 
-            window.setTimeout(() => {
-              if (window.location.pathname.startsWith("/new-trade")) {
-                window.location.href = destination;
+            try {
+              let resolvedImageUrl: string | null = null;
+
+              if (imageData) {
+                if (selectedImageFile) {
+                  resolvedImageUrl = await uploadTradeImageFile(
+                    selectedImageFile,
+                    targetTradeId,
+                  );
+                } else if (isDataUrl(imageData)) {
+                  const generatedFile = dataUrlToFile(
+                    imageData,
+                    `trade-${targetTradeId}-${Date.now()}`,
+                  );
+                  resolvedImageUrl = await uploadTradeImageFile(
+                    generatedFile,
+                    targetTradeId,
+                  );
+                } else {
+                  resolvedImageUrl = imageData;
+                }
               }
-            }, 150);
+
+              const trade: StoredTrade = {
+                id: targetTradeId,
+                symbolCode: selectedSymbol.code,
+                symbolFlag: selectedSymbol.flag,
+                date: selectedDate.toISOString(),
+                openTime: openTime ? openTime.toISOString() : null,
+                closeTime: closeTime ? closeTime.toISOString() : null,
+                imageData: resolvedImageUrl ?? null,
+                position,
+                riskReward: riskReward.trim() || null,
+                risk: risk.trim() || null,
+                pips: pips.trim() || null,
+              };
+
+              if (isEditing && editingTradeId) {
+                updateTrade(trade);
+              } else {
+                saveTrade(trade);
+              }
+
+              const destination =
+                isEditing && editingTradeId
+                  ? `/registered-trades/${editingTradeId}`
+                  : "/";
+
+              releasePreviewUrl();
+              setSelectedImageFile(null);
+              setImageData(resolvedImageUrl ?? null);
+
+              if (imageInputRef.current) {
+                imageInputRef.current.value = "";
+              }
+
+              startNavigation(() => {
+                router.push(destination);
+              });
+
+              window.setTimeout(() => {
+                if (window.location.pathname.startsWith("/new-trade")) {
+                  window.location.href = destination;
+                }
+              }, 150);
+            } catch (error) {
+              console.error("Failed to save trade", error);
+              setImageError("Failed to upload the trade image. Please try again.");
+              return;
+            } finally {
+              setIsSaving(false);
+            }
           }}
         >
-          {isEditing ? "Update" : "Save"}
+          {isSaving ? (isEditing ? "Updating…" : "Saving…") : isEditing ? "Update" : "Save"}
         </Button>
       </div>
 
