@@ -90,14 +90,33 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
 
   const heroInputId = activeEntry ? `library-hero-${activeEntry.id}` : null;
 
+  const triggerFilePicker = (input: HTMLInputElement | null) => {
+    if (!input) {
+      return;
+    }
+
+    if (typeof input.showPicker === "function") {
+      try {
+        input.showPicker();
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "NotAllowedError") {
+          return;
+        }
+      }
+    }
+
+    input.click();
+  };
+
   const handleHeroClick = () => {
-    heroInputRef.current?.click();
+    triggerFilePicker(heroInputRef.current);
   };
 
   const handleHeroKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      heroInputRef.current?.click();
+      triggerFilePicker(heroInputRef.current);
     }
   };
 
@@ -112,7 +131,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
 
     const input = thumbnailInputRefs.current[entryId];
 
-    input?.click();
+    triggerFilePicker(input ?? null);
   };
 
   const handleThumbnailKeyDown = (
@@ -225,7 +244,11 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                 <div key={entry.id} className="flex flex-col items-center">
                   <input
                     ref={(element) => {
-                      thumbnailInputRefs.current[entry.id] = element;
+                      if (element) {
+                        thumbnailInputRefs.current[entry.id] = element;
+                      } else {
+                        delete thumbnailInputRefs.current[entry.id];
+                      }
                     }}
                     id={`library-thumb-${entry.id}`}
                     type="file"
