@@ -78,16 +78,18 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
   return (
     <div className="flex w-full flex-col gap-8">
       <div
-        className={`relative min-h-[360px] rounded-[32px] ${
-          uploadedImage ? "bg-transparent" : "border border-dashed border-border/60 bg-surface/30 p-2"
+        className={`relative min-h-[360px] rounded-[40px] ${
+          uploadedImage
+            ? "bg-transparent"
+            : "border border-dashed border-border/60 bg-background/50 p-4 sm:p-8"
         }`}
       >
         <label
           htmlFor="library-hero-upload"
           className={`group flex h-full w-full cursor-pointer flex-col items-center justify-center text-center transition ${
             uploadedImage
-              ? "rounded-[32px] bg-transparent"
-              : "gap-3 rounded-[28px] bg-background/40 px-6 py-12 hover:bg-background/60"
+              ? "rounded-[40px] bg-transparent"
+              : "gap-4 rounded-[32px] border border-transparent px-8 py-16 hover:bg-background/70"
           }`}
         >
           <input
@@ -111,15 +113,14 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground">
-              <span className="rounded-full border border-dashed border-border/40 bg-background/80 px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/70">
+            <div className="flex flex-col items-center justify-center gap-4 text-foreground/60">
+              <span className="rounded-full border border-dashed border-border/40 bg-background px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/70">
                 Enter Image
               </span>
-              <p className="text-xs font-medium text-foreground/60 sm:text-sm">PNG, JPG o WEBP · max 5 MB</p>
-              <p className="max-w-[360px] text-xs text-foreground/50 sm:text-sm">
+              <p className="text-xs font-medium sm:text-sm">PNG, JPG o WEBP · max 5 MB</p>
+              <p className="max-w-[360px] text-xs sm:text-sm">
                 Tap to upload a snapshot of your setup before entering the trade.
               </p>
-              <p className="text-xs text-foreground/40 sm:text-sm">Formato consigliato: 19:6</p>
             </div>
           )}
 
@@ -147,7 +148,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
               <label
                 htmlFor={`library-entry-upload-${entry.id}`}
                 onClick={() => setActiveId(entry.id)}
-                className={`group relative flex h-40 min-w-[320px] flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-[28px] border transition duration-200 ease-out ${
+                className={`group relative flex h-40 w-[260px] min-w-[220px] cursor-pointer items-center justify-center overflow-hidden rounded-[32px] border bg-background transition duration-200 ease-out ${
                   isActive
                     ? "border-accent/70 shadow-[0_20px_36px_rgba(15,23,42,0.18)]"
                     : "border-border/60 hover:-translate-y-1 hover:border-accent/60"
@@ -156,7 +157,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                 <span className="sr-only">Carica o sostituisci l&apos;immagine per {entry.title}</span>
                 {previewImage ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={previewImage} alt="" className="h-full w-full object-contain" />
+                  <img src={previewImage} alt="" className="h-full w-full object-cover" />
                 ) : null}
               </label>
             </div>
