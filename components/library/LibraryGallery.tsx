@@ -133,9 +133,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
       <div className="flex w-full gap-4 overflow-x-auto pb-2">
         {preparedEntries.map((entry) => {
           const isActive = entry.id === activeEntry?.id;
-          const uploadedEntryImage = entryUploads[entry.id];
-          const previewImage = uploadedEntryImage ?? entry.imageSrc ?? null;
-
+          const hasEntryImage = Boolean(entryUploads[entry.id] ?? entry.imageSrc);
           return (
             <div key={entry.id} className="relative">
               <input
@@ -150,15 +148,18 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                 onClick={() => setActiveId(entry.id)}
                 className={`group relative flex h-40 w-[260px] min-w-[220px] cursor-pointer items-center justify-center overflow-hidden rounded-[32px] border bg-background transition duration-200 ease-out ${
                   isActive
-                    ? "-translate-y-0.5 border-accent/70 shadow-[0_20px_36px_rgba(15,23,42,0.18)]"
-                    : "border-border/60 hover:-translate-y-0.5 hover:border-accent/60"
+                    ? "border-accent/70 shadow-[0_20px_36px_rgba(15,23,42,0.18)]"
+                    : "border-border/60 hover:border-accent/60"
                 }`}
               >
-                <span className="sr-only">Carica o sostituisci l&apos;immagine per {entry.title}</span>
-                {previewImage ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={previewImage} alt="" className="h-full w-full object-cover" />
-                ) : null}
+                <span className="sr-only">
+                  {hasEntryImage
+                    ? `Sostituisci l'immagine per ${entry.title}`
+                    : `Carica un'immagine per ${entry.title}`}
+                </span>
+                <div className="flex h-full w-full items-center justify-center rounded-[28px] bg-foreground/5 px-6 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
+                  Enter Image
+                </div>
               </label>
             </div>
           );
