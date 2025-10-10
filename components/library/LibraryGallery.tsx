@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import type { LibraryEntry } from "@/lib/libraryGallery";
 
 export type LibraryGalleryProps = {
@@ -11,8 +11,6 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
   const preparedEntries = useMemo(() => entries, [entries]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [entryUploads, setEntryUploads] = useState<Record<string, string>>({});
-  const activeUploadInputRef = useRef<HTMLInputElement | null>(null);
-  const pendingUploadEntryIdRef = useRef<string | null>(null);
   const activeEntry = preparedEntries[activeIndex] ?? null;
 
   useEffect(() => {
@@ -21,30 +19,29 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
     }
   }, [activeIndex, preparedEntries.length]);
 
-  const handleUploadForActiveEntry = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    const entryId = pendingUploadEntryIdRef.current ?? activeEntry?.id ?? null;
-    pendingUploadEntryIdRef.current = null;
+  const handleUploadForEntry =
+    (entryId: string) => (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
 
-    if (!file || !entryId) {
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      const result = reader.result;
-
-      if (typeof result !== "string") {
+      if (!file) {
         return;
       }
 
-      setEntryUploads((previous) => ({ ...previous, [entryId]: result }));
-    };
+      const reader = new FileReader();
 
-    reader.readAsDataURL(file);
-    event.target.value = "";
-  };
+      reader.onload = () => {
+        const result = reader.result;
+
+        if (typeof result !== "string") {
+          return;
+        }
+
+        setEntryUploads((previous) => ({ ...previous, [entryId]: result }));
+      };
+
+      reader.readAsDataURL(file);
+      event.target.value = "";
+    };
 
   const goToPrevious = () => {
     setActiveIndex((previous) =>
@@ -81,86 +78,46 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
     return preparedEntries.slice(start, end);
   }, [activeIndex, preparedEntries]);
 
-  const isUploadDisabled = !activeEntry;
-
-  const triggerUploadForEntry = (entryId: string) => {
-    pendingUploadEntryIdRef.current = entryId;
-
-    const clickInput = () => {
-      activeUploadInputRef.current?.click();
-    };
-
-    if (typeof window !== "undefined" && "requestAnimationFrame" in window) {
-      window.requestAnimationFrame(clickInput);
-    } else {
-      clickInput();
-    }
-  };
-
-  const handleHeroClick = () => {
-    if (!activeEntry) {
-      return;
-    }
-
-    triggerUploadForEntry(activeEntry.id);
-  };
-
-  const handleThumbnailClick = (entryId: string) => {
-    const targetIndex = preparedEntries.findIndex(
-      (preparedEntry) => preparedEntry.id === entryId,
-    );
-
-    if (targetIndex === -1) {
-      return;
-    }
-
-    if (targetIndex !== activeIndex) {
-      setActiveIndex(targetIndex);
-    }
-
-    triggerUploadForEntry(entryId);
-  };
-
   return (
     <div className="flex w-full flex-col gap-8">
-      <input
-        id="library-active-upload"
-        type="file"
-        accept="image/*"
-        className="sr-only"
-        disabled={!activeEntry}
-        ref={activeUploadInputRef}
-        onChange={handleUploadForActiveEntry}
-      />
-      <button
-        type="button"
-        onClick={handleHeroClick}
-        disabled={isUploadDisabled}
-        className={`group relative flex min-h-[420px] w-full flex-col items-center justify-center rounded-[40px] border border-dashed border-border/50 bg-[#f6f7f9] text-center transition ${
-          isUploadDisabled ? "cursor-default opacity-80" : "cursor-pointer hover:border-border/70"
+      <div
+        className={`group relative flex min-h-[420px] w-full flex-col items-center justify-center rounded-[40px] border border-dashed border-border/50 bg-[#f6f7f9] text-center transition focus-within:border-border/70 ${
+          activeEntry ? "cursor-pointer hover:border-border/70" : "cursor-default opacity-80"
         }`}
       >
-        {activePreview ? (
-          <div className="flex h-full w-full items-center justify-center p-6 sm:p-10">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={activePreview}
-              alt="Anteprima immagine caricata"
-              className="max-h-[520px] w-full rounded-[32px] object-contain"
-            />
-          </div>
-        ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-10 text-foreground/50">
-            <span className="rounded-full border border-dashed border-border/50 bg-white px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
-              Enter image
-            </span>
-            <p className="text-xs text-foreground/50">PNG, JPG or WEBP - max 5 MB</p>
-            <p className="text-xs text-foreground/40">
-              Tap to upload a snapshot of your setup before entering the trade.
-            </p>
-          </div>
-        )}
-      </button>
+        {activeEntry ? (
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+            onChange={handleUploadForEntry(activeEntry.id)}
+            aria-label="Upload image"
+          />
+        ) : null}
+        <div className="pointer-events-none flex h-full w-full flex-col items-center justify-center">
+          {activePreview ? (
+            <div className="flex h-full w-full items-center justify-center p-6 sm:p-10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={activePreview}
+                alt="Anteprima immagine caricata"
+                className="max-h-[520px] w-full rounded-[32px] object-contain"
+              />
+            </div>
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-10 text-foreground/50">
+              <span className="rounded-full border border-dashed border-border/50 bg-white px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
+                Enter image
+              </span>
+              <p className="text-xs text-foreground/50">PNG, JPG or WEBP - max 5 MB</p>
+              <p className="text-xs text-foreground/40">
+                Tap to upload a snapshot of your setup before entering the trade.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="flex flex-col items-center gap-8">
         <div className="relative flex w-full items-center justify-center">
@@ -199,25 +156,42 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
               const previewImage = entryUploads[entry.id] ?? null;
 
               return (
-                <button
+                <div
                   key={entry.id}
-                  type="button"
-                  onClick={() => handleThumbnailClick(entry.id)}
-                  className={`flex h-40 w-[220px] flex-col items-center justify-center rounded-[32px] border border-dashed bg-[#f6f7f9] transition ${
+                  className={`group relative flex h-40 w-[220px] flex-col items-center justify-center rounded-[32px] border border-dashed bg-[#f6f7f9] transition focus-within:border-accent/60 ${
                     isActive
                       ? "border-accent/60 shadow-[0_24px_48px_rgba(15,23,42,0.08)]"
                       : "border-border/60 hover:border-accent/40"
                   }`}
                 >
-                  {previewImage ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={previewImage} alt="" className="h-full w-full rounded-[28px] object-cover" />
-                  ) : (
-                    <span className="text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
-                      Enter image
-                    </span>
-                  )}
-                </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                    aria-label="Upload image"
+                    onClick={() => {
+                      const targetIndex = preparedEntries.findIndex(
+                        (preparedEntry) => preparedEntry.id === entry.id,
+                      );
+
+                      if (targetIndex !== -1 && targetIndex !== activeIndex) {
+                        setActiveIndex(targetIndex);
+                      }
+                    }}
+                    onChange={handleUploadForEntry(entry.id)}
+                  />
+                  <div className="pointer-events-none flex h-full w-full items-center justify-center">
+                    {previewImage ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={previewImage} alt="" className="h-full w-full rounded-[28px] object-cover" />
+                    ) : (
+                      <span className="text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
+                        Enter image
+                      </span>
+                    )}
+                  </div>
+                </div>
               );
             })
           ) : (
