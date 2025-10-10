@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { LibraryEntry } from "@/lib/libraryGallery";
 
 export type LibraryGalleryProps = {
@@ -11,6 +11,8 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
   const preparedEntries = useMemo(() => entries, [entries]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [entryUploads, setEntryUploads] = useState<Record<string, string>>({});
+  const activeUploadInputRef = useRef<HTMLInputElement | null>(null);
+  const pendingUploadEntryIdRef = useRef<string | null>(null);
   const activeEntry = preparedEntries[activeIndex] ?? null;
 
   useEffect(() => {
@@ -21,8 +23,10 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
 
   const handleUploadForActiveEntry = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    const entryId = pendingUploadEntryIdRef.current ?? activeEntry?.id ?? null;
+    pendingUploadEntryIdRef.current = null;
 
-    if (!file || !activeEntry) {
+    if (!file || !entryId) {
       return;
     }
 
@@ -35,7 +39,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
         return;
       }
 
-      setEntryUploads((previous) => ({ ...previous, [activeEntry.id]: result }));
+      setEntryUploads((previous) => ({ ...previous, [entryId]: result }));
     };
 
     reader.readAsDataURL(file);
@@ -79,23 +83,63 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
 
   const isUploadDisabled = !activeEntry;
 
+  const triggerUploadForEntry = (entryId: string) => {
+    pendingUploadEntryIdRef.current = entryId;
+
+    const clickInput = () => {
+      activeUploadInputRef.current?.click();
+    };
+
+    if (typeof window !== "undefined" && "requestAnimationFrame" in window) {
+      window.requestAnimationFrame(clickInput);
+    } else {
+      clickInput();
+    }
+  };
+
+  const handleHeroClick = () => {
+    if (!activeEntry) {
+      return;
+    }
+
+    triggerUploadForEntry(activeEntry.id);
+  };
+
+  const handleThumbnailClick = (entryId: string) => {
+    const targetIndex = preparedEntries.findIndex(
+      (preparedEntry) => preparedEntry.id === entryId,
+    );
+
+    if (targetIndex === -1) {
+      return;
+    }
+
+    if (targetIndex !== activeIndex) {
+      setActiveIndex(targetIndex);
+    }
+
+    triggerUploadForEntry(entryId);
+  };
+
   return (
     <div className="flex w-full flex-col gap-8">
-      <label
-        htmlFor="library-active-upload"
+      <input
+        id="library-active-upload"
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        disabled={!activeEntry}
+        ref={activeUploadInputRef}
+        onChange={handleUploadForActiveEntry}
+      />
+      <button
+        type="button"
+        onClick={handleHeroClick}
+        disabled={isUploadDisabled}
         className={`group relative flex min-h-[420px] w-full flex-col items-center justify-center rounded-[40px] border border-dashed border-border/50 bg-[#f6f7f9] text-center transition ${
           isUploadDisabled ? "cursor-default opacity-80" : "cursor-pointer hover:border-border/70"
         }`}
       >
-        <input
-          id="library-active-upload"
-          type="file"
-          accept="image/*"
-          className="sr-only"
-          disabled={!activeEntry}
-          onChange={handleUploadForActiveEntry}
-        />
-
         {activePreview ? (
           <div className="flex h-full w-full items-center justify-center p-6 sm:p-10">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -116,7 +160,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
             </p>
           </div>
         )}
-      </label>
+      </button>
 
       <div className="flex flex-col items-center gap-8">
         <div className="relative flex w-full items-center justify-center">
@@ -158,15 +202,7 @@ export default function LibraryGallery({ entries }: LibraryGalleryProps) {
                 <button
                   key={entry.id}
                   type="button"
-                  onClick={() => {
-                    const targetIndex = preparedEntries.findIndex(
-                      (preparedEntry) => preparedEntry.id === entry.id,
-                    );
-
-                    if (targetIndex !== -1) {
-                      setActiveIndex(targetIndex);
-                    }
-                  }}
+                  onClick={() => handleThumbnailClick(entry.id)}
                   className={`flex h-40 w-[220px] flex-col items-center justify-center rounded-[32px] border border-dashed bg-[#f6f7f9] transition ${
                     isActive
                       ? "border-accent/60 shadow-[0_24px_48px_rgba(15,23,42,0.08)]"
