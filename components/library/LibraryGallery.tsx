@@ -1,176 +1,328 @@
 "use client";
 
-import { useMemo, useState, type ChangeEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type KeyboardEvent,
+} from "react";
 import type { LibraryEntry } from "@/lib/libraryGallery";
 
 export type LibraryGalleryProps = {
   entries: LibraryEntry[];
+  onEntryImageChange?: (entryId: string, imageData: string) => void;
 };
 
-export default function LibraryGallery({ entries }: LibraryGalleryProps) {
-  const preparedEntries = useMemo(() => entries.filter((entry) => entry.imageSrc), [entries]);
-  const [activeId, setActiveId] = useState(() => preparedEntries[0]?.id ?? null);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+export default function LibraryGallery({ entries, onEntryImageChange }: LibraryGalleryProps) {
+  const preparedEntries = useMemo(() => entries, [entries]);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [entryUploads, setEntryUploads] = useState<Record<string, string>>({});
+  const activeEntry = preparedEntries[activeIndex] ?? null;
 
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  useEffect(() => {
+    setEntryUploads((previous) => {
+      const nextEntries = { ...previous };
+      const validIds = new Set(preparedEntries.map((entry) => entry.id));
 
-    if (!file) {
-      return;
+      Object.keys(nextEntries).forEach((entryId) => {
+        if (!validIds.has(entryId)) {
+          delete nextEntries[entryId];
+        }
+      });
+
+      preparedEntries.forEach((entry) => {
+        const shouldSeed = !nextEntries[entry.id] && entry.imageSrc?.startsWith("data:");
+        if (shouldSeed) {
+          nextEntries[entry.id] = entry.imageSrc;
+        }
+      });
+
+      return nextEntries;
+    });
+  }, [preparedEntries]);
+
+  useEffect(() => {
+    if (activeIndex >= preparedEntries.length) {
+      setActiveIndex(preparedEntries.length ? preparedEntries.length - 1 : 0);
     }
+  }, [activeIndex, preparedEntries.length]);
 
-    setUploadError(null);
+  const heroInputRef = useRef<HTMLInputElement | null>(null);
+  const thumbnailInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-    const reader = new FileReader();
+  const handleUploadForEntry =
+    (entryId: string) => (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
 
-    reader.onload = () => {
-      const result = reader.result;
-
-      if (typeof result !== "string") {
-        setUploadError("Caricamento non riuscito. Riprova con un'altra immagine.");
+      if (!file) {
         return;
       }
 
-      setUploadError(null);
-      setUploadedImage(result);
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const result = reader.result;
+
+        if (typeof result !== "string") {
+          return;
+        }
+
+        setEntryUploads((previous) => ({ ...previous, [entryId]: result }));
+        onEntryImageChange?.(entryId, result);
+      };
+
+      reader.readAsDataURL(file);
+      event.target.value = "";
     };
 
-    reader.readAsDataURL(file);
-    event.target.value = "";
+  const goToPrevious = () => {
+    setActiveIndex((previous) =>
+      previous === 0 ? Math.max(preparedEntries.length - 1, 0) : previous - 1,
+    );
   };
 
-  const handleEntryImageChange = (entryId: string) => (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const goToNext = () => {
+    setActiveIndex((previous) =>
+      previous === Math.max(preparedEntries.length - 1, 0)
+        ? 0
+        : Math.min(previous + 1, preparedEntries.length - 1),
+    );
+  };
 
-    if (!file) {
+  const activePreview = activeEntry
+    ? entryUploads[activeEntry.id] ?? (activeEntry.imageSrc?.startsWith("data:") ? activeEntry.imageSrc : null)
+    : null;
+
+  const visibleEntries = useMemo(() => {
+    if (!preparedEntries.length) {
+      return [];
+    }
+
+    if (preparedEntries.length <= 3) {
+      return preparedEntries;
+    }
+
+    const start = Math.max(0, activeIndex - 1);
+    const end = Math.min(start + 3, preparedEntries.length);
+
+    if (end - start < 3 && start > 0) {
+      return preparedEntries.slice(end - 3, end);
+    }
+
+    return preparedEntries.slice(start, end);
+  }, [activeIndex, preparedEntries]);
+
+  const heroInputId = activeEntry ? `library-hero-${activeEntry.id}` : null;
+
+  const triggerFilePicker = (input: HTMLInputElement | null) => {
+    if (!input) {
       return;
     }
 
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      const result = reader.result;
-
-      if (typeof result !== "string") {
-        setUploadError("Caricamento non riuscito. Riprova con un'altra immagine.");
+    if (typeof input.showPicker === "function") {
+      try {
+        input.showPicker();
         return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "NotAllowedError") {
+          return;
+        }
       }
+    }
 
-      setUploadError(null);
-      setEntryUploads((previous) => ({ ...previous, [entryId]: result }));
-    };
-
-    reader.readAsDataURL(file);
-    event.target.value = "";
+    input.click();
   };
 
-  const activeEntry = useMemo(
-    () => preparedEntries.find((entry) => entry.id === activeId) ?? preparedEntries[0],
-    [activeId, preparedEntries],
-  );
+  const handleHeroClick = () => {
+    triggerFilePicker(heroInputRef.current);
+  };
 
-  if (!preparedEntries.length) {
-    return <div className="w-full rounded-3xl border border-dashed border-border/60 bg-surface/40 px-6 py-16" />;
-  }
+  const handleHeroKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      triggerFilePicker(heroInputRef.current);
+    }
+  };
+
+  const handleThumbnailClick = (entryId: string) => {
+    const targetIndex = preparedEntries.findIndex(
+      (preparedEntry) => preparedEntry.id === entryId,
+    );
+
+    if (targetIndex !== -1 && targetIndex !== activeIndex) {
+      setActiveIndex(targetIndex);
+    }
+
+    const input = thumbnailInputRefs.current[entryId];
+
+    triggerFilePicker(input ?? null);
+  };
+
+  const handleThumbnailKeyDown = (
+    event: KeyboardEvent<HTMLDivElement>,
+    entryId: string,
+  ) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleThumbnailClick(entryId);
+    }
+  };
 
   return (
     <div className="flex w-full flex-col gap-8">
-      <div
-        className={`relative min-h-[360px] rounded-[40px] ${
-          uploadedImage
-            ? "bg-transparent"
-            : "border border-dashed border-border/60 bg-background/50 p-4 sm:p-8"
-        }`}
-      >
-        <label
-          htmlFor="library-hero-upload"
-          className={`group flex h-full w-full cursor-pointer flex-col items-center justify-center text-center transition ${
-            uploadedImage
-              ? "rounded-[40px] bg-transparent"
-              : "gap-4 rounded-[32px] border border-transparent px-8 py-16 hover:bg-background/70"
-          }`}
-        >
+      {activeEntry ? (
+        <>
           <input
-            id="library-hero-upload"
+            ref={heroInputRef}
+            id={heroInputId ?? undefined}
             type="file"
             accept="image/*"
+            capture="environment"
             className="sr-only"
-            onChange={handleImageChange}
+            onChange={handleUploadForEntry(activeEntry.id)}
+            aria-label="Upload image"
           />
-          <span className="sr-only">Carica o sostituisci l&apos;immagine della libreria</span>
-
-          {uploadedImage ? (
+          <div
+            onClick={handleHeroClick}
+            onKeyDown={handleHeroKeyDown}
+            role="button"
+            tabIndex={0}
+            className="group relative flex min-h-[420px] w-full cursor-pointer flex-col items-center justify-center rounded-[40px] border border-dashed border-border/50 bg-[#f6f7f9] text-center transition hover:border-border/70 focus:outline-none focus-visible:border-border/70"
+            aria-label="Upload image"
+          >
             <div className="flex h-full w-full flex-col items-center justify-center">
-              <div className="flex h-full w-full max-w-5xl items-center justify-center px-6">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={uploadedImage}
-                  alt="Anteprima immagine caricata"
-                  className="max-h-[520px] w-full object-contain"
-                />
+              {activePreview ? (
+                <div className="flex h-full w-full items-center justify-center p-6 sm:p-10">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={activePreview}
+                    alt="Anteprima immagine caricata"
+                    className="max-h-[520px] w-full rounded-[32px] object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-10 text-foreground/50">
+                  <span className="rounded-full border border-dashed border-border/50 bg-white px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
+                    Enter image
+                  </span>
+                  <p className="text-xs text-foreground/50">PNG, JPG or WEBP - max 5 MB</p>
+                  <p className="text-xs text-foreground/40">
+                    Tap to upload a snapshot of your setup before entering the trade.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="relative flex min-h-[420px] w-full flex-col items-center justify-center rounded-[40px] border border-dashed border-border/50 bg-[#f6f7f9] text-center opacity-80">
+          <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-10 text-foreground/50">
+            <span className="rounded-full border border-dashed border-border/50 bg-white px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
+              Enter image
+            </span>
+            <p className="text-xs text-foreground/50">PNG, JPG or WEBP - max 5 MB</p>
+            <p className="text-xs text-foreground/40">
+              Tap to upload a snapshot of your setup before entering the trade.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col items-center gap-8">
+        <div className="relative flex w-full items-center justify-center">
+          <div className="h-px w-full bg-border/40" />
+          <div className="absolute inset-0 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={goToPrevious}
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-border bg-background text-lg font-semibold text-foreground shadow-sm transition hover:border-accent/50 hover:text-accent disabled:opacity-50"
+              aria-label="Previous image"
+              disabled={!preparedEntries.length}
+            >
+              ‹
+            </button>
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-foreground text-lg text-background shadow">
+                ✓
               </div>
             </div>
+            <button
+              type="button"
+              onClick={goToNext}
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-border bg-background text-lg font-semibold text-foreground shadow-sm transition hover:border-accent/50 hover:text-accent disabled:opacity-50"
+              aria-label="Next image"
+              disabled={!preparedEntries.length}
+            >
+              ›
+            </button>
+          </div>
+        </div>
+
+        <div className="flex w-full flex-wrap items-center justify-center gap-6">
+          {visibleEntries.length ? (
+            visibleEntries.map((entry) => {
+              const isActive = entry.id === activeEntry?.id;
+              const previewImage =
+                entryUploads[entry.id] ??
+                (entry.imageSrc?.startsWith("data:") ? entry.imageSrc : null);
+
+              return (
+                <div key={entry.id} className="flex flex-col items-center">
+                  <input
+                    ref={(element) => {
+                      if (element) {
+                        thumbnailInputRefs.current[entry.id] = element;
+                      } else {
+                        delete thumbnailInputRefs.current[entry.id];
+                      }
+                    }}
+                    id={`library-thumb-${entry.id}`}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="sr-only"
+                    aria-label="Upload image"
+                    onChange={handleUploadForEntry(entry.id)}
+                  />
+                  <div
+                    onClick={() => handleThumbnailClick(entry.id)}
+                    onKeyDown={(event) => handleThumbnailKeyDown(event, entry.id)}
+                    role="button"
+                    tabIndex={0}
+                    className={`group relative flex h-40 w-[220px] cursor-pointer flex-col items-center justify-center rounded-[32px] border border-dashed bg-[#f6f7f9] transition hover:border-accent/40 focus:outline-none focus-visible:border-accent/60 ${
+                      isActive
+                        ? "border-accent/60 shadow-[0_24px_48px_rgba(15,23,42,0.08)]"
+                        : "border-border/60"
+                    }`}
+                    aria-label="Upload image"
+                  >
+                    <div className="flex h-full w-full items-center justify-center">
+                      {previewImage ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={previewImage} alt="" className="h-full w-full rounded-[28px] object-cover" />
+                      ) : (
+                        <span className="text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
+                          Enter image
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
           ) : (
-            <div className="flex flex-col items-center justify-center gap-4 text-foreground/60">
-              <span className="rounded-full border border-dashed border-border/40 bg-background px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/70">
-                Enter Image
+            <div className="flex h-40 w-[220px] flex-col items-center justify-center gap-2 rounded-[32px] border border-dashed border-border/60 bg-[#f6f7f9] text-center">
+              <span className="text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
+                Enter image
               </span>
-              <p className="text-xs font-medium sm:text-sm">PNG, JPG o WEBP · max 5 MB</p>
-              <p className="max-w-[360px] text-xs sm:text-sm">
-                Tap to upload a snapshot of your setup before entering the trade.
-              </p>
+              <span className="text-[10px] uppercase tracking-[0.3em] text-foreground/40">
+                PNG / JPG / WEBP
+              </span>
             </div>
           )}
-
-          {uploadError ? (
-            <p className="mt-6 text-sm text-destructive">{uploadError}</p>
-          ) : null}
-        </label>
-      </div>
-
-      <div className="flex w-full gap-4 overflow-x-auto pb-2">
-        {preparedEntries.map((entry) => {
-          const isActive = entry.id === activeEntry?.id;
-          const uploadedEntryImage = entryUploads[entry.id];
-          const previewImage = uploadedEntryImage ?? entry.imageSrc ?? null;
-          const hasEntryImage = Boolean(previewImage);
-          return (
-            <div key={entry.id} className="relative">
-              <input
-                id={`library-entry-upload-${entry.id}`}
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={handleEntryImageChange(entry.id)}
-              />
-              <label
-                htmlFor={`library-entry-upload-${entry.id}`}
-                onClick={() => setActiveId(entry.id)}
-                className={`group relative flex h-40 w-[260px] min-w-[220px] cursor-pointer items-center justify-center overflow-hidden rounded-[32px] border bg-background transition duration-200 ease-out ${
-                  isActive
-                    ? "border-accent/70 shadow-[0_20px_36px_rgba(15,23,42,0.18)]"
-                    : "border-border/60 hover:border-accent/60"
-                }`}
-              >
-                <span className="sr-only">
-                  {hasEntryImage
-                    ? `Sostituisci l'immagine per ${entry.title}`
-                    : `Carica un'immagine per ${entry.title}`}
-                </span>
-                {previewImage ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={previewImage} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center rounded-[28px] bg-foreground/5 px-6 text-xs font-semibold uppercase tracking-[0.4em] text-foreground/60">
-                    Enter Image
-                  </div>
-                )}
-              </label>
-            </div>
-          );
-        })}
+        </div>
       </div>
     </div>
   );
