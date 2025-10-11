@@ -16,7 +16,15 @@ import {
   type WheelEvent as ReactWheelEvent,
 } from "react";
 import Button from "@/components/ui/Button";
-import { loadTrades, saveTrade, updateTrade, type StoredTrade } from "@/lib/tradesStorage";
+import { LibrarySection } from "@/components/library/LibrarySection";
+import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
+import {
+  loadTrades,
+  saveTrade,
+  updateTrade,
+  type StoredLibraryItem,
+  type StoredTrade,
+} from "@/lib/tradesStorage";
 
 type SymbolOption = {
   code: string;
@@ -31,6 +39,15 @@ const availableSymbols: SymbolOption[] = [
   { code: "USDCAD", flag: "🇺🇸 🇨🇦" },
   { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
 ];
+
+type LibraryItem = StoredLibraryItem;
+
+function createLibraryItem(imageData: string | null = null): LibraryItem {
+  return {
+    id: `library-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    imageData,
+  } satisfies LibraryItem;
+}
 
 function formatDateTimeLocal(date: Date) {
   const pad = (value: number) => value.toString().padStart(2, "0");
@@ -144,6 +161,7 @@ function NewTradePageContent() {
   const openTimeInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimeInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const weekSwipeOriginRef = useRef<
     { x: number; time: number } | null
   >(null);
@@ -152,8 +170,12 @@ function NewTradePageContent() {
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
-  const [imageData, setImageData] = useState<string | null>(null);
+  const initialLibraryItems = useMemo(() => [createLibraryItem(null)], []);
+  const [libraryItems, setLibraryItems] = useState<LibraryItem[]>(initialLibraryItems);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>(
+    initialLibraryItems[0]?.id ?? "",
+  );
   const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
   const [riskReward, setRiskReward] = useState("");
   const [risk, setRisk] = useState("");
@@ -164,6 +186,30 @@ function NewTradePageContent() {
     getStartOfMonth(initialSelectedDate),
   );
   const [, startNavigation] = useTransition();
+
+  useEffect(() => {
+    if (libraryItems.length === 0) {
+      const fallback = createLibraryItem(null);
+      setLibraryItems([fallback]);
+      setSelectedLibraryItemId(fallback.id);
+      return;
+    }
+
+    if (!libraryItems.some((item) => item.id === selectedLibraryItemId)) {
+      setSelectedLibraryItemId(libraryItems[0].id);
+    }
+  }, [libraryItems, selectedLibraryItemId]);
+
+  const selectedLibraryItem = useMemo(
+    () =>
+      libraryItems.find((item) => item.id === selectedLibraryItemId) ??
+      libraryItems[0] ??
+      null,
+    [libraryItems, selectedLibraryItemId],
+  );
+
+  const selectedImageData = selectedLibraryItem?.imageData ?? null;
+
   const calendarDays = useMemo(() => {
     const firstOfMonth = getStartOfMonth(calendarMonth);
     const gridStart = getStartOfWeek(firstOfMonth);
@@ -556,7 +602,16 @@ function NewTradePageContent() {
       setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate, 17));
     }
 
-    setImageData(match.imageData ?? null);
+    const hydratedLibraryItems =
+      Array.isArray(match.libraryItems) && match.libraryItems.length > 0
+        ? match.libraryItems.map((item) => ({
+            id: item.id,
+            imageData: item.imageData ?? null,
+          }))
+        : [createLibraryItem(match.imageData ?? null)];
+
+    setLibraryItems(hydratedLibraryItems);
+    setSelectedLibraryItemId(hydratedLibraryItems[0]?.id ?? initialLibraryItems[0].id);
     setImageError(null);
 
     setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
@@ -567,7 +622,15 @@ function NewTradePageContent() {
     if (imageInputRef.current) {
       imageInputRef.current.value = "";
     }
-  }, [editingTradeId, handleSelectDate, imageInputRef, isEditing, router, selectedDate]);
+  }, [
+    editingTradeId,
+    handleSelectDate,
+    imageInputRef,
+    initialLibraryItems,
+    isEditing,
+    router,
+    selectedDate,
+  ]);
 
   const dayOfWeekLabel = useMemo(
     () =>
@@ -587,6 +650,12 @@ function NewTradePageContent() {
   const handleImageChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
 
+    const targetItemId = selectedLibraryItemId;
+    if (!targetItemId) {
+      setImageError("Nessuna card selezionata. Aggiungi o scegli una card prima di caricare.");
+      return;
+    }
+
     if (!file) {
       setImageError(null);
       return;
@@ -599,33 +668,235 @@ function NewTradePageContent() {
     }
 
     const reader = new FileReader();
+    const inputElement = event.target;
 
     reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setImageData(reader.result);
-        setImageError(null);
+      const result = reader.result;
+
+      if (typeof result !== "string") {
+        setImageError("Impossibile leggere l'immagine selezionata. Riprova con un altro file.");
+        if (inputElement) {
+          inputElement.value = "";
+        }
+        return;
+      }
+
+      setLibraryItems((prev) =>
+        prev.map((item) =>
+          item.id === targetItemId
+            ? {
+                ...item,
+                imageData: result,
+              }
+            : item,
+        ),
+      );
+      setImageError(null);
+
+      if (inputElement) {
+        inputElement.value = "";
       }
     };
 
     reader.onerror = () => {
       setImageError("Failed to load the selected image. Please try another file.");
-      setImageData(null);
+      setLibraryItems((prev) =>
+        prev.map((item) =>
+          item.id === targetItemId
+            ? {
+                ...item,
+                imageData: null,
+              }
+            : item,
+        ),
+      );
+
+      if (inputElement) {
+        inputElement.value = "";
+      }
     };
 
     reader.readAsDataURL(file);
-  }, []);
+  }, [selectedLibraryItemId]);
 
   const openImagePicker = useCallback(() => {
     imageInputRef.current?.click();
   }, []);
 
   const handleRemoveImage = useCallback(() => {
-    setImageData(null);
+    if (!selectedLibraryItemId) {
+      return;
+    }
+
+    setLibraryItems((prev) =>
+      prev.map((item) =>
+        item.id === selectedLibraryItemId
+          ? {
+              ...item,
+              imageData: null,
+            }
+          : item,
+      ),
+    );
+    setImageError(null);
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+  }, [selectedLibraryItemId]);
+
+  const handleDownloadImage = useCallback(() => {
+    if (!selectedImageData) {
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = selectedImageData;
+    link.download = "trade-preview.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [selectedImageData]);
+
+  const handleFocusPreview = useCallback(() => {
+    previewContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, []);
+
+  const handleAddLibraryItem = useCallback(() => {
+    const newItem = createLibraryItem(null);
+    setLibraryItems((prev) => [...prev, newItem]);
+    setSelectedLibraryItemId(newItem.id);
     setImageError(null);
     if (imageInputRef.current) {
       imageInputRef.current.value = "";
     }
   }, []);
+
+  const libraryCards = useMemo(
+    () =>
+      libraryItems.map((item, index) => {
+        const hasImage = Boolean(item.imageData);
+
+        return {
+          id: item.id,
+          label: hasImage ? `Anteprima ${index + 1}` : "Carica anteprima",
+          onClick: () => {
+            if (hasImage) {
+              handleFocusPreview();
+            } else {
+              openImagePicker();
+            }
+          },
+          visual: hasImage ? (
+            <div className="relative h-full w-full">
+              <Image
+                src={item.imageData!}
+                alt={`Anteprima libreria ${index + 1}`}
+                fill
+                sizes="(min-width: 768px) 160px, 200px"
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-neutral-100 via-white to-neutral-200 text-muted-fg">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 48 48"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-12 w-12 text-accent"
+                aria-hidden="true"
+              >
+                <path d="M24 6v24" />
+                <path d="m14 16 10-10 10 10" />
+                <path d="M10 30v6a6 6 0 0 0 6 6h16a6 6 0 0 0 6-6v-6" />
+              </svg>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.28em]">Carica</span>
+            </div>
+          ),
+        } satisfies LibraryCarouselItem;
+      }),
+    [handleFocusPreview, libraryItems, openImagePicker]
+  );
+
+  const primaryPreviewContent = (
+    <>
+      <div ref={previewContainerRef} className="relative mx-auto flex w-full max-w-3xl flex-col items-center">
+        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[28px] bg-white shadow-lg ring-1 ring-black/5">
+          {selectedImageData ? (
+            <>
+              <Image
+                src={selectedImageData}
+                alt="Selected trade context"
+                fill
+                sizes="(min-width: 768px) 560px, 92vw"
+                className="object-cover"
+                unoptimized
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 via-black/0 to-black/40" />
+              <button
+                type="button"
+                onClick={openImagePicker}
+                className="absolute inset-0 z-10 h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+                aria-label="Aggiorna immagine della libreria"
+              />
+              <div className="absolute right-5 top-5 z-20 flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={handleFocusPreview}
+                  className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                >
+                  Focus
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadImage}
+                  className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                >
+                  Scarica
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                >
+                  Rimuovi
+                </button>
+              </div>
+              <div className="pointer-events-none absolute bottom-6 left-6 right-6 z-10 flex flex-col gap-2 text-left text-white drop-shadow">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.24em] opacity-70">
+                  Before the position
+                </span>
+                <span className="text-lg font-semibold">Snapshot di riferimento</span>
+              </div>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={openImagePicker}
+              className="flex h-full w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+            >
+              <UploadIcon />
+              <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Carica anteprima</span>
+              <span className="text-xs text-muted-fg/80">Aggiungi uno screenshot o un chart di contesto.</span>
+            </button>
+          )}
+        </div>
+      </div>
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageChange}
+        aria-label="Upload trade image"
+      />
+    </>
+  );
+  const libraryPreview = primaryPreviewContent;
 
   return (
     <section
@@ -660,7 +931,11 @@ function NewTradePageContent() {
               date: selectedDate.toISOString(),
               openTime: openTime ? openTime.toISOString() : null,
               closeTime: closeTime ? closeTime.toISOString() : null,
-              imageData: imageData ?? null,
+              imageData: selectedImageData ?? null,
+              libraryItems: libraryItems.map((item) => ({
+                id: item.id,
+                imageData: item.imageData ?? null,
+              })),
               position,
               riskReward: riskReward.trim() || null,
               risk: risk.trim() || null,
@@ -1117,80 +1392,21 @@ function NewTradePageContent() {
 
             </>
           ) : (
-            <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Images</span>
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg opacity-80">
-                    Before the position
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={openImagePicker}
-                  className={`group relative flex min-h-[220px] w-full items-center justify-center overflow-hidden rounded-2xl border border-dashed ${
-                    imageData
-                      ? "border-transparent bg-surface"
-                      : "bg-subtle text-muted-fg transition hover:text-accent"
-                  } aspect-video`}
-                  style={
-                    imageData
-                      ? undefined
-                      : { borderColor: "color-mix(in srgb, rgba(var(--border)) 100%, transparent)" }
-                  }
-                >
-                  {imageData ? (
-                    <Image
-                      src={imageData}
-                      alt="Selected trade context"
-                      fill
-                      sizes="(min-width: 768px) 480px, 90vw"
-                      className="object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 px-4 text-center text-sm font-medium">
-                      <span className="rounded-full bg-bg px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-fg">
-                        Enter image
-                      </span>
-                      <span className="text-xs text-muted-fg opacity-80">PNG, JPG or WEBP · max 5 MB</span>
-                      <span className="text-xs text-muted-fg opacity-70">
-                        Tap to upload a snapshot of your setup before entering the trade.
-                      </span>
-                    </div>
-                  )}
-                </button>
-
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={handleImageChange}
-                  aria-label="Upload trade image"
-                />
-
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-fg">
-                  <p className="max-w-[70%]">
-                    {imageData ? "Tap the preview to replace the image." : "Tap the area above to select or capture an image."}
-                  </p>
-                  {imageData ? (
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="text-[11px] font-medium uppercase tracking-[0.24em] text-accent transition hover:opacity-80"
-                    >
-                      Remove
-                    </button>
-                  ) : null}
-                </div>
-
-                {imageError ? (
-                  <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-medium text-red-600">{imageError}</p>
-                ) : null}
-              </div>
-            </div>
+            <LibrarySection
+              title="Library"
+              subtitle="Prima dell’operazione"
+              preview={libraryPreview}
+              actions={libraryCards}
+              selectedActionId={selectedLibraryItemId}
+              onSelectAction={setSelectedLibraryItemId}
+              onAddAction={handleAddLibraryItem}
+              footer={
+                <p className="text-left text-sm text-muted-fg">
+                  Organizza le tue reference per prendere decisioni più rapide prima dell’operazione.
+                </p>
+              }
+              errorMessage={imageError}
+            />
           )}
         </div>
       </div>
@@ -1322,6 +1538,26 @@ function NewTradePageContent() {
         </div>
       ) : null}
     </section>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 48 48"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-14 w-14 text-accent"
+      aria-hidden="true"
+    >
+      <path d="M24 6v24" />
+      <path d="m14 16 10-10 10 10" />
+      <path d="M10 30v6a6 6 0 0 0 6 6h16a6 6 0 0 0 6-6v-6" />
+    </svg>
   );
 }
 

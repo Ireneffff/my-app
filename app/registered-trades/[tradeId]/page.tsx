@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Button from "@/components/ui/Button";
+import { LibrarySection } from "@/components/library/LibrarySection";
+import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
 import {
   deleteTrade,
   loadTrades,
   REGISTERED_TRADES_UPDATED_EVENT,
+  type StoredLibraryItem,
   type StoredTrade,
 } from "@/lib/tradesStorage";
 
@@ -80,6 +83,8 @@ export default function RegisteredTradePage() {
 
   const [state, setState] = useState<TradeState>({ status: "loading", trade: null });
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
+  const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>("snapshot");
+  const previewContainerRef = useRef<HTMLDivElement | null>(null);
 
   const rawTradeId = params.tradeId;
   const tradeId = Array.isArray(rawTradeId) ? rawTradeId[0] : rawTradeId;
@@ -139,6 +144,198 @@ export default function RegisteredTradePage() {
     });
   }, [selectedDate]);
 
+  const libraryItems = useMemo<StoredLibraryItem[]>(() => {
+    if (!state.trade) {
+      return [
+        {
+          id: "snapshot",
+          imageData: null,
+        },
+      ];
+    }
+
+    const hydrated = Array.isArray(state.trade.libraryItems)
+      ? state.trade.libraryItems
+          .filter((item): item is StoredLibraryItem => Boolean(item) && typeof item.id === "string")
+          .map((item) => ({
+            id: item.id,
+            imageData: item.imageData ?? null,
+          }))
+      : [];
+
+    if (hydrated.length > 0) {
+      return hydrated;
+    }
+
+    if (state.trade.imageData) {
+      return [
+        {
+          id: "snapshot",
+          imageData: state.trade.imageData,
+        },
+      ];
+    }
+
+    return [
+      {
+        id: "snapshot",
+        imageData: null,
+      },
+    ];
+  }, [state.trade]);
+
+  useEffect(() => {
+    if (libraryItems.length === 0) {
+      setSelectedLibraryItemId("snapshot");
+      return;
+    }
+
+    setSelectedLibraryItemId((prev) => {
+      if (libraryItems.some((item) => item.id === prev)) {
+        return prev;
+      }
+      return libraryItems[0].id;
+    });
+  }, [libraryItems]);
+
+  const selectedLibraryItem = useMemo(
+    () =>
+      libraryItems.find((item) => item.id === selectedLibraryItemId) ??
+      libraryItems[0] ??
+      null,
+    [libraryItems, selectedLibraryItemId],
+  );
+
+  const selectedImageData = selectedLibraryItem?.imageData ?? null;
+
+  const handleFocusPreview = useCallback(() => {
+    previewContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, []);
+
+  const handleDownloadImage = useCallback(() => {
+    if (!selectedImageData) {
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = selectedImageData;
+    link.download = `trade-${state.trade?.id ?? "preview"}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [selectedImageData, state.trade?.id]);
+
+  const handleOpenInNewTab = useCallback(() => {
+    if (!selectedImageData) {
+      return;
+    }
+
+    window.open(selectedImageData, "_blank", "noopener,noreferrer");
+  }, [selectedImageData]);
+
+  const libraryCards = useMemo(
+    () =>
+      libraryItems.map((item, index) => {
+        const hasImage = Boolean(item.imageData);
+
+        return {
+          id: item.id,
+          label: hasImage ? `Anteprima ${index + 1}` : "Nessuna anteprima",
+          onClick: () => {
+            handleFocusPreview();
+          },
+          visual: hasImage ? (
+            <div className="relative h-full w-full">
+              <Image
+                src={item.imageData!}
+                alt={`Snapshot libreria ${index + 1}`}
+                fill
+                sizes="(min-width: 768px) 160px, 200px"
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-neutral-100 via-white to-neutral-200 text-muted-fg">
+              <EmptyLibraryIcon />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.28em]">Vuoto</span>
+            </div>
+          ),
+        } satisfies LibraryCarouselItem;
+      }),
+    [handleFocusPreview, libraryItems]
+  );
+
+  const libraryFooter = selectedImageData ? (
+    <p className="text-left text-sm text-muted-fg">
+      Questo è lo snapshot che hai salvato quando hai registrato l’operazione.
+    </p>
+  ) : (
+    <p className="text-left text-sm text-muted-fg">
+      Nessuna immagine è stata allegata a questa operazione.
+    </p>
+  );
+
+  const primaryPreviewContent = (
+    <div ref={previewContainerRef} className="relative mx-auto flex w-full max-w-3xl flex-col items-center">
+      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[28px] bg-white shadow-lg ring-1 ring-black/5">
+        {selectedImageData ? (
+          <>
+            <Image
+              src={selectedImageData}
+              alt="Trade context attachment"
+              fill
+              sizes="(min-width: 768px) 560px, 92vw"
+              className="object-cover"
+              unoptimized
+            />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 via-black/0 to-black/40" />
+            <div className="absolute right-5 top-5 z-20 flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleFocusPreview}
+                className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+              >
+                Focus
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadImage}
+                className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+              >
+                Scarica
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenInNewTab}
+                className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+              >
+                Apri
+              </button>
+            </div>
+            <div className="pointer-events-none absolute bottom-6 left-6 right-6 z-10 flex flex-col gap-2 text-left text-white drop-shadow">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.24em] opacity-70">
+                Before the position
+              </span>
+              <span className="text-lg font-semibold">Snapshot registrato</span>
+            </div>
+          </>
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
+            <EmptyLibraryIcon />
+            <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">
+              Nessuna anteprima
+            </span>
+            <span className="max-w-[28ch] text-center text-xs text-muted-fg/80">
+              Aggiungi immagini alle prossime operazioni per costruire un archivio visivo coerente.
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+  const libraryPreview = primaryPreviewContent;
+
   if (state.status === "loading") {
     return (
       <section className="relative flex min-h-dvh flex-col items-center justify-center bg-bg px-6 py-12 text-fg">
@@ -177,7 +374,6 @@ export default function RegisteredTradePage() {
 
   const openTimeDisplay = getDateTimeDisplay(state.trade.openTime);
   const closeTimeDisplay = getDateTimeDisplay(state.trade.closeTime);
-  const imageData = state.trade.imageData ?? null;
   const positionLabel = state.trade.position === "SHORT" ? "Short" : "Long";
   const riskRewardValue = formatOptionalText(state.trade.riskReward);
   const riskValue = formatOptionalText(state.trade.risk);
@@ -457,41 +653,40 @@ export default function RegisteredTradePage() {
           </div>
             </>
           ) : (
-            <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Images</span>
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg opacity-80">
-                    Before the position
-                  </span>
-                </div>
-
-                {imageData ? (
-                  <div className="flex flex-col gap-3">
-                    <div className="relative flex min-h-[240px] w-full items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface aspect-video">
-                      <Image
-                        src={imageData}
-                        alt="Trade context attachment"
-                        fill
-                        sizes="(min-width: 768px) 560px, 90vw"
-                        className="object-cover"
-                        unoptimized
-                      />
-                    </div>
-                    <p className="text-xs text-muted-fg">
-                      This is the snapshot you saved when registering the trade.
-                    </p>
-                  </div>
-                ) : (
-                  <p className="rounded-2xl border border-dashed bg-subtle px-5 py-6 text-center text-xs text-muted-fg">
-                    No image was attached to this trade.
-                  </p>
-                )}
-              </div>
-            </div>
+            <LibrarySection
+              title="Library"
+              subtitle="Prima dell’operazione"
+              preview={libraryPreview}
+              actions={libraryCards}
+              selectedActionId={selectedLibraryItemId}
+              onSelectAction={setSelectedLibraryItemId}
+              footer={libraryFooter}
+            />
           )}
         </div>
       </div>
     </section>
+  );
+}
+
+function EmptyLibraryIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 64 64"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-16 w-16 text-muted-fg/70"
+      aria-hidden="true"
+    >
+      <rect x="10" y="14" width="44" height="36" rx="6" ry="6" />
+      <path d="M10 24h44" />
+      <path d="M22 8v12" />
+      <path d="M42 8v12" />
+      <path d="m24 36 6-6 6 6 6-6 6 6" />
+    </svg>
   );
 }
