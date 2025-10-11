@@ -763,13 +763,27 @@ function NewTradePageContent() {
 
   const handleAddLibraryItem = useCallback(() => {
     const newItem = createLibraryItem(null);
-    setLibraryItems((prev) => [...prev, newItem]);
+
+    setLibraryItems((prev) => {
+      if (prev.length === 0) {
+        return [newItem];
+      }
+
+      const selectedIndex = selectedLibraryItemId
+        ? prev.findIndex((item) => item.id === selectedLibraryItemId)
+        : prev.length - 1;
+
+      const insertIndex = selectedIndex >= 0 ? selectedIndex + 1 : prev.length;
+
+      return [...prev.slice(0, insertIndex), newItem, ...prev.slice(insertIndex)];
+    });
+
     setSelectedLibraryItemId(newItem.id);
     setImageError(null);
     if (imageInputRef.current) {
       imageInputRef.current.value = "";
     }
-  }, []);
+  }, [selectedLibraryItemId]);
 
   const libraryCards = useMemo(
     () =>
