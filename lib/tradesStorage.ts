@@ -6,6 +6,7 @@ export type StoredTrade = {
   openTime?: string | null;
   closeTime?: string | null;
   imageData?: string | null;
+  libraryImages?: string[] | null;
   position: "LONG" | "SHORT";
   riskReward?: string | null;
   risk?: string | null;
@@ -76,6 +77,24 @@ function parseTrades(raw: string | null): StoredTrade[] {
 
         if (storedItem.imageData === undefined) {
           storedItem.imageData = null;
+        }
+
+        if (storedItem.libraryImages !== undefined && storedItem.libraryImages !== null) {
+          if (Array.isArray(storedItem.libraryImages)) {
+            storedItem.libraryImages = storedItem.libraryImages.filter(
+              (value): value is string => typeof value === "string" && value.length > 0,
+            );
+          } else {
+            storedItem.libraryImages = [];
+          }
+        }
+
+        if (storedItem.libraryImages === undefined) {
+          storedItem.libraryImages = [];
+        }
+
+        if (storedItem.libraryImages.length > 0 && !storedItem.imageData) {
+          storedItem.imageData = storedItem.libraryImages[0] ?? null;
         }
 
         if (storedItem.position !== "LONG" && storedItem.position !== "SHORT") {

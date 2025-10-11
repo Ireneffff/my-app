@@ -16,7 +16,35 @@ import {
   type WheelEvent as ReactWheelEvent,
 } from "react";
 import Button from "@/components/ui/Button";
+import { LibrarySection, type LibrarySectionItem } from "@/components/library/LibrarySection";
+import {
+  LibraryInspirationPreview,
+  LibraryInspirationThumbnail,
+} from "@/components/library/LibraryInspiration";
 import { loadTrades, saveTrade, updateTrade, type StoredTrade } from "@/lib/tradesStorage";
+import {
+  LIBRARY_INSPIRATION_ENTRIES,
+  type LibraryInspirationEntry,
+} from "@/lib/libraryInspiration";
+
+type LibraryUploadCard = {
+  id: string;
+  imageData: string | null;
+};
+
+type LibraryItemDefinition =
+  | {
+      id: string;
+      kind: "upload";
+      imageData: string | null;
+      card: LibrarySectionItem;
+    }
+  | {
+      id: string;
+      kind: "inspiration";
+      entry: LibraryInspirationEntry;
+      card: LibrarySectionItem;
+    };
 
 type SymbolOption = {
   code: string;
@@ -144,16 +172,22 @@ function NewTradePageContent() {
   const openTimeInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimeInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const weekSwipeOriginRef = useRef<
     { x: number; time: number } | null
   >(null);
   const weekPointerTargetDateRef = useRef<string | null>(null);
   const weekWheelCooldownRef = useRef<number>(0);
+  const pendingUploadTargetRef = useRef<string | null>(null);
+  const uploadCounterRef = useRef<number>(2);
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
-  const [imageData, setImageData] = useState<string | null>(null);
+  const [libraryUploads, setLibraryUploads] = useState<LibraryUploadCard[]>([
+    { id: "upload-1", imageData: null },
+  ]);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>("upload-1");
   const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
   const [riskReward, setRiskReward] = useState("");
   const [risk, setRisk] = useState("");
@@ -556,7 +590,17 @@ function NewTradePageContent() {
       setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate, 17));
     }
 
-    setImageData(match.imageData ?? null);
+    const storedImages = Array.isArray(match.libraryImages)
+      ? match.libraryImages.filter((value): value is string => typeof value === "string")
+      : [];
+
+    const uploads: LibraryUploadCard[] = storedImages.length
+      ? storedImages.map((src, index) => ({ id: `upload-${index + 1}`, imageData: src ?? null }))
+      : [{ id: "upload-1", imageData: match.imageData ?? null }];
+
+    setLibraryUploads(uploads);
+    setSelectedLibraryItemId(uploads[0]?.id ?? "upload-1");
+    uploadCounterRef.current = uploads.length + 1;
     setImageError(null);
 
     setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
@@ -584,48 +628,324 @@ function NewTradePageContent() {
   const openTimeDisplay = getDateTimeDisplayParts(openTime);
   const closeTimeDisplay = getDateTimeDisplayParts(closeTime);
 
-  const handleImageChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] ?? null;
-
-    if (!file) {
-      setImageError(null);
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setImageError("The selected file is too large. Choose an image under 5 MB.");
-      event.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setImageData(reader.result);
-        setImageError(null);
+  const resolveUploadTargetId = useCallback(
+    (requestedId?: string | null) => {
+      if (requestedId && libraryUploads.some((item) => item.id === requestedId)) {
+        return requestedId;
       }
-    };
 
-    reader.onerror = () => {
-      setImageError("Failed to load the selected image. Please try another file.");
-      setImageData(null);
-    };
+      const selectedUpload = libraryUploads.find((item) => item.id === selectedLibraryItemId);
+      if (selectedUpload) {
+        return selectedUpload.id;
+      }
 
-    reader.readAsDataURL(file);
-  }, []);
+      return libraryUploads[0]?.id ?? null;
+    },
+    [libraryUploads, selectedLibraryItemId],
+  );
 
-  const openImagePicker = useCallback(() => {
-    imageInputRef.current?.click();
-  }, []);
+  const handleImageChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0] ?? null;
+
+      if (!file) {
+        setImageError(null);
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        setImageError("The selected file is too large. Choose an image under 5 MB.");
+        event.target.value = "";
+        return;
+      }
+
+      const targetId = resolveUploadTargetId(pendingUploadTargetRef.current);
+
+      if (!targetId) {
+        setImageError("Nessuna card disponibile per caricare l’immagine.");
+        event.target.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          setLibraryUploads((prev) =>
+            prev.map((item) => (item.id === targetId ? { ...item, imageData: reader.result as string } : item)),
+          );
+          setSelectedLibraryItemId(targetId);
+          setImageError(null);
+        }
+
+        pendingUploadTargetRef.current = null;
+        if (imageInputRef.current) {
+          imageInputRef.current.value = "";
+        }
+      };
+
+      reader.onerror = () => {
+        setImageError("Failed to load the selected image. Please try another file.");
+        pendingUploadTargetRef.current = null;
+        if (imageInputRef.current) {
+          imageInputRef.current.value = "";
+        }
+      };
+
+      reader.readAsDataURL(file);
+    },
+    [pendingUploadTargetRef, resolveUploadTargetId],
+  );
+
+  const openImagePicker = useCallback(
+    (targetId?: string) => {
+      const resolvedId = resolveUploadTargetId(targetId);
+
+      if (!resolvedId) {
+        setImageError("Aggiungi una card prima di caricare un’immagine.");
+        return;
+      }
+
+      pendingUploadTargetRef.current = resolvedId;
+      setSelectedLibraryItemId(resolvedId);
+      imageInputRef.current?.click();
+    },
+    [resolveUploadTargetId],
+  );
 
   const handleRemoveImage = useCallback(() => {
-    setImageData(null);
+    const targetId = resolveUploadTargetId();
+
+    if (!targetId) {
+      return;
+    }
+
+    setLibraryUploads((prev) =>
+      prev.map((item) => (item.id === targetId ? { ...item, imageData: null } : item)),
+    );
     setImageError(null);
+
     if (imageInputRef.current) {
       imageInputRef.current.value = "";
     }
+  }, [resolveUploadTargetId]);
+
+  const handleDownloadImage = useCallback(() => {
+    const targetId = resolveUploadTargetId();
+    const imageData = targetId
+      ? libraryUploads.find((item) => item.id === targetId)?.imageData
+      : null;
+
+    if (!imageData) {
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = imageData;
+    link.download = "trade-preview.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [libraryUploads, resolveUploadTargetId]);
+
+  const handleAddLibraryCard = useCallback(() => {
+    const newId = `upload-${uploadCounterRef.current}`;
+    uploadCounterRef.current += 1;
+
+    setLibraryUploads((prev) => [...prev, { id: newId, imageData: null }]);
+    setSelectedLibraryItemId(newId);
+
+    window.setTimeout(() => {
+      openImagePicker(newId);
+    }, 0);
+  }, [openImagePicker]);
+
+  const handleFocusPreview = useCallback(() => {
+    previewContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, []);
+
+  const libraryItems = useMemo<LibraryItemDefinition[]>(() => {
+    const uploadItems: LibraryItemDefinition[] = libraryUploads.map((upload, index) => {
+      const hasImage = Boolean(upload.imageData);
+      const label = hasImage ? `Snapshot ${index + 1}` : "Carica anteprima";
+
+      const card: LibrarySectionItem = {
+        id: upload.id,
+        label,
+        visual: hasImage ? (
+          <div className="relative h-full w-full">
+            <Image
+              src={upload.imageData as string}
+              alt="Anteprima operazione"
+              fill
+              sizes="(min-width: 768px) 160px, 200px"
+              className="object-cover"
+              unoptimized
+            />
+          </div>
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-neutral-100 via-white to-neutral-200 text-muted-fg">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 48 48"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-12 w-12 text-accent"
+              aria-hidden="true"
+            >
+              <path d="M24 6v24" />
+              <path d="m14 16 10-10 10 10" />
+              <path d="M10 30v6a6 6 0 0 0 6 6h16a6 6 0 0 0 6-6v-6" />
+            </svg>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.28em]">Carica</span>
+          </div>
+        ),
+        onClick: () => {
+          if (hasImage) {
+            handleFocusPreview();
+          } else {
+            openImagePicker(upload.id);
+          }
+        },
+      };
+
+      return {
+        id: upload.id,
+        kind: "upload" as const,
+        imageData: upload.imageData,
+        card,
+      };
+    });
+
+    const inspirationItems: LibraryItemDefinition[] = LIBRARY_INSPIRATION_ENTRIES.map((entry) => ({
+      id: entry.id,
+      kind: "inspiration" as const,
+      entry,
+      card: {
+        id: entry.id,
+        label: entry.label,
+        visual: <LibraryInspirationThumbnail entry={entry} />,
+        onClick: () => {
+          handleFocusPreview();
+        },
+      },
+    }));
+
+    return [...uploadItems, ...inspirationItems];
+  }, [handleFocusPreview, libraryUploads, openImagePicker]);
+
+  const selectedLibraryItem = useMemo(
+    () => libraryItems.find((item) => item.id === selectedLibraryItemId) ?? libraryItems[0] ?? null,
+    [libraryItems, selectedLibraryItemId],
+  );
+
+  const selectedUploadItem =
+    selectedLibraryItem && selectedLibraryItem.kind === "upload"
+      ? selectedLibraryItem
+      : libraryItems.find(
+          (item): item is Extract<LibraryItemDefinition, { kind: "upload" }> => item.kind === "upload",
+        ) ?? null;
+
+  const selectedInspirationEntry =
+    selectedLibraryItem && selectedLibraryItem.kind === "inspiration"
+      ? selectedLibraryItem.entry
+      : null;
+
+  const uploadPreviewContent = (
+    <>
+      <div ref={previewContainerRef} className="relative mx-auto flex w-full max-w-3xl flex-col items-center">
+        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[28px] bg-white shadow-lg ring-1 ring-black/5">
+          {selectedUploadItem?.imageData ? (
+            <>
+              <Image
+                src={selectedUploadItem.imageData}
+                alt="Selected trade context"
+                fill
+                sizes="(min-width: 768px) 560px, 92vw"
+                className="object-cover"
+                unoptimized
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 via-black/0 to-black/40" />
+              <button
+                type="button"
+                onClick={() => openImagePicker(selectedUploadItem.id)}
+                className="absolute inset-0 z-10 h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+                aria-label="Aggiorna immagine della libreria"
+              />
+              <div className="absolute right-5 top-5 z-20 flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={handleFocusPreview}
+                  className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                >
+                  Focus
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadImage}
+                  className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                >
+                  Scarica
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                >
+                  Rimuovi
+                </button>
+              </div>
+              <div className="pointer-events-none absolute bottom-6 left-6 right-6 z-10 flex flex-col gap-2 text-left text-white drop-shadow">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.24em] opacity-70">
+                  Before the position
+                </span>
+                <span className="text-lg font-semibold">Snapshot di riferimento</span>
+              </div>
+            </>
+          ) : selectedUploadItem ? (
+            <button
+              type="button"
+              onClick={() => openImagePicker(selectedUploadItem.id)}
+              className="flex h-full w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+            >
+              <UploadIcon />
+              <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Carica anteprima</span>
+              <span className="text-xs text-muted-fg/80">Aggiungi uno screenshot o un chart di contesto.</span>
+            </button>
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
+              <UploadIcon />
+              <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">
+                Aggiungi una card per iniziare
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageChange}
+        aria-label="Upload trade image"
+      />
+    </>
+  );
+
+  const inspirationPreviewContent = selectedInspirationEntry ? (
+    <div ref={previewContainerRef} className="relative mx-auto flex w-full max-w-3xl flex-col items-center">
+      <LibraryInspirationPreview entry={selectedInspirationEntry} />
+    </div>
+  ) : null;
+
+  const libraryPreview =
+    selectedLibraryItem && selectedLibraryItem.kind === "inspiration"
+      ? inspirationPreviewContent ?? uploadPreviewContent
+      : uploadPreviewContent ?? inspirationPreviewContent;
 
   return (
     <section
@@ -660,7 +980,10 @@ function NewTradePageContent() {
               date: selectedDate.toISOString(),
               openTime: openTime ? openTime.toISOString() : null,
               closeTime: closeTime ? closeTime.toISOString() : null,
-              imageData: imageData ?? null,
+              imageData: libraryUploads.find((item) => item.imageData)?.imageData ?? null,
+              libraryImages: libraryUploads
+                .map((item) => item.imageData)
+                .filter((value): value is string => typeof value === "string" && value.length > 0),
               position,
               riskReward: riskReward.trim() || null,
               risk: risk.trim() || null,
@@ -1117,80 +1440,21 @@ function NewTradePageContent() {
 
             </>
           ) : (
-            <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Images</span>
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg opacity-80">
-                    Before the position
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={openImagePicker}
-                  className={`group relative flex min-h-[220px] w-full items-center justify-center overflow-hidden rounded-2xl border border-dashed ${
-                    imageData
-                      ? "border-transparent bg-surface"
-                      : "bg-subtle text-muted-fg transition hover:text-accent"
-                  } aspect-video`}
-                  style={
-                    imageData
-                      ? undefined
-                      : { borderColor: "color-mix(in srgb, rgba(var(--border)) 100%, transparent)" }
-                  }
-                >
-                  {imageData ? (
-                    <Image
-                      src={imageData}
-                      alt="Selected trade context"
-                      fill
-                      sizes="(min-width: 768px) 480px, 90vw"
-                      className="object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 px-4 text-center text-sm font-medium">
-                      <span className="rounded-full bg-bg px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-fg">
-                        Enter image
-                      </span>
-                      <span className="text-xs text-muted-fg opacity-80">PNG, JPG or WEBP · max 5 MB</span>
-                      <span className="text-xs text-muted-fg opacity-70">
-                        Tap to upload a snapshot of your setup before entering the trade.
-                      </span>
-                    </div>
-                  )}
-                </button>
-
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={handleImageChange}
-                  aria-label="Upload trade image"
-                />
-
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-fg">
-                  <p className="max-w-[70%]">
-                    {imageData ? "Tap the preview to replace the image." : "Tap the area above to select or capture an image."}
-                  </p>
-                  {imageData ? (
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="text-[11px] font-medium uppercase tracking-[0.24em] text-accent transition hover:opacity-80"
-                    >
-                      Remove
-                    </button>
-                  ) : null}
-                </div>
-
-                {imageError ? (
-                  <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-medium text-red-600">{imageError}</p>
-                ) : null}
-              </div>
-            </div>
+            <LibrarySection
+              title="Library"
+              subtitle="Prima dell’operazione"
+              preview={libraryPreview}
+              items={libraryItems.map((item) => item.card)}
+              selectedItemId={selectedLibraryItem?.id}
+              onSelectItem={setSelectedLibraryItemId}
+              onAddItem={handleAddLibraryCard}
+              footer={
+                <p className="text-left text-sm text-muted-fg">
+                  Organizza le tue reference per prendere decisioni più rapide prima dell’operazione.
+                </p>
+              }
+              errorMessage={imageError}
+            />
           )}
         </div>
       </div>
@@ -1322,6 +1586,26 @@ function NewTradePageContent() {
         </div>
       ) : null}
     </section>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 48 48"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-14 w-14 text-accent"
+      aria-hidden="true"
+    >
+      <path d="M24 6v24" />
+      <path d="m14 16 10-10 10 10" />
+      <path d="M10 30v6a6 6 0 0 0 6 6h16a6 6 0 0 0 6-6v-6" />
+    </svg>
   );
 }
 
