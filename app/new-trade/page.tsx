@@ -671,19 +671,27 @@ function NewTradePageContent() {
     const inputElement = event.target;
 
     reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setLibraryItems((prev) =>
-          prev.map((item) =>
-            item.id === targetItemId
-              ? {
-                  ...item,
-                  imageData: reader.result,
-                }
-              : item,
-          ),
-        );
-        setImageError(null);
+      const result = reader.result;
+
+      if (typeof result !== "string") {
+        setImageError("Impossibile leggere l'immagine selezionata. Riprova con un altro file.");
+        if (inputElement) {
+          inputElement.value = "";
+        }
+        return;
       }
+
+      setLibraryItems((prev) =>
+        prev.map((item) =>
+          item.id === targetItemId
+            ? {
+                ...item,
+                imageData: result,
+              }
+            : item,
+        ),
+      );
+      setImageError(null);
 
       if (inputElement) {
         inputElement.value = "";
