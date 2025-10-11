@@ -173,6 +173,7 @@ function NewTradePageContent() {
   const initialLibraryItems = useMemo(() => [createLibraryItem(null)], []);
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>(initialLibraryItems);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [recentlyAddedLibraryItemId, setRecentlyAddedLibraryItemId] = useState<string | null>(null);
   const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>(
     initialLibraryItems[0]?.id ?? "",
   );
@@ -199,6 +200,20 @@ function NewTradePageContent() {
       setSelectedLibraryItemId(libraryItems[0].id);
     }
   }, [libraryItems, selectedLibraryItemId]);
+
+  useEffect(() => {
+    if (!recentlyAddedLibraryItemId) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setRecentlyAddedLibraryItemId(null);
+    }, 400);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [recentlyAddedLibraryItemId]);
 
   const selectedLibraryItem = useMemo(
     () =>
@@ -612,6 +627,7 @@ function NewTradePageContent() {
 
     setLibraryItems(hydratedLibraryItems);
     setSelectedLibraryItemId(hydratedLibraryItems[0]?.id ?? initialLibraryItems[0].id);
+    setRecentlyAddedLibraryItemId(null);
     setImageError(null);
 
     setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
@@ -763,18 +779,40 @@ function NewTradePageContent() {
 
   const handleAddLibraryItem = useCallback(() => {
     const newItem = createLibraryItem(null);
-    setLibraryItems((prev) => [...prev, newItem]);
+
+    setLibraryItems((prev) => {
+      if (prev.length === 0) {
+        return [newItem];
+      }
+
+      if (!selectedLibraryItemId) {
+        return [...prev, newItem];
+      }
+
+      const targetIndex = prev.findIndex((item) => item.id === selectedLibraryItemId);
+
+      if (targetIndex === -1) {
+        return [...prev, newItem];
+      }
+
+      const nextItems = [...prev];
+      nextItems.splice(targetIndex + 1, 0, newItem);
+      return nextItems;
+    });
+
     setSelectedLibraryItemId(newItem.id);
+    setRecentlyAddedLibraryItemId(newItem.id);
     setImageError(null);
     if (imageInputRef.current) {
       imageInputRef.current.value = "";
     }
-  }, []);
+  }, [selectedLibraryItemId]);
 
   const libraryCards = useMemo(
     () =>
       libraryItems.map((item, index) => {
         const hasImage = Boolean(item.imageData);
+        const isRecentlyAdded = item.id === recentlyAddedLibraryItemId;
 
         return {
           id: item.id,
@@ -786,6 +824,7 @@ function NewTradePageContent() {
               openImagePicker();
             }
           },
+          className: isRecentlyAdded ? "animate-fade-slide-in" : undefined,
           visual: hasImage ? (
             <div className="relative h-full w-full">
               <Image
@@ -819,7 +858,7 @@ function NewTradePageContent() {
           ),
         } satisfies LibraryCarouselItem;
       }),
-    [handleFocusPreview, libraryItems, openImagePicker]
+    [handleFocusPreview, libraryItems, openImagePicker, recentlyAddedLibraryItemId]
   );
 
   const primaryPreviewContent = (
