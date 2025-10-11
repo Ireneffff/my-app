@@ -212,27 +212,6 @@ export default function RegisteredTradePage() {
     previewContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, []);
 
-  const handleDownloadImage = useCallback(() => {
-    if (!selectedImageData) {
-      return;
-    }
-
-    const link = document.createElement("a");
-    link.href = selectedImageData;
-    link.download = `trade-${state.trade?.id ?? "preview"}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }, [selectedImageData, state.trade?.id]);
-
-  const handleOpenInNewTab = useCallback(() => {
-    if (!selectedImageData) {
-      return;
-    }
-
-    window.open(selectedImageData, "_blank", "noopener,noreferrer");
-  }, [selectedImageData]);
-
   const libraryCards = useMemo(
     () =>
       libraryItems.map((item, index) => {
@@ -278,48 +257,23 @@ export default function RegisteredTradePage() {
 
   const primaryPreviewContent = (
     <div ref={previewContainerRef} className="relative mx-auto flex w-full max-w-3xl flex-col items-center">
-      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[28px] bg-white shadow-lg ring-1 ring-black/5">
+      <div
+        className={
+          selectedImageData
+            ? "relative aspect-[16/9] w-full overflow-hidden rounded-[28px] shadow-[0_20px_55px_rgba(15,23,42,0.08)]"
+            : "relative aspect-[16/9] w-full overflow-hidden rounded-[28px] bg-white shadow-[0_20px_55px_rgba(15,23,42,0.08)]"
+        }
+      >
         {selectedImageData ? (
-          <>
-            <Image
-              src={selectedImageData}
-              alt="Trade context attachment"
-              fill
-              sizes="(min-width: 768px) 560px, 92vw"
-              className="object-cover"
-              unoptimized
-            />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 via-black/0 to-black/40" />
-            <div className="absolute right-5 top-5 z-20 flex flex-wrap items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={handleFocusPreview}
-                className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-              >
-                Focus
-              </button>
-              <button
-                type="button"
-                onClick={handleDownloadImage}
-                className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-              >
-                Scarica
-              </button>
-              <button
-                type="button"
-                onClick={handleOpenInNewTab}
-                className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-              >
-                Apri
-              </button>
-            </div>
-            <div className="pointer-events-none absolute bottom-6 left-6 right-6 z-10 flex flex-col gap-2 text-left text-white drop-shadow">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.24em] opacity-70">
-                Before the position
-              </span>
-              <span className="text-lg font-semibold">Snapshot registrato</span>
-            </div>
-          </>
+          <Image
+            src={selectedImageData}
+            alt="Trade context attachment"
+            fill
+            sizes="(min-width: 768px) 560px, 92vw"
+            className="object-contain"
+            unoptimized
+            priority
+          />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
             <EmptyLibraryIcon />
