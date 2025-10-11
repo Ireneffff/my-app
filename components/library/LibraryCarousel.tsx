@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { LibraryCard, type LibraryCardProps } from "./LibraryCard";
 
@@ -16,105 +16,112 @@ interface LibraryCarouselProps {
 }
 
 export function LibraryCarousel({ items, selectedId, onSelectItem, onAddItem }: LibraryCarouselProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const hasItems = items.length > 0;
+
   const selectedIndex = useMemo(() => {
     if (!hasItems) {
       return -1;
     }
 
-    const explicitIndex = selectedId ? items.findIndex((item) => item.id === selectedId) : 0;
+    if (!selectedId) {
+      return 0;
+    }
+
+    const explicitIndex = items.findIndex((item) => item.id === selectedId);
     return explicitIndex >= 0 ? explicitIndex : 0;
   }, [hasItems, items, selectedId]);
 
-  const selectedItem = hasItems && selectedIndex >= 0 ? items[selectedIndex] : undefined;
+  useEffect(() => {
+    if (!hasItems || selectedIndex === -1 || !containerRef.current) {
+      return;
+    }
 
-  const goToOffset = (offset: number) => {
+    const selector = `[data-library-carousel-item="${items[selectedIndex]?.id}"]`;
+    const target = containerRef.current.querySelector<HTMLElement>(selector);
+
+    target?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [hasItems, items, selectedIndex]);
+
+  const goToAdjacent = (direction: -1 | 1) => {
     if (!hasItems || items.length < 2) {
       return;
     }
 
-    const nextIndex = (selectedIndex + offset + items.length) % items.length;
+    const baseIndex = selectedIndex === -1 ? 0 : selectedIndex;
+    const nextIndex = (baseIndex + direction + items.length) % items.length;
     const target = items[nextIndex];
-    if (!target) {
-      return;
-    }
 
-    onSelectItem?.(target.id);
+    if (target) {
+      onSelectItem?.(target.id);
+    }
   };
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="flex items-center justify-center gap-3">
-        <button
-          type="button"
-          onClick={() => goToOffset(-1)}
-          disabled={!hasItems || items.length < 2}
-          aria-label="Mostra card precedente"
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 disabled:pointer-events-none disabled:opacity-40 sm:h-12 sm:w-12"
-        >
-          <ArrowIcon direction="left" />
-        </button>
-
-        {selectedItem ? (
-          <LibraryCard
-            key={selectedItem.id}
-            {...selectedItem}
-            isActive
-            className={`w-[220px] sm:w-[240px] ${selectedItem.className ?? ""}`}
-            onClick={(event) => {
-              onSelectItem?.(selectedItem.id);
-              selectedItem.onClick?.(event);
-            }}
-          />
-        ) : (
-          <div className="flex h-[180px] w-[220px] items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg sm:h-[200px] sm:w-[240px]">
-            Nessuna card
-          </div>
-        )}
-
-        <div className="flex items-center gap-3">
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => goToOffset(1)}
+            onClick={() => goToAdjacent(-1)}
+            disabled={!hasItems || items.length < 2}
+            aria-label="Mostra card precedente"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 disabled:pointer-events-none disabled:opacity-40 sm:h-12 sm:w-12"
+          >
+            <ArrowIcon direction="left" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => goToAdjacent(1)}
             disabled={!hasItems || items.length < 2}
             aria-label="Mostra card successiva"
             className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 disabled:pointer-events-none disabled:opacity-40 sm:h-12 sm:w-12"
           >
             <ArrowIcon direction="right" />
           </button>
-
-          {onAddItem ? (
-            <button
-              type="button"
-              onClick={onAddItem}
-              aria-label="Aggiungi una nuova card libreria"
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-2xl text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 sm:h-12 sm:w-12"
-            >
-              <PlusIcon />
-            </button>
-          ) : null}
         </div>
+
+        {onAddItem ? (
+          <button
+            type="button"
+            onClick={onAddItem}
+            aria-label="Aggiungi una nuova card libreria"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-2xl text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 sm:h-12 sm:w-12"
+          >
+            <PlusIcon />
+          </button>
+        ) : null}
       </div>
 
-      {items.length > 1 ? (
-        <div className="flex items-center justify-center gap-2">
-          {items.map((item, index) => {
-            const isActive = item.id === (selectedItem?.id ?? selectedId);
+      <div
+        ref={containerRef}
+        className="flex gap-4 overflow-x-auto pb-2 pt-1 [scrollbar-width:thin] [scrollbar-color:theme(colors.accent)_transparent]"
+      >
+        {hasItems ? (
+          items.map((item) => {
+            const isActive = item.id === (selectedId ?? items[0]?.id);
 
             return (
-              <button
+              <LibraryCard
                 key={item.id}
-                type="button"
-                onClick={() => onSelectItem?.(item.id)}
-                className={`h-2.5 w-2.5 rounded-full transition ${
-                  isActive ? "bg-accent" : "bg-muted/40 hover:bg-muted"
-                }`}
-                aria-label={`Mostra card ${index + 1}`}
+                {...item}
+                isActive={isActive}
+                data-library-carousel-item={item.id}
+                className={`w-[200px] flex-shrink-0 sm:w-[220px] ${item.className ?? ""}`}
+                onClick={(event) => {
+                  onSelectItem?.(item.id);
+                  item.onClick?.(event);
+                }}
               />
             );
-          })}
-        </div>
-      ) : null}
+          })
+        ) : (
+          <div className="flex h-[180px] w-[200px] flex-shrink-0 items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg sm:h-[200px] sm:w-[220px]">
+            Nessuna card
+          </div>
+        )}
+      </div>
     </div>
   );
 }

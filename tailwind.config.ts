@@ -6,7 +6,19 @@ const config: Config = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}", // Componenti condivisi
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",      // (se usi ancora /pages)
   ],
-  theme: { extend: {} },
+  theme: {
+    extend: {
+      keyframes: {
+        "fade-slide-in": {
+          "0%": { opacity: "0", transform: "translateX(12px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
+      },
+      animation: {
+        "fade-slide-in": "fade-slide-in 240ms ease-out",
+      },
+    },
+  },
   plugins: [],
 };
 
