@@ -60,7 +60,7 @@ export function LibraryCarousel({ items, selectedId, onSelectItem, onAddItem }: 
             key={selectedItem.id}
             {...selectedItem}
             isActive
-            className={`w-[220px] sm:w-[240px] ${selectedItem.className ?? ""}`}
+            className={`w-[220px] sm:w-[240px] animate-fade-slide-in ${selectedItem.className ?? ""}`}
             onClick={(event) => {
               onSelectItem?.(selectedItem.id);
               selectedItem.onClick?.(event);
