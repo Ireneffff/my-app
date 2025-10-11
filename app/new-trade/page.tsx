@@ -16,7 +16,13 @@ import {
   type WheelEvent as ReactWheelEvent,
 } from "react";
 import Button from "@/components/ui/Button";
+import { LibrarySection } from "@/components/library/LibrarySection";
+import {
+  LibraryInspirationPreview,
+  LibraryInspirationThumbnail,
+} from "@/components/library/LibraryInspiration";
 import { loadTrades, saveTrade, updateTrade, type StoredTrade } from "@/lib/tradesStorage";
+import { LIBRARY_INSPIRATION_ENTRIES } from "@/lib/libraryInspiration";
 
 type SymbolOption = {
   code: string;
@@ -144,6 +150,7 @@ function NewTradePageContent() {
   const openTimeInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimeInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const weekSwipeOriginRef = useRef<
     { x: number; time: number } | null
   >(null);
@@ -154,6 +161,7 @@ function NewTradePageContent() {
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
   const [imageData, setImageData] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>("primary");
   const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
   const [riskReward, setRiskReward] = useState("");
   const [risk, setRisk] = useState("");
@@ -626,6 +634,167 @@ function NewTradePageContent() {
       imageInputRef.current.value = "";
     }
   }, []);
+
+  const handleDownloadImage = useCallback(() => {
+    if (!imageData) {
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = imageData;
+    link.download = "trade-preview.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [imageData]);
+
+  const handleFocusPreview = useCallback(() => {
+    previewContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, []);
+
+  const inspirationalCards = useMemo(
+    () =>
+      LIBRARY_INSPIRATION_ENTRIES.map((entry) => ({
+        id: entry.id,
+        label: entry.label,
+        visual: <LibraryInspirationThumbnail entry={entry} />,
+      })),
+    []
+  );
+
+  const libraryCards = useMemo(
+    () => [
+      {
+        id: "primary",
+        label: imageData ? "Snapshot attuale" : "Carica anteprima",
+        onClick: () => {
+          handleFocusPreview();
+        },
+        visual: imageData ? (
+          <div className="relative h-full w-full">
+            <Image
+              src={imageData}
+              alt="Anteprima operazione"
+              fill
+              sizes="(min-width: 768px) 160px, 200px"
+              className="object-cover"
+              unoptimized
+            />
+          </div>
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-neutral-100 via-white to-neutral-200 text-muted-fg">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 48 48"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-12 w-12 text-accent"
+              aria-hidden="true"
+            >
+              <path d="M24 6v24" />
+              <path d="m14 16 10-10 10 10" />
+              <path d="M10 30v6a6 6 0 0 0 6 6h16a6 6 0 0 0 6-6v-6" />
+            </svg>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.28em]">Carica</span>
+          </div>
+        ),
+      },
+      ...inspirationalCards,
+    ],
+    [handleFocusPreview, imageData, inspirationalCards]
+  );
+
+  const selectedInspiration = useMemo(
+    () => LIBRARY_INSPIRATION_ENTRIES.find((entry) => entry.id === selectedLibraryItemId),
+    [selectedLibraryItemId]
+  );
+
+  const primaryPreviewContent = (
+    <>
+      <div ref={previewContainerRef} className="relative mx-auto flex w-full max-w-3xl flex-col items-center">
+        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[28px] bg-white shadow-lg ring-1 ring-black/5">
+          {imageData ? (
+            <>
+              <Image
+                src={imageData}
+                alt="Selected trade context"
+                fill
+                sizes="(min-width: 768px) 560px, 92vw"
+                className="object-cover"
+                unoptimized
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 via-black/0 to-black/40" />
+              <button
+                type="button"
+                onClick={openImagePicker}
+                className="absolute inset-0 z-10 h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+                aria-label="Aggiorna immagine della libreria"
+              />
+              <div className="absolute right-5 top-5 z-20 flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={handleFocusPreview}
+                  className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                >
+                  Focus
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadImage}
+                  className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                >
+                  Scarica
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                >
+                  Rimuovi
+                </button>
+              </div>
+              <div className="pointer-events-none absolute bottom-6 left-6 right-6 z-10 flex flex-col gap-2 text-left text-white drop-shadow">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.24em] opacity-70">
+                  Before the position
+                </span>
+                <span className="text-lg font-semibold">Snapshot di riferimento</span>
+              </div>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={openImagePicker}
+              className="flex h-full w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+            >
+              <UploadIcon />
+              <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Carica anteprima</span>
+              <span className="text-xs text-muted-fg/80">Aggiungi uno screenshot o un chart di contesto.</span>
+            </button>
+          )}
+        </div>
+      </div>
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageChange}
+        aria-label="Upload trade image"
+      />
+    </>
+  );
+
+  const inspirationPreviewContent = selectedInspiration ? (
+    <div ref={previewContainerRef} className="relative mx-auto flex w-full max-w-3xl flex-col items-center">
+      <LibraryInspirationPreview entry={selectedInspiration} />
+    </div>
+  ) : null;
+
+  const libraryPreview =
+    selectedLibraryItemId === "primary" ? primaryPreviewContent : inspirationPreviewContent ?? primaryPreviewContent;
 
   return (
     <section
@@ -1117,80 +1286,20 @@ function NewTradePageContent() {
 
             </>
           ) : (
-            <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Images</span>
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg opacity-80">
-                    Before the position
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={openImagePicker}
-                  className={`group relative flex min-h-[220px] w-full items-center justify-center overflow-hidden rounded-2xl border border-dashed ${
-                    imageData
-                      ? "border-transparent bg-surface"
-                      : "bg-subtle text-muted-fg transition hover:text-accent"
-                  } aspect-video`}
-                  style={
-                    imageData
-                      ? undefined
-                      : { borderColor: "color-mix(in srgb, rgba(var(--border)) 100%, transparent)" }
-                  }
-                >
-                  {imageData ? (
-                    <Image
-                      src={imageData}
-                      alt="Selected trade context"
-                      fill
-                      sizes="(min-width: 768px) 480px, 90vw"
-                      className="object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 px-4 text-center text-sm font-medium">
-                      <span className="rounded-full bg-bg px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-fg">
-                        Enter image
-                      </span>
-                      <span className="text-xs text-muted-fg opacity-80">PNG, JPG or WEBP · max 5 MB</span>
-                      <span className="text-xs text-muted-fg opacity-70">
-                        Tap to upload a snapshot of your setup before entering the trade.
-                      </span>
-                    </div>
-                  )}
-                </button>
-
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={handleImageChange}
-                  aria-label="Upload trade image"
-                />
-
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-fg">
-                  <p className="max-w-[70%]">
-                    {imageData ? "Tap the preview to replace the image." : "Tap the area above to select or capture an image."}
-                  </p>
-                  {imageData ? (
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="text-[11px] font-medium uppercase tracking-[0.24em] text-accent transition hover:opacity-80"
-                    >
-                      Remove
-                    </button>
-                  ) : null}
-                </div>
-
-                {imageError ? (
-                  <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-medium text-red-600">{imageError}</p>
-                ) : null}
-              </div>
-            </div>
+            <LibrarySection
+              title="Library"
+              subtitle="Prima dell’operazione"
+              preview={libraryPreview}
+              actions={libraryCards}
+              selectedActionId={selectedLibraryItemId}
+              onSelectAction={setSelectedLibraryItemId}
+              footer={
+                <p className="text-left text-sm text-muted-fg">
+                  Organizza le tue reference per prendere decisioni più rapide prima dell’operazione.
+                </p>
+              }
+              errorMessage={imageError}
+            />
           )}
         </div>
       </div>
@@ -1322,6 +1431,26 @@ function NewTradePageContent() {
         </div>
       ) : null}
     </section>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 48 48"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-14 w-14 text-accent"
+      aria-hidden="true"
+    >
+      <path d="M24 6v24" />
+      <path d="m14 16 10-10 10 10" />
+      <path d="M10 30v6a6 6 0 0 0 6 6h16a6 6 0 0 0 6-6v-6" />
+    </svg>
   );
 }
 
