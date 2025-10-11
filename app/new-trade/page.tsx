@@ -13,9 +13,11 @@ import {
   type ChangeEvent,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
   type WheelEvent as ReactWheelEvent,
 } from "react";
 import Button from "@/components/ui/Button";
+import { LibrarySection } from "@/components/library/LibrarySection";
 import { loadTrades, saveTrade, updateTrade, type StoredTrade } from "@/lib/tradesStorage";
 
 type SymbolOption = {
@@ -30,6 +32,64 @@ const availableSymbols: SymbolOption[] = [
   { code: "AUDUSD", flag: "🇦🇺 🇺🇸" },
   { code: "USDCAD", flag: "🇺🇸 🇨🇦" },
   { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
+];
+
+type CuratedLibraryStory = {
+  id: string;
+  label: string;
+  badge: string;
+  title: string;
+  description: string;
+  cardGradient: string;
+  previewGradient: string;
+  accentGradient: string;
+  highlights: string[];
+};
+
+type LibraryItem = {
+  id: string;
+  label: string;
+  visual: ReactNode;
+  preview: ReactNode;
+};
+
+const curatedLibraryStories: CuratedLibraryStory[] = [
+  {
+    id: "breakout-scenario",
+    label: "Scenario breakout",
+    badge: "Setup",
+    title: "Compressione prima del breakout",
+    description:
+      "Osserva come il prezzo rispetta il range in attesa della rottura del livello chiave con aumento di volumi.",
+    cardGradient: "from-sky-200 via-sky-300 to-indigo-400",
+    previewGradient: "from-slate-900 via-sky-900/80 to-slate-950",
+    accentGradient: "from-sky-400/60 via-sky-300/40 to-indigo-400/60",
+    highlights: ["Trend di fondo rialzista", "Volume in crescita", "Livello 1.0920 da monitorare"],
+  },
+  {
+    id: "pullback-plan",
+    label: "Pullback plan",
+    badge: "Playbook",
+    title: "Rientro su struttura di domanda",
+    description:
+      "La price action forma massimi decrescenti ma mantiene un supporto dinamico: ideale per pianificare un pullback controllato.",
+    cardGradient: "from-emerald-200 via-teal-200 to-emerald-400",
+    previewGradient: "from-emerald-900 via-emerald-800 to-slate-900",
+    accentGradient: "from-emerald-400/60 via-teal-300/50 to-emerald-500/60",
+    highlights: ["Momentum ancora positivo", "RSI vicino a 45", "Conferma su timeframe superiore"],
+  },
+  {
+    id: "session-memo",
+    label: "Session memo",
+    badge: "Focus",
+    title: "Checklist pre-sessione europea",
+    description:
+      "Elementi rapidi per preparare l’apertura: bias direzionale, livelli di liquidità e notizie in calendario.",
+    cardGradient: "from-amber-200 via-orange-200 to-rose-300",
+    previewGradient: "from-amber-900 via-orange-900/90 to-stone-900",
+    accentGradient: "from-orange-400/60 via-amber-300/50 to-rose-400/60",
+    highlights: ["Bias leggermente short", "Liquidità sotto 1.0850", "Attenzione alle news PMI"],
+  },
 ];
 
 function formatDateTimeLocal(date: Date) {
@@ -144,6 +204,7 @@ function NewTradePageContent() {
   const openTimeInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimeInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const weekSwipeOriginRef = useRef<
     { x: number; time: number } | null
   >(null);
@@ -159,6 +220,7 @@ function NewTradePageContent() {
   const [risk, setRisk] = useState("");
   const [pips, setPips] = useState("");
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
+  const [activeLibraryItemId, setActiveLibraryItemId] = useState<string>("personal");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() =>
     getStartOfMonth(initialSelectedDate),
@@ -626,6 +688,201 @@ function NewTradePageContent() {
       imageInputRef.current.value = "";
     }
   }, []);
+
+  const handleDownloadImage = useCallback(() => {
+    if (!imageData) {
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = imageData;
+    link.download = "trade-preview.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [imageData]);
+
+  const handleSelectLibraryItem = useCallback((itemId: string) => {
+    setActiveLibraryItemId(itemId);
+
+    const scroll = () => {
+      previewContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    };
+
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(scroll);
+    } else {
+      scroll();
+    }
+  }, []);
+
+  const libraryItems = useMemo<LibraryItem[]>(() => {
+    const personalVisual = imageData ? (
+      <div className="relative h-full w-full">
+        <Image src={imageData} alt="Anteprima caricata" fill sizes="220px" className="object-cover" unoptimized />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/10 to-black/60 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      </div>
+    ) : (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-muted-fg">
+        <span className="inline-flex scale-75 transform text-accent">
+          <UploadIcon />
+        </span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.24em]">Carica</span>
+      </div>
+    );
+
+    const personalPreview = (
+      <div className="w-full">
+        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[28px] bg-white shadow-lg ring-1 ring-black/5">
+          {imageData ? (
+            <>
+              <Image
+                src={imageData}
+                alt="Selected trade context"
+                fill
+                sizes="(min-width: 768px) 560px, 92vw"
+                className="object-cover"
+                unoptimized
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 via-black/0 to-black/40" />
+              <button
+                type="button"
+                onClick={openImagePicker}
+                className="absolute inset-0 h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+                aria-label="Aggiorna immagine della libreria"
+              />
+              <div className="pointer-events-none absolute bottom-6 left-6 right-6 flex flex-col gap-2 text-left text-white drop-shadow">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.24em] opacity-70">Before the position</span>
+                <span className="text-lg font-semibold">Snapshot di riferimento</span>
+              </div>
+              <div className="absolute right-5 top-5 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDownloadImage}
+                  className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                >
+                  Scarica
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                >
+                  Rimuovi
+                </button>
+              </div>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={openImagePicker}
+              className="flex h-full w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+            >
+              <UploadIcon />
+              <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Carica anteprima</span>
+              <span className="text-xs text-muted-fg/80">Aggiungi uno screenshot o un chart di contesto.</span>
+            </button>
+          )}
+        </div>
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleImageChange}
+          aria-label="Upload trade image"
+        />
+      </div>
+    );
+
+    const curatedItems = curatedLibraryStories.map<LibraryItem>((story) => {
+      const visual = (
+        <div className={`relative h-full w-full overflow-hidden rounded-2xl bg-gradient-to-br ${story.cardGradient}`}>
+          <div className="absolute inset-0 bg-white/10" />
+          <div className="relative flex h-full flex-col items-center justify-center gap-3 px-4 text-center text-white drop-shadow">
+            <span className="rounded-full bg-black/20 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em]">
+              {story.badge}
+            </span>
+            <span className="text-sm font-semibold leading-tight">{story.title}</span>
+          </div>
+        </div>
+      );
+
+      const preview = (
+        <div
+          className={`relative aspect-[16/9] w-full overflow-hidden rounded-[28px] bg-gradient-to-br ${story.previewGradient} shadow-lg ring-1 ring-black/5`}
+        >
+          <div className={`absolute inset-0 bg-gradient-to-br ${story.accentGradient}`} />
+          <div className="absolute inset-0 opacity-30 mix-blend-screen">
+            <div className="absolute -left-8 top-0 h-full w-1/2 -skew-x-12 bg-white/10" />
+            <div className="absolute bottom-10 right-10 h-28 w-28 rounded-full border border-white/20" />
+          </div>
+          <div className="relative flex h-full flex-col justify-between p-8 text-white sm:p-10">
+            <div className="flex items-center gap-3">
+              <span className="rounded-full bg-white/20 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.24em]">
+                {story.badge}
+              </span>
+              <span className="text-xs font-semibold uppercase tracking-[0.24em] text-white/70">Library highlight</span>
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-2xl font-semibold tracking-tight sm:text-3xl">{story.title}</h3>
+              <p className="text-sm text-white/80 sm:max-w-xl">{story.description}</p>
+              <ul className="grid gap-3 text-sm text-white/80 sm:grid-cols-2">
+                {story.highlights.map((highlight, index) => (
+                  <li key={highlight} className="flex items-start gap-3">
+                    <span className="mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-white/15 text-xs font-semibold">
+                      {index + 1}
+                    </span>
+                    <span className="leading-relaxed">{highlight}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      );
+
+      return {
+        id: story.id,
+        label: story.label,
+        visual,
+        preview,
+      };
+    });
+
+    return [
+      {
+        id: "personal",
+        label: imageData ? "Snapshot personale" : "Carica anteprima",
+        visual: personalVisual,
+        preview: personalPreview,
+      },
+      ...curatedItems,
+    ];
+  }, [handleDownloadImage, handleImageChange, handleRemoveImage, imageData, openImagePicker]);
+
+  useEffect(() => {
+    if (!libraryItems.some((item) => item.id === activeLibraryItemId) && libraryItems.length > 0) {
+      setActiveLibraryItemId(libraryItems[0].id);
+    }
+  }, [activeLibraryItemId, libraryItems]);
+
+  const activeLibraryPreview = useMemo(() => {
+    const activeItem = libraryItems.find((item) => item.id === activeLibraryItemId) ?? libraryItems[0];
+    return activeItem?.preview ?? null;
+  }, [activeLibraryItemId, libraryItems]);
+
+  const libraryCards = useMemo(
+    () =>
+      libraryItems.map((item) => ({
+        id: item.id,
+        label: item.label,
+        visual: item.visual,
+        onClick: () => handleSelectLibraryItem(item.id),
+        isActive: item.id === activeLibraryItemId,
+      })),
+    [activeLibraryItemId, handleSelectLibraryItem, libraryItems],
+  );
 
   return (
     <section
@@ -1117,80 +1374,27 @@ function NewTradePageContent() {
 
             </>
           ) : (
-            <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Images</span>
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg opacity-80">
-                    Before the position
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={openImagePicker}
-                  className={`group relative flex min-h-[220px] w-full items-center justify-center overflow-hidden rounded-2xl border border-dashed ${
-                    imageData
-                      ? "border-transparent bg-surface"
-                      : "bg-subtle text-muted-fg transition hover:text-accent"
-                  } aspect-video`}
-                  style={
-                    imageData
-                      ? undefined
-                      : { borderColor: "color-mix(in srgb, rgba(var(--border)) 100%, transparent)" }
-                  }
+            <LibrarySection
+              title="Library"
+              subtitle="Prima dell’operazione"
+              preview={
+                <div
+                  ref={previewContainerRef}
+                  className="relative mx-auto flex w-full max-w-3xl flex-col items-center"
                 >
-                  {imageData ? (
-                    <Image
-                      src={imageData}
-                      alt="Selected trade context"
-                      fill
-                      sizes="(min-width: 768px) 480px, 90vw"
-                      className="object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 px-4 text-center text-sm font-medium">
-                      <span className="rounded-full bg-bg px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-fg">
-                        Enter image
-                      </span>
-                      <span className="text-xs text-muted-fg opacity-80">PNG, JPG or WEBP · max 5 MB</span>
-                      <span className="text-xs text-muted-fg opacity-70">
-                        Tap to upload a snapshot of your setup before entering the trade.
-                      </span>
-                    </div>
-                  )}
-                </button>
-
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={handleImageChange}
-                  aria-label="Upload trade image"
-                />
-
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-fg">
-                  <p className="max-w-[70%]">
-                    {imageData ? "Tap the preview to replace the image." : "Tap the area above to select or capture an image."}
-                  </p>
-                  {imageData ? (
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="text-[11px] font-medium uppercase tracking-[0.24em] text-accent transition hover:opacity-80"
-                    >
-                      Remove
-                    </button>
-                  ) : null}
+                  <div key={activeLibraryItemId} className="w-full overflow-hidden animate-preview-fade">
+                    {activeLibraryPreview}
+                  </div>
                 </div>
-
-                {imageError ? (
-                  <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-medium text-red-600">{imageError}</p>
-                ) : null}
-              </div>
-            </div>
+              }
+              actions={libraryCards}
+              footer={
+                <p className="text-left text-sm text-muted-fg">
+                  Organizza le tue reference per prendere decisioni più rapide prima dell’operazione.
+                </p>
+              }
+              errorMessage={imageError}
+            />
           )}
         </div>
       </div>
@@ -1322,6 +1526,26 @@ function NewTradePageContent() {
         </div>
       ) : null}
     </section>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 48 48"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-14 w-14 text-accent"
+      aria-hidden="true"
+    >
+      <path d="M24 6v24" />
+      <path d="m14 16 10-10 10 10" />
+      <path d="M10 30v6a6 6 0 0 0 6 6h16a6 6 0 0 0 6-6v-6" />
+    </svg>
   );
 }
 
