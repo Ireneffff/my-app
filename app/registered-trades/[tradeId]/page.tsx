@@ -6,17 +6,14 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
-import {
-  LibraryInspirationPreview,
-  LibraryInspirationThumbnail,
-} from "@/components/library/LibraryInspiration";
+import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
 import {
   deleteTrade,
   loadTrades,
   REGISTERED_TRADES_UPDATED_EVENT,
+  type StoredLibraryItem,
   type StoredTrade,
 } from "@/lib/tradesStorage";
-import { LIBRARY_INSPIRATION_ENTRIES } from "@/lib/libraryInspiration";
 
 type TradeState = {
   status: "loading" | "ready" | "missing";
@@ -147,80 +144,129 @@ export default function RegisteredTradePage() {
     });
   }, [selectedDate]);
 
-  const imageData = state.trade?.imageData ?? null;
+  const libraryItems = useMemo<StoredLibraryItem[]>(() => {
+    if (!state.trade) {
+      return [
+        {
+          id: "snapshot",
+          imageData: null,
+        },
+      ];
+    }
+
+    const hydrated = Array.isArray(state.trade.libraryItems)
+      ? state.trade.libraryItems
+          .filter((item): item is StoredLibraryItem => Boolean(item) && typeof item.id === "string")
+          .map((item) => ({
+            id: item.id,
+            imageData: item.imageData ?? null,
+          }))
+      : [];
+
+    if (hydrated.length > 0) {
+      return hydrated;
+    }
+
+    if (state.trade.imageData) {
+      return [
+        {
+          id: "snapshot",
+          imageData: state.trade.imageData,
+        },
+      ];
+    }
+
+    return [
+      {
+        id: "snapshot",
+        imageData: null,
+      },
+    ];
+  }, [state.trade]);
+
+  useEffect(() => {
+    if (libraryItems.length === 0) {
+      setSelectedLibraryItemId("snapshot");
+      return;
+    }
+
+    setSelectedLibraryItemId((prev) => {
+      if (libraryItems.some((item) => item.id === prev)) {
+        return prev;
+      }
+      return libraryItems[0].id;
+    });
+  }, [libraryItems]);
+
+  const selectedLibraryItem = useMemo(
+    () =>
+      libraryItems.find((item) => item.id === selectedLibraryItemId) ??
+      libraryItems[0] ??
+      null,
+    [libraryItems, selectedLibraryItemId],
+  );
+
+  const selectedImageData = selectedLibraryItem?.imageData ?? null;
 
   const handleFocusPreview = useCallback(() => {
     previewContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, []);
 
   const handleDownloadImage = useCallback(() => {
-    if (!imageData) {
+    if (!selectedImageData) {
       return;
     }
 
     const link = document.createElement("a");
-    link.href = imageData;
+    link.href = selectedImageData;
     link.download = `trade-${state.trade?.id ?? "preview"}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }, [imageData, state.trade?.id]);
+  }, [selectedImageData, state.trade?.id]);
 
   const handleOpenInNewTab = useCallback(() => {
-    if (!imageData) {
+    if (!selectedImageData) {
       return;
     }
 
-    window.open(imageData, "_blank", "noopener,noreferrer");
-  }, [imageData]);
-
-  const inspirationalCards = useMemo(
-    () =>
-      LIBRARY_INSPIRATION_ENTRIES.map((entry) => ({
-        id: entry.id,
-        label: entry.label,
-        visual: <LibraryInspirationThumbnail entry={entry} />,
-      })),
-    []
-  );
+    window.open(selectedImageData, "_blank", "noopener,noreferrer");
+  }, [selectedImageData]);
 
   const libraryCards = useMemo(
-    () => [
-      {
-        id: "snapshot",
-        label: imageData ? "Snapshot registrato" : "Nessuna anteprima",
-        onClick: () => {
-          handleFocusPreview();
-        },
-        visual: imageData ? (
-          <div className="relative h-full w-full">
-            <Image
-              src={imageData}
-              alt="Snapshot registrato"
-              fill
-              sizes="(min-width: 768px) 160px, 200px"
-              className="object-cover"
-              unoptimized
-            />
-          </div>
-        ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-neutral-100 via-white to-neutral-200 text-muted-fg">
-            <EmptyLibraryIcon />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.28em]">Vuoto</span>
-          </div>
-        ),
-      },
-      ...inspirationalCards,
-    ],
-    [handleFocusPreview, imageData, inspirationalCards]
+    () =>
+      libraryItems.map((item, index) => {
+        const hasImage = Boolean(item.imageData);
+
+        return {
+          id: item.id,
+          label: hasImage ? `Anteprima ${index + 1}` : "Nessuna anteprima",
+          onClick: () => {
+            handleFocusPreview();
+          },
+          visual: hasImage ? (
+            <div className="relative h-full w-full">
+              <Image
+                src={item.imageData!}
+                alt={`Snapshot libreria ${index + 1}`}
+                fill
+                sizes="(min-width: 768px) 160px, 200px"
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-neutral-100 via-white to-neutral-200 text-muted-fg">
+              <EmptyLibraryIcon />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.28em]">Vuoto</span>
+            </div>
+          ),
+        } satisfies LibraryCarouselItem;
+      }),
+    [handleFocusPreview, libraryItems]
   );
 
-  const selectedInspiration = useMemo(
-    () => LIBRARY_INSPIRATION_ENTRIES.find((entry) => entry.id === selectedLibraryItemId),
-    [selectedLibraryItemId]
-  );
-
-  const libraryFooter = imageData ? (
+  const libraryFooter = selectedImageData ? (
     <p className="text-left text-sm text-muted-fg">
       Questo è lo snapshot che hai salvato quando hai registrato l’operazione.
     </p>
@@ -233,10 +279,10 @@ export default function RegisteredTradePage() {
   const primaryPreviewContent = (
     <div ref={previewContainerRef} className="relative mx-auto flex w-full max-w-3xl flex-col items-center">
       <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[28px] bg-white shadow-lg ring-1 ring-black/5">
-        {imageData ? (
+        {selectedImageData ? (
           <>
             <Image
-              src={imageData}
+              src={selectedImageData}
               alt="Trade context attachment"
               fill
               sizes="(min-width: 768px) 560px, 92vw"
@@ -288,15 +334,7 @@ export default function RegisteredTradePage() {
       </div>
     </div>
   );
-
-  const inspirationPreviewContent = selectedInspiration ? (
-    <div ref={previewContainerRef} className="relative mx-auto flex w-full max-w-3xl flex-col items-center">
-      <LibraryInspirationPreview entry={selectedInspiration} />
-    </div>
-  ) : null;
-
-  const libraryPreview =
-    selectedLibraryItemId === "snapshot" ? primaryPreviewContent : inspirationPreviewContent ?? primaryPreviewContent;
+  const libraryPreview = primaryPreviewContent;
 
   if (state.status === "loading") {
     return (

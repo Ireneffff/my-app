@@ -1,3 +1,8 @@
+export type StoredLibraryItem = {
+  id: string;
+  imageData: string | null;
+};
+
 export type StoredTrade = {
   id: string;
   symbolCode: string;
@@ -6,6 +11,7 @@ export type StoredTrade = {
   openTime?: string | null;
   closeTime?: string | null;
   imageData?: string | null;
+  libraryItems?: StoredLibraryItem[];
   position: "LONG" | "SHORT";
   riskReward?: string | null;
   risk?: string | null;
@@ -76,6 +82,41 @@ function parseTrades(raw: string | null): StoredTrade[] {
 
         if (storedItem.imageData === undefined) {
           storedItem.imageData = null;
+        }
+
+        const rawLibraryItems = (storedItem as StoredTrade).libraryItems;
+        if (Array.isArray(rawLibraryItems)) {
+          storedItem.libraryItems = rawLibraryItems
+            .map((item) => {
+              if (!item || typeof item !== "object") {
+                return null;
+              }
+
+              const parsedItem = item as StoredLibraryItem;
+
+              if (typeof parsedItem.id !== "string" || parsedItem.id.trim().length === 0) {
+                return null;
+              }
+
+              if (parsedItem.imageData !== null && typeof parsedItem.imageData !== "string") {
+                return null;
+              }
+
+              return {
+                id: parsedItem.id,
+                imageData: parsedItem.imageData ?? null,
+              } satisfies StoredLibraryItem;
+            })
+            .filter((item): item is StoredLibraryItem => item !== null);
+        } else {
+          storedItem.libraryItems = storedItem.imageData
+            ? [
+                {
+                  id: "library-primary",
+                  imageData: storedItem.imageData,
+                },
+              ]
+            : [];
         }
 
         if (storedItem.position !== "LONG" && storedItem.position !== "SHORT") {

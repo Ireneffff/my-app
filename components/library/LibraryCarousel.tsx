@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 
 import { LibraryCard, type LibraryCardProps } from "./LibraryCard";
 
@@ -12,110 +12,109 @@ interface LibraryCarouselProps {
   items: LibraryCarouselItem[];
   selectedId?: string;
   onSelectItem?: (itemId: string) => void;
+  onAddItem?: () => void;
 }
 
-export function LibraryCarousel({ items, selectedId, onSelectItem }: LibraryCarouselProps) {
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
+export function LibraryCarousel({ items, selectedId, onSelectItem, onAddItem }: LibraryCarouselProps) {
+  const hasItems = items.length > 0;
+  const selectedIndex = useMemo(() => {
+    if (!hasItems) {
+      return -1;
+    }
 
-  const updateScrollState = useCallback(() => {
-    const container = scrollContainerRef.current;
+    const explicitIndex = selectedId ? items.findIndex((item) => item.id === selectedId) : 0;
+    return explicitIndex >= 0 ? explicitIndex : 0;
+  }, [hasItems, items, selectedId]);
 
-    if (!container) {
-      setCanScrollLeft(false);
-      setCanScrollRight(false);
+  const selectedItem = hasItems && selectedIndex >= 0 ? items[selectedIndex] : undefined;
+
+  const goToOffset = (offset: number) => {
+    if (!hasItems || items.length < 2) {
       return;
     }
 
-    const { scrollLeft, scrollWidth, clientWidth } = container;
-
-    setCanScrollLeft(scrollLeft > 4);
-    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 4);
-  }, []);
-
-  useEffect(() => {
-    updateScrollState();
-
-    const container = scrollContainerRef.current;
-    if (!container) {
+    const nextIndex = (selectedIndex + offset + items.length) % items.length;
+    const target = items[nextIndex];
+    if (!target) {
       return;
     }
 
-    const handleResize = () => {
-      updateScrollState();
-    };
-
-    container.addEventListener("scroll", updateScrollState, { passive: true });
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      container.removeEventListener("scroll", updateScrollState);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [updateScrollState]);
-
-  useEffect(() => {
-    updateScrollState();
-  }, [items.length, updateScrollState]);
-
-  const scrollByOffset = useCallback((direction: "left" | "right") => {
-    const container = scrollContainerRef.current;
-    if (!container) {
-      return;
-    }
-
-    const scrollAmount = container.clientWidth * 0.7;
-    const left = direction === "left" ? -scrollAmount : scrollAmount;
-
-    container.scrollBy({ left, behavior: "smooth" });
-  }, []);
-
-  const leftArrowDisabled = useMemo(() => items.length === 0 || !canScrollLeft, [canScrollLeft, items.length]);
-  const rightArrowDisabled = useMemo(() => items.length === 0 || !canScrollRight, [canScrollRight, items.length]);
+    onSelectItem?.(target.id);
+  };
 
   return (
-    <div className="relative">
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-neutral-50 via-neutral-50/80 to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-neutral-50 via-neutral-50/80 to-transparent" />
+    <div className="flex flex-col items-center gap-4">
+      <div className="flex items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={() => goToOffset(-1)}
+          disabled={!hasItems || items.length < 2}
+          aria-label="Mostra card precedente"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 disabled:pointer-events-none disabled:opacity-40 sm:h-12 sm:w-12"
+        >
+          <ArrowIcon direction="left" />
+        </button>
 
-      <button
-        type="button"
-        onClick={() => scrollByOffset("left")}
-        disabled={leftArrowDisabled}
-        aria-label="Scroll library options backward"
-        className="absolute left-2 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 disabled:pointer-events-none disabled:opacity-40 sm:flex"
-      >
-        <ArrowIcon direction="left" />
-      </button>
-
-      <div
-        ref={scrollContainerRef}
-        className="flex gap-4 overflow-x-auto scroll-smooth px-1 py-2 sm:px-4"
-        style={{ scrollbarWidth: "none" }}
-      >
-        {items.map(({ id, onClick, ...card }) => (
+        {selectedItem ? (
           <LibraryCard
-            key={id}
-            {...card}
-            isActive={id === selectedId}
+            key={selectedItem.id}
+            {...selectedItem}
+            isActive
+            className={`w-[220px] sm:w-[240px] ${selectedItem.className ?? ""}`}
             onClick={(event) => {
-              onSelectItem?.(id);
-              onClick?.(event);
+              onSelectItem?.(selectedItem.id);
+              selectedItem.onClick?.(event);
             }}
           />
-        ))}
+        ) : (
+          <div className="flex h-[180px] w-[220px] items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg sm:h-[200px] sm:w-[240px]">
+            Nessuna card
+          </div>
+        )}
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => goToOffset(1)}
+            disabled={!hasItems || items.length < 2}
+            aria-label="Mostra card successiva"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 disabled:pointer-events-none disabled:opacity-40 sm:h-12 sm:w-12"
+          >
+            <ArrowIcon direction="right" />
+          </button>
+
+          {onAddItem ? (
+            <button
+              type="button"
+              onClick={onAddItem}
+              aria-label="Aggiungi una nuova card libreria"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-2xl text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 sm:h-12 sm:w-12"
+            >
+              <PlusIcon />
+            </button>
+          ) : null}
+        </div>
       </div>
 
-      <button
-        type="button"
-        onClick={() => scrollByOffset("right")}
-        disabled={rightArrowDisabled}
-        aria-label="Scroll library options forward"
-        className="absolute right-2 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 disabled:pointer-events-none disabled:opacity-40 sm:flex"
-      >
-        <ArrowIcon direction="right" />
-      </button>
+      {items.length > 1 ? (
+        <div className="flex items-center justify-center gap-2">
+          {items.map((item, index) => {
+            const isActive = item.id === (selectedItem?.id ?? selectedId);
+
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onSelectItem?.(item.id)}
+                className={`h-2.5 w-2.5 rounded-full transition ${
+                  isActive ? "bg-accent" : "bg-muted/40 hover:bg-muted"
+                }`}
+                aria-label={`Mostra card ${index + 1}`}
+              />
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -132,10 +131,29 @@ function ArrowIcon({ direction }: { direction: "left" | "right" }) {
       strokeWidth="1.6"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={`h-6 w-6 transition-transform ${rotation}`}
+      className={`h-5 w-5 transition-transform ${rotation}`}
       aria-hidden="true"
     >
       <path d="m8 4 8 8-8 8" />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-6 w-6"
+      aria-hidden="true"
+    >
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
     </svg>
   );
 }

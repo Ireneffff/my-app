@@ -17,12 +17,14 @@ import {
 } from "react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
+import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
 import {
-  LibraryInspirationPreview,
-  LibraryInspirationThumbnail,
-} from "@/components/library/LibraryInspiration";
-import { loadTrades, saveTrade, updateTrade, type StoredTrade } from "@/lib/tradesStorage";
-import { LIBRARY_INSPIRATION_ENTRIES } from "@/lib/libraryInspiration";
+  loadTrades,
+  saveTrade,
+  updateTrade,
+  type StoredLibraryItem,
+  type StoredTrade,
+} from "@/lib/tradesStorage";
 
 type SymbolOption = {
   code: string;
@@ -37,6 +39,15 @@ const availableSymbols: SymbolOption[] = [
   { code: "USDCAD", flag: "🇺🇸 🇨🇦" },
   { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
 ];
+
+type LibraryItem = StoredLibraryItem;
+
+function createLibraryItem(imageData: string | null = null): LibraryItem {
+  return {
+    id: `library-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    imageData,
+  } satisfies LibraryItem;
+}
 
 function formatDateTimeLocal(date: Date) {
   const pad = (value: number) => value.toString().padStart(2, "0");
@@ -159,9 +170,12 @@ function NewTradePageContent() {
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
-  const [imageData, setImageData] = useState<string | null>(null);
+  const initialLibraryItems = useMemo(() => [createLibraryItem(null)], []);
+  const [libraryItems, setLibraryItems] = useState<LibraryItem[]>(initialLibraryItems);
   const [imageError, setImageError] = useState<string | null>(null);
-  const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>("primary");
+  const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>(
+    initialLibraryItems[0]?.id ?? "",
+  );
   const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
   const [riskReward, setRiskReward] = useState("");
   const [risk, setRisk] = useState("");
@@ -172,6 +186,30 @@ function NewTradePageContent() {
     getStartOfMonth(initialSelectedDate),
   );
   const [, startNavigation] = useTransition();
+
+  useEffect(() => {
+    if (libraryItems.length === 0) {
+      const fallback = createLibraryItem(null);
+      setLibraryItems([fallback]);
+      setSelectedLibraryItemId(fallback.id);
+      return;
+    }
+
+    if (!libraryItems.some((item) => item.id === selectedLibraryItemId)) {
+      setSelectedLibraryItemId(libraryItems[0].id);
+    }
+  }, [libraryItems, selectedLibraryItemId]);
+
+  const selectedLibraryItem = useMemo(
+    () =>
+      libraryItems.find((item) => item.id === selectedLibraryItemId) ??
+      libraryItems[0] ??
+      null,
+    [libraryItems, selectedLibraryItemId],
+  );
+
+  const selectedImageData = selectedLibraryItem?.imageData ?? null;
+
   const calendarDays = useMemo(() => {
     const firstOfMonth = getStartOfMonth(calendarMonth);
     const gridStart = getStartOfWeek(firstOfMonth);
@@ -564,7 +602,16 @@ function NewTradePageContent() {
       setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate, 17));
     }
 
-    setImageData(match.imageData ?? null);
+    const hydratedLibraryItems =
+      Array.isArray(match.libraryItems) && match.libraryItems.length > 0
+        ? match.libraryItems.map((item) => ({
+            id: item.id,
+            imageData: item.imageData ?? null,
+          }))
+        : [createLibraryItem(match.imageData ?? null)];
+
+    setLibraryItems(hydratedLibraryItems);
+    setSelectedLibraryItemId(hydratedLibraryItems[0]?.id ?? initialLibraryItems[0].id);
     setImageError(null);
 
     setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
@@ -575,7 +622,15 @@ function NewTradePageContent() {
     if (imageInputRef.current) {
       imageInputRef.current.value = "";
     }
-  }, [editingTradeId, handleSelectDate, imageInputRef, isEditing, router, selectedDate]);
+  }, [
+    editingTradeId,
+    handleSelectDate,
+    imageInputRef,
+    initialLibraryItems,
+    isEditing,
+    router,
+    selectedDate,
+  ]);
 
   const dayOfWeekLabel = useMemo(
     () =>
@@ -595,6 +650,12 @@ function NewTradePageContent() {
   const handleImageChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
 
+    const targetItemId = selectedLibraryItemId;
+    if (!targetItemId) {
+      setImageError("Nessuna card selezionata. Aggiungi o scegli una card prima di caricare.");
+      return;
+    }
+
     if (!file) {
       setImageError(null);
       return;
@@ -607,119 +668,160 @@ function NewTradePageContent() {
     }
 
     const reader = new FileReader();
+    const inputElement = event.target;
 
     reader.onload = () => {
       if (typeof reader.result === "string") {
-        setImageData(reader.result);
+        setLibraryItems((prev) =>
+          prev.map((item) =>
+            item.id === targetItemId
+              ? {
+                  ...item,
+                  imageData: reader.result,
+                }
+              : item,
+          ),
+        );
         setImageError(null);
+      }
+
+      if (inputElement) {
+        inputElement.value = "";
       }
     };
 
     reader.onerror = () => {
       setImageError("Failed to load the selected image. Please try another file.");
-      setImageData(null);
+      setLibraryItems((prev) =>
+        prev.map((item) =>
+          item.id === targetItemId
+            ? {
+                ...item,
+                imageData: null,
+              }
+            : item,
+        ),
+      );
+
+      if (inputElement) {
+        inputElement.value = "";
+      }
     };
 
     reader.readAsDataURL(file);
-  }, []);
+  }, [selectedLibraryItemId]);
 
   const openImagePicker = useCallback(() => {
     imageInputRef.current?.click();
   }, []);
 
   const handleRemoveImage = useCallback(() => {
-    setImageData(null);
+    if (!selectedLibraryItemId) {
+      return;
+    }
+
+    setLibraryItems((prev) =>
+      prev.map((item) =>
+        item.id === selectedLibraryItemId
+          ? {
+              ...item,
+              imageData: null,
+            }
+          : item,
+      ),
+    );
+    setImageError(null);
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+  }, [selectedLibraryItemId]);
+
+  const handleDownloadImage = useCallback(() => {
+    if (!selectedImageData) {
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = selectedImageData;
+    link.download = "trade-preview.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [selectedImageData]);
+
+  const handleFocusPreview = useCallback(() => {
+    previewContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, []);
+
+  const handleAddLibraryItem = useCallback(() => {
+    const newItem = createLibraryItem(null);
+    setLibraryItems((prev) => [...prev, newItem]);
+    setSelectedLibraryItemId(newItem.id);
     setImageError(null);
     if (imageInputRef.current) {
       imageInputRef.current.value = "";
     }
   }, []);
 
-  const handleDownloadImage = useCallback(() => {
-    if (!imageData) {
-      return;
-    }
-
-    const link = document.createElement("a");
-    link.href = imageData;
-    link.download = "trade-preview.png";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }, [imageData]);
-
-  const handleFocusPreview = useCallback(() => {
-    previewContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, []);
-
-  const inspirationalCards = useMemo(
-    () =>
-      LIBRARY_INSPIRATION_ENTRIES.map((entry) => ({
-        id: entry.id,
-        label: entry.label,
-        visual: <LibraryInspirationThumbnail entry={entry} />,
-      })),
-    []
-  );
-
   const libraryCards = useMemo(
-    () => [
-      {
-        id: "primary",
-        label: imageData ? "Snapshot attuale" : "Carica anteprima",
-        onClick: () => {
-          handleFocusPreview();
-        },
-        visual: imageData ? (
-          <div className="relative h-full w-full">
-            <Image
-              src={imageData}
-              alt="Anteprima operazione"
-              fill
-              sizes="(min-width: 768px) 160px, 200px"
-              className="object-cover"
-              unoptimized
-            />
-          </div>
-        ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-neutral-100 via-white to-neutral-200 text-muted-fg">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 48 48"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-12 w-12 text-accent"
-              aria-hidden="true"
-            >
-              <path d="M24 6v24" />
-              <path d="m14 16 10-10 10 10" />
-              <path d="M10 30v6a6 6 0 0 0 6 6h16a6 6 0 0 0 6-6v-6" />
-            </svg>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.28em]">Carica</span>
-          </div>
-        ),
-      },
-      ...inspirationalCards,
-    ],
-    [handleFocusPreview, imageData, inspirationalCards]
-  );
+    () =>
+      libraryItems.map((item, index) => {
+        const hasImage = Boolean(item.imageData);
 
-  const selectedInspiration = useMemo(
-    () => LIBRARY_INSPIRATION_ENTRIES.find((entry) => entry.id === selectedLibraryItemId),
-    [selectedLibraryItemId]
+        return {
+          id: item.id,
+          label: hasImage ? `Anteprima ${index + 1}` : "Carica anteprima",
+          onClick: () => {
+            if (hasImage) {
+              handleFocusPreview();
+            } else {
+              openImagePicker();
+            }
+          },
+          visual: hasImage ? (
+            <div className="relative h-full w-full">
+              <Image
+                src={item.imageData!}
+                alt={`Anteprima libreria ${index + 1}`}
+                fill
+                sizes="(min-width: 768px) 160px, 200px"
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-neutral-100 via-white to-neutral-200 text-muted-fg">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 48 48"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-12 w-12 text-accent"
+                aria-hidden="true"
+              >
+                <path d="M24 6v24" />
+                <path d="m14 16 10-10 10 10" />
+                <path d="M10 30v6a6 6 0 0 0 6 6h16a6 6 0 0 0 6-6v-6" />
+              </svg>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.28em]">Carica</span>
+            </div>
+          ),
+        } satisfies LibraryCarouselItem;
+      }),
+    [handleFocusPreview, libraryItems, openImagePicker]
   );
 
   const primaryPreviewContent = (
     <>
       <div ref={previewContainerRef} className="relative mx-auto flex w-full max-w-3xl flex-col items-center">
         <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[28px] bg-white shadow-lg ring-1 ring-black/5">
-          {imageData ? (
+          {selectedImageData ? (
             <>
               <Image
-                src={imageData}
+                src={selectedImageData}
                 alt="Selected trade context"
                 fill
                 sizes="(min-width: 768px) 560px, 92vw"
@@ -786,15 +888,7 @@ function NewTradePageContent() {
       />
     </>
   );
-
-  const inspirationPreviewContent = selectedInspiration ? (
-    <div ref={previewContainerRef} className="relative mx-auto flex w-full max-w-3xl flex-col items-center">
-      <LibraryInspirationPreview entry={selectedInspiration} />
-    </div>
-  ) : null;
-
-  const libraryPreview =
-    selectedLibraryItemId === "primary" ? primaryPreviewContent : inspirationPreviewContent ?? primaryPreviewContent;
+  const libraryPreview = primaryPreviewContent;
 
   return (
     <section
@@ -829,7 +923,11 @@ function NewTradePageContent() {
               date: selectedDate.toISOString(),
               openTime: openTime ? openTime.toISOString() : null,
               closeTime: closeTime ? closeTime.toISOString() : null,
-              imageData: imageData ?? null,
+              imageData: selectedImageData ?? null,
+              libraryItems: libraryItems.map((item) => ({
+                id: item.id,
+                imageData: item.imageData ?? null,
+              })),
               position,
               riskReward: riskReward.trim() || null,
               risk: risk.trim() || null,
@@ -1293,6 +1391,7 @@ function NewTradePageContent() {
               actions={libraryCards}
               selectedActionId={selectedLibraryItemId}
               onSelectAction={setSelectedLibraryItemId}
+              onAddAction={handleAddLibraryItem}
               footer={
                 <p className="text-left text-sm text-muted-fg">
                   Organizza le tue reference per prendere decisioni più rapide prima dell’operazione.

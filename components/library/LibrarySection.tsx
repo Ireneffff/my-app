@@ -11,6 +11,7 @@ interface LibrarySectionProps {
   actions: LibraryCarouselItem[];
   selectedActionId?: string;
   onSelectAction?: (actionId: string) => void;
+  onAddAction?: () => void;
   footer?: ReactNode;
   errorMessage?: string | null;
 }
@@ -22,6 +23,7 @@ export function LibrarySection({
   actions,
   selectedActionId,
   onSelectAction,
+  onAddAction,
   footer,
   errorMessage,
 }: LibrarySectionProps) {
@@ -41,7 +43,12 @@ export function LibrarySection({
       </div>
 
       <div className="rounded-[28px] bg-neutral-50 px-4 py-6 shadow-sm">
-        <LibraryCarousel items={actions} selectedId={selectedActionId} onSelectItem={onSelectAction} />
+        <LibraryCarousel
+          items={actions}
+          selectedId={selectedActionId}
+          onSelectItem={onSelectAction}
+          onAddItem={onAddAction}
+        />
       </div>
 
       {errorMessage ? (
