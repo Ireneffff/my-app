@@ -256,26 +256,20 @@ export default function RegisteredTradePage() {
   );
 
   const primaryPreviewContent = (
-    <div ref={previewContainerRef} className="relative mx-auto flex w-full max-w-3xl flex-col items-center">
-      <div
-        className={
-          selectedImageData
-            ? "relative aspect-[16/9] w-full overflow-hidden rounded-[28px] shadow-[0_20px_55px_rgba(15,23,42,0.08)]"
-            : "relative aspect-[16/9] w-full overflow-hidden rounded-[28px] bg-white shadow-[0_20px_55px_rgba(15,23,42,0.08)]"
-        }
-      >
+    <div ref={previewContainerRef} className="relative mx-auto flex w-full max-w-5xl flex-col items-center">
+      <div className="relative aspect-[16/9] w-full">
         {selectedImageData ? (
           <Image
             src={selectedImageData}
             alt="Trade context attachment"
             fill
-            sizes="(min-width: 768px) 560px, 92vw"
-            className="object-contain"
+            sizes="(min-width: 768px) 960px, 92vw"
+            className="object-cover"
             unoptimized
             priority
           />
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
+          <div className="flex h-full w-full flex-col items-center justify-center gap-4 rounded-[28px] bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
             <EmptyLibraryIcon />
             <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">
               Nessuna anteprima
