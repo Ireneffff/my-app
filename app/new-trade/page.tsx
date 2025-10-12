@@ -739,40 +739,6 @@ function NewTradePageContent() {
     imageInputRef.current?.click();
   }, []);
 
-  const handleRemoveImage = useCallback(() => {
-    if (!selectedLibraryItemId) {
-      return;
-    }
-
-    setLibraryItems((prev) =>
-      prev.map((item) =>
-        item.id === selectedLibraryItemId
-          ? {
-              ...item,
-              imageData: null,
-            }
-          : item,
-      ),
-    );
-    setImageError(null);
-    if (imageInputRef.current) {
-      imageInputRef.current.value = "";
-    }
-  }, [selectedLibraryItemId]);
-
-  const handleDownloadImage = useCallback(() => {
-    if (!selectedImageData) {
-      return;
-    }
-
-    const link = document.createElement("a");
-    link.href = selectedImageData;
-    link.download = "trade-preview.png";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }, [selectedImageData]);
-
   const handleFocusPreview = useCallback(() => {
     previewContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, []);
@@ -863,67 +829,34 @@ function NewTradePageContent() {
 
   const primaryPreviewContent = (
     <>
-      <div ref={previewContainerRef} className="relative mx-auto flex w-full max-w-3xl flex-col items-center">
-        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[28px] bg-white shadow-lg ring-1 ring-black/5">
-          {selectedImageData ? (
-            <>
-              <Image
-                src={selectedImageData}
-                alt="Selected trade context"
-                fill
-                sizes="(min-width: 768px) 560px, 92vw"
-                className="object-cover"
-                unoptimized
-              />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 via-black/0 to-black/40" />
-              <button
-                type="button"
-                onClick={openImagePicker}
-                className="absolute inset-0 z-10 h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
-                aria-label="Aggiorna immagine della libreria"
-              />
-              <div className="absolute right-5 top-5 z-20 flex flex-wrap items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={handleFocusPreview}
-                  className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-                >
-                  Focus
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDownloadImage}
-                  className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-                >
-                  Scarica
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRemoveImage}
-                  className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-                >
-                  Rimuovi
-                </button>
-              </div>
-              <div className="pointer-events-none absolute bottom-6 left-6 right-6 z-10 flex flex-col gap-2 text-left text-white drop-shadow">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.24em] opacity-70">
-                  Before the position
-                </span>
-                <span className="text-lg font-semibold">Snapshot di riferimento</span>
-              </div>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={openImagePicker}
-              className="flex h-full w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
-            >
-              <UploadIcon />
-              <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Carica anteprima</span>
-              <span className="text-xs text-muted-fg/80">Aggiungi uno screenshot o un chart di contesto.</span>
-            </button>
-          )}
-        </div>
+      <div ref={previewContainerRef} className="mx-auto w-full max-w-6xl">
+        {selectedImageData ? (
+          <button
+            type="button"
+            onClick={openImagePicker}
+            className="block w-full cursor-pointer border-0 bg-transparent p-0"
+            aria-label="Aggiorna immagine della libreria"
+          >
+            <Image
+              src={selectedImageData}
+              alt="Selected trade context"
+              width={1920}
+              height={1080}
+              className="block h-auto w-full"
+              unoptimized
+            />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={openImagePicker}
+            className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+          >
+            <UploadIcon />
+            <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Carica anteprima</span>
+            <span className="text-xs text-muted-fg/80">Aggiungi uno screenshot o un chart di contesto.</span>
+          </button>
+        )}
       </div>
       <input
         ref={imageInputRef}

@@ -256,30 +256,26 @@ export default function RegisteredTradePage() {
   );
 
   const primaryPreviewContent = (
-    <div ref={previewContainerRef} className="relative mx-auto flex w-full max-w-5xl flex-col items-center">
-      <div className="relative aspect-[16/9] w-full">
-        {selectedImageData ? (
-          <Image
-            src={selectedImageData}
-            alt="Trade context attachment"
-            fill
-            sizes="(min-width: 768px) 960px, 92vw"
-            className="object-cover"
-            unoptimized
-            priority
-          />
-        ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-4 rounded-[28px] bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
-            <EmptyLibraryIcon />
-            <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">
-              Nessuna anteprima
-            </span>
-            <span className="max-w-[28ch] text-center text-xs text-muted-fg/80">
-              Aggiungi immagini alle prossime operazioni per costruire un archivio visivo coerente.
-            </span>
-          </div>
-        )}
-      </div>
+    <div ref={previewContainerRef} className="mx-auto w-full max-w-6xl">
+      {selectedImageData ? (
+        <Image
+          src={selectedImageData}
+          alt="Trade context attachment"
+          width={1920}
+          height={1080}
+          className="block h-auto w-full"
+          unoptimized
+          priority
+        />
+      ) : (
+        <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-4 rounded-[28px] bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
+          <EmptyLibraryIcon />
+          <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Nessuna anteprima</span>
+          <span className="max-w-[28ch] text-center text-xs text-muted-fg/80">
+            Aggiungi immagini alle prossime operazioni per costruire un archivio visivo coerente.
+          </span>
+        </div>
+      )}
     </div>
   );
   const libraryPreview = primaryPreviewContent;
