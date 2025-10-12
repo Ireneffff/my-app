@@ -6,6 +6,10 @@ import { LibraryCard, type LibraryCardProps } from "./LibraryCard";
 
 export interface LibraryCarouselItem extends LibraryCardProps {
   id: string;
+  note?: string;
+  onNoteChange?: (nextNote: string) => void;
+  notePlaceholder?: string;
+  isNoteReadOnly?: boolean;
 }
 
 interface LibraryCarouselProps {
@@ -34,14 +38,26 @@ export function LibraryCarousel({
       {hasItems ? (
         items.map((item) => {
           const isActive = item.id === (selectedId ?? items[0]?.id);
-          const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
+          const {
+            className: itemClassName,
+            onClick: itemOnClick,
+            note,
+            onNoteChange,
+            notePlaceholder,
+            isNoteReadOnly,
+            ...restItem
+          } = item;
           const combinedClassName = itemClassName
             ? `${itemClassName} w-full`
             : "w-full";
           const shouldDim = hasItems && !isActive;
+          const noteId = `library-note-${item.id}`;
+          const noteValue = note ?? "";
+          const canEditNote = typeof onNoteChange === "function" && !isNoteReadOnly;
+          const noteFieldPlaceholder = notePlaceholder ?? "Aggiungi note";
 
           return (
-            <div key={item.id} className="relative">
+            <div key={item.id} className="relative flex flex-col gap-3">
               {onRemoveItem ? (
                 <button
                   type="button"
@@ -68,6 +84,29 @@ export function LibraryCarousel({
                   itemOnClick?.(event);
                 }}
               />
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor={noteId}
+                  className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg"
+                >
+                  Note
+                </label>
+                <textarea
+                  id={noteId}
+                  value={noteValue}
+                  onChange={(event) => {
+                    if (canEditNote) {
+                      onNoteChange?.(event.target.value);
+                    }
+                  }}
+                  placeholder={noteFieldPlaceholder}
+                  readOnly={!canEditNote}
+                  aria-readonly={!canEditNote}
+                  className={`min-h-[92px] w-full resize-none rounded-2xl border border-white/70 bg-[#eef2ff] px-4 py-3 text-xs font-medium text-fg shadow-[0_22px_60px_-45px_rgba(15,23,42,0.55)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
+                    canEditNote ? "" : "cursor-default opacity-80"
+                  }`}
+                />
+              </div>
             </div>
           );
         })

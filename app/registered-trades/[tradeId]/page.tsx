@@ -287,6 +287,7 @@ export default function RegisteredTradePage() {
           .map((item) => ({
             id: item.id,
             imageData: item.imageData ?? null,
+            notes: typeof item.notes === "string" ? item.notes : "",
           }))
       : [];
 
@@ -299,6 +300,7 @@ export default function RegisteredTradePage() {
         {
           id: "snapshot",
           imageData: state.trade.imageData,
+          notes: "",
         },
       ];
     }
@@ -307,6 +309,7 @@ export default function RegisteredTradePage() {
       {
         id: "snapshot",
         imageData: null,
+        notes: "",
       },
     ];
   }, [state.trade]);
@@ -552,6 +555,9 @@ export default function RegisteredTradePage() {
               <span className="text-[11px] font-semibold uppercase tracking-[0.28em]">Vuoto</span>
             </div>
           ),
+          note: item.notes ?? "",
+          notePlaceholder: "Note salvate",
+          isNoteReadOnly: true,
         } satisfies LibraryCarouselItem;
       }),
     [libraryItems]

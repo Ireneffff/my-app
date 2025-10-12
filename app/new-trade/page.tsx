@@ -47,6 +47,7 @@ function createLibraryItem(imageData: string | null = null): LibraryItem {
   return {
     id: `library-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
     imageData,
+    notes: "",
   } satisfies LibraryItem;
 }
 
@@ -768,6 +769,7 @@ function NewTradePageContent() {
         ? match.libraryItems.map((item) => ({
             id: item.id,
             imageData: item.imageData ?? null,
+            notes: typeof item.notes === "string" ? item.notes : "",
           }))
         : [createLibraryItem(match.imageData ?? null)];
 
@@ -1134,6 +1136,12 @@ function NewTradePageContent() {
     setRecentlyAddedLibraryItemId((prev) => (prev === itemId ? null : prev));
   }, []);
 
+  const handleUpdateLibraryNote = useCallback((itemId: string, nextNote: string) => {
+    setLibraryItems((prev) =>
+      prev.map((item) => (item.id === itemId ? { ...item, notes: nextNote } : item)),
+    );
+  }, []);
+
   const libraryCards = useMemo(
     () =>
       libraryItems.map((item, index) => {
@@ -1149,6 +1157,11 @@ function NewTradePageContent() {
             }
           },
           className: isRecentlyAdded ? "animate-fade-slide-in" : undefined,
+          note: item.notes ?? "",
+          onNoteChange: (nextNote: string) => {
+            handleUpdateLibraryNote(item.id, nextNote);
+          },
+          notePlaceholder: "Scrivi le tue note",
           visual: hasImage ? (
             <div className="relative h-full w-full">
               <Image
@@ -1182,7 +1195,12 @@ function NewTradePageContent() {
           ),
         } satisfies LibraryCarouselItem;
       }),
-    [libraryItems, openImagePicker, recentlyAddedLibraryItemId]
+    [
+      handleUpdateLibraryNote,
+      libraryItems,
+      openImagePicker,
+      recentlyAddedLibraryItemId,
+    ]
   );
 
   const primaryPreviewContent = (
@@ -1292,6 +1310,7 @@ function NewTradePageContent() {
               libraryItems: libraryItems.map((item) => ({
                 id: item.id,
                 imageData: item.imageData ?? null,
+                notes: item.notes ?? "",
               })),
               position,
               riskReward: riskReward.trim() || null,
@@ -1762,11 +1781,6 @@ function NewTradePageContent() {
               onSelectAction={setSelectedLibraryItemId}
               onAddAction={handleAddLibraryItem}
               onRemoveAction={handleRemoveLibraryItem}
-              footer={
-                <p className="text-left text-sm text-muted-fg">
-                  Organizza le tue reference per prendere decisioni più rapide prima dell’operazione.
-                </p>
-              }
               errorMessage={imageError}
             />
           )}

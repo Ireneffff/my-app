@@ -1,6 +1,7 @@
 export type StoredLibraryItem = {
   id: string;
   imageData: string | null;
+  notes: string;
 };
 
 export type StoredTrade = {
@@ -105,6 +106,7 @@ function parseTrades(raw: string | null): StoredTrade[] {
               return {
                 id: parsedItem.id,
                 imageData: parsedItem.imageData ?? null,
+                notes: typeof parsedItem.notes === "string" ? parsedItem.notes : "",
               } satisfies StoredLibraryItem;
             })
             .filter((item): item is StoredLibraryItem => item !== null);
@@ -114,6 +116,7 @@ function parseTrades(raw: string | null): StoredTrade[] {
                 {
                   id: "library-primary",
                   imageData: storedItem.imageData,
+                  notes: "",
                 },
               ]
             : [];
