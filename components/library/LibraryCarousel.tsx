@@ -54,35 +54,10 @@ export function LibraryCarousel({
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-start gap-3">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => goToAdjacent(-1)}
-            disabled={!hasItems || items.length < 2}
-            aria-label="Mostra card precedente"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 disabled:pointer-events-none disabled:opacity-40 sm:h-12 sm:w-12"
-          >
-            <ArrowIcon direction="left" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => goToAdjacent(1)}
-            disabled={!hasItems || items.length < 2}
-            aria-label="Mostra card successiva"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 disabled:pointer-events-none disabled:opacity-40 sm:h-12 sm:w-12"
-          >
-            <ArrowIcon direction="right" />
-          </button>
-        </div>
-
-      </div>
-
+    <div className="relative">
       <div
         ref={containerRef}
-        className="flex flex-col gap-6 pb-3 pt-2"
+        className="flex flex-col gap-6 pb-3 pt-2 pr-16"
       >
         {hasItems ? (
           items.map((item) => {
@@ -146,12 +121,35 @@ export function LibraryCarousel({
           />
         ) : null}
       </div>
+      <div className="pointer-events-none absolute right-2 top-1/2 flex -translate-y-1/2 justify-end">
+        <div className="flex flex-col items-center gap-2 pointer-events-auto">
+          <button
+            type="button"
+            onClick={() => goToAdjacent(-1)}
+            disabled={!hasItems || items.length < 2}
+            aria-label="Mostra card precedente"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 disabled:pointer-events-none disabled:opacity-40 sm:h-12 sm:w-12"
+          >
+            <ArrowIcon direction="up" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => goToAdjacent(1)}
+            disabled={!hasItems || items.length < 2}
+            aria-label="Mostra card successiva"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 disabled:pointer-events-none disabled:opacity-40 sm:h-12 sm:w-12"
+          >
+            <ArrowIcon direction="down" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
 
-function ArrowIcon({ direction }: { direction: "left" | "right" }) {
-  const rotation = direction === "left" ? "rotate-180" : "";
+function ArrowIcon({ direction }: { direction: "up" | "down" }) {
+  const rotation = direction === "up" ? "-rotate-90" : "rotate-90";
 
   return (
     <svg
