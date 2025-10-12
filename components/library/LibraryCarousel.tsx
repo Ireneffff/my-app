@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 
 import { LibraryCard, type LibraryCardProps } from "./LibraryCard";
 
@@ -26,145 +26,73 @@ export function LibraryCarousel({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const hasItems = items.length > 0;
 
-  const selectedIndex = useMemo(() => {
-    if (!hasItems) {
-      return -1;
-    }
-
-    if (!selectedId) {
-      return 0;
-    }
-
-    const explicitIndex = items.findIndex((item) => item.id === selectedId);
-    return explicitIndex >= 0 ? explicitIndex : 0;
-  }, [hasItems, items, selectedId]);
-
-  const goToAdjacent = (direction: -1 | 1) => {
-    if (!hasItems || items.length < 2) {
-      return;
-    }
-
-    const baseIndex = selectedIndex === -1 ? 0 : selectedIndex;
-    const nextIndex = (baseIndex + direction + items.length) % items.length;
-    const target = items[nextIndex];
-
-    if (target) {
-      onSelectItem?.(target.id);
-    }
-  };
-
   return (
-    <div className="relative">
-      <div
-        ref={containerRef}
-        className="flex flex-col gap-6 pb-3 pt-2 pr-16"
-      >
-        {hasItems ? (
-          items.map((item) => {
-            const isActive = item.id === (selectedId ?? items[0]?.id);
-            const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
-            const combinedClassName = itemClassName
-              ? `${itemClassName} w-full`
-              : "w-full";
-            const shouldDim = hasItems && !isActive;
-
-            return (
-              <div key={item.id} className="relative">
-                {onRemoveItem ? (
-                  <button
-                    type="button"
-                    aria-label={`Rimuovi ${item.label}`}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      onRemoveItem(item.id);
-                    }}
-                    className="absolute right-4 top-4 z-40 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-white/95 text-neutral-500 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] transition-colors hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-                  >
-                    <CloseIcon />
-                  </button>
-                ) : null}
-
-                <LibraryCard
-                  {...restItem}
-                  isActive={isActive}
-                  isDimmed={shouldDim}
-                  data-library-carousel-item={item.id}
-                  className={combinedClassName}
-                  onClick={(event) => {
-                    onSelectItem?.(item.id);
-                    itemOnClick?.(event);
-                  }}
-                />
-              </div>
-            );
-          })
-        ) : (
-          <div className="flex h-[180px] w-full items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
-            Nessuna card
-          </div>
-        )}
-
-        {onAddItem ? (
-          <LibraryCard
-            key="library-add-card"
-            label="Nuova immagine"
-            aria-label="Aggiungi una nuova card libreria"
-            isActive={false}
-            isDimmed={false}
-            data-library-carousel-item="add"
-            className="w-full"
-            onClick={() => {
-              onAddItem?.();
-            }}
-            visual={<PlusIcon className="h-10 w-10 text-accent" />}
-          />
-        ) : null}
-      </div>
-      <div className="pointer-events-none absolute right-2 top-1/2 flex -translate-y-1/2 justify-end">
-        <div className="flex flex-col items-center gap-2 pointer-events-auto">
-          <button
-            type="button"
-            onClick={() => goToAdjacent(-1)}
-            disabled={!hasItems || items.length < 2}
-            aria-label="Mostra card precedente"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 disabled:pointer-events-none disabled:opacity-40 sm:h-12 sm:w-12"
-          >
-            <ArrowIcon direction="up" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => goToAdjacent(1)}
-            disabled={!hasItems || items.length < 2}
-            aria-label="Mostra card successiva"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 disabled:pointer-events-none disabled:opacity-40 sm:h-12 sm:w-12"
-          >
-            <ArrowIcon direction="down" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ArrowIcon({ direction }: { direction: "up" | "down" }) {
-  const rotation = direction === "up" ? "-rotate-90" : "rotate-90";
-
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={`h-5 w-5 transition-transform ${rotation}`}
-      aria-hidden="true"
+    <div
+      ref={containerRef}
+      className="flex flex-col gap-6 pb-3 pt-2"
     >
-      <path d="m8 4 8 8-8 8" />
-    </svg>
+      {hasItems ? (
+        items.map((item) => {
+          const isActive = item.id === (selectedId ?? items[0]?.id);
+          const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
+          const combinedClassName = itemClassName
+            ? `${itemClassName} w-full`
+            : "w-full";
+          const shouldDim = hasItems && !isActive;
+
+          return (
+            <div key={item.id} className="relative">
+              {onRemoveItem ? (
+                <button
+                  type="button"
+                  aria-label={`Rimuovi ${item.label}`}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onRemoveItem(item.id);
+                  }}
+                  className="absolute right-4 top-4 z-40 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-white/95 text-neutral-500 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] transition-colors hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                >
+                  <CloseIcon />
+                </button>
+              ) : null}
+
+              <LibraryCard
+                {...restItem}
+                isActive={isActive}
+                isDimmed={shouldDim}
+                data-library-carousel-item={item.id}
+                className={combinedClassName}
+                onClick={(event) => {
+                  onSelectItem?.(item.id);
+                  itemOnClick?.(event);
+                }}
+              />
+            </div>
+          );
+        })
+      ) : (
+        <div className="flex h-[180px] w-full items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
+          Nessuna card
+        </div>
+      )}
+
+      {onAddItem ? (
+        <LibraryCard
+          key="library-add-card"
+          label="Nuova immagine"
+          aria-label="Aggiungi una nuova card libreria"
+          isActive={false}
+          isDimmed={false}
+          data-library-carousel-item="add"
+          className="w-full"
+          onClick={() => {
+            onAddItem?.();
+          }}
+          visual={<PlusIcon className="h-10 w-10 text-accent" />}
+        />
+      ) : null}
+    </div>
   );
 }
 
