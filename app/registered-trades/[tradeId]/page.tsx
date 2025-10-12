@@ -256,7 +256,7 @@ export default function RegisteredTradePage() {
   );
 
   const primaryPreviewContent = (
-    <div ref={previewContainerRef} className="mx-auto w-full max-w-7xl">
+    <div ref={previewContainerRef} className="mx-auto w-full max-w-6xl">
       {selectedImageData ? (
         <Image
           src={selectedImageData}
