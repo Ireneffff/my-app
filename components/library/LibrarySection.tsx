@@ -70,7 +70,7 @@ export function LibrarySection({
           </header>
 
           <div className="flex w-full flex-col items-stretch gap-10 lg:flex-row lg:items-start">
-            <div className="w-full lg:flex-1">{preview}</div>
+            <div className="w-full lg:flex-[1.6] xl:flex-[2]">{preview}</div>
 
             <div className="flex w-full justify-center lg:w-auto lg:flex lg:flex-col lg:items-center lg:justify-center lg:self-stretch">
               <LibraryNavigationControls
@@ -80,7 +80,7 @@ export function LibrarySection({
               />
             </div>
 
-            <div className="w-full lg:w-[320px] xl:w-[360px]">
+            <div className="w-full lg:w-[220px] xl:w-[240px]">
               <LibraryCarousel
                 items={actions}
                 selectedId={selectedActionId}
