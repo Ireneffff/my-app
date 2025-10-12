@@ -120,13 +120,13 @@ function LibraryNavigationControls({
         className="pointer-events-none absolute top-0 bottom-0 left-1/2 w-px -translate-x-1/2 bg-muted/40"
       />
       <div className="pointer-events-auto relative z-10 flex flex-col items-center">
-        <div className="flex flex-col items-stretch divide-y divide-muted/20 rounded-full bg-white p-1 shadow-md">
+        <div className="flex flex-col items-center divide-y divide-muted/20 rounded-full bg-white px-1 py-2 shadow-md">
           <button
             type="button"
             onClick={onSelectPrevious}
             disabled={disabled}
             aria-label="Mostra card precedente"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-muted-fg transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:pointer-events-none disabled:opacity-40 sm:h-11 sm:w-11"
+            className="flex h-10 w-10 items-center justify-center text-muted-fg transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40 sm:h-11 sm:w-11"
           >
             <ArrowIcon direction="up" />
           </button>
@@ -135,7 +135,7 @@ function LibraryNavigationControls({
             onClick={onSelectNext}
             disabled={disabled}
             aria-label="Mostra card successiva"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-muted-fg transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:pointer-events-none disabled:opacity-40 sm:h-11 sm:w-11"
+            className="flex h-10 w-10 items-center justify-center text-muted-fg transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40 sm:h-11 sm:w-11"
           >
             <ArrowIcon direction="down" />
           </button>

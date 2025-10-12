@@ -599,9 +599,6 @@ export default function RegisteredTradePage() {
         </div>
       )}
 
-      <div className="relative mt-6 w-full">
-        <div className="h-px w-full bg-neutral-200" aria-hidden="true" />
-      </div>
     </div>
   );
   const libraryPreview = primaryPreviewContent;

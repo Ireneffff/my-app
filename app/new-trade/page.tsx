@@ -1242,9 +1242,6 @@ function NewTradePageContent() {
           </button>
         )}
 
-        <div className="relative mt-6 w-full">
-          <div className="h-px w-full bg-neutral-200" aria-hidden="true" />
-        </div>
       </div>
       <input
         ref={imageInputRef}
