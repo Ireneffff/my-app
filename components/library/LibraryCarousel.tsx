@@ -48,7 +48,7 @@ export function LibraryCarousel({ items, selectedId, onSelectItem, onAddItem }: 
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-start gap-3">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -71,16 +71,6 @@ export function LibraryCarousel({ items, selectedId, onSelectItem, onAddItem }: 
           </button>
         </div>
 
-        {onAddItem ? (
-          <button
-            type="button"
-            onClick={onAddItem}
-            aria-label="Aggiungi una nuova card libreria"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-2xl text-muted-fg shadow-md transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 sm:h-12 sm:w-12"
-          >
-            <PlusIcon />
-          </button>
-        ) : null}
       </div>
 
       <div
@@ -110,6 +100,20 @@ export function LibraryCarousel({ items, selectedId, onSelectItem, onAddItem }: 
             Nessuna card
           </div>
         )}
+
+        {onAddItem ? (
+          <LibraryCard
+            key="library-add-card"
+            label="Nuova immagine"
+            aria-label="Aggiungi una nuova card libreria"
+            isActive={false}
+            data-library-carousel-item="add"
+            onClick={() => {
+              onAddItem?.();
+            }}
+            visual={<PlusIcon className="h-10 w-10 text-accent" />}
+          />
+        ) : null}
       </div>
     </div>
   );
@@ -135,7 +139,7 @@ function ArrowIcon({ direction }: { direction: "left" | "right" }) {
   );
 }
 
-function PlusIcon() {
+function PlusIcon({ className = "h-6 w-6" }: { className?: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -145,7 +149,7 @@ function PlusIcon() {
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-6 w-6"
+      className={className}
       aria-hidden="true"
     >
       <path d="M12 5v14" />
