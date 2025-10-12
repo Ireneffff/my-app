@@ -85,7 +85,7 @@ export function LibraryCarousel({ items, selectedId, onSelectItem, onAddItem }: 
 
       <div
         ref={containerRef}
-        className="flex gap-4 overflow-x-auto pb-2 pt-1 [scrollbar-width:thin] [scrollbar-color:theme(colors.accent)_transparent]"
+        className="flex max-h-[520px] flex-col gap-4 overflow-y-auto pb-2 pt-1 [scrollbar-width:thin] [scrollbar-color:theme(colors.accent)_transparent]"
       >
         {hasItems ? (
           items.map((item) => {
@@ -97,7 +97,7 @@ export function LibraryCarousel({ items, selectedId, onSelectItem, onAddItem }: 
                 {...item}
                 isActive={isActive}
                 data-library-carousel-item={item.id}
-                className={`w-[200px] flex-shrink-0 sm:w-[220px] ${item.className ?? ""}`}
+                className={`w-full ${item.className ?? ""}`}
                 onClick={(event) => {
                   onSelectItem?.(item.id);
                   item.onClick?.(event);
@@ -106,7 +106,7 @@ export function LibraryCarousel({ items, selectedId, onSelectItem, onAddItem }: 
             );
           })
         ) : (
-          <div className="flex h-[180px] w-[200px] flex-shrink-0 items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg sm:h-[200px] sm:w-[220px]">
+          <div className="flex h-[180px] w-full items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
             Nessuna card
           </div>
         )}

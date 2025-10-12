@@ -36,19 +36,23 @@ export function LibrarySection({
             {subtitle ? <p className="text-sm text-muted-fg">{subtitle}</p> : null}
           </header>
 
-          <div className="w-full">{preview}</div>
+          <div className="flex w-full flex-col items-stretch gap-8 lg:flex-row lg:items-start">
+            <div className="w-full lg:flex-1">{preview}</div>
+
+            <div className="w-full lg:max-w-xs xl:max-w-sm">
+              <div className="rounded-[28px] border border-neutral-200 bg-white px-4 py-6 text-left">
+                <LibraryCarousel
+                  items={actions}
+                  selectedId={selectedActionId}
+                  onSelectItem={onSelectAction}
+                  onAddItem={onAddAction}
+                />
+              </div>
+            </div>
+          </div>
 
           {footer ? <div className="w-full text-left text-xs text-muted-fg">{footer}</div> : null}
         </div>
-      </div>
-
-      <div className="rounded-[28px] border border-neutral-200 bg-white px-4 py-6">
-        <LibraryCarousel
-          items={actions}
-          selectedId={selectedActionId}
-          onSelectItem={onSelectAction}
-          onAddItem={onAddAction}
-        />
       </div>
 
       {errorMessage ? (
