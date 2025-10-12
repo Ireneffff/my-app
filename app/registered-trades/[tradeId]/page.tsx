@@ -653,12 +653,12 @@ export default function RegisteredTradePage() {
           alt="Trade context attachment"
           width={1920}
           height={1080}
-          className="block h-auto w-full"
+          className="block h-auto w-full max-h-[37rem]"
           unoptimized
           priority
         />
       ) : (
-        <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-4 rounded-[28px] bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
+        <div className="flex aspect-[16/9] w-full max-h-[37rem] flex-col items-center justify-center gap-4 rounded-[28px] bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
           <EmptyLibraryIcon />
           <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Nessuna anteprima</span>
           <span className="max-w-[28ch] text-center text-xs text-muted-fg/80">

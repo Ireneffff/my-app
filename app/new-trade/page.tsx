@@ -1253,7 +1253,7 @@ function NewTradePageContent() {
               alt="Selected trade context"
               width={1920}
               height={1080}
-              className="block h-auto w-full"
+              className="block h-auto w-full max-h-[37rem]"
               unoptimized
             />
           </button>
@@ -1269,7 +1269,7 @@ function NewTradePageContent() {
 
               openImagePicker();
             }}
-            className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+            className="flex aspect-[16/9] w-full max-h-[37rem] flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
           >
             <UploadIcon />
             <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Carica anteprima</span>
