@@ -39,15 +39,13 @@ export function LibrarySection({
           <div className="flex w-full flex-col items-stretch gap-8 lg:flex-row lg:items-start">
             <div className="w-full lg:flex-1">{preview}</div>
 
-            <div className="w-full lg:max-w-xs xl:max-w-sm">
-              <div className="rounded-[28px] border border-neutral-200 bg-white px-4 py-6 text-left">
-                <LibraryCarousel
-                  items={actions}
-                  selectedId={selectedActionId}
-                  onSelectItem={onSelectAction}
-                  onAddItem={onAddAction}
-                />
-              </div>
+            <div className="w-full lg:w-[240px] xl:w-[280px]">
+              <LibraryCarousel
+                items={actions}
+                selectedId={selectedActionId}
+                onSelectItem={onSelectAction}
+                onAddItem={onAddAction}
+              />
             </div>
           </div>
 

@@ -97,7 +97,7 @@ export function LibraryCarousel({ items, selectedId, onSelectItem, onAddItem }: 
                 {...item}
                 isActive={isActive}
                 data-library-carousel-item={item.id}
-                className={`w-full ${item.className ?? ""}`}
+                className={item.className ?? ""}
                 onClick={(event) => {
                   onSelectItem?.(item.id);
                   item.onClick?.(event);
