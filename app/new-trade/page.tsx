@@ -345,6 +345,7 @@ function NewTradePageContent() {
   );
 
   const selectedImageData = selectedLibraryItem?.imageData ?? null;
+  const selectedLibraryNote = selectedLibraryItem?.notes ?? "";
 
   const canNavigateLibrary = libraryItems.length > 1;
 
@@ -1142,6 +1143,19 @@ function NewTradePageContent() {
     );
   }, []);
 
+  const handleSelectedLibraryNoteChange = useCallback(
+    (nextNote: string) => {
+      const targetId = selectedLibraryItemId ?? libraryItems[0]?.id;
+
+      if (!targetId) {
+        return;
+      }
+
+      handleUpdateLibraryNote(targetId, nextNote);
+    },
+    [handleUpdateLibraryNote, libraryItems, selectedLibraryItemId],
+  );
+
   const libraryCards = useMemo(
     () =>
       libraryItems.map((item, index) => {
@@ -1157,11 +1171,6 @@ function NewTradePageContent() {
             }
           },
           className: isRecentlyAdded ? "animate-fade-slide-in" : undefined,
-          note: item.notes ?? "",
-          onNoteChange: (nextNote: string) => {
-            handleUpdateLibraryNote(item.id, nextNote);
-          },
-          notePlaceholder: "Scrivi le tue note",
           visual: hasImage ? (
             <div className="relative h-full w-full">
               <Image
@@ -1195,12 +1204,7 @@ function NewTradePageContent() {
           ),
         } satisfies LibraryCarouselItem;
       }),
-    [
-      handleUpdateLibraryNote,
-      libraryItems,
-      openImagePicker,
-      recentlyAddedLibraryItemId,
-    ]
+    [libraryItems, openImagePicker, recentlyAddedLibraryItemId]
   );
 
   const primaryPreviewContent = (
@@ -1259,8 +1263,28 @@ function NewTradePageContent() {
             <span className="text-xs text-muted-fg/80">Aggiungi uno screenshot o un chart di contesto.</span>
           </button>
         )}
-
       </div>
+
+      <div className="mx-auto mt-6 w-full max-w-6xl">
+        <div className="flex flex-col gap-2">
+          <label
+            htmlFor="library-note-editor"
+            className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg"
+          >
+            Note
+          </label>
+          <textarea
+            id="library-note-editor"
+            value={selectedLibraryNote}
+            onChange={(event) => {
+              handleSelectedLibraryNoteChange(event.target.value);
+            }}
+            placeholder="Scrivi le tue note"
+            className="min-h-[120px] w-full resize-none rounded-3xl border border-white/70 bg-[#eef2ff] px-5 py-4 text-sm font-medium text-fg shadow-[0_22px_60px_-45px_rgba(15,23,42,0.55)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+          />
+        </div>
+      </div>
+
       <input
         ref={imageInputRef}
         type="file"

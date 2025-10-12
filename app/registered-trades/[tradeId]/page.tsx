@@ -338,6 +338,7 @@ export default function RegisteredTradePage() {
   );
 
   const selectedImageData = selectedLibraryItem?.imageData ?? null;
+  const selectedLibraryNote = selectedLibraryItem?.notes ?? "";
 
   const canNavigateLibrary = libraryItems.length > 1;
 
@@ -556,9 +557,6 @@ export default function RegisteredTradePage() {
               <span className="text-[11px] font-semibold uppercase tracking-[0.28em]">Vuoto</span>
             </div>
           ),
-          note: item.notes ?? "",
-          notePlaceholder: "Note salvate",
-          isNoteReadOnly: true,
         } satisfies LibraryCarouselItem;
       }),
     [libraryItems]
@@ -575,38 +573,58 @@ export default function RegisteredTradePage() {
   );
 
   const primaryPreviewContent = (
-    <div
-      ref={previewContainerRef}
-      className="mx-auto w-full max-w-6xl"
-      onWheel={handlePreviewWheel}
-      onTouchStart={handlePreviewTouchStart}
-      onTouchMove={handlePreviewTouchMove}
-      onTouchEnd={handlePreviewTouchEnd}
-      onTouchCancel={handlePreviewTouchCancel}
-    >
-      {selectedImageData ? (
-        <span className="relative block aspect-[16/9] w-full max-h-[calc(648px-1cm)]">
-          <Image
-            src={selectedImageData}
-            alt="Trade context attachment"
-            fill
-            className="h-full w-full object-contain"
-            sizes="(min-width: 1280px) 960px, 100vw"
-            unoptimized
-            priority
-          />
-        </span>
-      ) : (
-        <div className="flex aspect-[16/9] w-full max-h-[calc(648px-1cm)] flex-col items-center justify-center gap-4 rounded-[28px] bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
-          <EmptyLibraryIcon />
-          <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Nessuna anteprima</span>
-          <span className="max-w-[28ch] text-center text-xs text-muted-fg/80">
-            Aggiungi immagini alle prossime operazioni per costruire un archivio visivo coerente.
+    <>
+      <div
+        ref={previewContainerRef}
+        className="mx-auto w-full max-w-6xl"
+        onWheel={handlePreviewWheel}
+        onTouchStart={handlePreviewTouchStart}
+        onTouchMove={handlePreviewTouchMove}
+        onTouchEnd={handlePreviewTouchEnd}
+        onTouchCancel={handlePreviewTouchCancel}
+      >
+        {selectedImageData ? (
+          <span className="relative block aspect-[16/9] w-full max-h-[calc(648px-1cm)]">
+            <Image
+              src={selectedImageData}
+              alt="Trade context attachment"
+              fill
+              className="h-full w-full object-contain"
+              sizes="(min-width: 1280px) 960px, 100vw"
+              unoptimized
+              priority
+            />
           </span>
-        </div>
-      )}
+        ) : (
+          <div className="flex aspect-[16/9] w-full max-h-[calc(648px-1cm)] flex-col items-center justify-center gap-4 rounded-[28px] bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
+            <EmptyLibraryIcon />
+            <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Nessuna anteprima</span>
+            <span className="max-w-[28ch] text-center text-xs text-muted-fg/80">
+              Aggiungi immagini alle prossime operazioni per costruire un archivio visivo coerente.
+            </span>
+          </div>
+        )}
+      </div>
 
-    </div>
+      <div className="mx-auto mt-6 w-full max-w-6xl">
+        <div className="flex flex-col gap-2">
+          <label
+            htmlFor="library-note-viewer"
+            className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg"
+          >
+            Note
+          </label>
+          <textarea
+            id="library-note-viewer"
+            value={selectedLibraryNote}
+            readOnly
+            aria-readonly="true"
+            placeholder="Note salvate"
+            className="min-h-[120px] w-full resize-none rounded-3xl border border-white/70 bg-[#eef2ff] px-5 py-4 text-sm font-medium text-fg opacity-80 shadow-[0_22px_60px_-45px_rgba(15,23,42,0.55)] focus-visible:outline-none"
+          />
+        </div>
+      </div>
+    </>
   );
   const libraryPreview = primaryPreviewContent;
 
