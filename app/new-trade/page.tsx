@@ -222,7 +222,6 @@ function NewTradePageContent() {
     count: 0,
     initialOverflow: null,
   });
-  const wheelLockTimeoutRef = useRef<number | null>(null);
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
@@ -277,14 +276,6 @@ function NewTradePageContent() {
     scrollLockStateRef.current.initialOverflow = null;
   }, []);
 
-  const clearPendingWheelTimeout = useCallback(() => {
-    const pendingWheelTimeout = wheelLockTimeoutRef.current;
-    if (pendingWheelTimeout !== null) {
-      window.clearTimeout(pendingWheelTimeout);
-      wheelLockTimeoutRef.current = null;
-    }
-  }, []);
-
   const unlockBodyScroll = useCallback(() => {
     if (typeof document === "undefined") {
       return;
@@ -302,12 +293,34 @@ function NewTradePageContent() {
     }
   }, [resetBodyScrollLock]);
 
+  const temporarilyLockScrollForNavigation = useCallback(
+    (navigate: () => void) => {
+      lockBodyScroll();
+
+      const release = () => {
+        if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+          window.requestAnimationFrame(() => {
+            unlockBodyScroll();
+          });
+        } else {
+          unlockBodyScroll();
+        }
+      };
+
+      try {
+        navigate();
+      } finally {
+        release();
+      }
+    },
+    [lockBodyScroll, unlockBodyScroll],
+  );
+
   useEffect(() => {
     return () => {
       resetBodyScrollLock();
-      clearPendingWheelTimeout();
     };
-  }, [clearPendingWheelTimeout, resetBodyScrollLock]);
+  }, [resetBodyScrollLock]);
 
   useEffect(() => {
     if (libraryItems.length === 0) {
@@ -373,25 +386,32 @@ function NewTradePageContent() {
   );
 
   const handleSelectPreviousLibraryItem = useCallback(() => {
-    goToAdjacentLibraryItem(-1);
-  }, [goToAdjacentLibraryItem]);
+    if (!canNavigateLibrary) {
+      return;
+    }
+
+    temporarilyLockScrollForNavigation(() => {
+      goToAdjacentLibraryItem(-1);
+    });
+  }, [canNavigateLibrary, goToAdjacentLibraryItem, temporarilyLockScrollForNavigation]);
 
   const handleSelectNextLibraryItem = useCallback(() => {
-    goToAdjacentLibraryItem(1);
-  }, [goToAdjacentLibraryItem]);
+    if (!canNavigateLibrary) {
+      return;
+    }
+
+    temporarilyLockScrollForNavigation(() => {
+      goToAdjacentLibraryItem(1);
+    });
+  }, [canNavigateLibrary, goToAdjacentLibraryItem, temporarilyLockScrollForNavigation]);
 
   const handleNavigationPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLButtonElement>) => {
-      lockBodyScroll();
       event.preventDefault();
       event.stopPropagation();
     },
-    [lockBodyScroll],
+    [],
   );
-
-  const handleNavigationPointerUp = useCallback(() => {
-    unlockBodyScroll();
-  }, [unlockBodyScroll]);
 
   const calendarDays = useMemo(() => {
     const firstOfMonth = getStartOfMonth(calendarMonth);
@@ -940,19 +960,21 @@ function NewTradePageContent() {
           return;
         }
 
-        lockBodyScroll();
         event.preventDefault();
         event.stopPropagation();
-        goToAdjacentLibraryItem(1);
+        temporarilyLockScrollForNavigation(() => {
+          goToAdjacentLibraryItem(1);
+        });
       } else if (event.key === "ArrowLeft") {
         if (!canNavigateLibrary) {
           return;
         }
 
-        lockBodyScroll();
         event.preventDefault();
         event.stopPropagation();
-        goToAdjacentLibraryItem(-1);
+        temporarilyLockScrollForNavigation(() => {
+          goToAdjacentLibraryItem(-1);
+        });
       }
     };
 
@@ -960,24 +982,10 @@ function NewTradePageContent() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [canNavigateLibrary, goToAdjacentLibraryItem, lockBodyScroll]);
-
-  useEffect(() => {
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
-        unlockBodyScroll();
-      }
-    };
-
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, [unlockBodyScroll]);
+  }, [canNavigateLibrary, goToAdjacentLibraryItem, temporarilyLockScrollForNavigation]);
 
   const handlePreviewTouchStart = useCallback(
     (event: ReactTouchEvent<HTMLDivElement>) => {
-      lockBodyScroll();
       event.stopPropagation();
 
       const touch = event.touches[0];
@@ -994,7 +1002,7 @@ function NewTradePageContent() {
       };
       previewSwipeHandledRef.current = false;
     },
-    [lockBodyScroll],
+    [],
   );
 
   const handlePreviewTouchMove = useCallback(
@@ -1041,20 +1049,17 @@ function NewTradePageContent() {
 
       if (!swipeStart) {
         previewSwipeHandledRef.current = false;
-        unlockBodyScroll();
         return;
       }
 
       if (!canNavigateLibrary) {
         previewSwipeHandledRef.current = false;
-        unlockBodyScroll();
         return;
       }
 
       const touch = event.changedTouches[0];
       if (!touch) {
         previewSwipeHandledRef.current = false;
-        unlockBodyScroll();
         return;
       }
 
@@ -1064,30 +1069,27 @@ function NewTradePageContent() {
 
       if (elapsed > LIBRARY_NAVIGATION_SWIPE_DURATION_MS) {
         previewSwipeHandledRef.current = false;
-        unlockBodyScroll();
         return;
       }
 
       if (Math.abs(deltaX) < LIBRARY_NAVIGATION_SWIPE_DISTANCE_PX) {
         previewSwipeHandledRef.current = false;
-        unlockBodyScroll();
         return;
       }
 
       if (Math.abs(deltaX) <= Math.abs(deltaY)) {
         previewSwipeHandledRef.current = false;
-        unlockBodyScroll();
         return;
       }
 
       event.preventDefault();
       event.stopPropagation();
 
-      if (deltaX > 0) {
-        goToAdjacentLibraryItem(-1);
-      } else {
-        goToAdjacentLibraryItem(1);
-      }
+      const direction: 1 | -1 = deltaX > 0 ? -1 : 1;
+
+      temporarilyLockScrollForNavigation(() => {
+        goToAdjacentLibraryItem(direction);
+      });
 
       previewSwipeHandledRef.current = true;
 
@@ -1098,32 +1100,21 @@ function NewTradePageContent() {
       } else {
         previewSwipeHandledRef.current = false;
       }
-
-      unlockBodyScroll();
     },
-    [canNavigateLibrary, goToAdjacentLibraryItem, unlockBodyScroll],
+    [canNavigateLibrary, goToAdjacentLibraryItem, temporarilyLockScrollForNavigation],
   );
 
   const handlePreviewTouchCancel = useCallback(() => {
     previewSwipeStateRef.current = null;
     previewSwipeHandledRef.current = false;
-    unlockBodyScroll();
-  }, [unlockBodyScroll]);
+  }, []);
 
   const handlePreviewWheel = useCallback(
     (event: ReactWheelEvent<HTMLDivElement>) => {
       event.preventDefault();
       event.stopPropagation();
-
-      lockBodyScroll();
-      clearPendingWheelTimeout();
-
-      wheelLockTimeoutRef.current = window.setTimeout(() => {
-        unlockBodyScroll();
-        wheelLockTimeoutRef.current = null;
-      }, 150);
     },
-    [clearPendingWheelTimeout, lockBodyScroll, unlockBodyScroll],
+    [],
   );
 
   const handleAddLibraryItem = useCallback(() => {
@@ -1273,9 +1264,6 @@ function NewTradePageContent() {
                 type="button"
                 onClick={handleSelectPreviousLibraryItem}
                 onPointerDown={handleNavigationPointerDown}
-                onPointerUp={handleNavigationPointerUp}
-                onPointerLeave={handleNavigationPointerUp}
-                onPointerCancel={handleNavigationPointerUp}
                 className={getNavigationButtonClasses(canNavigateLibrary)}
                 aria-label="Mostra immagine precedente"
                 aria-disabled={!canNavigateLibrary}
@@ -1287,9 +1275,6 @@ function NewTradePageContent() {
                 type="button"
                 onClick={handleSelectNextLibraryItem}
                 onPointerDown={handleNavigationPointerDown}
-                onPointerUp={handleNavigationPointerUp}
-                onPointerLeave={handleNavigationPointerUp}
-                onPointerCancel={handleNavigationPointerUp}
                 className={getNavigationButtonClasses(canNavigateLibrary)}
                 aria-label="Mostra immagine successiva"
                 aria-disabled={!canNavigateLibrary}

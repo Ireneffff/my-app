@@ -148,7 +148,6 @@ export default function RegisteredTradePage() {
     count: 0,
     initialOverflow: null,
   });
-  const wheelLockTimeoutRef = useRef<number | null>(null);
 
   const rawTradeId = params.tradeId;
   const tradeId = Array.isArray(rawTradeId) ? rawTradeId[0] : rawTradeId;
@@ -186,14 +185,6 @@ export default function RegisteredTradePage() {
     scrollLockStateRef.current.initialOverflow = null;
   }, []);
 
-  const clearPendingWheelTimeout = useCallback(() => {
-    const pendingWheelTimeout = wheelLockTimeoutRef.current;
-    if (pendingWheelTimeout !== null) {
-      window.clearTimeout(pendingWheelTimeout);
-      wheelLockTimeoutRef.current = null;
-    }
-  }, []);
-
   const unlockBodyScroll = useCallback(() => {
     if (typeof document === "undefined") {
       return;
@@ -211,12 +202,34 @@ export default function RegisteredTradePage() {
     }
   }, [resetBodyScrollLock]);
 
+  const temporarilyLockScrollForNavigation = useCallback(
+    (navigate: () => void) => {
+      lockBodyScroll();
+
+      const release = () => {
+        if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+          window.requestAnimationFrame(() => {
+            unlockBodyScroll();
+          });
+        } else {
+          unlockBodyScroll();
+        }
+      };
+
+      try {
+        navigate();
+      } finally {
+        release();
+      }
+    },
+    [lockBodyScroll, unlockBodyScroll],
+  );
+
   useEffect(() => {
     return () => {
       resetBodyScrollLock();
-      clearPendingWheelTimeout();
     };
-  }, [clearPendingWheelTimeout, resetBodyScrollLock]);
+  }, [resetBodyScrollLock]);
 
   useEffect(() => {
     if (!tradeId) {
@@ -364,25 +377,32 @@ export default function RegisteredTradePage() {
   );
 
   const handleSelectPreviousLibraryItem = useCallback(() => {
-    goToAdjacentLibraryItem(-1);
-  }, [goToAdjacentLibraryItem]);
+    if (!canNavigateLibrary) {
+      return;
+    }
+
+    temporarilyLockScrollForNavigation(() => {
+      goToAdjacentLibraryItem(-1);
+    });
+  }, [canNavigateLibrary, goToAdjacentLibraryItem, temporarilyLockScrollForNavigation]);
 
   const handleSelectNextLibraryItem = useCallback(() => {
-    goToAdjacentLibraryItem(1);
-  }, [goToAdjacentLibraryItem]);
+    if (!canNavigateLibrary) {
+      return;
+    }
+
+    temporarilyLockScrollForNavigation(() => {
+      goToAdjacentLibraryItem(1);
+    });
+  }, [canNavigateLibrary, goToAdjacentLibraryItem, temporarilyLockScrollForNavigation]);
 
   const handleNavigationPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLButtonElement>) => {
-      lockBodyScroll();
       event.preventDefault();
       event.stopPropagation();
     },
-    [lockBodyScroll],
+    [],
   );
-
-  const handleNavigationPointerUp = useCallback(() => {
-    unlockBodyScroll();
-  }, [unlockBodyScroll]);
 
   const handleFocusPreview = useCallback(() => {
     previewContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -417,19 +437,21 @@ export default function RegisteredTradePage() {
           return;
         }
 
-        lockBodyScroll();
         event.preventDefault();
         event.stopPropagation();
-        goToAdjacentLibraryItem(1);
+        temporarilyLockScrollForNavigation(() => {
+          goToAdjacentLibraryItem(1);
+        });
       } else if (event.key === "ArrowLeft") {
         if (!canNavigateLibrary) {
           return;
         }
 
-        lockBodyScroll();
         event.preventDefault();
         event.stopPropagation();
-        goToAdjacentLibraryItem(-1);
+        temporarilyLockScrollForNavigation(() => {
+          goToAdjacentLibraryItem(-1);
+        });
       }
     };
 
@@ -437,24 +459,10 @@ export default function RegisteredTradePage() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [canNavigateLibrary, goToAdjacentLibraryItem, lockBodyScroll]);
-
-  useEffect(() => {
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
-        unlockBodyScroll();
-      }
-    };
-
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, [unlockBodyScroll]);
+  }, [canNavigateLibrary, goToAdjacentLibraryItem, temporarilyLockScrollForNavigation]);
 
   const handlePreviewTouchStart = useCallback(
     (event: ReactTouchEvent<HTMLDivElement>) => {
-      lockBodyScroll();
       event.stopPropagation();
 
       const touch = event.touches[0];
@@ -469,7 +477,7 @@ export default function RegisteredTradePage() {
         time: Date.now(),
       };
     },
-    [lockBodyScroll],
+    [],
   );
 
   const handlePreviewTouchMove = useCallback(
@@ -514,18 +522,15 @@ export default function RegisteredTradePage() {
       previewSwipeStateRef.current = null;
 
       if (!swipeStart) {
-        unlockBodyScroll();
         return;
       }
 
       if (!canNavigateLibrary) {
-        unlockBodyScroll();
         return;
       }
 
       const touch = event.changedTouches[0];
       if (!touch) {
-        unlockBodyScroll();
         return;
       }
 
@@ -534,53 +539,39 @@ export default function RegisteredTradePage() {
       const elapsed = Date.now() - swipeStart.time;
 
       if (elapsed > LIBRARY_NAVIGATION_SWIPE_DURATION_MS) {
-        unlockBodyScroll();
         return;
       }
 
       if (Math.abs(deltaX) < LIBRARY_NAVIGATION_SWIPE_DISTANCE_PX) {
-        unlockBodyScroll();
         return;
       }
 
       if (Math.abs(deltaX) <= Math.abs(deltaY)) {
-        unlockBodyScroll();
         return;
       }
 
       event.preventDefault();
       event.stopPropagation();
 
-      if (deltaX > 0) {
-        goToAdjacentLibraryItem(-1);
-      } else {
-        goToAdjacentLibraryItem(1);
-      }
+      const direction: 1 | -1 = deltaX > 0 ? -1 : 1;
 
-      unlockBodyScroll();
+      temporarilyLockScrollForNavigation(() => {
+        goToAdjacentLibraryItem(direction);
+      });
     },
-    [canNavigateLibrary, goToAdjacentLibraryItem, unlockBodyScroll],
+    [canNavigateLibrary, goToAdjacentLibraryItem, temporarilyLockScrollForNavigation],
   );
 
   const handlePreviewTouchCancel = useCallback(() => {
     previewSwipeStateRef.current = null;
-    unlockBodyScroll();
-  }, [unlockBodyScroll]);
+  }, []);
 
   const handlePreviewWheel = useCallback(
     (event: ReactWheelEvent<HTMLDivElement>) => {
       event.preventDefault();
       event.stopPropagation();
-
-      lockBodyScroll();
-      clearPendingWheelTimeout();
-
-      wheelLockTimeoutRef.current = window.setTimeout(() => {
-        unlockBodyScroll();
-        wheelLockTimeoutRef.current = null;
-      }, 150);
     },
-    [clearPendingWheelTimeout, lockBodyScroll, unlockBodyScroll],
+    [],
   );
 
   const libraryCards = useMemo(
@@ -660,31 +651,25 @@ export default function RegisteredTradePage() {
         <div className="h-px w-full bg-neutral-200" aria-hidden="true" />
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           <div className="flex items-center rounded-full bg-white p-1 shadow-sm ring-1 ring-black/5">
-            <button
-              type="button"
-              onClick={handleSelectPreviousLibraryItem}
-              onPointerDown={handleNavigationPointerDown}
-              onPointerUp={handleNavigationPointerUp}
-              onPointerLeave={handleNavigationPointerUp}
-              onPointerCancel={handleNavigationPointerUp}
-              className={getNavigationButtonClasses(canNavigateLibrary)}
-              aria-label="Mostra immagine precedente"
-              aria-disabled={!canNavigateLibrary}
-            >
+              <button
+                type="button"
+                onClick={handleSelectPreviousLibraryItem}
+                onPointerDown={handleNavigationPointerDown}
+                className={getNavigationButtonClasses(canNavigateLibrary)}
+                aria-label="Mostra immagine precedente"
+                aria-disabled={!canNavigateLibrary}
+              >
               <NavigationArrowIcon direction="left" animate={canNavigateLibrary} />
             </button>
 
-            <button
-              type="button"
-              onClick={handleSelectNextLibraryItem}
-              onPointerDown={handleNavigationPointerDown}
-              onPointerUp={handleNavigationPointerUp}
-              onPointerLeave={handleNavigationPointerUp}
-              onPointerCancel={handleNavigationPointerUp}
-              className={getNavigationButtonClasses(canNavigateLibrary)}
-              aria-label="Mostra immagine successiva"
-              aria-disabled={!canNavigateLibrary}
-            >
+              <button
+                type="button"
+                onClick={handleSelectNextLibraryItem}
+                onPointerDown={handleNavigationPointerDown}
+                className={getNavigationButtonClasses(canNavigateLibrary)}
+                aria-label="Mostra immagine successiva"
+                aria-disabled={!canNavigateLibrary}
+              >
               <NavigationArrowIcon direction="right" animate={canNavigateLibrary} />
             </button>
           </div>
