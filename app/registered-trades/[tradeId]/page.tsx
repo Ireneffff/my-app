@@ -90,7 +90,7 @@ const LIBRARY_NAVIGATION_SWIPE_DURATION_MS = 600;
 
 function getNavigationButtonClasses(isInteractive: boolean) {
   const baseClasses =
-    "group flex h-12 w-12 items-center justify-center text-muted-fg transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white first:rounded-l-full last:rounded-r-full";
+    "group flex h-11 w-11 items-center justify-center rounded-xl text-muted-fg transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
   const interactiveClasses =
     "hover:text-fg motion-safe:hover:-translate-y-0.5 motion-safe:focus-visible:-translate-y-0.5 active:scale-95";
   const disabledClasses = "cursor-default text-muted-fg/60";
@@ -478,10 +478,10 @@ export default function RegisteredTradePage() {
         </div>
       )}
 
-      <div className="relative mt-6 flex w-full justify-center">
+      <div className="relative mt-6 w-full">
         <div className="h-px w-full bg-neutral-200" aria-hidden="true" />
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
-          <div className="mx-auto flex items-center justify-center rounded-full bg-white p-1.5 shadow-sm ring-1 ring-black/5">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="flex items-center rounded-2xl bg-white p-1 shadow-sm ring-1 ring-black/5">
             <button
               type="button"
               onClick={handleSelectPreviousLibraryItem}
