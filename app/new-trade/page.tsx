@@ -1233,7 +1233,7 @@ function NewTradePageContent() {
             className="block w-full cursor-pointer border-0 bg-transparent p-0"
             aria-label="Aggiorna immagine della libreria"
           >
-            <span className="relative block aspect-[16/9] w-full max-h-[calc(648px-1cm)]">
+            <span className="relative block aspect-[16/9] w-full">
               <Image
                 src={selectedImageData}
                 alt="Selected trade context"
@@ -1256,7 +1256,7 @@ function NewTradePageContent() {
 
               openImagePicker();
             }}
-            className="flex aspect-[16/9] w-full max-h-[calc(648px-1cm)] flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+            className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
           >
             <UploadIcon />
             <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Carica anteprima</span>
