@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type TouchEvent as ReactTouchEvent,
+} from "react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
@@ -77,6 +85,48 @@ function formatOptionalText(value?: string | null) {
   return trimmed.length > 0 ? trimmed : "—";
 }
 
+const LIBRARY_NAVIGATION_SWIPE_DISTANCE_PX = 40;
+const LIBRARY_NAVIGATION_SWIPE_DURATION_MS = 600;
+
+function getNavigationButtonClasses(isInteractive: boolean) {
+  const baseClasses =
+    "group flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white text-muted-fg transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
+  const interactiveClasses =
+    "hover:text-fg motion-safe:hover:-translate-y-0.5 motion-safe:focus-visible:-translate-y-0.5 active:scale-95";
+  const disabledClasses = "cursor-default text-muted-fg/60";
+
+  return `${baseClasses} ${isInteractive ? interactiveClasses : disabledClasses}`;
+}
+
+function NavigationArrowIcon({
+  direction,
+  animate,
+}: {
+  direction: "left" | "right";
+  animate: boolean;
+}) {
+  const horizontalOffset = direction === "left" ? "-" : "";
+  const animationClasses = animate
+    ? `motion-safe:group-hover:${horizontalOffset}translate-x-0.5 motion-safe:group-active:${horizontalOffset}translate-x-0.5`
+    : "";
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`h-5 w-5 transition-transform duration-200 ${animationClasses}`}
+      aria-hidden="true"
+    >
+      <path d="m8 4 8 8-8 8" />
+    </svg>
+  );
+}
+
 export default function RegisteredTradePage() {
   const params = useParams<{ tradeId: string }>();
   const router = useRouter();
@@ -85,6 +135,11 @@ export default function RegisteredTradePage() {
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
   const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>("snapshot");
   const previewContainerRef = useRef<HTMLDivElement | null>(null);
+  const previewSwipeStateRef = useRef<{
+    x: number;
+    y: number;
+    time: number;
+  } | null>(null);
 
   const rawTradeId = params.tradeId;
   const tradeId = Array.isArray(rawTradeId) ? rawTradeId[0] : rawTradeId;
@@ -208,8 +263,148 @@ export default function RegisteredTradePage() {
 
   const selectedImageData = selectedLibraryItem?.imageData ?? null;
 
+  const canNavigateLibrary = libraryItems.length > 1;
+
+  const goToAdjacentLibraryItem = useCallback(
+    (direction: 1 | -1) => {
+      if (libraryItems.length === 0) {
+        return;
+      }
+
+      setSelectedLibraryItemId((currentId) => {
+        if (libraryItems.length === 0) {
+          return currentId;
+        }
+
+        if (libraryItems.length === 1) {
+          return libraryItems[0]?.id ?? currentId;
+        }
+
+        const currentIndex = libraryItems.findIndex((item) => item.id === currentId);
+        const baseIndex = currentIndex === -1 ? 0 : currentIndex;
+        const nextIndex = (baseIndex + direction + libraryItems.length) % libraryItems.length;
+        return libraryItems[nextIndex]?.id ?? currentId;
+      });
+    },
+    [libraryItems],
+  );
+
+  const handleSelectPreviousLibraryItem = useCallback(() => {
+    goToAdjacentLibraryItem(-1);
+  }, [goToAdjacentLibraryItem]);
+
+  const handleSelectNextLibraryItem = useCallback(() => {
+    goToAdjacentLibraryItem(1);
+  }, [goToAdjacentLibraryItem]);
+
   const handleFocusPreview = useCallback(() => {
     previewContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+
+      const target = event.target as HTMLElement | null;
+      if (target) {
+        const tagName = target.tagName;
+        if (
+          tagName === "INPUT" ||
+          tagName === "TEXTAREA" ||
+          tagName === "SELECT" ||
+          target.isContentEditable
+        ) {
+          return;
+        }
+      }
+
+      const previewElement = previewContainerRef.current;
+      if (!previewElement || !document.body.contains(previewElement)) {
+        return;
+      }
+
+      if (event.key === "ArrowRight") {
+        if (!canNavigateLibrary) {
+          return;
+        }
+
+        event.preventDefault();
+        goToAdjacentLibraryItem(1);
+      } else if (event.key === "ArrowLeft") {
+        if (!canNavigateLibrary) {
+          return;
+        }
+
+        event.preventDefault();
+        goToAdjacentLibraryItem(-1);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [canNavigateLibrary, goToAdjacentLibraryItem]);
+
+  const handlePreviewTouchStart = useCallback((event: ReactTouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    if (!touch) {
+      previewSwipeStateRef.current = null;
+      return;
+    }
+
+    previewSwipeStateRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now(),
+    };
+  }, []);
+
+  const handlePreviewTouchEnd = useCallback(
+    (event: ReactTouchEvent<HTMLDivElement>) => {
+      const swipeStart = previewSwipeStateRef.current;
+      previewSwipeStateRef.current = null;
+
+      if (!swipeStart || !canNavigateLibrary) {
+        return;
+      }
+
+      const touch = event.changedTouches[0];
+      if (!touch) {
+        return;
+      }
+
+      const deltaX = touch.clientX - swipeStart.x;
+      const deltaY = touch.clientY - swipeStart.y;
+      const elapsed = Date.now() - swipeStart.time;
+
+      if (elapsed > LIBRARY_NAVIGATION_SWIPE_DURATION_MS) {
+        return;
+      }
+
+      if (Math.abs(deltaX) < LIBRARY_NAVIGATION_SWIPE_DISTANCE_PX) {
+        return;
+      }
+
+      if (Math.abs(deltaX) <= Math.abs(deltaY)) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (deltaX > 0) {
+        goToAdjacentLibraryItem(-1);
+      } else {
+        goToAdjacentLibraryItem(1);
+      }
+    },
+    [canNavigateLibrary, goToAdjacentLibraryItem],
+  );
+
+  const handlePreviewTouchCancel = useCallback(() => {
+    previewSwipeStateRef.current = null;
   }, []);
 
   const libraryCards = useMemo(
@@ -256,7 +451,13 @@ export default function RegisteredTradePage() {
   );
 
   const primaryPreviewContent = (
-    <div ref={previewContainerRef} className="mx-auto w-full max-w-6xl">
+    <div
+      ref={previewContainerRef}
+      className="mx-auto w-full max-w-6xl"
+      onTouchStart={handlePreviewTouchStart}
+      onTouchEnd={handlePreviewTouchEnd}
+      onTouchCancel={handlePreviewTouchCancel}
+    >
       {selectedImageData ? (
         <Image
           src={selectedImageData}
@@ -276,6 +477,28 @@ export default function RegisteredTradePage() {
           </span>
         </div>
       )}
+
+      <div className="mt-4 flex items-center justify-center gap-6">
+        <button
+          type="button"
+          onClick={handleSelectPreviousLibraryItem}
+          className={getNavigationButtonClasses(canNavigateLibrary)}
+          aria-label="Mostra immagine precedente"
+          aria-disabled={!canNavigateLibrary}
+        >
+          <NavigationArrowIcon direction="left" animate={canNavigateLibrary} />
+        </button>
+
+        <button
+          type="button"
+          onClick={handleSelectNextLibraryItem}
+          className={getNavigationButtonClasses(canNavigateLibrary)}
+          aria-label="Mostra immagine successiva"
+          aria-disabled={!canNavigateLibrary}
+        >
+          <NavigationArrowIcon direction="right" animate={canNavigateLibrary} />
+        </button>
+      </div>
     </div>
   );
   const libraryPreview = primaryPreviewContent;
