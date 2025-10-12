@@ -303,7 +303,7 @@ export default function RegisteredTradePage() {
   const handleNavigationPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLButtonElement>) => {
       event.preventDefault();
-      event.currentTarget.focus({ preventScroll: true });
+      event.stopPropagation();
     },
     [],
   );
@@ -372,6 +372,35 @@ export default function RegisteredTradePage() {
       time: Date.now(),
     };
   }, []);
+
+  const handlePreviewTouchMove = useCallback(
+    (event: ReactTouchEvent<HTMLDivElement>) => {
+      const swipeStart = previewSwipeStateRef.current;
+
+      if (!swipeStart || !canNavigateLibrary) {
+        return;
+      }
+
+      const touch = event.touches[0];
+      if (!touch) {
+        return;
+      }
+
+      const deltaX = touch.clientX - swipeStart.x;
+      const deltaY = touch.clientY - swipeStart.y;
+
+      if (Math.abs(deltaX) <= Math.abs(deltaY)) {
+        return;
+      }
+
+      if (Math.abs(deltaX) < 10) {
+        return;
+      }
+
+      event.preventDefault();
+    },
+    [canNavigateLibrary],
+  );
 
   const handlePreviewTouchEnd = useCallback(
     (event: ReactTouchEvent<HTMLDivElement>) => {
@@ -466,6 +495,7 @@ export default function RegisteredTradePage() {
       ref={previewContainerRef}
       className="mx-auto w-full max-w-6xl"
       onTouchStart={handlePreviewTouchStart}
+      onTouchMove={handlePreviewTouchMove}
       onTouchEnd={handlePreviewTouchEnd}
       onTouchCancel={handlePreviewTouchCancel}
     >
