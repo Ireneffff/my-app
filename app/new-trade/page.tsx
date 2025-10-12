@@ -2,7 +2,6 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import clsx from "clsx";
 import {
   Suspense,
   useCallback,
@@ -939,10 +938,9 @@ function NewTradePageContent() {
       </div>
 
       <div
-        className={clsx(
-          "mx-auto flex w-full flex-1 flex-col gap-12",
-          activeTab === "library" ? "max-w-6xl sm:max-w-7xl" : "max-w-3xl sm:max-w-4xl",
-        )}
+        className={`mx-auto flex w-full flex-1 flex-col gap-12 ${
+          activeTab === "library" ? "max-w-6xl sm:max-w-7xl" : "max-w-3xl sm:max-w-4xl"
+        }`}
       >
         <header className="space-y-2">
           <p className="text-sm text-muted-fg">Trading Journal</p>
