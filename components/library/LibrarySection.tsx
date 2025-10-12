@@ -31,7 +31,7 @@ export function LibrarySection({
 }: LibrarySectionProps) {
   return (
     <div className="flex flex-col gap-12">
-      <div className="rounded-[40px] border border-white/60 bg-[#f6f7fb] px-6 py-12 text-center shadow-[0_36px_120px_-70px_rgba(15,23,42,0.35)] backdrop-blur">
+      <div className="rounded-[40px] border border-white/60 bg-[#fafbfe] px-6 py-12 text-center shadow-[0_36px_120px_-70px_rgba(15,23,42,0.35)] backdrop-blur">
         <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-10">
           <header className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-fg">{title}</p>
