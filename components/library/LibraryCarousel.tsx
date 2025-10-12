@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 
 import { LibraryCard, type LibraryCardProps } from "./LibraryCard";
 
@@ -31,17 +31,6 @@ export function LibraryCarousel({ items, selectedId, onSelectItem, onAddItem }: 
     const explicitIndex = items.findIndex((item) => item.id === selectedId);
     return explicitIndex >= 0 ? explicitIndex : 0;
   }, [hasItems, items, selectedId]);
-
-  useEffect(() => {
-    if (!hasItems || selectedIndex === -1 || !containerRef.current) {
-      return;
-    }
-
-    const selector = `[data-library-carousel-item="${items[selectedIndex]?.id}"]`;
-    const target = containerRef.current.querySelector<HTMLElement>(selector);
-
-    target?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-  }, [hasItems, items, selectedIndex]);
 
   const goToAdjacent = (direction: -1 | 1) => {
     if (!hasItems || items.length < 2) {

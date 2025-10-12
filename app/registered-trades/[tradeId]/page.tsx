@@ -431,10 +431,6 @@ export default function RegisteredTradePage() {
     [],
   );
 
-  const handleFocusPreview = useCallback(() => {
-    previewContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, []);
-
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) {
@@ -609,9 +605,6 @@ export default function RegisteredTradePage() {
         return {
           id: item.id,
           label: hasImage ? `Anteprima ${index + 1}` : "Nessuna anteprima",
-          onClick: () => {
-            handleFocusPreview();
-          },
           visual: hasImage ? (
             <div className="relative h-full w-full">
               <Image
@@ -631,7 +624,7 @@ export default function RegisteredTradePage() {
           ),
         } satisfies LibraryCarouselItem;
       }),
-    [handleFocusPreview, libraryItems]
+    [libraryItems]
   );
 
   const libraryFooter = selectedImageData ? (

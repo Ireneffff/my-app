@@ -954,10 +954,6 @@ function NewTradePageContent() {
     imageInputRef.current?.click();
   }, []);
 
-  const handleFocusPreview = useCallback(() => {
-    previewContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, []);
-
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) {
@@ -1185,9 +1181,7 @@ function NewTradePageContent() {
           id: item.id,
           label: hasImage ? `Anteprima ${index + 1}` : "Carica anteprima",
           onClick: () => {
-            if (hasImage) {
-              handleFocusPreview();
-            } else {
+            if (!hasImage) {
               openImagePicker();
             }
           },
@@ -1225,7 +1219,7 @@ function NewTradePageContent() {
           ),
         } satisfies LibraryCarouselItem;
       }),
-    [handleFocusPreview, libraryItems, openImagePicker, recentlyAddedLibraryItemId]
+    [libraryItems, openImagePicker, recentlyAddedLibraryItemId]
   );
 
   const primaryPreviewContent = (
