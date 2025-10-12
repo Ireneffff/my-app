@@ -13,9 +13,16 @@ interface LibraryCarouselProps {
   selectedId?: string;
   onSelectItem?: (itemId: string) => void;
   onAddItem?: () => void;
+  onRemoveItem?: (itemId: string) => void;
 }
 
-export function LibraryCarousel({ items, selectedId, onSelectItem, onAddItem }: LibraryCarouselProps) {
+export function LibraryCarousel({
+  items,
+  selectedId,
+  onSelectItem,
+  onAddItem,
+  onRemoveItem,
+}: LibraryCarouselProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const hasItems = items.length > 0;
 
@@ -80,19 +87,39 @@ export function LibraryCarousel({ items, selectedId, onSelectItem, onAddItem }: 
         {hasItems ? (
           items.map((item) => {
             const isActive = item.id === (selectedId ?? items[0]?.id);
+            const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
+            const combinedClassName = itemClassName
+              ? `${itemClassName} w-full`
+              : "w-full";
 
             return (
-              <LibraryCard
-                key={item.id}
-                {...item}
-                isActive={isActive}
-                data-library-carousel-item={item.id}
-                className={item.className ?? ""}
-                onClick={(event) => {
-                  onSelectItem?.(item.id);
-                  item.onClick?.(event);
-                }}
-              />
+              <div key={item.id} className="relative">
+                {onRemoveItem ? (
+                  <button
+                    type="button"
+                    aria-label={`Rimuovi ${item.label}`}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onRemoveItem(item.id);
+                    }}
+                    className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-muted-fg shadow-sm transition-colors hover:bg-white hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                  >
+                    <CloseIcon />
+                  </button>
+                ) : null}
+
+                <LibraryCard
+                  {...restItem}
+                  isActive={isActive}
+                  data-library-carousel-item={item.id}
+                  className={combinedClassName}
+                  onClick={(event) => {
+                    onSelectItem?.(item.id);
+                    itemOnClick?.(event);
+                  }}
+                />
+              </div>
             );
           })
         ) : (
@@ -108,6 +135,7 @@ export function LibraryCarousel({ items, selectedId, onSelectItem, onAddItem }: 
             aria-label="Aggiungi una nuova card libreria"
             isActive={false}
             data-library-carousel-item="add"
+            className="w-full"
             onClick={() => {
               onAddItem?.();
             }}
@@ -154,6 +182,25 @@ function PlusIcon({ className = "h-6 w-6" }: { className?: string }) {
     >
       <path d="M12 5v14" />
       <path d="M5 12h14" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-3.5 w-3.5"
+      aria-hidden="true"
+    >
+      <path d="m16.5 7.5-9 9" />
+      <path d="m7.5 7.5 9 9" />
     </svg>
   );
 }

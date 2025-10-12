@@ -12,6 +12,7 @@ interface LibrarySectionProps {
   selectedActionId?: string;
   onSelectAction?: (actionId: string) => void;
   onAddAction?: () => void;
+  onRemoveAction?: (actionId: string) => void;
   footer?: ReactNode;
   errorMessage?: string | null;
 }
@@ -24,6 +25,7 @@ export function LibrarySection({
   selectedActionId,
   onSelectAction,
   onAddAction,
+  onRemoveAction,
   footer,
   errorMessage,
 }: LibrarySectionProps) {
@@ -45,6 +47,7 @@ export function LibrarySection({
                 selectedId={selectedActionId}
                 onSelectItem={onSelectAction}
                 onAddItem={onAddAction}
+                onRemoveItem={onRemoveAction}
               />
             </div>
           </div>

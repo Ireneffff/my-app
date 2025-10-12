@@ -1171,6 +1171,38 @@ function NewTradePageContent() {
     }
   }, [selectedLibraryItemId]);
 
+  const handleRemoveLibraryItem = useCallback((itemId: string) => {
+    setLibraryItems((prev) => {
+      const targetIndex = prev.findIndex((item) => item.id === itemId);
+
+      if (targetIndex === -1) {
+        return prev;
+      }
+
+      const nextItems = [...prev.slice(0, targetIndex), ...prev.slice(targetIndex + 1)];
+      const fallbackId =
+        nextItems.length > 0
+          ? nextItems[Math.min(targetIndex, nextItems.length - 1)]?.id ?? ""
+          : "";
+
+      setSelectedLibraryItemId((current) => {
+        if (!current) {
+          return fallbackId;
+        }
+
+        if (current !== itemId) {
+          return current;
+        }
+
+        return fallbackId;
+      });
+
+      return nextItems;
+    });
+
+    setRecentlyAddedLibraryItemId((prev) => (prev === itemId ? null : prev));
+  }, []);
+
   const libraryCards = useMemo(
     () =>
       libraryItems.map((item, index) => {
@@ -1826,6 +1858,7 @@ function NewTradePageContent() {
               selectedActionId={selectedLibraryItemId}
               onSelectAction={setSelectedLibraryItemId}
               onAddAction={handleAddLibraryItem}
+              onRemoveAction={handleRemoveLibraryItem}
               footer={
                 <p className="text-left text-sm text-muted-fg">
                   Organizza le tue reference per prendere decisioni più rapide prima dell’operazione.
