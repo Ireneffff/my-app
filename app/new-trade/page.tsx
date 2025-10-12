@@ -124,47 +124,6 @@ const LIBRARY_NAVIGATION_SWIPE_DISTANCE_PX = 40;
 const LIBRARY_NAVIGATION_SWIPE_DURATION_MS = 600;
 const LIBRARY_NAVIGATION_SCROLL_LOCK_DURATION_MS = 400;
 
-function getNavigationButtonClasses(isInteractive: boolean) {
-  const baseClasses =
-    "group flex h-11 w-11 items-center justify-center rounded-xl text-muted-fg transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
-  const interactiveClasses =
-    "hover:text-fg motion-safe:hover:-translate-y-0.5 motion-safe:focus-visible:-translate-y-0.5 active:scale-95";
-  const disabledClasses = "cursor-default text-muted-fg/60";
-
-  return `${baseClasses} ${isInteractive ? interactiveClasses : disabledClasses}`;
-}
-
-function NavigationArrowIcon({
-  direction,
-  animate,
-}: {
-  direction: "left" | "right";
-  animate: boolean;
-}) {
-  const horizontalOffset = direction === "left" ? "-" : "";
-  const animationClasses = animate
-    ? `motion-safe:group-hover:${horizontalOffset}translate-x-0.5 motion-safe:group-active:${horizontalOffset}translate-x-0.5`
-    : "";
-  const pathDefinition =
-    direction === "left" ? "m16 4-8 8 8 8" : "m8 4 8 8-8 8";
-
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={`h-5 w-5 transition-transform duration-200 ${animationClasses}`}
-      aria-hidden="true"
-    >
-      <path d={pathDefinition} />
-    </svg>
-  );
-}
-
 function NewTradePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -410,34 +369,6 @@ function NewTradePageContent() {
       });
     },
     [libraryItems],
-  );
-
-  const handleSelectPreviousLibraryItem = useCallback(() => {
-    if (!canNavigateLibrary) {
-      return;
-    }
-
-    temporarilyLockScrollForNavigation(() => {
-      goToAdjacentLibraryItem(-1);
-    });
-  }, [canNavigateLibrary, goToAdjacentLibraryItem, temporarilyLockScrollForNavigation]);
-
-  const handleSelectNextLibraryItem = useCallback(() => {
-    if (!canNavigateLibrary) {
-      return;
-    }
-
-    temporarilyLockScrollForNavigation(() => {
-      goToAdjacentLibraryItem(1);
-    });
-  }, [canNavigateLibrary, goToAdjacentLibraryItem, temporarilyLockScrollForNavigation]);
-
-  const handleNavigationPointerDown = useCallback(
-    (event: ReactPointerEvent<HTMLButtonElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-    },
-    [],
   );
 
   const calendarDays = useMemo(() => {
@@ -1313,31 +1244,6 @@ function NewTradePageContent() {
 
         <div className="relative mt-6 w-full">
           <div className="h-px w-full bg-neutral-200" aria-hidden="true" />
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <div className="flex items-center rounded-full bg-white p-1 shadow-sm ring-1 ring-black/5">
-              <button
-                type="button"
-                onClick={handleSelectPreviousLibraryItem}
-                onPointerDown={handleNavigationPointerDown}
-                className={getNavigationButtonClasses(canNavigateLibrary)}
-                aria-label="Mostra immagine precedente"
-                aria-disabled={!canNavigateLibrary}
-              >
-                <NavigationArrowIcon direction="left" animate={canNavigateLibrary} />
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSelectNextLibraryItem}
-                onPointerDown={handleNavigationPointerDown}
-                className={getNavigationButtonClasses(canNavigateLibrary)}
-                aria-label="Mostra immagine successiva"
-                aria-disabled={!canNavigateLibrary}
-              >
-                <NavigationArrowIcon direction="right" animate={canNavigateLibrary} />
-              </button>
-            </div>
-          </div>
         </div>
       </div>
       <input
