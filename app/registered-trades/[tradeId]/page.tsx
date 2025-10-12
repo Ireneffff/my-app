@@ -576,7 +576,7 @@ export default function RegisteredTradePage() {
     <>
       <div
         ref={previewContainerRef}
-        className="mx-auto w-full max-w-6xl"
+        className="w-full"
         onWheel={handlePreviewWheel}
         onTouchStart={handlePreviewTouchStart}
         onTouchMove={handlePreviewTouchMove}
@@ -590,7 +590,7 @@ export default function RegisteredTradePage() {
               alt="Trade context attachment"
               fill
               className="h-full w-full object-contain"
-              sizes="(min-width: 1280px) 960px, 100vw"
+              sizes="100vw"
               unoptimized
               priority
             />
@@ -606,7 +606,7 @@ export default function RegisteredTradePage() {
         )}
       </div>
 
-      <div className="mx-auto mt-6 w-full max-w-6xl">
+      <div className="mt-6 w-full">
         <div className="flex flex-col gap-2">
           <label
             htmlFor="library-note-viewer"
@@ -730,8 +730,8 @@ export default function RegisteredTradePage() {
       </div>
 
       <div
-        className={`mx-auto flex w-full flex-1 flex-col gap-12 ${
-          activeTab === "library" ? "max-w-6xl sm:max-w-7xl" : "max-w-3xl sm:max-w-4xl"
+        className={`flex w-full flex-1 flex-col gap-12 ${
+          activeTab === "library" ? "" : "mx-auto max-w-3xl sm:max-w-4xl"
         }`}
       >
         <header className="space-y-2">

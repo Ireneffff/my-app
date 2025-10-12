@@ -62,17 +62,17 @@ export function LibrarySection({
 
   return (
     <div className="flex flex-col gap-12">
-      <div className="rounded-[40px] border border-white/60 bg-[#fafbfe] px-6 py-12 text-center shadow-[0_36px_120px_-70px_rgba(15,23,42,0.35)] backdrop-blur">
-        <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-10">
+      <div className="w-full rounded-[40px] border border-white/60 bg-[#fafbfe] px-6 py-12 text-center shadow-[0_36px_120px_-70px_rgba(15,23,42,0.35)] backdrop-blur">
+        <div className="flex w-full flex-col items-center gap-10 lg:items-stretch">
           <header className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-fg">{title}</p>
             {subtitle ? <p className="text-sm text-muted-fg">{subtitle}</p> : null}
           </header>
 
-          <div className="flex w-full flex-col items-stretch gap-5 lg:flex-row lg:items-start lg:gap-3 xl:gap-4 2xl:gap-5">
-            <div className="w-full lg:flex-[4.5] xl:flex-[6.5] 2xl:flex-[7.5]">{preview}</div>
+          <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(72px,0.8fr)_minmax(220px,1.6fr)] lg:items-start xl:gap-8">
+            <div className="w-full">{preview}</div>
 
-            <div className="flex w-full justify-center lg:w-12 lg:flex lg:flex-col lg:items-center lg:justify-center lg:self-stretch xl:w-16">
+            <div className="flex w-full justify-center lg:h-full">
               <LibraryNavigationControls
                 onSelectPrevious={() => handleNavigate(-1)}
                 onSelectNext={() => handleNavigate(1)}
@@ -80,7 +80,7 @@ export function LibrarySection({
               />
             </div>
 
-            <div className="w-full lg:w-[220px] xl:w-[240px]">
+            <div className="w-full min-w-0 lg:max-w-[320px]">
               <LibraryCarousel
                 items={actions}
                 selectedId={selectedActionId}
@@ -114,13 +114,13 @@ function LibraryNavigationControls({
   disabled,
 }: LibraryNavigationControlsProps) {
   return (
-    <div className="relative flex w-full justify-center py-4 lg:w-full lg:py-0 lg:self-stretch">
+    <div className="relative flex w-full max-w-[140px] justify-center py-4 lg:h-full lg:py-0">
       <span
         aria-hidden="true"
         className="pointer-events-none absolute top-0 bottom-0 left-1/2 w-px -translate-x-1/2 bg-muted/40"
       />
-      <div className="pointer-events-auto relative z-10 flex flex-col items-center">
-        <div className="flex flex-col items-center divide-y divide-muted/20 rounded-full bg-white px-1 py-2 shadow-md">
+      <div className="pointer-events-auto relative z-10 flex h-full flex-col items-center justify-center">
+        <div className="flex w-full flex-col items-center divide-y divide-muted/20 rounded-full bg-white px-1 py-2 shadow-md">
           <button
             type="button"
             onClick={onSelectPrevious}
