@@ -122,6 +122,7 @@ function isSameDay(a: Date, b: Date) {
 
 const LIBRARY_NAVIGATION_SWIPE_DISTANCE_PX = 40;
 const LIBRARY_NAVIGATION_SWIPE_DURATION_MS = 600;
+const LIBRARY_NAVIGATION_SCROLL_LOCK_DURATION_MS = 400;
 
 function getNavigationButtonClasses(isInteractive: boolean) {
   const baseClasses =
@@ -222,6 +223,17 @@ function NewTradePageContent() {
     count: 0,
     initialOverflow: null,
   });
+  const scrollUnlockTimeoutsRef = useRef<Set<number>>(new Set());
+  const clearScheduledScrollUnlocks = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    scrollUnlockTimeoutsRef.current.forEach((timeoutId) => {
+      window.clearTimeout(timeoutId);
+    });
+    scrollUnlockTimeoutsRef.current.clear();
+  }, []);
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
@@ -307,10 +319,24 @@ function NewTradePageContent() {
         }
       };
 
+      const scheduleRelease = () => {
+        if (typeof window === "undefined") {
+          release();
+          return;
+        }
+
+        const timeoutId = window.setTimeout(() => {
+          scrollUnlockTimeoutsRef.current.delete(timeoutId);
+          release();
+        }, LIBRARY_NAVIGATION_SCROLL_LOCK_DURATION_MS);
+
+        scrollUnlockTimeoutsRef.current.add(timeoutId);
+      };
+
       try {
         navigate();
       } finally {
-        release();
+        scheduleRelease();
       }
     },
     [lockBodyScroll, unlockBodyScroll],
@@ -318,9 +344,10 @@ function NewTradePageContent() {
 
   useEffect(() => {
     return () => {
+      clearScheduledScrollUnlocks();
       resetBodyScrollLock();
     };
-  }, [resetBodyScrollLock]);
+  }, [clearScheduledScrollUnlocks, resetBodyScrollLock]);
 
   useEffect(() => {
     if (libraryItems.length === 0) {
