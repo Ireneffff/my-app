@@ -109,6 +109,8 @@ function NavigationArrowIcon({
   const animationClasses = animate
     ? `motion-safe:group-hover:${horizontalOffset}translate-x-0.5 motion-safe:group-active:${horizontalOffset}translate-x-0.5`
     : "";
+  const pathDefinition =
+    direction === "left" ? "m16 4-8 8 8 8" : "m8 4 8 8-8 8";
 
   return (
     <svg
@@ -122,7 +124,7 @@ function NavigationArrowIcon({
       className={`h-5 w-5 transition-transform duration-200 ${animationClasses}`}
       aria-hidden="true"
     >
-      <path d="m8 4 8 8-8 8" />
+      <path d={pathDefinition} />
     </svg>
   );
 }
@@ -481,7 +483,7 @@ export default function RegisteredTradePage() {
       <div className="relative mt-6 w-full">
         <div className="h-px w-full bg-neutral-200" aria-hidden="true" />
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <div className="flex items-center rounded-2xl bg-white p-1 shadow-sm ring-1 ring-black/5">
+          <div className="flex items-center rounded-full bg-white p-1 shadow-sm ring-1 ring-black/5">
             <button
               type="button"
               onClick={handleSelectPreviousLibraryItem}
