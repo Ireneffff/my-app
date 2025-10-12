@@ -310,6 +310,14 @@ function NewTradePageContent() {
     goToAdjacentLibraryItem(1);
   }, [goToAdjacentLibraryItem]);
 
+  const handleNavigationPointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      event.currentTarget.focus({ preventScroll: true });
+    },
+    [],
+  );
+
   const calendarDays = useMemo(() => {
     const firstOfMonth = getStartOfMonth(calendarMonth);
     const gridStart = getStartOfWeek(firstOfMonth);
@@ -1091,6 +1099,7 @@ function NewTradePageContent() {
               <button
                 type="button"
                 onClick={handleSelectPreviousLibraryItem}
+                onPointerDown={handleNavigationPointerDown}
                 className={getNavigationButtonClasses(canNavigateLibrary)}
                 aria-label="Mostra immagine precedente"
                 aria-disabled={!canNavigateLibrary}
@@ -1101,6 +1110,7 @@ function NewTradePageContent() {
               <button
                 type="button"
                 onClick={handleSelectNextLibraryItem}
+                onPointerDown={handleNavigationPointerDown}
                 className={getNavigationButtonClasses(canNavigateLibrary)}
                 aria-label="Mostra immagine successiva"
                 aria-disabled={!canNavigateLibrary}

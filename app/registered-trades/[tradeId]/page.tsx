@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
   type TouchEvent as ReactTouchEvent,
 } from "react";
 import Button from "@/components/ui/Button";
@@ -299,6 +300,14 @@ export default function RegisteredTradePage() {
     goToAdjacentLibraryItem(1);
   }, [goToAdjacentLibraryItem]);
 
+  const handleNavigationPointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      event.currentTarget.focus({ preventScroll: true });
+    },
+    [],
+  );
+
   const handleFocusPreview = useCallback(() => {
     previewContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, []);
@@ -487,6 +496,7 @@ export default function RegisteredTradePage() {
             <button
               type="button"
               onClick={handleSelectPreviousLibraryItem}
+              onPointerDown={handleNavigationPointerDown}
               className={getNavigationButtonClasses(canNavigateLibrary)}
               aria-label="Mostra immagine precedente"
               aria-disabled={!canNavigateLibrary}
@@ -497,6 +507,7 @@ export default function RegisteredTradePage() {
             <button
               type="button"
               onClick={handleSelectNextLibraryItem}
+              onPointerDown={handleNavigationPointerDown}
               className={getNavigationButtonClasses(canNavigateLibrary)}
               aria-label="Mostra immagine successiva"
               aria-disabled={!canNavigateLibrary}
