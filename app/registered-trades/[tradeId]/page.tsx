@@ -277,6 +277,7 @@ export default function RegisteredTradePage() {
         {
           id: "snapshot",
           imageData: null,
+          notes: "",
         },
       ];
     }
