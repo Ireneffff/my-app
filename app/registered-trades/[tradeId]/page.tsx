@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
+import clsx from "clsx";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
@@ -381,7 +382,12 @@ export default function RegisteredTradePage() {
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-12 sm:max-w-4xl">
+      <div
+        className={clsx(
+          "mx-auto flex w-full flex-1 flex-col gap-12",
+          activeTab === "library" ? "max-w-6xl sm:max-w-7xl" : "max-w-3xl sm:max-w-4xl",
+        )}
+      >
         <header className="space-y-2">
           <p className="text-sm text-muted-fg">Trading Journal</p>
           <h1 className="text-4xl font-semibold tracking-tight text-fg md:text-5xl">
