@@ -1248,14 +1248,16 @@ function NewTradePageContent() {
             className="block w-full cursor-pointer border-0 bg-transparent p-0"
             aria-label="Aggiorna immagine della libreria"
           >
-            <Image
-              src={selectedImageData}
-              alt="Selected trade context"
-              width={1920}
-              height={1080}
-              className="block h-auto w-full max-h-[calc(648px-1cm)]"
-              unoptimized
-            />
+            <span className="relative block aspect-[16/9] w-full max-h-[calc(648px-1cm)]">
+              <Image
+                src={selectedImageData}
+                alt="Selected trade context"
+                fill
+                className="h-full w-full object-contain"
+                sizes="(min-width: 1280px) 960px, 100vw"
+                unoptimized
+              />
+            </span>
           </button>
         ) : (
           <button

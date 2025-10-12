@@ -648,15 +648,17 @@ export default function RegisteredTradePage() {
       onTouchCancel={handlePreviewTouchCancel}
     >
       {selectedImageData ? (
-        <Image
-          src={selectedImageData}
-          alt="Trade context attachment"
-          width={1920}
-          height={1080}
-          className="block h-auto w-full max-h-[calc(648px-1cm)]"
-          unoptimized
-          priority
-        />
+        <span className="relative block aspect-[16/9] w-full max-h-[calc(648px-1cm)]">
+          <Image
+            src={selectedImageData}
+            alt="Trade context attachment"
+            fill
+            className="h-full w-full object-contain"
+            sizes="(min-width: 1280px) 960px, 100vw"
+            unoptimized
+            priority
+          />
+        </span>
       ) : (
         <div className="flex aspect-[16/9] w-full max-h-[calc(648px-1cm)] flex-col items-center justify-center gap-4 rounded-[28px] bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
           <EmptyLibraryIcon />
