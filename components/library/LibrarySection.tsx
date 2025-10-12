@@ -69,10 +69,10 @@ export function LibrarySection({
             {subtitle ? <p className="text-sm text-muted-fg">{subtitle}</p> : null}
           </header>
 
-          <div className="flex w-full flex-col items-stretch gap-6 lg:flex-row lg:items-start lg:gap-4 xl:gap-6">
-            <div className="w-full lg:flex-[3.1] xl:flex-[4]">{preview}</div>
+          <div className="flex w-full flex-col items-stretch gap-5 lg:flex-row lg:items-start lg:gap-3 xl:gap-4 2xl:gap-5">
+            <div className="w-full lg:flex-[4.5] xl:flex-[6.5] 2xl:flex-[7.5]">{preview}</div>
 
-            <div className="flex w-full justify-center lg:w-16 lg:flex lg:flex-col lg:items-center lg:justify-center lg:self-stretch xl:w-24">
+            <div className="flex w-full justify-center lg:w-12 lg:flex lg:flex-col lg:items-center lg:justify-center lg:self-stretch xl:w-16">
               <LibraryNavigationControls
                 onSelectPrevious={() => handleNavigate(-1)}
                 onSelectNext={() => handleNavigate(1)}
