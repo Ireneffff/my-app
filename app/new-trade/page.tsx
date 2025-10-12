@@ -218,6 +218,11 @@ function NewTradePageContent() {
   >(null);
   const weekPointerTargetDateRef = useRef<string | null>(null);
   const weekWheelCooldownRef = useRef<number>(0);
+  const scrollLockStateRef = useRef<{ count: number; initialOverflow: string | null }>({
+    count: 0,
+    initialOverflow: null,
+  });
+  const wheelLockTimeoutRef = useRef<number | null>(null);
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
@@ -238,6 +243,71 @@ function NewTradePageContent() {
     getStartOfMonth(initialSelectedDate),
   );
   const [, startNavigation] = useTransition();
+
+  const lockBodyScroll = useCallback(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const body = document.body;
+    if (!body) {
+      return;
+    }
+
+    if (scrollLockStateRef.current.count === 0) {
+      scrollLockStateRef.current.initialOverflow = body.style.overflow ?? "";
+      body.style.overflow = "hidden";
+    }
+
+    scrollLockStateRef.current.count += 1;
+  }, []);
+
+  const resetBodyScrollLock = useCallback(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const body = document.body;
+    if (!body) {
+      return;
+    }
+
+    body.style.overflow = scrollLockStateRef.current.initialOverflow ?? "";
+    scrollLockStateRef.current.count = 0;
+    scrollLockStateRef.current.initialOverflow = null;
+  }, []);
+
+  const clearPendingWheelTimeout = useCallback(() => {
+    const pendingWheelTimeout = wheelLockTimeoutRef.current;
+    if (pendingWheelTimeout !== null) {
+      window.clearTimeout(pendingWheelTimeout);
+      wheelLockTimeoutRef.current = null;
+    }
+  }, []);
+
+  const unlockBodyScroll = useCallback(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    if (scrollLockStateRef.current.count <= 0) {
+      scrollLockStateRef.current.count = 0;
+      return;
+    }
+
+    scrollLockStateRef.current.count -= 1;
+
+    if (scrollLockStateRef.current.count === 0) {
+      resetBodyScrollLock();
+    }
+  }, [resetBodyScrollLock]);
+
+  useEffect(() => {
+    return () => {
+      resetBodyScrollLock();
+      clearPendingWheelTimeout();
+    };
+  }, [clearPendingWheelTimeout, resetBodyScrollLock]);
 
   useEffect(() => {
     if (libraryItems.length === 0) {
@@ -312,11 +382,16 @@ function NewTradePageContent() {
 
   const handleNavigationPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLButtonElement>) => {
+      lockBodyScroll();
       event.preventDefault();
       event.stopPropagation();
     },
-    [],
+    [lockBodyScroll],
   );
+
+  const handleNavigationPointerUp = useCallback(() => {
+    unlockBodyScroll();
+  }, [unlockBodyScroll]);
 
   const calendarDays = useMemo(() => {
     const firstOfMonth = getStartOfMonth(calendarMonth);
@@ -865,14 +940,18 @@ function NewTradePageContent() {
           return;
         }
 
+        lockBodyScroll();
         event.preventDefault();
+        event.stopPropagation();
         goToAdjacentLibraryItem(1);
       } else if (event.key === "ArrowLeft") {
         if (!canNavigateLibrary) {
           return;
         }
 
+        lockBodyScroll();
         event.preventDefault();
+        event.stopPropagation();
         goToAdjacentLibraryItem(-1);
       }
     };
@@ -881,29 +960,55 @@ function NewTradePageContent() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [canNavigateLibrary, goToAdjacentLibraryItem]);
+  }, [canNavigateLibrary, goToAdjacentLibraryItem, lockBodyScroll]);
 
-  const handlePreviewTouchStart = useCallback((event: ReactTouchEvent<HTMLDivElement>) => {
-    const touch = event.touches[0];
-    if (!touch) {
-      previewSwipeStateRef.current = null;
-      previewSwipeHandledRef.current = false;
-      return;
-    }
-
-    previewSwipeStateRef.current = {
-      x: touch.clientX,
-      y: touch.clientY,
-      time: Date.now(),
+  useEffect(() => {
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+        unlockBodyScroll();
+      }
     };
-    previewSwipeHandledRef.current = false;
-  }, []);
+
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [unlockBodyScroll]);
+
+  const handlePreviewTouchStart = useCallback(
+    (event: ReactTouchEvent<HTMLDivElement>) => {
+      lockBodyScroll();
+      event.stopPropagation();
+
+      const touch = event.touches[0];
+      if (!touch) {
+        previewSwipeStateRef.current = null;
+        previewSwipeHandledRef.current = false;
+        return;
+      }
+
+      previewSwipeStateRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        time: Date.now(),
+      };
+      previewSwipeHandledRef.current = false;
+    },
+    [lockBodyScroll],
+  );
 
   const handlePreviewTouchMove = useCallback(
     (event: ReactTouchEvent<HTMLDivElement>) => {
       const swipeStart = previewSwipeStateRef.current;
 
-      if (!swipeStart || !canNavigateLibrary) {
+      if (!swipeStart) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (!canNavigateLibrary) {
         return;
       }
 
@@ -934,12 +1039,22 @@ function NewTradePageContent() {
       const swipeStart = previewSwipeStateRef.current;
       previewSwipeStateRef.current = null;
 
-      if (!swipeStart || !canNavigateLibrary) {
+      if (!swipeStart) {
+        previewSwipeHandledRef.current = false;
+        unlockBodyScroll();
+        return;
+      }
+
+      if (!canNavigateLibrary) {
+        previewSwipeHandledRef.current = false;
+        unlockBodyScroll();
         return;
       }
 
       const touch = event.changedTouches[0];
       if (!touch) {
+        previewSwipeHandledRef.current = false;
+        unlockBodyScroll();
         return;
       }
 
@@ -948,18 +1063,25 @@ function NewTradePageContent() {
       const elapsed = Date.now() - swipeStart.time;
 
       if (elapsed > LIBRARY_NAVIGATION_SWIPE_DURATION_MS) {
+        previewSwipeHandledRef.current = false;
+        unlockBodyScroll();
         return;
       }
 
       if (Math.abs(deltaX) < LIBRARY_NAVIGATION_SWIPE_DISTANCE_PX) {
+        previewSwipeHandledRef.current = false;
+        unlockBodyScroll();
         return;
       }
 
       if (Math.abs(deltaX) <= Math.abs(deltaY)) {
+        previewSwipeHandledRef.current = false;
+        unlockBodyScroll();
         return;
       }
 
       event.preventDefault();
+      event.stopPropagation();
 
       if (deltaX > 0) {
         goToAdjacentLibraryItem(-1);
@@ -976,14 +1098,33 @@ function NewTradePageContent() {
       } else {
         previewSwipeHandledRef.current = false;
       }
+
+      unlockBodyScroll();
     },
-    [canNavigateLibrary, goToAdjacentLibraryItem],
+    [canNavigateLibrary, goToAdjacentLibraryItem, unlockBodyScroll],
   );
 
   const handlePreviewTouchCancel = useCallback(() => {
     previewSwipeStateRef.current = null;
     previewSwipeHandledRef.current = false;
-  }, []);
+    unlockBodyScroll();
+  }, [unlockBodyScroll]);
+
+  const handlePreviewWheel = useCallback(
+    (event: ReactWheelEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      lockBodyScroll();
+      clearPendingWheelTimeout();
+
+      wheelLockTimeoutRef.current = window.setTimeout(() => {
+        unlockBodyScroll();
+        wheelLockTimeoutRef.current = null;
+      }, 150);
+    },
+    [clearPendingWheelTimeout, lockBodyScroll, unlockBodyScroll],
+  );
 
   const handleAddLibraryItem = useCallback(() => {
     const newItem = createLibraryItem(null);
@@ -1074,6 +1215,7 @@ function NewTradePageContent() {
       <div
         ref={previewContainerRef}
         className="mx-auto w-full max-w-6xl"
+        onWheel={handlePreviewWheel}
         onTouchStart={handlePreviewTouchStart}
         onTouchMove={handlePreviewTouchMove}
         onTouchEnd={handlePreviewTouchEnd}
@@ -1131,6 +1273,9 @@ function NewTradePageContent() {
                 type="button"
                 onClick={handleSelectPreviousLibraryItem}
                 onPointerDown={handleNavigationPointerDown}
+                onPointerUp={handleNavigationPointerUp}
+                onPointerLeave={handleNavigationPointerUp}
+                onPointerCancel={handleNavigationPointerUp}
                 className={getNavigationButtonClasses(canNavigateLibrary)}
                 aria-label="Mostra immagine precedente"
                 aria-disabled={!canNavigateLibrary}
@@ -1142,6 +1287,9 @@ function NewTradePageContent() {
                 type="button"
                 onClick={handleSelectNextLibraryItem}
                 onPointerDown={handleNavigationPointerDown}
+                onPointerUp={handleNavigationPointerUp}
+                onPointerLeave={handleNavigationPointerUp}
+                onPointerCancel={handleNavigationPointerUp}
                 className={getNavigationButtonClasses(canNavigateLibrary)}
                 aria-label="Mostra immagine successiva"
                 aria-disabled={!canNavigateLibrary}
