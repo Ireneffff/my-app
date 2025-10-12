@@ -54,7 +54,7 @@ export function LibraryCarousel({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center justify-start gap-3">
         <div className="flex items-center gap-2">
           <button
@@ -82,7 +82,7 @@ export function LibraryCarousel({
 
       <div
         ref={containerRef}
-        className="flex max-h-[520px] flex-col gap-4 overflow-y-auto pb-2 pt-1 [scrollbar-width:thin] [scrollbar-color:theme(colors.accent)_transparent]"
+        className="flex max-h-[520px] flex-col gap-6 overflow-y-auto pb-3 pt-2 [scrollbar-width:thin] [scrollbar-color:theme(colors.accent)_transparent]"
       >
         {hasItems ? (
           items.map((item) => {
@@ -104,7 +104,7 @@ export function LibraryCarousel({
                       event.stopPropagation();
                       onRemoveItem(item.id);
                     }}
-                    className="absolute right-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full border border-black/5 bg-white text-neutral-600 shadow-md transition-colors hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                    className="absolute right-4 top-4 z-40 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-white/95 text-neutral-500 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] transition-colors hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                   >
                     <CloseIcon />
                   </button>

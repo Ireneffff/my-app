@@ -30,18 +30,18 @@ export function LibrarySection({
   errorMessage,
 }: LibrarySectionProps) {
   return (
-    <div className="flex flex-col gap-10">
-      <div className="rounded-[32px] border border-neutral-200 bg-white px-5 py-10 text-center sm:px-8 md:px-12">
-        <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-8">
+    <div className="flex flex-col gap-12">
+      <div className="rounded-[40px] border border-white/60 bg-white/80 px-6 py-12 text-center shadow-[0_48px_140px_-80px_rgba(15,23,42,0.55)] backdrop-blur">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-10">
           <header className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-fg">{title}</p>
             {subtitle ? <p className="text-sm text-muted-fg">{subtitle}</p> : null}
           </header>
 
-          <div className="flex w-full flex-col items-stretch gap-8 lg:flex-row lg:items-start">
+          <div className="flex w-full flex-col items-stretch gap-10 lg:flex-row lg:items-start">
             <div className="w-full lg:flex-1">{preview}</div>
 
-            <div className="w-full lg:w-[240px] xl:w-[280px]">
+            <div className="w-full lg:w-[320px] xl:w-[360px]">
               <LibraryCarousel
                 items={actions}
                 selectedId={selectedActionId}

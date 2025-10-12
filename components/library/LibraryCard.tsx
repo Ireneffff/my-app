@@ -26,20 +26,20 @@ export function LibraryCard({
       disabled={disabled}
       aria-pressed={isActive}
       data-active={isActive ? "true" : "false"}
-      className={`group relative flex min-w-[140px] flex-col items-center gap-2 rounded-xl bg-white/80 p-2.5 text-center text-sm font-medium text-fg shadow-md transition-all duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-100 focus-visible:ring-accent/40 disabled:pointer-events-none disabled:opacity-50 sm:min-w-[160px] transform-gpu will-change-transform ${
+      className={`group relative flex min-w-[220px] flex-col items-center gap-5 rounded-[30px] border border-white/60 bg-white/90 p-5 text-center text-sm font-medium text-fg shadow-[0_18px_45px_-28px_rgba(15,23,42,0.45)] transition-all duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:pointer-events-none disabled:opacity-50 sm:min-w-[240px] transform-gpu will-change-transform ${
         isActive
-          ? "z-10 scale-[1.05] bg-white opacity-100 filter-none shadow-xl"
+          ? "z-30 scale-[1.08] bg-white shadow-[0_32px_90px_-40px_rgba(15,23,42,0.55)]"
           : "hover:scale-[1.02]"
       } ${
         isDimmed && !isActive
-          ? "scale-[0.95] opacity-60 grayscale hover:opacity-100 hover:grayscale-0"
+          ? "scale-[0.94] opacity-70 filter brightness-95 saturate-75 hover:opacity-95 hover:brightness-100 hover:saturate-100"
           : ""
       } ${className}`}
     >
-      <div className="flex h-16 w-full items-center justify-center overflow-hidden rounded-lg bg-white/90 shadow-inner">
+      <div className="flex h-28 w-full items-center justify-center overflow-hidden rounded-[24px] bg-neutral-50/90 shadow-inner">
         {visual}
       </div>
-      <span className="text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-muted-fg group-hover:text-fg">
+      <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-fg transition-colors group-hover:text-fg">
         {label}
       </span>
     </button>
