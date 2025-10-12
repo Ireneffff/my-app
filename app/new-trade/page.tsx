@@ -829,7 +829,7 @@ function NewTradePageContent() {
 
   const primaryPreviewContent = (
     <>
-      <div ref={previewContainerRef} className="mx-auto w-full max-w-6xl">
+      <div ref={previewContainerRef} className="mx-auto w-full max-w-7xl">
         {selectedImageData ? (
           <button
             type="button"

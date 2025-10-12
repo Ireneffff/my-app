@@ -29,8 +29,8 @@ export function LibrarySection({
 }: LibrarySectionProps) {
   return (
     <div className="flex flex-col gap-10">
-      <div className="rounded-[32px] bg-neutral-50 px-5 py-10 text-center shadow-sm sm:px-8 md:px-12">
-        <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-8">
+      <div className="rounded-[32px] border border-neutral-200 bg-white px-5 py-10 text-center sm:px-8 md:px-12">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-8">
           <header className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-fg">{title}</p>
             {subtitle ? <p className="text-sm text-muted-fg">{subtitle}</p> : null}
@@ -42,7 +42,7 @@ export function LibrarySection({
         </div>
       </div>
 
-      <div className="rounded-[28px] bg-neutral-50 px-4 py-6 shadow-sm">
+      <div className="rounded-[28px] border border-neutral-200 bg-white px-4 py-6">
         <LibraryCarousel
           items={actions}
           selectedId={selectedActionId}
