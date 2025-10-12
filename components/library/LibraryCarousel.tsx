@@ -91,6 +91,7 @@ export function LibraryCarousel({
             const combinedClassName = itemClassName
               ? `${itemClassName} w-full`
               : "w-full";
+            const shouldDim = hasItems && !isActive;
 
             return (
               <div key={item.id} className="relative">
@@ -112,6 +113,7 @@ export function LibraryCarousel({
                 <LibraryCard
                   {...restItem}
                   isActive={isActive}
+                  isDimmed={shouldDim}
                   data-library-carousel-item={item.id}
                   className={combinedClassName}
                   onClick={(event) => {
@@ -134,6 +136,7 @@ export function LibraryCarousel({
             label="Nuova immagine"
             aria-label="Aggiungi una nuova card libreria"
             isActive={false}
+            isDimmed={false}
             data-library-carousel-item="add"
             className="w-full"
             onClick={() => {
