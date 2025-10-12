@@ -82,7 +82,7 @@ export function LibraryCarousel({
 
       <div
         ref={containerRef}
-        className="flex max-h-[520px] flex-col gap-6 overflow-y-auto pb-3 pt-2 [scrollbar-width:thin] [scrollbar-color:theme(colors.accent)_transparent]"
+        className="flex flex-col gap-6 pb-3 pt-2"
       >
         {hasItems ? (
           items.map((item) => {
