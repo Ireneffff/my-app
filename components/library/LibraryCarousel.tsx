@@ -103,7 +103,7 @@ export function LibraryCarousel({
                       event.stopPropagation();
                       onRemoveItem(item.id);
                     }}
-                    className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-muted-fg shadow-sm transition-colors hover:bg-white hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                    className="absolute right-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full border border-black/5 bg-white text-neutral-600 shadow-md transition-colors hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                   >
                     <CloseIcon />
                   </button>
