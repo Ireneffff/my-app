@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { LibraryCarousel, type LibraryCarouselItem } from "./LibraryCarousel";
 
@@ -45,6 +45,88 @@ export function LibrarySection({
   }, [actions, activeActionId]);
 
   const canNavigate = hasActions && actions.length > 1;
+  const previewWrapperRef = useRef<HTMLDivElement | null>(null);
+  const [previewHeight, setPreviewHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const wrapper = previewWrapperRef.current;
+    if (!wrapper) {
+      setPreviewHeight(null);
+      return;
+    }
+
+    const findPreviewImage = () =>
+      wrapper.querySelector<HTMLElement>("[data-library-preview-image]");
+
+    let currentTarget = findPreviewImage();
+
+    const updateHeight = () => {
+      const target = currentTarget ?? findPreviewImage();
+      if (!target) {
+        setPreviewHeight(null);
+        return;
+      }
+
+      const { height } = target.getBoundingClientRect();
+      setPreviewHeight((previousHeight) =>
+        Math.abs((previousHeight ?? 0) - height) < 0.5 ? previousHeight : height,
+      );
+    };
+
+    updateHeight();
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        updateHeight();
+      });
+
+      if (currentTarget) {
+        resizeObserver.observe(currentTarget);
+      }
+    }
+
+    const mutationObserver = new MutationObserver(() => {
+      const nextTarget = findPreviewImage();
+      if (nextTarget && nextTarget !== currentTarget) {
+        if (resizeObserver && currentTarget) {
+          resizeObserver.unobserve(currentTarget);
+        }
+        currentTarget = nextTarget;
+        if (resizeObserver) {
+          resizeObserver.observe(nextTarget);
+        }
+      } else if (!nextTarget && currentTarget && resizeObserver) {
+        resizeObserver.unobserve(currentTarget);
+        currentTarget = null;
+      } else if (!nextTarget) {
+        currentTarget = null;
+      }
+
+      updateHeight();
+    });
+
+    mutationObserver.observe(wrapper, { childList: true, subtree: true });
+
+    const handleWindowResize = () => updateHeight();
+    window.addEventListener("resize", handleWindowResize);
+
+    return () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      mutationObserver.disconnect();
+      window.removeEventListener("resize", handleWindowResize);
+    };
+  }, [actions.length, selectedActionId]);
+
+  const carouselHeightStyle = previewHeight
+    ? { height: `${previewHeight}px`, maxHeight: `${previewHeight}px` }
+    : undefined;
 
   const handleNavigate = (direction: -1 | 1) => {
     if (!canNavigate) {
@@ -70,7 +152,7 @@ export function LibrarySection({
           </header>
 
           <div className="grid w-full gap-3.5 lg:grid-cols-[minmax(0,7.25fr)_minmax(56px,0.68fr)_minmax(210px,1.32fr)] lg:items-start xl:gap-5">
-            <div className="w-full">{preview}</div>
+            <div ref={previewWrapperRef} className="w-full">{preview}</div>
 
             <div className="flex w-full justify-center lg:h-full">
               <LibraryNavigationControls
@@ -80,7 +162,10 @@ export function LibrarySection({
               />
             </div>
 
-            <div className="w-full min-w-0 lg:max-w-[300px]">
+            <div
+              className="w-full min-w-0 lg:max-w-[300px]"
+              style={carouselHeightStyle}
+            >
               <LibraryCarousel
                 items={actions}
                 selectedId={selectedActionId}
