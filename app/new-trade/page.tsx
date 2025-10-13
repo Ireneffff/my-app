@@ -1211,7 +1211,7 @@ function NewTradePageContent() {
     <>
       <div
         ref={previewContainerRef}
-        className="w-full lg:max-w-[880px]"
+        className="w-full lg:max-w-[960px]"
         onWheel={handlePreviewWheel}
         onTouchStart={handlePreviewTouchStart}
         onTouchMove={handlePreviewTouchMove}
@@ -1233,7 +1233,7 @@ function NewTradePageContent() {
             className="block w-full cursor-pointer border-0 bg-transparent p-0"
             aria-label="Aggiorna immagine della libreria"
           >
-            <span className="relative block aspect-[3/2] w-full overflow-hidden shadow-[0_10px_25px_rgba(0,0,0,0.15),_0_-5px_15px_rgba(0,0,0,0.1)]">
+            <span className="relative block aspect-[3/2] w-full overflow-hidden rounded-[4px] border-2 border-black shadow-[0_10px_25px_rgba(0,0,0,0.15),_0_-5px_15px_rgba(0,0,0,0.1)]">
               <Image
                 src={selectedImageData}
                 alt="Selected trade context"

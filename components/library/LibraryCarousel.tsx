@@ -29,7 +29,7 @@ export function LibraryCarousel({
   return (
     <div
       ref={containerRef}
-      className="flex flex-col gap-4 pb-2 pt-1"
+      className="flex flex-col gap-3 pb-2 pt-1"
     >
       {hasItems ? (
         items.map((item) => {

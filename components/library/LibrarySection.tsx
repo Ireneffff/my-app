@@ -69,7 +69,7 @@ export function LibrarySection({
             {subtitle ? <p className="text-sm text-muted-fg">{subtitle}</p> : null}
           </header>
 
-          <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,6.5fr)_minmax(64px,0.72fr)_minmax(220px,1.4fr)] lg:items-start xl:gap-6">
+          <div className="grid w-full gap-3.5 lg:grid-cols-[minmax(0,7.25fr)_minmax(56px,0.68fr)_minmax(210px,1.32fr)] lg:items-start xl:gap-5">
             <div className="w-full">{preview}</div>
 
             <div className="flex w-full justify-center lg:h-full">
@@ -80,7 +80,7 @@ export function LibrarySection({
               />
             </div>
 
-            <div className="w-full min-w-0 lg:max-w-[320px]">
+            <div className="w-full min-w-0 lg:max-w-[300px]">
               <LibraryCarousel
                 items={actions}
                 selectedId={selectedActionId}
@@ -114,7 +114,7 @@ function LibraryNavigationControls({
   disabled,
 }: LibraryNavigationControlsProps) {
   return (
-    <div className="relative flex w-full max-w-[120px] justify-center py-2 lg:h-full lg:py-0">
+    <div className="relative flex w-full max-w-[112px] justify-center py-2 lg:h-full lg:py-0">
       <div className="pointer-events-auto relative z-10 flex h-full flex-col items-center justify-center">
         <div className="flex w-full flex-col items-center gap-3 rounded-full bg-white px-1.5 py-2.5 shadow-md">
           <button
