@@ -1209,7 +1209,11 @@ function NewTradePageContent() {
 
   const primaryPreviewContent = (
     <>
-      <div data-library-preview-stack className="flex w-full flex-col">
+      <div
+        data-library-preview-stack
+        className="flex w-full flex-col"
+        style={{ gap: "1cm" }}
+      >
         <div
           ref={previewContainerRef}
           className="w-full lg:max-w-[960px]"
@@ -1219,25 +1223,25 @@ function NewTradePageContent() {
           onTouchEnd={handlePreviewTouchEnd}
           onTouchCancel={handlePreviewTouchCancel}
         >
-          {selectedImageData ? (
-            <button
-              type="button"
-              onClick={(event) => {
-                if (previewSwipeHandledRef.current) {
-                  previewSwipeHandledRef.current = false;
-                  event.preventDefault();
-                  return;
-                }
+          <button
+            type="button"
+            onClick={(event) => {
+              if (previewSwipeHandledRef.current) {
+                previewSwipeHandledRef.current = false;
+                event.preventDefault();
+                return;
+              }
 
-                openImagePicker();
-              }}
-              className="block w-full cursor-pointer border-0 bg-transparent p-0"
-              aria-label="Aggiorna immagine della libreria"
+              openImagePicker();
+            }}
+            className="block w-full cursor-pointer border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+            aria-label="Aggiorna immagine della libreria"
+          >
+            <span
+              data-library-preview-image
+              className="relative block aspect-[3/2] w-full overflow-hidden rounded-[4px] border-2 border-black shadow-[0_10px_25px_rgba(0,0,0,0.15),_0_-5px_15px_rgba(0,0,0,0.1)]"
             >
-              <span
-                data-library-preview-image
-                className="relative block aspect-[3/2] w-full overflow-hidden rounded-[4px] border-2 border-black shadow-[0_10px_25px_rgba(0,0,0,0.15),_0_-5px_15px_rgba(0,0,0,0.1)]"
-              >
+              {selectedImageData ? (
                 <Image
                   src={selectedImageData}
                   alt="Selected trade context"
@@ -1246,31 +1250,22 @@ function NewTradePageContent() {
                   sizes="100vw"
                   unoptimized
                 />
-              </span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={(event) => {
-                if (previewSwipeHandledRef.current) {
-                  previewSwipeHandledRef.current = false;
-                  event.preventDefault();
-                  return;
-                }
-
-                openImagePicker();
-              }}
-              data-library-preview-image
-              className="flex aspect-[3/2] w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
-            >
-              <UploadIcon />
-              <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Carica anteprima</span>
-              <span className="text-xs text-muted-fg/80">Aggiungi uno screenshot o un chart di contesto.</span>
-            </button>
-          )}
+              ) : (
+                <span className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
+                  <UploadIcon />
+                  <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">
+                    Carica anteprima
+                  </span>
+                  <span className="text-xs text-muted-fg/80">
+                    Aggiungi uno screenshot o un chart di contesto.
+                  </span>
+                </span>
+              )}
+            </span>
+          </button>
         </div>
 
-        <div className="w-full">
+        <div className="w-full lg:max-w-[960px]">
           <textarea
             id="library-note-editor"
             value={selectedLibraryNote}
