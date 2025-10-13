@@ -1183,7 +1183,7 @@ function NewTradePageContent() {
               />
             </div>
           ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-neutral-100 via-white to-neutral-200 text-muted-fg">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-md bg-gradient-to-br from-neutral-100 via-white to-neutral-200 text-muted-fg">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 48 48"
@@ -1233,7 +1233,7 @@ function NewTradePageContent() {
             className="block w-full cursor-pointer border-0 bg-transparent p-0"
             aria-label="Aggiorna immagine della libreria"
           >
-            <span className="relative block aspect-[16/9] w-full overflow-hidden shadow-[0_10px_20px_rgba(0,0,0,0.1)]">
+            <span className="relative block aspect-[16/9] w-full overflow-hidden shadow-[0_10px_25px_rgba(0,0,0,0.15),_0_-5px_15px_rgba(0,0,0,0.1)]">
               <Image
                 src={selectedImageData}
                 alt="Selected trade context"
