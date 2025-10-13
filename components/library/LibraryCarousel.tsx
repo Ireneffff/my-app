@@ -112,7 +112,9 @@ export function LibraryCarousel({
             isActive={false}
             isDimmed={false}
             data-library-carousel-item="add"
-            className="w-full max-w-[calc(100%-1rem)] snap-start mx-auto"
+            className="mx-auto w-full max-w-[calc(100%-1rem)] snap-start"
+            hideLabel
+            visualWrapperClassName="mx-auto aspect-square h-28 w-28 rounded-full bg-white shadow-[0_22px_48px_-34px_rgba(15,23,42,0.45)]"
             onClick={() => {
               onAddItem?.();
             }}

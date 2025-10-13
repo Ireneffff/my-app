@@ -8,6 +8,8 @@ interface LibraryCardProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>,
   disabled?: boolean;
   isActive?: boolean;
   isDimmed?: boolean;
+  visualWrapperClassName?: string;
+  hideLabel?: boolean;
 }
 
 export function LibraryCard({
@@ -16,9 +18,17 @@ export function LibraryCard({
   disabled = false,
   isActive = false,
   isDimmed = false,
+  visualWrapperClassName,
+  hideLabel = false,
   className = "",
   ...buttonProps
 }: LibraryCardProps) {
+  const baseVisualWrapperClassName =
+    "flex items-center justify-center overflow-hidden transition-colors duration-300";
+  const resolvedVisualWrapperClassName = visualWrapperClassName
+    ? `${baseVisualWrapperClassName} ${visualWrapperClassName}`
+    : `${baseVisualWrapperClassName} h-24 w-full rounded-md bg-white`;
+
   return (
     <button
       type="button"
@@ -36,12 +46,14 @@ export function LibraryCard({
           : ""
       } ${className}`}
     >
-      <div className="flex h-24 w-full items-center justify-center overflow-hidden rounded-md bg-white">
+      <div className={resolvedVisualWrapperClassName}>
         {visual}
       </div>
-      <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg transition-colors group-hover:text-fg">
-        {label}
-      </span>
+      {!hideLabel ? (
+        <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg transition-colors group-hover:text-fg">
+          {label}
+        </span>
+      ) : null}
     </button>
   );
 }
