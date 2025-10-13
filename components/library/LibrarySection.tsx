@@ -124,16 +124,18 @@ export function LibrarySection({
     };
   }, [actions.length, selectedActionId]);
 
-  const carouselPadding = 8;
+  const carouselInsetTop = 16;
+  const carouselInsetBottom = 10;
 
   const carouselHeightStyle = previewHeight
     ? {
-        height: `${previewHeight}px`,
-        maxHeight: `${previewHeight}px`,
-        minHeight: `${previewHeight}px`,
-        paddingTop: `${carouselPadding}px`,
-        paddingBottom: `${carouselPadding}px`,
-        marginTop: `-${carouselPadding}px`,
+        height: `${previewHeight + carouselInsetTop + carouselInsetBottom}px`,
+        maxHeight: `${previewHeight + carouselInsetTop + carouselInsetBottom}px`,
+        minHeight: `${previewHeight + carouselInsetTop + carouselInsetBottom}px`,
+        paddingTop: `${carouselInsetTop}px`,
+        paddingBottom: `${carouselInsetBottom}px`,
+        marginTop: `-${carouselInsetTop}px`,
+        marginBottom: `-${carouselInsetBottom}px`,
       }
     : undefined;
 
