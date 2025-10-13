@@ -125,7 +125,11 @@ export function LibrarySection({
   }, [actions.length, selectedActionId]);
 
   const carouselHeightStyle = previewHeight
-    ? { height: `${previewHeight}px`, maxHeight: `${previewHeight}px` }
+    ? {
+        height: `${previewHeight}px`,
+        maxHeight: `${previewHeight}px`,
+        minHeight: `${previewHeight}px`,
+      }
     : undefined;
 
   const handleNavigate = (direction: -1 | 1) => {
@@ -151,27 +155,27 @@ export function LibrarySection({
             {subtitle ? <p className="text-sm text-muted-fg">{subtitle}</p> : null}
           </header>
 
-          <div className="grid w-full gap-3.5 lg:grid-cols-[minmax(0,7.1fr)_minmax(56px,0.7fr)_minmax(232px,1.36fr)] lg:items-start xl:gap-5">
+          <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,7.1fr)_minmax(0,2.2fr)] lg:items-center xl:gap-6">
             <div ref={previewWrapperRef} className="w-full">{preview}</div>
 
-            <div className="flex w-full justify-center lg:h-full">
+            <div className="flex w-full flex-col items-stretch gap-4 lg:h-full lg:flex-row lg:items-center lg:justify-end lg:gap-2">
+              <div
+                className="w-full min-w-0 lg:h-full lg:max-w-[344px]"
+                style={carouselHeightStyle}
+              >
+                <LibraryCarousel
+                  items={actions}
+                  selectedId={selectedActionId}
+                  onSelectItem={onSelectAction}
+                  onAddItem={onAddAction}
+                  onRemoveItem={onRemoveAction}
+                />
+              </div>
+
               <LibraryNavigationControls
                 onSelectPrevious={() => handleNavigate(-1)}
                 onSelectNext={() => handleNavigate(1)}
                 disabled={!canNavigate}
-              />
-            </div>
-
-            <div
-              className="w-full min-w-0 lg:max-w-[328px]"
-              style={carouselHeightStyle}
-            >
-              <LibraryCarousel
-                items={actions}
-                selectedId={selectedActionId}
-                onSelectItem={onSelectAction}
-                onAddItem={onAddAction}
-                onRemoveItem={onRemoveAction}
               />
             </div>
           </div>
@@ -199,28 +203,26 @@ function LibraryNavigationControls({
   disabled,
 }: LibraryNavigationControlsProps) {
   return (
-    <div className="relative flex w-full max-w-[112px] justify-center py-2 lg:h-full lg:py-0">
-      <div className="pointer-events-auto relative z-10 flex h-full flex-col items-center justify-center">
-        <div className="flex w-full flex-col items-center gap-3 rounded-full bg-white px-1.5 py-2.5 shadow-md">
-          <button
-            type="button"
-            onClick={onSelectPrevious}
-            disabled={disabled}
-            aria-label="Mostra card precedente"
-            className="flex h-10 w-10 items-center justify-center text-[#666666] transition hover:text-[#333333] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40 sm:h-11 sm:w-11"
-          >
-            <ArrowIcon direction="up" />
-          </button>
-          <button
-            type="button"
-            onClick={onSelectNext}
-            disabled={disabled}
-            aria-label="Mostra card successiva"
-            className="flex h-10 w-10 items-center justify-center text-[#666666] transition hover:text-[#333333] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40 sm:h-11 sm:w-11"
-          >
-            <ArrowIcon direction="down" />
-          </button>
-        </div>
+    <div className="flex justify-center lg:self-center">
+      <div className="pointer-events-auto flex flex-col items-center gap-2 rounded-xl border border-[#E6E6E6] bg-white px-2 py-3 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.25)]">
+        <button
+          type="button"
+          onClick={onSelectPrevious}
+          disabled={disabled}
+          aria-label="Mostra card precedente"
+          className="flex h-9 w-9 items-center justify-center text-[#666666] transition hover:text-[#333333] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40 sm:h-10 sm:w-10"
+        >
+          <ArrowIcon direction="up" />
+        </button>
+        <button
+          type="button"
+          onClick={onSelectNext}
+          disabled={disabled}
+          aria-label="Mostra card successiva"
+          className="flex h-9 w-9 items-center justify-center text-[#666666] transition hover:text-[#333333] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40 sm:h-10 sm:w-10"
+        >
+          <ArrowIcon direction="down" />
+        </button>
       </div>
     </div>
   );
