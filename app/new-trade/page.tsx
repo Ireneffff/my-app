@@ -1209,74 +1209,68 @@ function NewTradePageContent() {
 
   const primaryPreviewContent = (
     <>
-      <div
-        ref={previewContainerRef}
-        className="w-full lg:max-w-[960px]"
-        onWheel={handlePreviewWheel}
-        onTouchStart={handlePreviewTouchStart}
-        onTouchMove={handlePreviewTouchMove}
-        onTouchEnd={handlePreviewTouchEnd}
-        onTouchCancel={handlePreviewTouchCancel}
-      >
-        {selectedImageData ? (
-          <button
-            type="button"
-            onClick={(event) => {
-              if (previewSwipeHandledRef.current) {
-                previewSwipeHandledRef.current = false;
-                event.preventDefault();
-                return;
-              }
+      <div data-library-preview-stack className="flex w-full flex-col">
+        <div
+          ref={previewContainerRef}
+          className="w-full lg:max-w-[960px]"
+          onWheel={handlePreviewWheel}
+          onTouchStart={handlePreviewTouchStart}
+          onTouchMove={handlePreviewTouchMove}
+          onTouchEnd={handlePreviewTouchEnd}
+          onTouchCancel={handlePreviewTouchCancel}
+        >
+          {selectedImageData ? (
+            <button
+              type="button"
+              onClick={(event) => {
+                if (previewSwipeHandledRef.current) {
+                  previewSwipeHandledRef.current = false;
+                  event.preventDefault();
+                  return;
+                }
 
-              openImagePicker();
-            }}
-            className="block w-full cursor-pointer border-0 bg-transparent p-0"
-            aria-label="Aggiorna immagine della libreria"
-          >
-            <span
-              data-library-preview-image
-              className="relative block aspect-[3/2] w-full overflow-hidden rounded-[4px] border-2 border-black shadow-[0_10px_25px_rgba(0,0,0,0.15),_0_-5px_15px_rgba(0,0,0,0.1)]"
+                openImagePicker();
+              }}
+              className="block w-full cursor-pointer border-0 bg-transparent p-0"
+              aria-label="Aggiorna immagine della libreria"
             >
-              <Image
-                src={selectedImageData}
-                alt="Selected trade context"
-                fill
-                className="h-full w-full object-contain"
-                sizes="100vw"
-                unoptimized
-              />
-            </span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={(event) => {
-              if (previewSwipeHandledRef.current) {
-                previewSwipeHandledRef.current = false;
-                event.preventDefault();
-                return;
-              }
+              <span
+                data-library-preview-image
+                className="relative block aspect-[3/2] w-full overflow-hidden rounded-[4px] border-2 border-black shadow-[0_10px_25px_rgba(0,0,0,0.15),_0_-5px_15px_rgba(0,0,0,0.1)]"
+              >
+                <Image
+                  src={selectedImageData}
+                  alt="Selected trade context"
+                  fill
+                  className="h-full w-full object-contain"
+                  sizes="100vw"
+                  unoptimized
+                />
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={(event) => {
+                if (previewSwipeHandledRef.current) {
+                  previewSwipeHandledRef.current = false;
+                  event.preventDefault();
+                  return;
+                }
 
-              openImagePicker();
-            }}
-            data-library-preview-image
-            className="flex aspect-[3/2] w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
-          >
-            <UploadIcon />
-            <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Carica anteprima</span>
-            <span className="text-xs text-muted-fg/80">Aggiungi uno screenshot o un chart di contesto.</span>
-          </button>
-        )}
-      </div>
+                openImagePicker();
+              }}
+              data-library-preview-image
+              className="flex aspect-[3/2] w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+            >
+              <UploadIcon />
+              <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Carica anteprima</span>
+              <span className="text-xs text-muted-fg/80">Aggiungi uno screenshot o un chart di contesto.</span>
+            </button>
+          )}
+        </div>
 
-      <div className="mt-6 w-full">
-        <div className="flex flex-col gap-2">
-          <label
-            htmlFor="library-note-editor"
-            className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg"
-          >
-            Note
-          </label>
+        <div className="w-full">
           <textarea
             id="library-note-editor"
             value={selectedLibraryNote}
@@ -1284,7 +1278,8 @@ function NewTradePageContent() {
               handleSelectedLibraryNoteChange(event.target.value);
             }}
             placeholder="Scrivi le tue note"
-            className="min-h-[120px] w-full resize-none border border-white/70 bg-[#eef2ff] px-5 py-4 text-sm font-medium text-fg shadow-[0_22px_60px_-45px_rgba(15,23,42,0.55)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            aria-label="Note"
+            className="min-h-[120px] w-full resize-none rounded-none border border-white/70 bg-[#eef2ff] px-5 py-4 text-sm font-medium text-fg shadow-[0_22px_60px_-45px_rgba(15,23,42,0.55)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
           />
         </div>
       </div>

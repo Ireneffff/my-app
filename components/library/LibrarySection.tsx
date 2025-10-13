@@ -59,13 +59,13 @@ export function LibrarySection({
       return;
     }
 
-    const findPreviewImage = () =>
-      wrapper.querySelector<HTMLElement>("[data-library-preview-image]");
+    const findPreviewStack = () =>
+      wrapper.querySelector<HTMLElement>("[data-library-preview-stack]");
 
-    let currentTarget = findPreviewImage();
+    let currentTarget = findPreviewStack();
 
     const updateHeight = () => {
-      const target = currentTarget ?? findPreviewImage();
+      const target = currentTarget ?? findPreviewStack();
       if (!target) {
         setPreviewHeight(null);
         return;
@@ -91,7 +91,7 @@ export function LibrarySection({
     }
 
     const mutationObserver = new MutationObserver(() => {
-      const nextTarget = findPreviewImage();
+      const nextTarget = findPreviewStack();
       if (nextTarget && nextTarget !== currentTarget) {
         if (resizeObserver && currentTarget) {
           resizeObserver.unobserve(currentTarget);
@@ -155,10 +155,10 @@ export function LibrarySection({
             {subtitle ? <p className="text-sm text-muted-fg">{subtitle}</p> : null}
           </header>
 
-          <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,7.1fr)_minmax(0,2.2fr)] lg:items-center xl:gap-6">
+          <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,7.1fr)_minmax(0,2.2fr)] lg:items-start xl:gap-6">
             <div ref={previewWrapperRef} className="w-full">{preview}</div>
 
-            <div className="flex w-full flex-col items-stretch gap-4 lg:h-full lg:flex-row lg:items-center lg:justify-end lg:gap-2">
+            <div className="flex w-full flex-col items-stretch gap-4 lg:h-full lg:flex-row lg:items-stretch lg:justify-end lg:gap-3">
               <div
                 className="w-full min-w-0 lg:h-full lg:max-w-[344px]"
                 style={carouselHeightStyle}
@@ -203,26 +203,28 @@ function LibraryNavigationControls({
   disabled,
 }: LibraryNavigationControlsProps) {
   return (
-    <div className="flex justify-center lg:self-center">
-      <div className="pointer-events-auto flex flex-col items-center gap-2 rounded-xl border border-[#E6E6E6] bg-white px-2 py-3 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.25)]">
-        <button
-          type="button"
-          onClick={onSelectPrevious}
-          disabled={disabled}
-          aria-label="Mostra card precedente"
-          className="flex h-9 w-9 items-center justify-center text-[#666666] transition hover:text-[#333333] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40 sm:h-10 sm:w-10"
-        >
-          <ArrowIcon direction="up" />
-        </button>
-        <button
-          type="button"
-          onClick={onSelectNext}
-          disabled={disabled}
-          aria-label="Mostra card successiva"
-          className="flex h-9 w-9 items-center justify-center text-[#666666] transition hover:text-[#333333] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40 sm:h-10 sm:w-10"
-        >
-          <ArrowIcon direction="down" />
-        </button>
+    <div className="flex justify-center lg:h-full">
+      <div className="flex h-full items-center justify-center">
+        <div className="pointer-events-auto flex flex-col items-center gap-2 rounded-2xl border border-[#E6E6E6] bg-white px-2 py-3 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.25)]">
+          <button
+            type="button"
+            onClick={onSelectPrevious}
+            disabled={disabled}
+            aria-label="Mostra card precedente"
+            className="flex h-9 w-9 items-center justify-center text-[#666666] transition hover:text-[#333333] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40 sm:h-10 sm:w-10"
+          >
+            <ArrowIcon direction="up" />
+          </button>
+          <button
+            type="button"
+            onClick={onSelectNext}
+            disabled={disabled}
+            aria-label="Mostra card successiva"
+            className="flex h-9 w-9 items-center justify-center text-[#666666] transition hover:text-[#333333] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40 sm:h-10 sm:w-10"
+          >
+            <ArrowIcon direction="down" />
+          </button>
+        </div>
       </div>
     </div>
   );
