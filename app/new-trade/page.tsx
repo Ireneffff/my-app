@@ -1164,7 +1164,7 @@ function NewTradePageContent() {
 
         return {
           id: item.id,
-          label: hasImage ? `Anteprima ${index + 1}` : "Carica anteprima",
+          label: hasImage ? `Anteprima ${index + 1}` : "Carica",
           onClick: () => {
             if (!hasImage) {
               openImagePicker();
@@ -1254,7 +1254,7 @@ function NewTradePageContent() {
                 <span className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
                   <UploadIcon />
                   <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">
-                    Carica anteprima
+                    CARICA
                   </span>
                   <span className="text-xs text-muted-fg/80">
                     Aggiungi uno screenshot o un chart di contesto.

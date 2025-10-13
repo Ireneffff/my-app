@@ -165,7 +165,10 @@ export function LibrarySection({
           <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,7.1fr)_minmax(0,2.2fr)] lg:items-start xl:gap-6">
             <div ref={previewWrapperRef} className="w-full">{preview}</div>
 
-            <div className="flex w-full flex-col items-stretch gap-4 lg:h-full lg:flex-row lg:items-stretch lg:justify-end lg:gap-3">
+            <div
+              className="flex w-full flex-col items-stretch gap-4 lg:h-full lg:flex-row lg:items-stretch lg:justify-end lg:gap-3"
+              style={{ marginTop: "0.5cm" }}
+            >
               <div
                 className="w-full min-w-0 lg:h-full lg:max-w-[344px]"
                 style={carouselHeightStyle}
