@@ -1233,7 +1233,7 @@ function NewTradePageContent() {
             className="block w-full cursor-pointer border-0 bg-transparent p-0"
             aria-label="Aggiorna immagine della libreria"
           >
-            <span className="relative block aspect-[16/9] w-full overflow-hidden rounded-[32px] shadow-[0_8px_16px_rgba(0,0,0,0.1)]">
+            <span className="relative block aspect-[16/9] w-full overflow-hidden shadow-[0_10px_20px_rgba(0,0,0,0.1)]">
               <Image
                 src={selectedImageData}
                 alt="Selected trade context"
@@ -1280,7 +1280,7 @@ function NewTradePageContent() {
               handleSelectedLibraryNoteChange(event.target.value);
             }}
             placeholder="Scrivi le tue note"
-            className="min-h-[120px] w-full resize-none rounded-3xl border border-white/70 bg-[#eef2ff] px-5 py-4 text-sm font-medium text-fg shadow-[0_22px_60px_-45px_rgba(15,23,42,0.55)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            className="min-h-[120px] w-full resize-none border border-white/70 bg-[#eef2ff] px-5 py-4 text-sm font-medium text-fg shadow-[0_22px_60px_-45px_rgba(15,23,42,0.55)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
           />
         </div>
       </div>
