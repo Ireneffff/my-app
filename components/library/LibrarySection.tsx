@@ -69,7 +69,7 @@ export function LibrarySection({
             {subtitle ? <p className="text-sm text-muted-fg">{subtitle}</p> : null}
           </header>
 
-          <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(72px,0.8fr)_minmax(220px,1.6fr)] lg:items-start xl:gap-8">
+          <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,6.5fr)_minmax(64px,0.72fr)_minmax(220px,1.4fr)] lg:items-start xl:gap-6">
             <div className="w-full">{preview}</div>
 
             <div className="flex w-full justify-center lg:h-full">
@@ -114,19 +114,15 @@ function LibraryNavigationControls({
   disabled,
 }: LibraryNavigationControlsProps) {
   return (
-    <div className="relative flex w-full max-w-[140px] justify-center py-4 lg:h-full lg:py-0">
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute top-0 bottom-0 left-1/2 w-px -translate-x-1/2 bg-muted/40"
-      />
+    <div className="relative flex w-full max-w-[120px] justify-center py-2 lg:h-full lg:py-0">
       <div className="pointer-events-auto relative z-10 flex h-full flex-col items-center justify-center">
-        <div className="flex w-full flex-col items-center divide-y divide-muted/20 rounded-full bg-white px-1 py-2 shadow-md">
+        <div className="flex w-full flex-col items-center gap-3 rounded-full bg-white px-1.5 py-2.5 shadow-md">
           <button
             type="button"
             onClick={onSelectPrevious}
             disabled={disabled}
             aria-label="Mostra card precedente"
-            className="flex h-10 w-10 items-center justify-center text-muted-fg transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40 sm:h-11 sm:w-11"
+            className="flex h-10 w-10 items-center justify-center text-[#666666] transition hover:text-[#333333] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40 sm:h-11 sm:w-11"
           >
             <ArrowIcon direction="up" />
           </button>
@@ -135,7 +131,7 @@ function LibraryNavigationControls({
             onClick={onSelectNext}
             disabled={disabled}
             aria-label="Mostra card successiva"
-            className="flex h-10 w-10 items-center justify-center text-muted-fg transition hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40 sm:h-11 sm:w-11"
+            className="flex h-10 w-10 items-center justify-center text-[#666666] transition hover:text-[#333333] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40 sm:h-11 sm:w-11"
           >
             <ArrowIcon direction="down" />
           </button>
