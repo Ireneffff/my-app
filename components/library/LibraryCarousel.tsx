@@ -55,20 +55,20 @@ export function LibraryCarousel({
   return (
     <div
       ref={containerRef}
-      className="flex h-full flex-col gap-3 overflow-hidden"
+      className="flex h-full flex-col gap-3"
     >
-      <div className="flex h-full flex-col gap-3 overflow-y-auto pb-3 pr-1 pt-1 scroll-smooth snap-y snap-mandatory">
+      <div className="flex h-full flex-col gap-3 overflow-y-auto scroll-smooth snap-y snap-mandatory">
         {hasItems ? (
           items.map((item) => {
             const isActive = item.id === activeItemId;
             const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
             const combinedClassName = itemClassName
-              ? `${itemClassName} w-full`
-              : "w-full";
+              ? `${itemClassName} w-full max-w-[calc(100%-1rem)]`
+              : "w-full max-w-[calc(100%-1rem)]";
             const shouldDim = hasItems && !isActive;
 
             return (
-              <div key={item.id} className="relative snap-start">
+              <div key={item.id} className="relative flex snap-start justify-center">
                 {onRemoveItem ? (
                   <button
                     type="button"
@@ -89,7 +89,7 @@ export function LibraryCarousel({
                   isActive={isActive}
                   isDimmed={shouldDim}
                   data-library-carousel-item={item.id}
-                  className={combinedClassName}
+                  className={`${combinedClassName} mx-auto`}
                   onClick={(event) => {
                     onSelectItem?.(item.id);
                     itemOnClick?.(event);
@@ -99,7 +99,7 @@ export function LibraryCarousel({
             );
           })
         ) : (
-          <div className="flex h-[180px] w-full snap-start items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
+          <div className="mx-auto flex h-[180px] w-full max-w-[calc(100%-1rem)] snap-start items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
             Nessuna card
           </div>
         )}
@@ -112,7 +112,7 @@ export function LibraryCarousel({
             isActive={false}
             isDimmed={false}
             data-library-carousel-item="add"
-            className="w-full snap-start"
+            className="w-full max-w-[calc(100%-1rem)] snap-start mx-auto"
             onClick={() => {
               onAddItem?.();
             }}

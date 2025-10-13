@@ -151,7 +151,7 @@ export function LibrarySection({
             {subtitle ? <p className="text-sm text-muted-fg">{subtitle}</p> : null}
           </header>
 
-          <div className="grid w-full gap-3.5 lg:grid-cols-[minmax(0,7.25fr)_minmax(56px,0.68fr)_minmax(210px,1.32fr)] lg:items-start xl:gap-5">
+          <div className="grid w-full gap-3.5 lg:grid-cols-[minmax(0,7.1fr)_minmax(56px,0.7fr)_minmax(232px,1.36fr)] lg:items-start xl:gap-5">
             <div ref={previewWrapperRef} className="w-full">{preview}</div>
 
             <div className="flex w-full justify-center lg:h-full">
@@ -163,7 +163,7 @@ export function LibrarySection({
             </div>
 
             <div
-              className="w-full min-w-0 lg:max-w-[300px]"
+              className="w-full min-w-0 lg:max-w-[328px]"
               style={carouselHeightStyle}
             >
               <LibraryCarousel
