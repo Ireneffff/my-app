@@ -62,7 +62,7 @@ export function LibrarySection({
 
   return (
     <div className="flex flex-col gap-12">
-      <div className="w-full rounded-[40px] border border-white/60 bg-[#fafbfe] px-6 py-12 text-center shadow-[0_36px_120px_-70px_rgba(15,23,42,0.35)] backdrop-blur">
+      <div className="w-full rounded-[40px] border border-[#E6E6E6] bg-white px-6 py-12 text-center shadow-[0_32px_80px_-60px_rgba(15,23,42,0.25)]">
         <div className="flex w-full flex-col items-center gap-10 lg:items-stretch">
           <header className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-fg">{title}</p>
