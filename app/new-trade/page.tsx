@@ -1212,7 +1212,7 @@ function NewTradePageContent() {
       <div
         data-library-preview-stack
         className="flex w-full flex-col"
-        style={{ gap: "1cm" }}
+        style={{ gap: "0.5cm" }}
       >
         <div
           ref={previewContainerRef}

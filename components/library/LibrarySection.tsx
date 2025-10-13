@@ -124,11 +124,16 @@ export function LibrarySection({
     };
   }, [actions.length, selectedActionId]);
 
+  const carouselPadding = 8;
+
   const carouselHeightStyle = previewHeight
     ? {
         height: `${previewHeight}px`,
         maxHeight: `${previewHeight}px`,
         minHeight: `${previewHeight}px`,
+        paddingTop: `${carouselPadding}px`,
+        paddingBottom: `${carouselPadding}px`,
+        marginTop: `-${carouselPadding}px`,
       }
     : undefined;
 
@@ -205,7 +210,7 @@ function LibraryNavigationControls({
   return (
     <div className="flex justify-center lg:h-full">
       <div className="flex h-full items-center justify-center">
-        <div className="pointer-events-auto flex flex-col items-center gap-2 rounded-2xl border border-[#E6E6E6] bg-white px-2 py-3 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.25)]">
+        <div className="pointer-events-auto flex flex-col items-center gap-2 rounded-full border border-[#E6E6E6] bg-white px-2 py-3 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.25)]">
           <button
             type="button"
             onClick={onSelectPrevious}
