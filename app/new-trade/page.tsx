@@ -1183,7 +1183,7 @@ function NewTradePageContent() {
               />
             </div>
           ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-md bg-[#F4F4F4] text-muted-fg">
+            <div className="flex h-full w-full flex-col items-center justify-center rounded-md bg-[#F4F4F4] text-muted-fg">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 48 48"
@@ -1199,7 +1199,6 @@ function NewTradePageContent() {
                 <path d="m14 16 10-10 10 10" />
                 <path d="M10 30v6a6 6 0 0 0 6 6h16a6 6 0 0 0 6-6v-6" />
               </svg>
-              <span className="text-[11px] font-semibold uppercase tracking-[0.28em]">Carica</span>
             </div>
           ),
         } satisfies LibraryCarouselItem;
@@ -1239,7 +1238,7 @@ function NewTradePageContent() {
           >
             <span
               data-library-preview-image
-              className="relative block aspect-[3/2] w-full overflow-hidden rounded-[4px] border-2 border-black shadow-[0_10px_25px_rgba(0,0,0,0.15),_0_-5px_15px_rgba(0,0,0,0.1)]"
+              className="relative block aspect-[3/2] w-full overflow-hidden rounded-[4px] border-2 border-[#555555]"
             >
               {selectedImageData ? (
                 <Image
@@ -1253,9 +1252,6 @@ function NewTradePageContent() {
               ) : (
                 <span className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
                   <UploadIcon />
-                  <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">
-                    CARICA
-                  </span>
                   <span className="text-xs text-muted-fg/80">
                     Aggiungi uno screenshot o un chart di contesto.
                   </span>
