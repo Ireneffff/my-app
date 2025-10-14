@@ -1183,7 +1183,7 @@ function NewTradePageContent() {
               />
             </div>
           ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-md bg-[#E9E9E9] text-muted-fg">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-md bg-[#F4F4F4] text-muted-fg">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 48 48"
@@ -1274,7 +1274,7 @@ function NewTradePageContent() {
             }}
             placeholder="Scrivi le tue note"
             aria-label="Note"
-            className="min-h-[120px] w-full resize-none rounded-none border border-white/70 bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg shadow-[0_22px_60px_-45px_rgba(15,23,42,0.55)] transition focus-visible:outline-none"
+            className="min-h-[120px] w-full resize-none rounded-none border border-[#D9D9D9] bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg transition focus-visible:outline-none"
           />
         </div>
       </div>
