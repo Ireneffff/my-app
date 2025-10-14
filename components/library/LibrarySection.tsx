@@ -59,13 +59,13 @@ export function LibrarySection({
       return;
     }
 
-    const findPreviewStack = () =>
-      wrapper.querySelector<HTMLElement>("[data-library-preview-stack]");
+    const findPreviewImage = () =>
+      wrapper.querySelector<HTMLElement>("[data-library-preview-image]");
 
-    let currentTarget = findPreviewStack();
+    let currentTarget = findPreviewImage();
 
     const updateHeight = () => {
-      const target = currentTarget ?? findPreviewStack();
+      const target = currentTarget ?? findPreviewImage();
       if (!target) {
         setPreviewHeight(null);
         return;
@@ -91,7 +91,7 @@ export function LibrarySection({
     }
 
     const mutationObserver = new MutationObserver(() => {
-      const nextTarget = findPreviewStack();
+      const nextTarget = findPreviewImage();
       if (nextTarget && nextTarget !== currentTarget) {
         if (resizeObserver && currentTarget) {
           resizeObserver.unobserve(currentTarget);
@@ -124,18 +124,11 @@ export function LibrarySection({
     };
   }, [actions.length, selectedActionId]);
 
-  const carouselInsetTop = 16;
-  const carouselInsetBottom = 10;
-
   const carouselHeightStyle = previewHeight
     ? {
-        height: `${previewHeight + carouselInsetTop + carouselInsetBottom}px`,
-        maxHeight: `${previewHeight + carouselInsetTop + carouselInsetBottom}px`,
-        minHeight: `${previewHeight + carouselInsetTop + carouselInsetBottom}px`,
-        paddingTop: `${carouselInsetTop}px`,
-        paddingBottom: `${carouselInsetBottom}px`,
-        marginTop: `-${carouselInsetTop}px`,
-        marginBottom: `-${carouselInsetBottom}px`,
+        height: `${previewHeight}px`,
+        maxHeight: `${previewHeight}px`,
+        minHeight: `${previewHeight}px`,
       }
     : undefined;
 
@@ -178,7 +171,7 @@ export function LibrarySection({
               style={{ marginTop: "0.5cm" }}
             >
               <div
-                className="w-full min-w-0 lg:h-full lg:max-w-[344px]"
+                className="box-border w-full min-w-0 lg:h-full lg:max-w-[344px]"
                 style={carouselHeightStyle}
               >
                 <LibraryCarousel
