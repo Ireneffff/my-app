@@ -1260,19 +1260,6 @@ function NewTradePageContent() {
             </span>
           </button>
         </div>
-
-        <div className="w-full lg:max-w-[960px]">
-          <textarea
-            id="library-note-editor"
-            value={selectedLibraryNote}
-            onChange={(event) => {
-              handleSelectedLibraryNoteChange(event.target.value);
-            }}
-            placeholder="Scrivi le tue note"
-            aria-label="Note"
-            className="min-h-[120px] w-full resize-none rounded-none border border-[#D9D9D9] bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg transition focus-visible:outline-none"
-          />
-        </div>
       </div>
 
       <input
@@ -1286,6 +1273,19 @@ function NewTradePageContent() {
     </>
   );
   const libraryPreview = primaryPreviewContent;
+
+  const libraryNotesField = (
+    <textarea
+      id="library-note-editor"
+      value={selectedLibraryNote}
+      onChange={(event) => {
+        handleSelectedLibraryNoteChange(event.target.value);
+      }}
+      placeholder="Scrivi le tue note"
+      aria-label="Note"
+      className="min-h-[120px] w-full resize-none rounded-none border border-[#D9D9D9] bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg transition focus-visible:outline-none"
+    />
+  );
 
   const tabContent =
     activeTab === "main"
@@ -1687,6 +1687,7 @@ function NewTradePageContent() {
       : (
           <LibrarySection
             preview={libraryPreview}
+            notes={libraryNotesField}
             actions={libraryCards}
             selectedActionId={selectedLibraryItemId}
             onSelectAction={setSelectedLibraryItemId}

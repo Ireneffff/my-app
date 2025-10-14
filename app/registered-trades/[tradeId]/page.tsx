@@ -573,60 +573,58 @@ export default function RegisteredTradePage() {
   );
 
   const primaryPreviewContent = (
-    <>
-      <div
-        ref={previewContainerRef}
-        className="w-full"
-        onWheel={handlePreviewWheel}
-        onTouchStart={handlePreviewTouchStart}
-        onTouchMove={handlePreviewTouchMove}
-        onTouchEnd={handlePreviewTouchEnd}
-        onTouchCancel={handlePreviewTouchCancel}
-      >
-        {selectedImageData ? (
-          <span className="relative block aspect-[16/9] w-full">
-            <Image
-              src={selectedImageData}
-              alt="Trade context attachment"
-              fill
-              className="h-full w-full object-contain"
-              sizes="100vw"
-              unoptimized
-              priority
-            />
-          </span>
-        ) : (
-          <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-4 rounded-[28px] bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
-            <EmptyLibraryIcon />
-            <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Nessuna anteprima</span>
-            <span className="max-w-[28ch] text-center text-xs text-muted-fg/80">
-              Aggiungi immagini alle prossime operazioni per costruire un archivio visivo coerente.
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-6 w-full">
-        <div className="flex flex-col gap-2">
-          <label
-            htmlFor="library-note-viewer"
-            className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg"
-          >
-            Note
-          </label>
-          <textarea
-            id="library-note-viewer"
-            value={selectedLibraryNote}
-            readOnly
-            aria-readonly="true"
-            placeholder="Note salvate"
-            className="min-h-[120px] w-full resize-none rounded-none border border-[#D9D9D9] bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg opacity-80 focus-visible:outline-none"
+    <div
+      ref={previewContainerRef}
+      className="w-full"
+      onWheel={handlePreviewWheel}
+      onTouchStart={handlePreviewTouchStart}
+      onTouchMove={handlePreviewTouchMove}
+      onTouchEnd={handlePreviewTouchEnd}
+      onTouchCancel={handlePreviewTouchCancel}
+    >
+      {selectedImageData ? (
+        <span className="relative block aspect-[16/9] w-full">
+          <Image
+            src={selectedImageData}
+            alt="Trade context attachment"
+            fill
+            className="h-full w-full object-contain"
+            sizes="100vw"
+            unoptimized
+            priority
           />
+        </span>
+      ) : (
+        <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-4 rounded-[28px] bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
+          <EmptyLibraryIcon />
+          <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Nessuna anteprima</span>
+          <span className="max-w-[28ch] text-center text-xs text-muted-fg/80">
+            Aggiungi immagini alle prossime operazioni per costruire un archivio visivo coerente.
+          </span>
         </div>
-      </div>
-    </>
+      )}
+    </div>
   );
   const libraryPreview = primaryPreviewContent;
+
+  const libraryNotesField = (
+    <div className="flex flex-col gap-2">
+      <label
+        htmlFor="library-note-viewer"
+        className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg"
+      >
+        Note
+      </label>
+      <textarea
+        id="library-note-viewer"
+        value={selectedLibraryNote}
+        readOnly
+        aria-readonly="true"
+        placeholder="Note salvate"
+        className="min-h-[120px] w-full resize-none rounded-none border border-[#D9D9D9] bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg opacity-80 focus-visible:outline-none"
+      />
+    </div>
+  );
 
   if (state.status === "loading") {
     return (
@@ -951,6 +949,7 @@ export default function RegisteredTradePage() {
           ) : (
             <LibrarySection
               preview={libraryPreview}
+              notes={libraryNotesField}
               actions={libraryCards}
               selectedActionId={selectedLibraryItemId}
               onSelectAction={setSelectedLibraryItemId}

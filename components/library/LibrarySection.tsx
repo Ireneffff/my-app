@@ -17,6 +17,7 @@ interface LibrarySectionProps {
   onRemoveAction?: (actionId: string) => void;
   footer?: ReactNode;
   errorMessage?: string | null;
+  notes?: ReactNode;
 }
 
 export function LibrarySection({
@@ -30,6 +31,7 @@ export function LibrarySection({
   onRemoveAction,
   footer,
   errorMessage,
+  notes,
 }: LibrarySectionProps) {
   const previewWrapperRef = useRef<HTMLDivElement | null>(null);
   const [previewHeight, setPreviewHeight] = useState<number | null>(null);
@@ -135,8 +137,10 @@ export function LibrarySection({
             </header>
           ) : null}
 
-          <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,7.1fr)_minmax(0,2.2fr)] lg:items-start xl:gap-6">
-            <div ref={previewWrapperRef} className="w-full">{preview}</div>
+          <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,7.1fr)_minmax(0,2.2fr)] lg:grid-rows-[minmax(0,1fr)_auto] lg:items-start xl:gap-6">
+            <div ref={previewWrapperRef} className="w-full lg:row-span-2">
+              {preview}
+            </div>
 
             <div className="flex w-full flex-col items-stretch gap-4 lg:h-full lg:items-start">
               <div
@@ -151,6 +155,10 @@ export function LibrarySection({
                   onRemoveItem={onRemoveAction}
                 />
               </div>
+
+              {notes ? (
+                <div className="w-full lg:max-w-[344px] lg:self-end">{notes}</div>
+              ) : null}
             </div>
           </div>
 
