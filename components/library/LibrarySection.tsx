@@ -143,21 +143,21 @@ export function LibrarySection({
             </div>
 
             <div
-              className="box-border w-full min-w-0 lg:h-full lg:max-w-[344px]"
+              className="box-border flex w-full min-w-0 flex-col lg:row-span-2 lg:h-full lg:max-w-[344px]"
               style={carouselHeightStyle}
             >
-              <LibraryCarousel
-                items={actions}
-                selectedId={selectedActionId}
-                onSelectItem={onSelectAction}
-                onAddItem={onAddAction}
-                onRemoveItem={onRemoveAction}
-              />
-            </div>
+              <div className="flex-1 min-h-0">
+                <LibraryCarousel
+                  items={actions}
+                  selectedId={selectedActionId}
+                  onSelectItem={onSelectAction}
+                  onAddItem={onAddAction}
+                  onRemoveItem={onRemoveAction}
+                />
+              </div>
 
-            {notes ? (
-              <div className="w-full lg:max-w-[344px] lg:justify-self-end">{notes}</div>
-            ) : null}
+              {notes ? <div className="mt-4 w-full">{notes}</div> : null}
+            </div>
           </div>
 
           {footer ? <div className="w-full text-left text-xs text-muted-fg">{footer}</div> : null}
