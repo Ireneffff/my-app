@@ -55,9 +55,9 @@ export function LibraryCarousel({
   return (
     <div
       ref={containerRef}
-      className="flex h-full flex-col gap-3"
+      className="flex h-full flex-col"
     >
-      <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto scroll-smooth snap-y snap-mandatory py-3 scroll-pt-3 scroll-pb-3">
+      <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto scroll-smooth snap-y snap-mandatory">
         {hasItems ? (
           items.map((item) => {
             const isActive = item.id === activeItemId;

@@ -1238,7 +1238,7 @@ function NewTradePageContent() {
           >
             <span
               data-library-preview-image
-              className="relative block aspect-[3/2] w-full overflow-hidden rounded-[4px] border-2 border-[#555555]"
+              className="relative block aspect-[3/2] w-full overflow-hidden rounded-[4px] border-2 border-[#B7B7B7]"
             >
               {selectedImageData ? (
                 <Image
