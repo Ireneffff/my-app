@@ -1183,7 +1183,7 @@ function NewTradePageContent() {
               />
             </div>
           ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-md bg-gradient-to-br from-neutral-100 via-white to-neutral-200 text-muted-fg">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-md bg-[#D9D9D9] text-muted-fg">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 48 48"

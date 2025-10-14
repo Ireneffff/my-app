@@ -114,14 +114,14 @@ export function LibraryCarousel({
             data-library-carousel-item="add"
             className="mx-auto w-full max-w-[calc(100%-1rem)] snap-start"
             hideLabel
-            visualWrapperClassName="h-24 w-full rounded-md bg-white overflow-visible"
+            visualWrapperClassName="h-24 w-full overflow-visible bg-transparent"
             onClick={() => {
               onAddItem?.();
             }}
             visual={
               <span className="flex h-full w-full items-center justify-center">
-                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_22px_48px_-34px_rgba(15,23,42,0.45)]">
-                  <PlusIcon className="h-6 w-6 text-accent" />
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_22px_48px_-34px_rgba(15,23,42,0.45)]">
+                  <PlusIcon className="h-5 w-5 text-accent" />
                 </span>
               </span>
             }

@@ -552,7 +552,7 @@ export default function RegisteredTradePage() {
               />
             </div>
           ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-neutral-100 via-white to-neutral-200 text-muted-fg">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl bg-[#D9D9D9] text-muted-fg">
               <EmptyLibraryIcon />
               <span className="text-[11px] font-semibold uppercase tracking-[0.28em]">Vuoto</span>
             </div>
