@@ -1274,7 +1274,7 @@ function NewTradePageContent() {
             }}
             placeholder="Scrivi le tue note"
             aria-label="Note"
-            className="min-h-[120px] w-full resize-none rounded-none border border-white/70 bg-[#eef2ff] px-5 py-4 text-sm font-medium text-fg shadow-[0_22px_60px_-45px_rgba(15,23,42,0.55)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            className="min-h-[120px] w-full resize-none rounded-none border border-white/70 bg-[#fff7d1] px-5 py-4 text-sm font-medium text-fg shadow-[0_22px_60px_-45px_rgba(15,23,42,0.55)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
           />
         </div>
       </div>
@@ -1290,6 +1290,415 @@ function NewTradePageContent() {
     </>
   );
   const libraryPreview = primaryPreviewContent;
+
+  const tabContent =
+    activeTab === "main"
+      ? (
+          <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
+            <div className="flex w-full flex-col gap-8">
+              <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6">
+                <div className="mx-auto flex w-full max-w-xl items-center gap-3">
+                  <div
+                    className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1"
+                    onWheel={handleWeekWheel}
+                    onPointerDown={handleWeekPointerDown}
+                    onPointerUp={handleWeekPointerUp}
+                    onPointerCancel={handleWeekPointerCancel}
+                    onPointerLeave={handleWeekPointerCancel}
+                  >
+                    <div className="flex w-full items-center justify-center gap-2">
+                      {visibleWeekDays.map((date) => renderWeekDayPill(date))}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className={`flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg ${
+                      isCalendarOpen ? "bg-subtle text-fg" : ""
+                    }`}
+                    onClick={openCalendar}
+                    aria-haspopup="dialog"
+                    aria-expanded={isCalendarOpen}
+                    aria-label="Open calendar"
+                    title="Open calendar"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-6 w-6"
+                    >
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                      <circle cx="12" cy="16" r="1.5" />
+                    </svg>
+                  </button>
+                </div>
+
+                <p className="mt-4 text-center text-sm text-muted-fg md:mt-5 md:text-base">
+                  Day of the week: <span className="font-semibold text-fg">{dayOfWeekLabel}</span>
+                </p>
+              </div>
+
+              <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
+                <div className="flex flex-col gap-6">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex flex-col gap-3">
+                      <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsSymbolListOpen((prev) => !prev)}
+                        className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left transition focus:outline-none focus:ring-2 focus:ring-accent/40"
+                        aria-haspopup="listbox"
+                        aria-expanded={isSymbolListOpen}
+                      >
+                        <span className="text-2xl" aria-hidden="true">
+                          {selectedSymbol.flag}
+                        </span>
+                        <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                          {selectedSymbol.code}
+                        </span>
+                      </button>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="ml-auto rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-muted-fg hover:text-fg"
+                      onClick={() => setIsSymbolListOpen((prev) => !prev)}
+                      aria-haspopup="listbox"
+                      aria-expanded={isSymbolListOpen}
+                    >
+                      {isSymbolListOpen ? "Hide symbols" : "Show symbols"}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className={`h-4 w-4 transition-transform ${isSymbolListOpen ? "rotate-180" : ""}`}
+                        aria-hidden="true"
+                      >
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </Button>
+                  </div>
+
+                  <div
+                    className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                      isSymbolListOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <div
+                        className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-2"
+                        role="listbox"
+                        aria-activedescendant={`symbol-${selectedSymbol.code}`}
+                      >
+                        {availableSymbols.map((symbol) => {
+                          const isActive = symbol.code === selectedSymbol.code;
+
+                          return (
+                            <button
+                              key={symbol.code}
+                              id={`symbol-${symbol.code}`}
+                              type="button"
+                              className={`flex w-full items-center gap-4 rounded-2xl px-4 py-3 text-sm font-medium transition md:text-base ${
+                                isActive
+                                  ? "text-accent"
+                                  : "text-muted-fg hover:bg-subtle hover:text-fg"
+                              }`}
+                              style={
+                                isActive
+                                  ? {
+                                      backgroundColor: "rgb(var(--accent) / 0.1)",
+                                    }
+                                  : undefined
+                              }
+                              onClick={() => handleSelectSymbol(symbol)}
+                              aria-selected={isActive}
+                              role="option"
+                            >
+                              <span className="text-2xl" aria-hidden="true">
+                                {symbol.flag}
+                              </span>
+                              <span className="tracking-[0.18em]">{symbol.code}</span>
+                              {isActive ? (
+                                <span
+                                  className="ml-auto text-xs font-medium uppercase tracking-[0.24em]"
+                                  style={{ color: "rgb(var(--accent) / 0.8)" }}
+                                >
+                                  Selected
+                                </span>
+                              ) : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="flex flex-col gap-3">
+                      <label
+                        htmlFor="open-time-input"
+                        className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          toggleOpenTimePicker();
+                        }}
+                      >
+                        Open Time
+                      </label>
+                      <div
+                        className="relative"
+                        onPointerDown={(event) => {
+                          const input = openTimeInputRef.current;
+                          if (!input) {
+                            return;
+                          }
+
+                          const clickedInsideInput =
+                            event.target instanceof Node && input.contains(event.target);
+
+                          const wasActive = document.activeElement === input;
+
+                          if (wasActive || !clickedInsideInput) {
+                            event.preventDefault();
+                          }
+
+                          toggleOpenTimePicker();
+                        }}
+                      >
+                        <input
+                          id="open-time-input"
+                          ref={openTimeInputRef}
+                          type="datetime-local"
+                          className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40"
+                          value={openTime ? formatDateTimeLocal(openTime) : ""}
+                          onChange={(event) => {
+                            const { value } = event.target;
+                            if (!value) {
+                              setOpenTime(null);
+                              return;
+                            }
+
+                            const parsed = new Date(value);
+                            if (Number.isNaN(parsed.getTime())) {
+                              return;
+                            }
+
+                            setOpenTime(parsed);
+                          }}
+                          aria-label="Select open date and time"
+                        />
+                        <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left">
+                          <div className="flex items-center gap-2">
+                            <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
+                              {openTimeDisplay.dateLabel}
+                            </span>
+                            <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
+                              {openTimeDisplay.timeLabel}
+                            </span>
+                          </div>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="ml-auto h-6 w-6 text-muted-fg"
+                            aria-hidden="true"
+                          >
+                            <circle cx="12" cy="12" r="9" />
+                            <polyline points="12 7 12 12 15 15" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      <label
+                        htmlFor="close-time-input"
+                        className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          toggleCloseTimePicker();
+                        }}
+                      >
+                        Close Time
+                      </label>
+                      <div
+                        className="relative"
+                        onPointerDown={(event) => {
+                          const input = closeTimeInputRef.current;
+                          if (!input) {
+                            return;
+                          }
+
+                          const clickedInsideInput =
+                            event.target instanceof Node && input.contains(event.target);
+
+                          const wasActive = document.activeElement === input;
+
+                          if (wasActive || !clickedInsideInput) {
+                            event.preventDefault();
+                          }
+
+                          toggleCloseTimePicker();
+                        }}
+                      >
+                        <input
+                          id="close-time-input"
+                          ref={closeTimeInputRef}
+                          type="datetime-local"
+                          className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40"
+                          value={closeTime ? formatDateTimeLocal(closeTime) : ""}
+                          onChange={(event) => {
+                            const { value } = event.target;
+                            if (!value) {
+                              setCloseTime(null);
+                              return;
+                            }
+
+                            const parsed = new Date(value);
+                            if (Number.isNaN(parsed.getTime())) {
+                              return;
+                            }
+
+                            setCloseTime(parsed);
+                          }}
+                          aria-label="Select close date and time"
+                        />
+                        <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left">
+                          <div className="flex items-center gap-2">
+                            <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
+                              {closeTimeDisplay.dateLabel}
+                            </span>
+                            <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
+                              {closeTimeDisplay.timeLabel}
+                            </span>
+                          </div>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="ml-auto h-6 w-6 text-muted-fg"
+                            aria-hidden="true"
+                          >
+                            <circle cx="12" cy="12" r="9" />
+                            <polyline points="12 7 12 12 15 15" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex flex-col gap-3">
+                    <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Conditions</span>
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="position-select"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Position
+                        </label>
+                        <select
+                          id="position-select"
+                          value={position}
+                          onChange={(event) =>
+                            setPosition(event.target.value === "SHORT" ? "SHORT" : "LONG")
+                          }
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        >
+                          <option value="LONG">Long</option>
+                          <option value="SHORT">Short</option>
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="risk-reward-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          R/R
+                        </label>
+                        <input
+                          id="risk-reward-input"
+                          type="text"
+                          value={riskReward}
+                          onChange={(event) => setRiskReward(event.target.value)}
+                          placeholder="1:4"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="risk-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Risk
+                        </label>
+                        <input
+                          id="risk-input"
+                          type="text"
+                          value={risk}
+                          onChange={(event) => setRisk(event.target.value)}
+                          placeholder="2%"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="pips-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Nr. Pips
+                        </label>
+                        <input
+                          id="pips-input"
+                          type="text"
+                          value={pips}
+                          onChange={(event) => setPips(event.target.value)}
+                          placeholder="55"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      : (
+          <LibrarySection
+            preview={libraryPreview}
+            actions={libraryCards}
+            selectedActionId={selectedLibraryItemId}
+            onSelectAction={setSelectedLibraryItemId}
+            onAddAction={handleAddLibraryItem}
+            onRemoveAction={handleRemoveLibraryItem}
+            errorMessage={imageError}
+          />
+        );
 
   return (
     <section
@@ -1359,450 +1768,45 @@ function NewTradePageContent() {
         </Button>
       </div>
 
-      <div
-        className={`flex w-full flex-1 flex-col gap-12 ${
-          activeTab === "library" ? "" : "mx-auto max-w-3xl sm:max-w-4xl"
-        }`}
-      >
-        <header className="space-y-2">
-          <p className="text-sm text-muted-fg">Trading Journal</p>
-          <h1 className="text-4xl font-semibold tracking-tight text-fg md:text-5xl">
-            Register a trade
-          </h1>
-        </header>
+      <div className="flex w-full flex-1 flex-col gap-12">
+        <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
+          <div className="flex w-full flex-col gap-8">
+            <header className="space-y-2">
+              <p className="text-sm text-muted-fg">Trading Journal</p>
+              <h1 className="text-4xl font-semibold tracking-tight text-fg md:text-5xl">
+                Register a trade
+              </h1>
+            </header>
 
-        <div className="flex w-full flex-col gap-8">
-          <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-1 py-2 text-sm text-muted-fg">
-            {[
-              { label: "Main Data", value: "main" as const },
-              { label: "Library", value: "library" as const },
-            ].map(({ label, value }) => {
-              const isActive = activeTab === value;
+            <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-1 py-2 text-sm text-muted-fg">
+              {[
+                { label: "Main Data", value: "main" as const },
+                { label: "Library", value: "library" as const },
+              ].map(({ label, value }) => {
+                const isActive = activeTab === value;
 
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  className={`rounded-full border px-4 py-2 transition ${
-                    isActive
-                      ? "border-border bg-surface text-fg"
-                      : "border-transparent text-muted-fg hover:border-border hover:text-fg"
-                  }`}
-                  aria-pressed={isActive}
-                  onClick={() => setActiveTab(value)}
-                  disabled={isActive}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </nav>
-
-          {activeTab === "main" ? (
-            <>
-          <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6">
-            <div className="mx-auto flex w-full max-w-xl items-center gap-3">
-              <div
-                className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1"
-                onWheel={handleWeekWheel}
-                onPointerDown={handleWeekPointerDown}
-                onPointerUp={handleWeekPointerUp}
-                onPointerCancel={handleWeekPointerCancel}
-                onPointerLeave={handleWeekPointerCancel}
-              >
-                <div className="flex w-full items-center justify-center gap-2">
-                  {visibleWeekDays.map((date) => renderWeekDayPill(date))}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className={`flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg ${
-                  isCalendarOpen ? "bg-subtle text-fg" : ""
-                }`}
-                onClick={openCalendar}
-                aria-haspopup="dialog"
-                aria-expanded={isCalendarOpen}
-                aria-label="Open calendar"
-                title="Open calendar"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-6 w-6"
-                >
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                  <circle cx="12" cy="16" r="1.5" />
-                </svg>
-              </button>
-            </div>
-
-            <p className="mt-4 text-center text-sm text-muted-fg md:mt-5 md:text-base">
-              Day of the week: <span className="font-semibold text-fg">{dayOfWeekLabel}</span>
-            </p>
-          </div>
-
-          <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="flex flex-col gap-3">
-                  <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
+                return (
                   <button
+                    key={value}
                     type="button"
-                    onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                    className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left transition focus:outline-none focus:ring-2 focus:ring-accent/40"
-                    aria-haspopup="listbox"
-                    aria-expanded={isSymbolListOpen}
+                    className={`rounded-full border px-4 py-2 transition ${
+                      isActive
+                        ? "border-border bg-surface text-fg"
+                        : "border-transparent text-muted-fg hover:border-border hover:text-fg"
+                    }`}
+                    aria-pressed={isActive}
+                    onClick={() => setActiveTab(value)}
+                    disabled={isActive}
                   >
-                    <span className="text-2xl" aria-hidden="true">
-                      {selectedSymbol.flag}
-                    </span>
-                    <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
-                      {selectedSymbol.code}
-                    </span>
+                    {label}
                   </button>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="ml-auto rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-muted-fg hover:text-fg"
-                  onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                  aria-haspopup="listbox"
-                  aria-expanded={isSymbolListOpen}
-                >
-                  {isSymbolListOpen ? "Hide symbols" : "Show symbols"}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={`h-4 w-4 transition-transform ${isSymbolListOpen ? "rotate-180" : ""}`}
-                    aria-hidden="true"
-                  >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </Button>
-              </div>
-
-              <div
-                className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-                  isSymbolListOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                }`}
-              >
-                <div className="overflow-hidden">
-                  <div
-                    className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-2"
-                    role="listbox"
-                    aria-activedescendant={`symbol-${selectedSymbol.code}`}
-                  >
-                    {availableSymbols.map((symbol) => {
-                      const isActive = symbol.code === selectedSymbol.code;
-
-                      return (
-                        <button
-                          key={symbol.code}
-                          id={`symbol-${symbol.code}`}
-                          type="button"
-                          className={`flex w-full items-center gap-4 rounded-2xl px-4 py-3 text-sm font-medium transition md:text-base ${
-                            isActive
-                              ? "text-accent"
-                              : "text-muted-fg hover:bg-subtle hover:text-fg"
-                          }`}
-                          style={
-                            isActive
-                              ? {
-                                  backgroundColor: "rgb(var(--accent) / 0.1)",
-                                }
-                              : undefined
-                          }
-                          onClick={() => handleSelectSymbol(symbol)}
-                          aria-selected={isActive}
-                          role="option"
-                        >
-                          <span className="text-2xl" aria-hidden="true">
-                            {symbol.flag}
-                          </span>
-                          <span className="tracking-[0.18em]">{symbol.code}</span>
-                          {isActive ? (
-                            <span
-                              className="ml-auto text-xs font-medium uppercase tracking-[0.24em]"
-                              style={{ color: "rgb(var(--accent) / 0.8)" }}
-                            >
-                              Selected
-                            </span>
-                          ) : null}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="flex flex-col gap-3">
-                  <label
-                    htmlFor="open-time-input"
-                    className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      toggleOpenTimePicker();
-                    }}
-                  >
-                    Open Time
-                  </label>
-                  <div
-                    className="relative"
-                    onPointerDown={(event) => {
-                      const input = openTimeInputRef.current;
-                      if (!input) {
-                        return;
-                      }
-
-                      const clickedInsideInput =
-                        event.target instanceof Node && input.contains(event.target);
-
-                      const wasActive = document.activeElement === input;
-
-                      if (wasActive || !clickedInsideInput) {
-                        event.preventDefault();
-                      }
-
-                      toggleOpenTimePicker();
-                    }}
-                  >
-                    <input
-                      id="open-time-input"
-                      ref={openTimeInputRef}
-                      type="datetime-local"
-                      className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40"
-                      value={openTime ? formatDateTimeLocal(openTime) : ""}
-                      onChange={(event) => {
-                        const { value } = event.target;
-                        if (!value) {
-                          setOpenTime(null);
-                          return;
-                        }
-
-                        const parsed = new Date(value);
-                        if (Number.isNaN(parsed.getTime())) {
-                          return;
-                        }
-
-                        setOpenTime(parsed);
-                      }}
-                      aria-label="Select open date and time"
-                    />
-                    <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left">
-                      <div className="flex items-center gap-2">
-                        <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
-                          {openTimeDisplay.dateLabel}
-                        </span>
-                        <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
-                          {openTimeDisplay.timeLabel}
-                        </span>
-                      </div>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="ml-auto h-6 w-6 text-muted-fg"
-                        aria-hidden="true"
-                      >
-                        <circle cx="12" cy="12" r="9" />
-                        <polyline points="12 7 12 12 15 15" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <label
-                    htmlFor="close-time-input"
-                    className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      toggleCloseTimePicker();
-                    }}
-                  >
-                    Close Time
-                  </label>
-                  <div
-                    className="relative"
-                    onPointerDown={(event) => {
-                      const input = closeTimeInputRef.current;
-                      if (!input) {
-                        return;
-                      }
-
-                      const clickedInsideInput =
-                        event.target instanceof Node && input.contains(event.target);
-
-                      const wasActive = document.activeElement === input;
-
-                      if (wasActive || !clickedInsideInput) {
-                        event.preventDefault();
-                      }
-
-                      toggleCloseTimePicker();
-                    }}
-                  >
-                    <input
-                      id="close-time-input"
-                      ref={closeTimeInputRef}
-                      type="datetime-local"
-                      className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40"
-                      value={closeTime ? formatDateTimeLocal(closeTime) : ""}
-                      onChange={(event) => {
-                        const { value } = event.target;
-                        if (!value) {
-                          setCloseTime(null);
-                          return;
-                        }
-
-                        const parsed = new Date(value);
-                        if (Number.isNaN(parsed.getTime())) {
-                          return;
-                        }
-
-                        setCloseTime(parsed);
-                      }}
-                      aria-label="Select close date and time"
-                    />
-                    <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left">
-                      <div className="flex items-center gap-2">
-                        <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
-                          {closeTimeDisplay.dateLabel}
-                        </span>
-                        <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
-                          {closeTimeDisplay.timeLabel}
-                        </span>
-                      </div>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="ml-auto h-6 w-6 text-muted-fg"
-                        aria-hidden="true"
-                      >
-                        <circle cx="12" cy="12" r="9" />
-                        <polyline points="12 7 12 12 15 15" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-col gap-3">
-                <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Conditions</span>
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-2">
-                    <label
-                      htmlFor="position-select"
-                      className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                    >
-                      Position
-                    </label>
-                    <select
-                      id="position-select"
-                      value={position}
-                      onChange={(event) => setPosition(event.target.value === "SHORT" ? "SHORT" : "LONG")}
-                      className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
-                    >
-                      <option value="LONG">Long</option>
-                      <option value="SHORT">Short</option>
-                    </select>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label
-                      htmlFor="risk-reward-input"
-                      className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                    >
-                      R/R
-                    </label>
-                    <input
-                      id="risk-reward-input"
-                      type="text"
-                      value={riskReward}
-                      onChange={(event) => setRiskReward(event.target.value)}
-                      placeholder="1:4"
-                      className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label
-                      htmlFor="risk-input"
-                      className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                    >
-                      Risk
-                    </label>
-                    <input
-                      id="risk-input"
-                      type="text"
-                      value={risk}
-                      onChange={(event) => setRisk(event.target.value)}
-                      placeholder="2%"
-                      className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label
-                      htmlFor="pips-input"
-                      className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                    >
-                      Nr. Pips
-                    </label>
-                    <input
-                      id="pips-input"
-                      type="text"
-                      value={pips}
-                      onChange={(event) => setPips(event.target.value)}
-                      placeholder="55"
-                      className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+                );
+              })}
+            </nav>
           </div>
-
-            </>
-          ) : (
-            <LibrarySection
-              title="Library"
-              subtitle="Prima dell’operazione"
-              preview={libraryPreview}
-              actions={libraryCards}
-              selectedActionId={selectedLibraryItemId}
-              onSelectAction={setSelectedLibraryItemId}
-              onAddAction={handleAddLibraryItem}
-              onRemoveAction={handleRemoveLibraryItem}
-              errorMessage={imageError}
-            />
-          )}
         </div>
+
+        {tabContent}
       </div>
       {isCalendarOpen ? (
         <div

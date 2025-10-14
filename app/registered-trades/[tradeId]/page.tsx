@@ -620,7 +620,7 @@ export default function RegisteredTradePage() {
             readOnly
             aria-readonly="true"
             placeholder="Note salvate"
-            className="min-h-[120px] w-full resize-none rounded-3xl border border-white/70 bg-[#eef2ff] px-5 py-4 text-sm font-medium text-fg opacity-80 shadow-[0_22px_60px_-45px_rgba(15,23,42,0.55)] focus-visible:outline-none"
+            className="min-h-[120px] w-full resize-none rounded-3xl border border-white/70 bg-[#fff7d1] px-5 py-4 text-sm font-medium text-fg opacity-80 shadow-[0_22px_60px_-45px_rgba(15,23,42,0.55)] focus-visible:outline-none"
           />
         </div>
       </div>
@@ -950,8 +950,6 @@ export default function RegisteredTradePage() {
             </>
           ) : (
             <LibrarySection
-              title="Library"
-              subtitle="Prima dell’operazione"
               preview={libraryPreview}
               actions={libraryCards}
               selectedActionId={selectedLibraryItemId}

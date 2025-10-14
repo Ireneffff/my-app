@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LibraryCarousel, type LibraryCarouselItem } from "./LibraryCarousel";
 
 interface LibrarySectionProps {
-  title: string;
+  title?: string;
   subtitle?: string;
   preview: ReactNode;
   actions: LibraryCarouselItem[];
@@ -153,14 +153,22 @@ export function LibrarySection({
     }
   };
 
+  const titleText = title?.trim() ?? "";
+  const subtitleText = subtitle?.trim() ?? "";
+  const shouldRenderHeader = titleText.length > 0 || subtitleText.length > 0;
+
   return (
     <div className="flex flex-col gap-12">
       <div className="w-full rounded-[40px] border border-[#E6E6E6] bg-white px-6 py-12 text-center shadow-[0_32px_80px_-60px_rgba(15,23,42,0.25)]">
         <div className="flex w-full flex-col items-center gap-10 lg:items-stretch">
-          <header className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-fg">{title}</p>
-            {subtitle ? <p className="text-sm text-muted-fg">{subtitle}</p> : null}
-          </header>
+          {shouldRenderHeader ? (
+            <header className="space-y-1">
+              {titleText ? (
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-fg">{titleText}</p>
+              ) : null}
+              {subtitleText ? <p className="text-sm text-muted-fg">{subtitleText}</p> : null}
+            </header>
+          ) : null}
 
           <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,7.1fr)_minmax(0,2.2fr)] lg:items-start xl:gap-6">
             <div ref={previewWrapperRef} className="w-full">{preview}</div>
