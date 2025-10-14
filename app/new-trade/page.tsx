@@ -1183,7 +1183,7 @@ function NewTradePageContent() {
               />
             </div>
           ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-md bg-[#D9D9D9] text-muted-fg">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-md bg-[#E9E9E9] text-muted-fg">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 48 48"
@@ -1234,7 +1234,7 @@ function NewTradePageContent() {
 
               openImagePicker();
             }}
-            className="block w-full cursor-pointer border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+            className="block w-full cursor-pointer border-0 bg-transparent p-0 focus-visible:outline-none"
             aria-label="Aggiorna immagine della libreria"
           >
             <span
@@ -1274,7 +1274,7 @@ function NewTradePageContent() {
             }}
             placeholder="Scrivi le tue note"
             aria-label="Note"
-            className="min-h-[120px] w-full resize-none rounded-none border border-white/70 bg-[#fff7d1] px-5 py-4 text-sm font-medium text-fg shadow-[0_22px_60px_-45px_rgba(15,23,42,0.55)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            className="min-h-[120px] w-full resize-none rounded-none border border-white/70 bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg shadow-[0_22px_60px_-45px_rgba(15,23,42,0.55)] transition focus-visible:outline-none"
           />
         </div>
       </div>
