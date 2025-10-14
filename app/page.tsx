@@ -11,7 +11,7 @@ import {
   type StoredTrade,
 } from "@/lib/tradesStorage";
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 function getCalendarDays(activeDate: Date) {
   const year = activeDate.getFullYear();
@@ -37,7 +37,10 @@ function getCalendarDays(activeDate: Date) {
     days.push(new Date(year, month + 1, i));
   }
 
-  return days;
+  return days.filter((date) => {
+    const day = date.getDay();
+    return day !== 0 && day !== 6;
+  });
 }
 
 export default function Home() {
@@ -128,7 +131,7 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="mt-6 grid grid-cols-7 gap-2 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg opacity-80">
+          <div className="mt-6 grid grid-cols-5 gap-2 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg opacity-80">
             {WEEKDAYS.map((day) => (
               <div key={day} className="text-center">
                 {day}
@@ -136,7 +139,7 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="mt-2 grid grid-cols-7 gap-2 text-sm">
+          <div className="mt-2 grid grid-cols-5 gap-2 text-sm">
             {monthDays.map((day) => {
               const isCurrentMonth =
                 day.getMonth() === activeMonth && day.getFullYear() === activeYear;
