@@ -57,7 +57,7 @@ export function LibraryCarousel({
       ref={containerRef}
       className="flex h-full flex-col"
     >
-      <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto scroll-smooth snap-y snap-mandatory">
+      <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto scroll-smooth snap-y snap-mandatory py-3 scroll-py-6">
         {hasItems ? (
           items.map((item) => {
             const isActive = item.id === activeItemId;
@@ -114,7 +114,7 @@ export function LibraryCarousel({
             data-library-carousel-item="add"
             className="mx-auto w-full max-w-[calc(100%-1rem)] snap-start"
             hideLabel
-            visualWrapperClassName="h-24 w-full overflow-visible bg-transparent"
+            visualWrapperClassName="h-32 w-full overflow-visible bg-transparent"
             onClick={() => {
               onAddItem?.();
             }}
