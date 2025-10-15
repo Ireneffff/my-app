@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { SVGProps } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -12,6 +13,27 @@ import {
 } from "@/lib/tradesStorage";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+
+function CalendarSymbol(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <rect x={3.75} y={5.75} width={16.5} height={14.5} rx={2.25} />
+      <path d="M8 3.75v3M16 3.75v3" />
+      <path d="M3.75 10.5h16.5" />
+      <path d="M9 14h1.5M13.5 14H15" />
+      <path d="M9 17h1.5M13.5 17H15" />
+    </svg>
+  );
+}
 
 function getCalendarDays(activeDate: Date) {
   const year = activeDate.getFullYear();
@@ -106,13 +128,14 @@ export default function Home() {
       </header>
 
       <div className="mt-16 flex w-full flex-col items-center gap-12 pb-16">
-        <Card className="w-full max-w-3xl self-center p-8 sm:max-w-4xl">
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() =>
-                setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
-              }
+        <div className="relative w-full max-w-3xl self-center sm:max-w-4xl">
+          <Card className="w-full p-8">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() =>
+                  setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
+                }
               className="rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted-fg transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-subtle hover:text-fg hover:shadow-[0_12px_28px_rgba(15,23,42,0.12)]"
               aria-label="Previous month"
             >
@@ -131,40 +154,47 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="mt-6 grid grid-cols-5 gap-2 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg opacity-80">
-            {WEEKDAYS.map((day) => (
-              <div key={day} className="text-center">
-                {day}
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-2 grid grid-cols-5 gap-2 text-sm">
-            {monthDays.map((day) => {
-              const isCurrentMonth =
-                day.getMonth() === activeMonth && day.getFullYear() === activeYear;
-              const isToday = day.toDateString() === todayKey;
-
-              const baseClasses =
-                "flex h-10 items-center justify-center rounded-full transition";
-              const stateClasses = isCurrentMonth
-                ? "text-fg hover:bg-subtle"
-                : "text-muted-fg opacity-60";
-              const todayClasses = isToday
-                ? "bg-accent/10 text-accent font-semibold"
-                : "";
-
-              return (
-                <div
-                  key={day.toISOString()}
-                  className={[baseClasses, stateClasses, todayClasses].join(" ").trim()}
-                >
-                  {day.getDate()}
+            <div className="mt-6 grid grid-cols-5 place-items-center gap-2 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg opacity-80">
+              {WEEKDAYS.map((day) => (
+                <div key={day} className="text-center">
+                  {day}
                 </div>
-              );
-            })}
+              ))}
+            </div>
+
+            <div className="mt-2 grid grid-cols-5 place-items-center gap-2 text-sm">
+              {monthDays.map((day) => {
+                const isCurrentMonth =
+                  day.getMonth() === activeMonth && day.getFullYear() === activeYear;
+                const isToday = day.toDateString() === todayKey;
+
+                const baseClasses =
+                  "flex h-10 items-center justify-center rounded-full transition";
+                const stateClasses = isCurrentMonth
+                  ? "text-fg hover:bg-subtle"
+                  : "text-muted-fg opacity-60";
+                const todayClasses = isToday
+                  ? "bg-accent/10 text-accent font-semibold"
+                  : "";
+
+                return (
+                  <div
+                    key={day.toISOString()}
+                    className={[baseClasses, stateClasses, todayClasses].join(" ").trim()}
+                  >
+                    {day.getDate()}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          <div className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-border bg-surface text-muted-fg shadow-[0_12px_28px_rgba(15,23,42,0.12)]">
+              <CalendarSymbol className="h-7 w-7" />
+            </div>
           </div>
-        </Card>
+        </div>
 
         <div className="w-full max-w-3xl self-center text-left sm:max-w-4xl">
           <h2 className="text-sm font-medium uppercase tracking-[0.28em] text-muted-fg">
