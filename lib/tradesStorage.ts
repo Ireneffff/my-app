@@ -210,7 +210,11 @@ export async function loadTradeById(tradeId: string): Promise<StoredTrade | null
     return null;
   }
 
-  return sanitizeTrade((data ?? null) as SupabaseTradeRow | null) ?? null;
+  if (!data) {
+    return null;
+  }
+
+  return sanitizeTrade(data as SupabaseTradeRow);
 }
 
 export async function saveTrade(trade: StoredTrade) {
