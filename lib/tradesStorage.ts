@@ -1,3 +1,5 @@
+import { supabase } from "./supabaseClient";
+
 export type StoredLibraryItem = {
   id: string;
   imageData: string | null;
@@ -19,8 +21,42 @@ export type StoredTrade = {
   pips?: string | null;
 };
 
-const STORAGE_KEY = "registeredTrades";
+const TABLE_NAME = "registered_trades";
 const TRADES_UPDATED_EVENT = "registered-trades-changed";
+
+type SupabaseTradeRow = {
+  id: string;
+  user_id: string;
+  symbol_code: string | null;
+  symbol_flag: string | null;
+  date: string | null;
+  open_time: string | null;
+  close_time: string | null;
+  image_data: string | null;
+  library_items: unknown;
+  position: string | null;
+  risk_reward: string | null;
+  risk: string | null;
+  pips: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+type SupabaseTradeInsert = {
+  id: string;
+  user_id: string;
+  symbol_code: string;
+  symbol_flag: string;
+  date: string;
+  open_time: string | null;
+  close_time: string | null;
+  image_data: string | null;
+  library_items: StoredLibraryItem[];
+  position: "LONG" | "SHORT";
+  risk_reward: string | null;
+  risk: string | null;
+  pips: string | null;
+};
 
 function notifyTradesChanged() {
   if (typeof window === "undefined") {
@@ -30,185 +66,209 @@ function notifyTradesChanged() {
   window.dispatchEvent(new Event(TRADES_UPDATED_EVENT));
 }
 
-function parseTrades(raw: string | null): StoredTrade[] {
-  if (!raw) {
+function sanitizeLibraryItems(raw: unknown): StoredLibraryItem[] {
+  if (!Array.isArray(raw)) {
     return [];
   }
 
-  try {
-    const parsed = JSON.parse(raw);
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== "object") {
+        return null;
+      }
 
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
+      const parsedItem = item as StoredLibraryItem;
 
-    return parsed
-      .map((item) => {
-        if (
-          !item ||
-          typeof item !== "object" ||
-          typeof (item as StoredTrade).id !== "string" ||
-          typeof (item as StoredTrade).symbolCode !== "string" ||
-          typeof (item as StoredTrade).symbolFlag !== "string" ||
-          typeof (item as StoredTrade).date !== "string"
-        ) {
-          return null;
-        }
+      if (typeof parsedItem.id !== "string" || parsedItem.id.trim().length === 0) {
+        return null;
+      }
 
-        const storedItem = item as StoredTrade;
+      if (parsedItem.imageData !== null && typeof parsedItem.imageData !== "string") {
+        return null;
+      }
 
-        if (
-          storedItem.openTime !== undefined &&
-          storedItem.openTime !== null &&
-          typeof storedItem.openTime !== "string"
-        ) {
-          storedItem.openTime = null;
-        }
-
-        if (
-          storedItem.closeTime !== undefined &&
-          storedItem.closeTime !== null &&
-          typeof storedItem.closeTime !== "string"
-        ) {
-          storedItem.closeTime = null;
-        }
-
-        if (
-          storedItem.imageData !== undefined &&
-          storedItem.imageData !== null &&
-          typeof storedItem.imageData !== "string"
-        ) {
-          storedItem.imageData = null;
-        }
-
-        if (storedItem.imageData === undefined) {
-          storedItem.imageData = null;
-        }
-
-        const rawLibraryItems = (storedItem as StoredTrade).libraryItems;
-        if (Array.isArray(rawLibraryItems)) {
-          storedItem.libraryItems = rawLibraryItems
-            .map((item) => {
-              if (!item || typeof item !== "object") {
-                return null;
-              }
-
-              const parsedItem = item as StoredLibraryItem;
-
-              if (typeof parsedItem.id !== "string" || parsedItem.id.trim().length === 0) {
-                return null;
-              }
-
-              if (parsedItem.imageData !== null && typeof parsedItem.imageData !== "string") {
-                return null;
-              }
-
-              return {
-                id: parsedItem.id,
-                imageData: parsedItem.imageData ?? null,
-                notes: typeof parsedItem.notes === "string" ? parsedItem.notes : "",
-              } satisfies StoredLibraryItem;
-            })
-            .filter((item): item is StoredLibraryItem => item !== null);
-        } else {
-          storedItem.libraryItems = storedItem.imageData
-            ? [
-                {
-                  id: "library-primary",
-                  imageData: storedItem.imageData,
-                  notes: "",
-                },
-              ]
-            : [];
-        }
-
-        if (storedItem.position !== "LONG" && storedItem.position !== "SHORT") {
-          storedItem.position = "LONG";
-        }
-
-        if (
-          storedItem.riskReward !== undefined &&
-          storedItem.riskReward !== null &&
-          typeof storedItem.riskReward !== "string"
-        ) {
-          storedItem.riskReward = null;
-        }
-
-        if (storedItem.riskReward === undefined) {
-          storedItem.riskReward = null;
-        }
-
-        if (storedItem.risk !== undefined && storedItem.risk !== null && typeof storedItem.risk !== "string") {
-          storedItem.risk = null;
-        }
-
-        if (storedItem.risk === undefined) {
-          storedItem.risk = null;
-        }
-
-        if (storedItem.pips !== undefined && storedItem.pips !== null && typeof storedItem.pips !== "string") {
-          storedItem.pips = null;
-        }
-
-        if (storedItem.pips === undefined) {
-          storedItem.pips = null;
-        }
-
-        return storedItem;
-      })
-      .filter((item): item is StoredTrade => item !== null);
-  } catch (error) {
-    console.error("Failed to parse stored trades", error);
-    return [];
-  }
+      return {
+        id: parsedItem.id,
+        imageData: parsedItem.imageData ?? null,
+        notes: typeof parsedItem.notes === "string" ? parsedItem.notes : "",
+      } satisfies StoredLibraryItem;
+    })
+    .filter((item): item is StoredLibraryItem => item !== null);
 }
 
-export function loadTrades(): StoredTrade[] {
-  if (typeof window === "undefined") {
+function sanitizeTrade(row: SupabaseTradeRow): StoredTrade | null {
+  if (
+    !row ||
+    typeof row !== "object" ||
+    typeof row.id !== "string" ||
+    typeof row.symbol_code !== "string" ||
+    typeof row.symbol_flag !== "string" ||
+    typeof row.date !== "string"
+  ) {
+    return null;
+  }
+
+  const libraryItems = sanitizeLibraryItems(row.library_items);
+
+  const openTime = typeof row.open_time === "string" ? row.open_time : null;
+  const closeTime = typeof row.close_time === "string" ? row.close_time : null;
+  const imageData = typeof row.image_data === "string" ? row.image_data : null;
+  const riskReward = typeof row.risk_reward === "string" ? row.risk_reward : null;
+  const risk = typeof row.risk === "string" ? row.risk : null;
+  const pips = typeof row.pips === "string" ? row.pips : null;
+
+  const position = row.position === "LONG" || row.position === "SHORT" ? row.position : "LONG";
+
+  return {
+    id: row.id,
+    symbolCode: row.symbol_code,
+    symbolFlag: row.symbol_flag,
+    date: row.date,
+    openTime,
+    closeTime,
+    imageData,
+    libraryItems,
+    position,
+    riskReward,
+    risk,
+    pips,
+  } satisfies StoredTrade;
+}
+
+function mapTradeToInsert(trade: StoredTrade, userId: string): SupabaseTradeInsert {
+  const libraryItems = sanitizeLibraryItems(trade.libraryItems ?? []);
+  const position = trade.position === "SHORT" ? "SHORT" : "LONG";
+
+  return {
+    id: trade.id,
+    user_id: userId,
+    symbol_code: trade.symbolCode,
+    symbol_flag: trade.symbolFlag,
+    date: trade.date,
+    open_time: trade.openTime ?? null,
+    close_time: trade.closeTime ?? null,
+    image_data: trade.imageData ?? null,
+    library_items: libraryItems,
+    position,
+    risk_reward: trade.riskReward ?? null,
+    risk: trade.risk ?? null,
+    pips: trade.pips ?? null,
+  } satisfies SupabaseTradeInsert;
+}
+
+async function getCurrentUserId() {
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error) {
+    console.error("Failed to retrieve Supabase session", error);
+    return null;
+  }
+
+  return session?.user?.id ?? null;
+}
+
+export async function loadTrades(): Promise<StoredTrade[]> {
+  const userId = await getCurrentUserId();
+  if (!userId) {
     return [];
   }
 
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  return parseTrades(raw);
-}
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select("*")
+    .eq("user_id", userId)
+    .order("date", { ascending: false });
 
-export function saveTrade(trade: StoredTrade) {
-  if (typeof window === "undefined") {
-    return;
+  if (error) {
+    console.error("Failed to load trades from Supabase", error);
+    return [];
   }
 
-  const currentTrades = loadTrades();
-  const updatedTrades = [trade, ...currentTrades];
+  return (data ?? [])
+    .map((row) => sanitizeTrade(row as SupabaseTradeRow))
+    .filter((trade): trade is StoredTrade => trade !== null);
+}
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTrades));
+export async function loadTradeById(tradeId: string): Promise<StoredTrade | null> {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select("*")
+    .eq("user_id", userId)
+    .eq("id", tradeId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to load trade from Supabase", error);
+    return null;
+  }
+
+  return sanitizeTrade((data ?? null) as SupabaseTradeRow | null) ?? null;
+}
+
+export async function saveTrade(trade: StoredTrade) {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    throw new Error("User session is required to save a trade");
+  }
+
+  const payload = mapTradeToInsert(trade, userId);
+  const { error } = await supabase.from(TABLE_NAME).insert(payload);
+
+  if (error) {
+    console.error("Failed to save trade to Supabase", error);
+    throw error;
+  }
+
   notifyTradesChanged();
 }
 
-export function updateTrade(trade: StoredTrade) {
-  if (typeof window === "undefined") {
-    return;
+export async function updateTrade(trade: StoredTrade) {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    throw new Error("User session is required to update a trade");
   }
 
-  const currentTrades = loadTrades();
-  const updatedTrades = currentTrades.map((storedTrade) =>
-    storedTrade.id === trade.id ? trade : storedTrade,
-  );
+  const payload = mapTradeToInsert(trade, userId);
+  const { error } = await supabase
+    .from(TABLE_NAME)
+    .update(payload)
+    .eq("id", trade.id)
+    .eq("user_id", userId);
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTrades));
+  if (error) {
+    console.error("Failed to update trade in Supabase", error);
+    throw error;
+  }
+
   notifyTradesChanged();
 }
 
-export function deleteTrade(tradeId: string) {
-  if (typeof window === "undefined") {
-    return;
+export async function deleteTrade(tradeId: string) {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    throw new Error("User session is required to delete a trade");
   }
 
-  const currentTrades = loadTrades();
-  const updatedTrades = currentTrades.filter((trade) => trade.id !== tradeId);
+  const { error } = await supabase
+    .from(TABLE_NAME)
+    .delete()
+    .eq("id", tradeId)
+    .eq("user_id", userId);
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTrades));
+  if (error) {
+    console.error("Failed to delete trade from Supabase", error);
+    throw error;
+  }
+
   notifyTradesChanged();
 }
 
-export const REGISTERED_TRADES_STORAGE_KEY = STORAGE_KEY;
 export const REGISTERED_TRADES_UPDATED_EVENT = TRADES_UPDATED_EVENT;

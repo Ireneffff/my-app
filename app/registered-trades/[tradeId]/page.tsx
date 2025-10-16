@@ -18,7 +18,7 @@ import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
 import {
   deleteTrade,
-  loadTrades,
+  loadTradeById,
   REGISTERED_TRADES_UPDATED_EVENT,
   type StoredLibraryItem,
   type StoredTrade,
@@ -96,6 +96,7 @@ export default function RegisteredTradePage() {
 
   const [state, setState] = useState<TradeState>({ status: "loading", trade: null });
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
+  const [isDeleting, setIsDeleting] = useState(false);
   const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>("snapshot");
   const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const previewSwipeStateRef = useRef<{
@@ -222,23 +223,35 @@ export default function RegisteredTradePage() {
       return;
     }
 
-    function refreshTrade() {
-      const trades = loadTrades();
-      const match = trades.find((storedTrade) => storedTrade.id === tradeId) ?? null;
+    let isActive = true;
+
+    const refreshTrade = async () => {
+      const match = tradeId ? await loadTradeById(tradeId) : null;
+
+      if (!isActive) {
+        return;
+      }
 
       setState({ status: match ? "ready" : "missing", trade: match });
-    }
+    };
 
-    refreshTrade();
+    void refreshTrade();
 
     if (typeof window === "undefined") {
-      return;
+      return () => {
+        isActive = false;
+      };
     }
 
-    window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrade);
+    const handleRefresh = () => {
+      void refreshTrade();
+    };
+
+    window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleRefresh);
 
     return () => {
-      window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrade);
+      isActive = false;
+      window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleRefresh);
     };
   }, [tradeId]);
 
@@ -677,8 +690,8 @@ export default function RegisteredTradePage() {
     router.push(`/new-trade?tradeId=${state.trade.id}`);
   };
 
-  const handleDeleteTrade = () => {
-    if (!state.trade) {
+  const handleDeleteTrade = async () => {
+    if (!state.trade || isDeleting) {
       return;
     }
 
@@ -687,9 +700,20 @@ export default function RegisteredTradePage() {
       return;
     }
 
-    deleteTrade(state.trade.id);
-    setState({ status: "missing", trade: null });
-    router.push("/");
+    setIsDeleting(true);
+
+    try {
+      await deleteTrade(state.trade.id);
+      setState({ status: "missing", trade: null });
+      router.push("/");
+    } catch (error) {
+      console.error("Failed to delete trade", error);
+      if (typeof window !== "undefined") {
+        window.alert("Unable to delete the trade. Please try again.");
+      }
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -721,8 +745,9 @@ export default function RegisteredTradePage() {
             size="sm"
             className="border border-transparent text-red-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
             onClick={handleDeleteTrade}
+            disabled={isDeleting}
           >
-            Delete
+            {isDeleting ? "Deleting..." : "Delete"}
           </Button>
         </div>
       </div>

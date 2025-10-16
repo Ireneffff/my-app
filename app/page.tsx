@@ -62,20 +62,34 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    function refreshTrades() {
-      setTrades(loadTrades());
-    }
+    let isActive = true;
 
-    refreshTrades();
+    const refreshTrades = async () => {
+      const fetchedTrades = await loadTrades();
+      if (!isActive) {
+        return;
+      }
+
+      setTrades(fetchedTrades);
+    };
+
+    void refreshTrades();
 
     if (typeof window === "undefined") {
-      return;
+      return () => {
+        isActive = false;
+      };
     }
 
-    window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrades);
+    const handleTradesUpdated = () => {
+      void refreshTrades();
+    };
+
+    window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleTradesUpdated);
 
     return () => {
-      window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrades);
+      isActive = false;
+      window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleTradesUpdated);
     };
   }, []);
 

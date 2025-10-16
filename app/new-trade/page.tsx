@@ -20,7 +20,7 @@ import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
 import {
-  loadTrades,
+  loadTradeById,
   saveTrade,
   updateTrade,
   type StoredLibraryItem,
@@ -197,6 +197,7 @@ function NewTradePageContent() {
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const initialLibraryItems = useMemo(() => [createLibraryItem(null)], []);
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>(initialLibraryItems);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -727,66 +728,79 @@ function NewTradePageContent() {
       return;
     }
 
-    const trades = loadTrades();
-    const match = trades.find((trade) => trade.id === editingTradeId);
+    let isActive = true;
 
-    if (!match) {
-      router.replace("/");
-      return;
-    }
+    const hydrateTrade = async () => {
+      const match = await loadTradeById(editingTradeId);
 
-    const matchedSymbol =
-      availableSymbols.find((symbol) => symbol.code === match.symbolCode) ?? {
-        code: match.symbolCode,
-        flag: match.symbolFlag,
-      };
+      if (!isActive) {
+        return;
+      }
 
-    setSelectedSymbol(matchedSymbol);
+      if (!match) {
+        router.replace("/");
+        return;
+      }
 
-    const parsedDate = new Date(match.date);
-    const isDateValid = !Number.isNaN(parsedDate.getTime());
-    const effectiveDate = isDateValid ? parsedDate : selectedDate;
+      const matchedSymbol =
+        availableSymbols.find((symbol) => symbol.code === match.symbolCode) ?? {
+          code: match.symbolCode,
+          flag: match.symbolFlag,
+        };
 
-    if (isDateValid) {
-      handleSelectDate(parsedDate);
-    }
+      setSelectedSymbol(matchedSymbol);
 
-    if (match.openTime) {
-      const parsedOpen = new Date(match.openTime);
-      setOpenTime(!Number.isNaN(parsedOpen.getTime()) ? parsedOpen : alignTimeWithDate(null, effectiveDate, 9));
-    } else {
-      setOpenTime((prev) => alignTimeWithDate(prev, effectiveDate, 9));
-    }
+      const parsedDate = new Date(match.date);
+      const isDateValid = !Number.isNaN(parsedDate.getTime());
+      const effectiveDate = isDateValid ? parsedDate : selectedDate;
 
-    if (match.closeTime) {
-      const parsedClose = new Date(match.closeTime);
-      setCloseTime(!Number.isNaN(parsedClose.getTime()) ? parsedClose : alignTimeWithDate(null, effectiveDate, 17));
-    } else {
-      setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate, 17));
-    }
+      if (isDateValid) {
+        handleSelectDate(parsedDate);
+      }
 
-    const hydratedLibraryItems =
-      Array.isArray(match.libraryItems) && match.libraryItems.length > 0
-        ? match.libraryItems.map((item) => ({
-            id: item.id,
-            imageData: item.imageData ?? null,
-            notes: typeof item.notes === "string" ? item.notes : "",
-          }))
-        : [createLibraryItem(match.imageData ?? null)];
+      if (match.openTime) {
+        const parsedOpen = new Date(match.openTime);
+        setOpenTime(!Number.isNaN(parsedOpen.getTime()) ? parsedOpen : alignTimeWithDate(null, effectiveDate, 9));
+      } else {
+        setOpenTime((prev) => alignTimeWithDate(prev, effectiveDate, 9));
+      }
 
-    setLibraryItems(hydratedLibraryItems);
-    setSelectedLibraryItemId(hydratedLibraryItems[0]?.id ?? initialLibraryItems[0].id);
-    setRecentlyAddedLibraryItemId(null);
-    setImageError(null);
+      if (match.closeTime) {
+        const parsedClose = new Date(match.closeTime);
+        setCloseTime(!Number.isNaN(parsedClose.getTime()) ? parsedClose : alignTimeWithDate(null, effectiveDate, 17));
+      } else {
+        setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate, 17));
+      }
 
-    setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
-    setRiskReward(match.riskReward ?? "");
-    setRisk(match.risk ?? "");
-    setPips(match.pips ?? "");
+      const hydratedLibraryItems =
+        Array.isArray(match.libraryItems) && match.libraryItems.length > 0
+          ? match.libraryItems.map((item) => ({
+              id: item.id,
+              imageData: item.imageData ?? null,
+              notes: typeof item.notes === "string" ? item.notes : "",
+            }))
+          : [createLibraryItem(match.imageData ?? null)];
 
-    if (imageInputRef.current) {
-      imageInputRef.current.value = "";
-    }
+      setLibraryItems(hydratedLibraryItems);
+      setSelectedLibraryItemId(hydratedLibraryItems[0]?.id ?? initialLibraryItems[0].id);
+      setRecentlyAddedLibraryItemId(null);
+      setImageError(null);
+
+      setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
+      setRiskReward(match.riskReward ?? "");
+      setRisk(match.risk ?? "");
+      setPips(match.pips ?? "");
+
+      if (imageInputRef.current) {
+        imageInputRef.current.value = "";
+      }
+    };
+
+    void hydrateTrade();
+
+    return () => {
+      isActive = false;
+    };
   }, [
     editingTradeId,
     handleSelectDate,
@@ -1721,7 +1735,14 @@ function NewTradePageContent() {
           variant="primary"
           size="md"
           className="ml-auto min-w-[140px]"
-          onClick={() => {
+          disabled={isSaving}
+          onClick={async () => {
+            if (isSaving) {
+              return;
+            }
+
+            setIsSaving(true);
+
             const targetTradeId = editingTradeId ?? Date.now().toString(36);
             const trade: StoredTrade = {
               id: targetTradeId,
@@ -1742,26 +1763,36 @@ function NewTradePageContent() {
               pips: pips.trim() || null,
             };
 
-            if (isEditing && editingTradeId) {
-              updateTrade(trade);
-            } else {
-              saveTrade(trade);
-            }
-
-            const destination = isEditing && editingTradeId ? `/registered-trades/${editingTradeId}` : "/";
-
-            startNavigation(() => {
-              router.push(destination);
-            });
-
-            window.setTimeout(() => {
-              if (window.location.pathname.startsWith("/new-trade")) {
-                window.location.href = destination;
+            try {
+              if (isEditing && editingTradeId) {
+                await updateTrade(trade);
+              } else {
+                await saveTrade(trade);
               }
-            }, 150);
+
+              const destination =
+                isEditing && editingTradeId ? `/registered-trades/${editingTradeId}` : "/";
+
+              startNavigation(() => {
+                router.push(destination);
+              });
+
+              window.setTimeout(() => {
+                if (window.location.pathname.startsWith("/new-trade")) {
+                  window.location.href = destination;
+                }
+              }, 150);
+            } catch (error) {
+              console.error("Failed to persist trade", error);
+              if (typeof window !== "undefined") {
+                window.alert("Unable to save the trade. Please try again.");
+              }
+            } finally {
+              setIsSaving(false);
+            }
           }}
         >
-          {isEditing ? "Update" : "Save"}
+          {isSaving ? "Saving..." : isEditing ? "Update" : "Save"}
         </Button>
       </div>
 
