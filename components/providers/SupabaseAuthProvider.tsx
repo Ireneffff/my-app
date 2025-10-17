@@ -46,7 +46,7 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       .catch((error) => {
         console.error("Failed to initialize Supabase session", error);
         if (isMounted) {
-          setSession(null);
+          setSessionState(null);
           setIsLoading(false);
         }
       });
