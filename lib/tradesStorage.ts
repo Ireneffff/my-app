@@ -163,11 +163,30 @@ async function getCurrentUserId() {
   } = await supabase.auth.getSession();
 
   if (error) {
-    console.error("Failed to retrieve Supabase session", error);
+    console.error("Failed to retrieve Supabase session", error.message, error);
     return null;
   }
 
-  return session?.user?.id ?? null;
+  if (session?.user?.id) {
+    return session.user.id;
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    console.error("Failed to retrieve Supabase user", userError.message, userError);
+    return null;
+  }
+
+  if (!user?.id) {
+    console.error("No authenticated Supabase user was found when required");
+    return null;
+  }
+
+  return user.id;
 }
 
 export async function loadTrades(): Promise<StoredTrade[]> {
@@ -224,10 +243,10 @@ export async function saveTrade(trade: StoredTrade) {
   }
 
   const payload = mapTradeToInsert(trade, userId);
-  const { error } = await supabase.from(TABLE_NAME).insert(payload);
+  const { error } = await supabase.from(TABLE_NAME).insert([payload]);
 
   if (error) {
-    console.error("Failed to save trade to Supabase", error);
+    console.error("Failed to save trade to Supabase", error.message, error);
     throw error;
   }
 
@@ -248,7 +267,7 @@ export async function updateTrade(trade: StoredTrade) {
     .eq("user_id", userId);
 
   if (error) {
-    console.error("Failed to update trade in Supabase", error);
+    console.error("Failed to update trade in Supabase", error.message, error);
     throw error;
   }
 
@@ -268,7 +287,7 @@ export async function deleteTrade(tradeId: string) {
     .eq("user_id", userId);
 
   if (error) {
-    console.error("Failed to delete trade from Supabase", error);
+    console.error("Failed to delete trade from Supabase", error.message, error);
     throw error;
   }
 

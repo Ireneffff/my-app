@@ -1783,7 +1783,11 @@ function NewTradePageContent() {
                 }
               }, 150);
             } catch (error) {
-              console.error("Failed to persist trade", error);
+              const message =
+                error && typeof error === "object" && "message" in error
+                  ? String(error.message)
+                  : "Unknown error";
+              console.error("Failed to persist trade", message, error);
               if (typeof window !== "undefined") {
                 window.alert("Unable to save the trade. Please try again.");
               }
