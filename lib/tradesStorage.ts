@@ -58,6 +58,32 @@ type SupabaseTradeInsert = {
   pips: string | null;
 };
 
+type MaybeSupabaseError = {
+  message?: string;
+  details?: string;
+};
+
+function logSupabaseError(context: string, error: unknown) {
+  if (error && typeof error === "object") {
+    const supabaseError = error as MaybeSupabaseError;
+    const message =
+      typeof supabaseError.message === "string" && supabaseError.message.length > 0
+        ? supabaseError.message
+        : null;
+    const details =
+      typeof supabaseError.details === "string" && supabaseError.details.length > 0
+        ? supabaseError.details
+        : null;
+
+    if (message || details) {
+      console.error(context, message, details, error);
+      return;
+    }
+  }
+
+  console.error(context, error);
+}
+
 function notifyTradesChanged() {
   if (typeof window === "undefined") {
     return;
@@ -163,7 +189,7 @@ async function getCurrentUserId() {
   } = await supabase.auth.getSession();
 
   if (error) {
-    console.error("Failed to retrieve Supabase session", error.message, error);
+    logSupabaseError("Failed to retrieve Supabase session", error);
     return null;
   }
 
@@ -177,7 +203,7 @@ async function getCurrentUserId() {
   } = await supabase.auth.getUser();
 
   if (userError) {
-    console.error("Failed to retrieve Supabase user", userError.message, userError);
+    logSupabaseError("Failed to retrieve Supabase user", userError);
     return null;
   }
 
@@ -202,7 +228,7 @@ export async function loadTrades(): Promise<StoredTrade[]> {
     .order("date", { ascending: false });
 
   if (error) {
-    console.error("Failed to load trades from Supabase", error);
+    logSupabaseError("Failed to load trades from Supabase", error);
     return [];
   }
 
@@ -225,7 +251,7 @@ export async function loadTradeById(tradeId: string): Promise<StoredTrade | null
     .maybeSingle();
 
   if (error) {
-    console.error("Failed to load trade from Supabase", error);
+    logSupabaseError("Failed to load trade from Supabase", error);
     return null;
   }
 
@@ -246,7 +272,7 @@ export async function saveTrade(trade: StoredTrade) {
   const { error } = await supabase.from(TABLE_NAME).insert([payload]);
 
   if (error) {
-    console.error("Failed to save trade to Supabase", error.message, error);
+    logSupabaseError("Failed to save trade to Supabase", error);
     throw error;
   }
 
@@ -267,7 +293,7 @@ export async function updateTrade(trade: StoredTrade) {
     .eq("user_id", userId);
 
   if (error) {
-    console.error("Failed to update trade in Supabase", error.message, error);
+    logSupabaseError("Failed to update trade in Supabase", error);
     throw error;
   }
 
@@ -287,7 +313,7 @@ export async function deleteTrade(tradeId: string) {
     .eq("user_id", userId);
 
   if (error) {
-    console.error("Failed to delete trade from Supabase", error.message, error);
+    logSupabaseError("Failed to delete trade from Supabase", error);
     throw error;
   }
 

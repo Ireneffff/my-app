@@ -1785,11 +1785,26 @@ function NewTradePageContent() {
             } catch (error) {
               const message =
                 error && typeof error === "object" && "message" in error
-                  ? String(error.message)
+                  ? String((error as { message?: unknown }).message)
                   : "Unknown error";
-              console.error("Failed to persist trade", message, error);
+              const details =
+                error && typeof error === "object" && "details" in error
+                  ? String((error as { details?: unknown }).details ?? "")
+                  : "";
+              if (details) {
+                console.error("Failed to persist trade", message, details, error);
+              } else {
+                console.error("Failed to persist trade", message, error);
+              }
+
               if (typeof window !== "undefined") {
-                window.alert("Unable to save the trade. Please try again.");
+                const isAuthError =
+                  message === "User session is required to save a trade" ||
+                  message === "User session is required to update a trade";
+                const alertMessage = isAuthError
+                  ? "You must be signed in to save a trade."
+                  : "Unable to save the trade. Please try again.";
+                window.alert(alertMessage);
               }
             } finally {
               setIsSaving(false);
