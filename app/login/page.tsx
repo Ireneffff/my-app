@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
@@ -8,7 +8,18 @@ import Card from "@/components/ui/Card";
 import { supabase } from "@/lib/supabaseClient";
 import { useSupabaseAuth } from "@/components/providers/SupabaseAuthProvider";
 
-export default function LoginPage() {
+function LoginLoading() {
+  return (
+    <section className="flex min-h-dvh flex-col items-center justify-center bg-bg px-6 py-16 text-fg">
+      <Card className="w-full max-w-md space-y-6 p-8 text-center">
+        <h1 className="text-xl font-semibold">Checking your session…</h1>
+        <p className="text-sm text-muted-fg">Please wait while we prepare your trading journal.</p>
+      </Card>
+    </section>
+  );
+}
+
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading: isAuthLoading } = useSupabaseAuth();
@@ -30,14 +41,7 @@ export default function LoginPage() {
   }, [isAuthLoading, redirectTo, router, user]);
 
   if (isAuthLoading || user) {
-    return (
-      <section className="flex min-h-dvh flex-col items-center justify-center bg-bg px-6 py-16 text-fg">
-        <Card className="w-full max-w-md space-y-6 p-8 text-center">
-          <h1 className="text-xl font-semibold">Checking your session…</h1>
-          <p className="text-sm text-muted-fg">Please wait while we prepare your trading journal.</p>
-        </Card>
-      </section>
-    );
+    return <LoginLoading />;
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -122,5 +126,13 @@ export default function LoginPage() {
         </p>
       </Card>
     </section>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginLoading />}>
+      <LoginContent />
+    </Suspense>
   );
 }
