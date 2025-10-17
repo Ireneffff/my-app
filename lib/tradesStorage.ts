@@ -1,4 +1,5 @@
 import { supabase } from "./supabaseClient";
+import { getCurrentUser } from "./authSession";
 
 export type StoredLibraryItem = {
   id: string;
@@ -183,29 +184,7 @@ function mapTradeToInsert(trade: StoredTrade, userId: string): SupabaseTradeInse
 }
 
 async function getCurrentUserId() {
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
-
-  if (error) {
-    logSupabaseError("Failed to retrieve Supabase session", error);
-    return null;
-  }
-
-  if (session?.user?.id) {
-    return session.user.id;
-  }
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError) {
-    logSupabaseError("Failed to retrieve Supabase user", userError);
-    return null;
-  }
+  const user = await getCurrentUser();
 
   if (!user?.id) {
     console.error("No authenticated Supabase user was found when required");

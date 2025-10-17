@@ -16,6 +16,7 @@ import {
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
+import { useRequireAuth } from "@/components/providers/SupabaseAuthProvider";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
@@ -128,6 +129,7 @@ const LIBRARY_NAVIGATION_SCROLL_LOCK_DURATION_MS = 400;
 function NewTradePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isLoading: isAuthLoading, user: authUser } = useRequireAuth();
   const editingTradeId = searchParams.get("tradeId");
   const isEditing = Boolean(editingTradeId);
   const today = useMemo(() => {
@@ -1735,7 +1737,7 @@ function NewTradePageContent() {
           variant="primary"
           size="md"
           className="ml-auto min-w-[140px]"
-          disabled={isSaving}
+          disabled={isSaving || isAuthLoading || !authUser}
           onClick={async () => {
             if (isSaving) {
               return;
@@ -1801,10 +1803,14 @@ function NewTradePageContent() {
                 const isAuthError =
                   message === "User session is required to save a trade" ||
                   message === "User session is required to update a trade";
-                const alertMessage = isAuthError
-                  ? "You must be signed in to save a trade."
-                  : "Unable to save the trade. Please try again.";
-                window.alert(alertMessage);
+
+                if (isAuthError) {
+                  const currentLocation = `${window.location.pathname}${window.location.search}`;
+                  router.replace(`/login?redirect=${encodeURIComponent(currentLocation)}`);
+                  return;
+                }
+
+                window.alert("Unable to save the trade. Please try again.");
               }
             } finally {
               setIsSaving(false);

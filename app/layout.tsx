@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import SwUpdateBanner from "@/components/SwUpdateBanner";
+import { SupabaseAuthProvider } from "@/components/providers/SupabaseAuthProvider";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -25,7 +26,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-dvh bg-bg text-fg antialiased">
-        <main id="main">{children}</main>
+        <SupabaseAuthProvider>
+          <main id="main">{children}</main>
+        </SupabaseAuthProvider>
 
         {/* Banner "Update available" */}
         <SwUpdateBanner />

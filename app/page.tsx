@@ -10,6 +10,7 @@ import {
   REGISTERED_TRADES_UPDATED_EVENT,
   type StoredTrade,
 } from "@/lib/tradesStorage";
+import { useSupabaseAuth } from "@/components/providers/SupabaseAuthProvider";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -43,6 +44,7 @@ function getCalendarDays(activeDate: Date) {
 export default function Home() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [trades, setTrades] = useState<StoredTrade[]>([]);
+  const { user, isLoading: isAuthLoading } = useSupabaseAuth();
 
   useEffect(() => {
     async function checkSupabase() {
@@ -62,7 +64,18 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (isAuthLoading) {
+      return;
+    }
+
     let isActive = true;
+
+    if (!user) {
+      setTrades([]);
+      return () => {
+        isActive = false;
+      };
+    }
 
     const refreshTrades = async () => {
       const fetchedTrades = await loadTrades();
@@ -91,7 +104,7 @@ export default function Home() {
       isActive = false;
       window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleTradesUpdated);
     };
-  }, []);
+  }, [isAuthLoading, user]);
 
   const monthDays = useMemo(() => getCalendarDays(currentDate), [currentDate]);
   const todayKey = new Date().toDateString();

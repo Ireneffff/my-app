@@ -23,6 +23,7 @@ import {
   type StoredLibraryItem,
   type StoredTrade,
 } from "@/lib/tradesStorage";
+import { useRequireAuth } from "@/components/providers/SupabaseAuthProvider";
 
 type TradeState = {
   status: "loading" | "ready" | "missing";
@@ -93,6 +94,7 @@ const LIBRARY_NAVIGATION_SCROLL_LOCK_DURATION_MS = 400;
 export default function RegisteredTradePage() {
   const params = useParams<{ tradeId: string }>();
   const router = useRouter();
+  const { isLoading: isAuthLoading, user: authUser } = useRequireAuth();
 
   const [state, setState] = useState<TradeState>({ status: "loading", trade: null });
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
@@ -218,6 +220,15 @@ export default function RegisteredTradePage() {
   }, [clearScheduledScrollUnlocks, resetBodyScrollLock]);
 
   useEffect(() => {
+    if (isAuthLoading) {
+      return;
+    }
+
+    if (!authUser) {
+      setState({ status: "loading", trade: null });
+      return;
+    }
+
     if (!tradeId) {
       setState({ status: "missing", trade: null });
       return;
@@ -253,7 +264,7 @@ export default function RegisteredTradePage() {
       isActive = false;
       window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleRefresh);
     };
-  }, [tradeId]);
+  }, [authUser, isAuthLoading, tradeId]);
 
   const selectedDate = useMemo(() => {
     if (state.trade?.date) {
