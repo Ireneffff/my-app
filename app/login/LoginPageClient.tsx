@@ -103,17 +103,15 @@ export default function LoginPageClient({ loading }: LoginPageClientProps) {
 
     setErrorMessage(null);
     setIsGitHubRedirecting(true);
-    cacheAuthRedirect(redirectTo);
+    cacheAuthRedirect("/new-trade");
 
     try {
       const origin = typeof window === "undefined" ? null : window.location.origin;
-      const callbackUrl = origin
-        ? `${origin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`
-        : null;
+      const redirectUrl = origin ? `${origin}/new-trade` : null;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "github",
-        options: callbackUrl ? { redirectTo: callbackUrl } : undefined,
+        options: redirectUrl ? { redirectTo: redirectUrl } : undefined,
       });
 
       if (error) {
