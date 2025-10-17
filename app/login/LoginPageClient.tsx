@@ -75,6 +75,11 @@ export default function LoginPageClient({ loading }: LoginPageClientProps) {
     });
 
     if (error) {
+      console.error("Email sign-in failed", {
+        message: error.message,
+        status: error.status ?? null,
+        error,
+      });
       setErrorMessage(error.message ?? "Unable to sign in");
       setIsSubmitting(false);
       return;
@@ -93,22 +98,35 @@ export default function LoginPageClient({ loading }: LoginPageClientProps) {
     setIsGitHubRedirecting(true);
 
     try {
-      const redirectUrl =
-        typeof window === "undefined"
-          ? null
-          : `${window.location.origin}/login?redirect=${encodeURIComponent(redirectTo)}`;
+      const origin = typeof window === "undefined" ? null : window.location.origin;
+      const callbackUrl = origin
+        ? `${origin}/auth/v1/callback?redirect=${encodeURIComponent(redirectTo)}`
+        : null;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "github",
-        options: redirectUrl ? { redirectTo: redirectUrl } : undefined,
+        options: callbackUrl ? { redirectTo: callbackUrl } : undefined,
       });
 
       if (error) {
+        console.error("GitHub sign-in failed", {
+          message: error.message,
+          status: error.status ?? null,
+          error,
+        });
         setErrorMessage(error.message ?? "Unable to sign in with GitHub");
         setIsGitHubRedirecting(false);
       }
     } catch (error) {
-      console.error("GitHub sign-in failed", error);
+      if (error && typeof error === "object" && "message" in error) {
+        console.error("GitHub sign-in failed", {
+          message: (error as { message?: string }).message ?? null,
+          status: "status" in error ? (error as { status?: number }).status ?? null : null,
+          error,
+        });
+      } else {
+        console.error("GitHub sign-in failed", error);
+      }
       setErrorMessage("Unable to sign in with GitHub. Please try again.");
       setIsGitHubRedirecting(false);
     }

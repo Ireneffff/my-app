@@ -62,6 +62,7 @@ type SupabaseTradeInsert = {
 type MaybeSupabaseError = {
   message?: string;
   details?: string;
+  status?: number;
 };
 
 function logSupabaseError(context: string, error: unknown) {
@@ -75,9 +76,13 @@ function logSupabaseError(context: string, error: unknown) {
       typeof supabaseError.details === "string" && supabaseError.details.length > 0
         ? supabaseError.details
         : null;
+    const status =
+      typeof supabaseError.status === "number" && Number.isFinite(supabaseError.status)
+        ? supabaseError.status
+        : null;
 
-    if (message || details) {
-      console.error(context, message, details, error);
+    if (message || details || status !== null) {
+      console.error(context, { message, details, status, error });
       return;
     }
   }
