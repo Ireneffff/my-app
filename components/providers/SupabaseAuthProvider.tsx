@@ -80,29 +80,55 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     const hasOAuthTokens =
       hash.includes("access_token") || hash.includes("refresh_token") || hash.includes("expires_in");
 
-    const isAuthScreen = pathname?.startsWith("/login") || pathname?.startsWith("/auth/");
+    if (!hasOAuthTokens) {
+      return;
+    }
 
-    const shouldRedirect = hasOAuthTokens || lastAuthEvent === "SIGNED_IN" || isAuthScreen;
+    const target = consumeCachedAuthRedirect("/new-trade");
+    const cleanUrl = `${window.location.pathname}${window.location.search}`;
+    window.history.replaceState({}, document.title, cleanUrl);
 
-    if (!shouldRedirect) {
+    if (pathname !== target) {
+      router.push(target);
+    }
+  }, [isLoading, pathname, router, session]);
+
+  useEffect(() => {
+    if (!session) {
+      return;
+    }
+
+    if (lastAuthEvent !== "SIGNED_IN") {
       return;
     }
 
     const target = consumeCachedAuthRedirect("/new-trade");
 
-    if (hasOAuthTokens) {
-      const cleanUrl = `${window.location.pathname}${window.location.search}`;
-      window.history.replaceState({}, document.title, cleanUrl);
+    if (pathname !== target) {
+      router.push(target);
     }
+
+    setLastAuthEvent(null);
+  }, [lastAuthEvent, pathname, router, session]);
+
+  useEffect(() => {
+    if (isLoading || !session) {
+      return;
+    }
+
+    const isAuthScreen = pathname?.startsWith("/login") || pathname?.startsWith("/auth/");
+    const isSplashScreen = pathname === "/";
+
+    if (!isAuthScreen && !isSplashScreen) {
+      return;
+    }
+
+    const target = consumeCachedAuthRedirect("/new-trade");
 
     if (pathname !== target) {
-      router.replace(target);
+      router.push(target);
     }
-
-    if (lastAuthEvent === "SIGNED_IN") {
-      setLastAuthEvent(null);
-    }
-  }, [isLoading, lastAuthEvent, pathname, router, session]);
+  }, [isLoading, pathname, router, session]);
 
   const value = useMemo(
     () => ({
