@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode, type SVGProps } from "react";
 
 import { useSupabaseAuth } from "@/components/providers/SupabaseAuthProvider";
 import Button from "@/components/ui/Button";
@@ -11,6 +11,24 @@ import { supabase } from "@/lib/supabaseClient";
 
 interface LoginPageClientProps {
   loading: ReactNode;
+}
+
+function GitHubIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden
+      focusable="false"
+      role="img"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path
+        fill="currentColor"
+        d="M12 .5a12 12 0 0 0-3.79 23.4c.6.11.82-.26.82-.58v-2.2c-3.35.73-4.06-1.62-4.06-1.62-.55-1.4-1.35-1.77-1.35-1.77-1.1-.75.08-.74.08-.74 1.22.09 1.86 1.26 1.86 1.26 1.08 1.86 2.84 1.32 3.53 1 .11-.8.42-1.33.76-1.63-2.67-.31-5.48-1.34-5.48-5.95 0-1.32.47-2.4 1.25-3.25-.13-.31-.54-1.57.12-3.27 0 0 1-.32 3.3 1.24a11.4 11.4 0 0 1 6 0c2.28-1.56 3.28-1.24 3.28-1.24.67 1.7.26 2.96.13 3.27.78.85 1.25 1.93 1.25 3.25 0 4.62-2.82 5.63-5.5 5.94.43.37.81 1.1.81 2.22v3.29c0 .32.21.7.82.58A12 12 0 0 0 12 .5Z"
+      />
+    </svg>
+  );
 }
 
 export default function LoginPageClient({ loading }: LoginPageClientProps) {
@@ -23,6 +41,9 @@ export default function LoginPageClient({ loading }: LoginPageClientProps) {
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGitHubRedirecting, setIsGitHubRedirecting] = useState(false);
+
+  const isBusy = useMemo(() => isSubmitting || isGitHubRedirecting, [isSubmitting, isGitHubRedirecting]);
 
   useEffect(() => {
     if (isAuthLoading) {
@@ -41,7 +62,7 @@ export default function LoginPageClient({ loading }: LoginPageClientProps) {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (isSubmitting) {
+    if (isBusy) {
       return;
     }
 
@@ -61,6 +82,36 @@ export default function LoginPageClient({ loading }: LoginPageClientProps) {
 
     setIsSubmitting(false);
     router.replace(redirectTo);
+  };
+
+  const handleGitHubSignIn = async () => {
+    if (isBusy) {
+      return;
+    }
+
+    setErrorMessage(null);
+    setIsGitHubRedirecting(true);
+
+    try {
+      const redirectUrl =
+        typeof window === "undefined"
+          ? null
+          : `${window.location.origin}/login?redirect=${encodeURIComponent(redirectTo)}`;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "github",
+        options: redirectUrl ? { redirectTo: redirectUrl } : undefined,
+      });
+
+      if (error) {
+        setErrorMessage(error.message ?? "Unable to sign in with GitHub");
+        setIsGitHubRedirecting(false);
+      }
+    } catch (error) {
+      console.error("GitHub sign-in failed", error);
+      setErrorMessage("Unable to sign in with GitHub. Please try again.");
+      setIsGitHubRedirecting(false);
+    }
   };
 
   return (
@@ -106,10 +157,33 @@ export default function LoginPageClient({ loading }: LoginPageClientProps) {
             </p>
           ) : null}
 
-          <Button type="submit" variant="primary" size="md" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" variant="primary" size="md" className="w-full" disabled={isBusy}>
             {isSubmitting ? "Signing in..." : "Sign in"}
           </Button>
         </form>
+
+        <div className="relative py-2">
+          <div className="absolute inset-0 flex items-center" aria-hidden>
+            <div className="w-full border-t border-border" />
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-surface px-3 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">
+              Or continue with
+            </span>
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          variant="secondary"
+          size="md"
+          className="w-full"
+          onClick={handleGitHubSignIn}
+          disabled={isBusy}
+          leftIcon={<GitHubIcon className="h-5 w-5" />}
+        >
+          {isGitHubRedirecting ? "Redirecting…" : "Sign in with GitHub"}
+        </Button>
 
         <p className="text-center text-xs text-muted-fg">
           Having trouble? Contact support or
