@@ -108,7 +108,7 @@ export default function LoginPageClient({ loading }: LoginPageClientProps) {
     try {
       const origin = typeof window === "undefined" ? null : window.location.origin;
       const callbackUrl = origin
-        ? `${origin}/auth/v1/callback?redirect=${encodeURIComponent(redirectTo)}`
+        ? `${origin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`
         : null;
 
       const { error } = await supabase.auth.signInWithOAuth({
