@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import SwUpdateBanner from "@/components/SwUpdateBanner";
 import { SupabaseAuthProvider } from "@/components/providers/SupabaseAuthProvider";
+import AuthRedirectListener from "@/components/providers/AuthRedirectListener";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-dvh bg-bg text-fg antialiased">
         <SupabaseAuthProvider>
+          <AuthRedirectListener />
           <main id="main">{children}</main>
         </SupabaseAuthProvider>
 

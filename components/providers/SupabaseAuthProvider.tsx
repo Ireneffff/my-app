@@ -9,8 +9,8 @@ import {
   type ReactNode,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
-import { cacheAuthRedirect, consumeCachedAuthRedirect, getCurrentSession, subscribeToAuthChanges } from "@/lib/authSession";
+import type { Session, User } from "@supabase/supabase-js";
+import { cacheAuthRedirect, getCurrentSession, subscribeToAuthChanges } from "@/lib/authSession";
 
 export type SupabaseAuthContextValue = {
   session: Session | null;
@@ -25,11 +25,8 @@ const SupabaseAuthContext = createContext<SupabaseAuthContextValue>({
 });
 
 export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
-  const pathname = usePathname();
   const [session, setSessionState] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [lastAuthEvent, setLastAuthEvent] = useState<AuthChangeEvent | "INITIAL_SESSION" | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -51,14 +48,13 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         }
       });
 
-    const unsubscribe = subscribeToAuthChanges((nextSession, event) => {
+    const unsubscribe = subscribeToAuthChanges((nextSession) => {
       if (!isMounted) {
         return;
       }
 
       setSessionState(nextSession);
       setIsLoading(false);
-      setLastAuthEvent(event);
     });
 
     return () => {
@@ -66,69 +62,6 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       unsubscribe();
     };
   }, []);
-
-  useEffect(() => {
-    if (isLoading || !session) {
-      return;
-    }
-
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const hash = window.location.hash ?? "";
-    const hasOAuthTokens =
-      hash.includes("access_token") || hash.includes("refresh_token") || hash.includes("expires_in");
-
-    if (!hasOAuthTokens) {
-      return;
-    }
-
-    const target = consumeCachedAuthRedirect("/new-trade");
-    const cleanUrl = `${window.location.pathname}${window.location.search}`;
-    window.history.replaceState({}, document.title, cleanUrl);
-
-    if (pathname !== target) {
-      router.push(target);
-    }
-  }, [isLoading, pathname, router, session]);
-
-  useEffect(() => {
-    if (!session) {
-      return;
-    }
-
-    if (lastAuthEvent !== "SIGNED_IN") {
-      return;
-    }
-
-    const target = consumeCachedAuthRedirect("/new-trade");
-
-    if (pathname !== target) {
-      router.push(target);
-    }
-
-    setLastAuthEvent(null);
-  }, [lastAuthEvent, pathname, router, session]);
-
-  useEffect(() => {
-    if (isLoading || !session) {
-      return;
-    }
-
-    const isAuthScreen = pathname?.startsWith("/login") || pathname?.startsWith("/auth/");
-    const isSplashScreen = pathname === "/";
-
-    if (!isAuthScreen && !isSplashScreen) {
-      return;
-    }
-
-    const target = consumeCachedAuthRedirect("/new-trade");
-
-    if (pathname !== target) {
-      router.push(target);
-    }
-  }, [isLoading, pathname, router, session]);
 
   const value = useMemo(
     () => ({
