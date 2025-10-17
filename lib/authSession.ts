@@ -80,8 +80,16 @@ export async function getCurrentUser(): Promise<User | null> {
   }
 
   if (data?.user) {
-    if (data.session) {
-      setSession(data.session);
+    if (!currentSession || currentSession.user?.id !== data.user.id) {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error(
+          "Failed to refresh Supabase session after retrieving user",
+          sessionError.message ?? sessionError,
+        );
+      } else {
+        setSession(sessionData?.session ?? null);
+      }
     }
 
     return data.user;
