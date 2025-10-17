@@ -12,7 +12,7 @@ interface AuthCallbackClientProps {
 
 function buildRedirectTarget(path: string) {
   if (!path || path === "" || path === "undefined") {
-    return "/";
+    return "/new-trade";
   }
 
   if (path.startsWith("/")) {
@@ -24,7 +24,7 @@ function buildRedirectTarget(path: string) {
     return `${url.pathname}${url.search}${url.hash}`;
   } catch (error) {
     console.error("Invalid redirect path provided to Supabase OAuth callback", { path, error });
-    return "/";
+    return "/new-trade";
   }
 }
 
@@ -34,7 +34,7 @@ export default function AuthCallbackClient({ loading }: AuthCallbackClientProps)
   const { user, isLoading } = useSupabaseAuth();
   const [hasNavigated, setHasNavigated] = useState(false);
 
-  const redirectParam = searchParams?.get("redirect") ?? "/";
+  const redirectParam = searchParams?.get("redirect") ?? "/new-trade";
   const error = searchParams?.get("error");
   const errorDescription = searchParams?.get("error_description");
 

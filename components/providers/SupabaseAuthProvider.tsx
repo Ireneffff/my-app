@@ -88,7 +88,7 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const target = consumeCachedAuthRedirect("/");
+    const target = consumeCachedAuthRedirect("/new-trade");
 
     if (hasOAuthTokens) {
       const cleanUrl = `${window.location.pathname}${window.location.search}`;

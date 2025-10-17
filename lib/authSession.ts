@@ -129,7 +129,7 @@ function sanitizeRedirectTarget(target: string | null | undefined): string | nul
   try {
     const url = new URL(target, "https://example.com");
     const normalized = `${url.pathname}${url.search}${url.hash}`;
-    return normalized || "/";
+    return normalized || "/new-trade";
   } catch (error) {
     console.error("Invalid redirect target provided for Supabase auth", { target, error });
     return null;
@@ -173,7 +173,7 @@ export function clearCachedAuthRedirect() {
   window.sessionStorage.removeItem(AUTH_REDIRECT_STORAGE_KEY);
 }
 
-export function consumeCachedAuthRedirect(fallback: string = "/") {
+export function consumeCachedAuthRedirect(fallback: string = "/new-trade") {
   const target = getCachedAuthRedirect();
   clearCachedAuthRedirect();
   return target ?? fallback;

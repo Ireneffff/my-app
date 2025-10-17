@@ -36,7 +36,7 @@ export default function LoginPageClient({ loading }: LoginPageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading: isAuthLoading } = useSupabaseAuth();
-  const redirectTo = searchParams?.get("redirect") ?? "/";
+  const redirectTo = searchParams?.get("redirect") ?? "/new-trade";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
