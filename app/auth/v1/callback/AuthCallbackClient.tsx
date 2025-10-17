@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { useSupabaseAuth } from "@/components/providers/SupabaseAuthProvider";
+import { cacheAuthRedirect } from "@/lib/authSession";
 
 interface AuthCallbackClientProps {
   loading: ReactNode;
@@ -38,6 +39,10 @@ export default function AuthCallbackClient({ loading }: AuthCallbackClientProps)
   const errorDescription = searchParams?.get("error_description");
 
   const redirectTarget = useMemo(() => buildRedirectTarget(redirectParam), [redirectParam]);
+
+  useEffect(() => {
+    cacheAuthRedirect(redirectTarget);
+  }, [redirectTarget]);
 
   useEffect(() => {
     if (error || errorDescription) {

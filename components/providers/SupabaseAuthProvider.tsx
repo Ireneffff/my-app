@@ -9,8 +9,8 @@ import {
   type ReactNode,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import type { Session, User } from "@supabase/supabase-js";
-import { getCurrentSession, subscribeToAuthChanges } from "@/lib/authSession";
+import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
+import { cacheAuthRedirect, consumeCachedAuthRedirect, getCurrentSession, subscribeToAuthChanges } from "@/lib/authSession";
 
 export type SupabaseAuthContextValue = {
   session: Session | null;
@@ -25,8 +25,11 @@ const SupabaseAuthContext = createContext<SupabaseAuthContextValue>({
 });
 
 export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const [session, setSessionState] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastAuthEvent, setLastAuthEvent] = useState<AuthChangeEvent | "INITIAL_SESSION" | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -37,7 +40,7 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        setSession(initialSession);
+        setSessionState(initialSession);
         setIsLoading(false);
       })
       .catch((error) => {
@@ -48,13 +51,14 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         }
       });
 
-    const unsubscribe = subscribeToAuthChanges((nextSession) => {
+    const unsubscribe = subscribeToAuthChanges((nextSession, event) => {
       if (!isMounted) {
         return;
       }
 
-      setSession(nextSession);
+      setSessionState(nextSession);
       setIsLoading(false);
+      setLastAuthEvent(event);
     });
 
     return () => {
@@ -62,6 +66,43 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (isLoading || !session) {
+      return;
+    }
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const hash = window.location.hash ?? "";
+    const hasOAuthTokens =
+      hash.includes("access_token") || hash.includes("refresh_token") || hash.includes("expires_in");
+
+    const isAuthScreen = pathname?.startsWith("/login") || pathname?.startsWith("/auth/");
+
+    const shouldRedirect = hasOAuthTokens || lastAuthEvent === "SIGNED_IN" || isAuthScreen;
+
+    if (!shouldRedirect) {
+      return;
+    }
+
+    const target = consumeCachedAuthRedirect("/");
+
+    if (hasOAuthTokens) {
+      const cleanUrl = `${window.location.pathname}${window.location.search}`;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+
+    if (pathname !== target) {
+      router.replace(target);
+    }
+
+    if (lastAuthEvent === "SIGNED_IN") {
+      setLastAuthEvent(null);
+    }
+  }, [isLoading, lastAuthEvent, pathname, router, session]);
 
   const value = useMemo(
     () => ({
@@ -101,6 +142,7 @@ export function useRequireAuth(redirectTo: string = "/login") {
 
     const { search } = window.location;
     const currentPath = search && search.length > 0 ? `${pathname}${search}` : pathname ?? "/";
+    cacheAuthRedirect(currentPath);
     const target = `${redirectTo}?redirect=${encodeURIComponent(currentPath)}`;
     router.replace(target);
   }, [auth.isLoading, auth.user, pathname, redirectTo, router]);

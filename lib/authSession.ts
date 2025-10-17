@@ -1,29 +1,36 @@
 "use client";
 
-import type { Session, User } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { supabase } from "./supabaseClient";
 
-export type AuthListener = (session: Session | null) => void;
+export type AuthListener = (
+  session: Session | null,
+  event: AuthChangeEvent | "INITIAL_SESSION",
+) => void;
 
 let currentSession: Session | null = null;
 let hasLoadedInitialSession = false;
 let loadingPromise: Promise<Session | null> | null = null;
 const listeners = new Set<AuthListener>();
+const AUTH_REDIRECT_STORAGE_KEY = "supabase.auth.redirect";
 
-function notify(session: Session | null) {
+function notify(session: Session | null, event: AuthChangeEvent | "INITIAL_SESSION") {
   listeners.forEach((listener) => {
     try {
-      listener(session);
+      listener(session, event);
     } catch (listenerError) {
       console.error("Auth listener threw an error", listenerError);
     }
   });
 }
 
-function setSession(session: Session | null) {
+function setSession(
+  session: Session | null,
+  event: AuthChangeEvent | "INITIAL_SESSION" = "INITIAL_SESSION",
+) {
   currentSession = session ?? null;
   hasLoadedInitialSession = true;
-  notify(currentSession);
+  notify(currentSession, event);
 }
 
 async function loadInitialSession() {
@@ -40,7 +47,7 @@ async function loadInitialSession() {
         }
 
         const session = data?.session ?? null;
-        setSession(session);
+        setSession(session, "INITIAL_SESSION");
         return session;
       })
       .finally(() => {
@@ -55,8 +62,8 @@ if (typeof window !== "undefined") {
   void loadInitialSession();
 }
 
-void supabase.auth.onAuthStateChange((_event, session) => {
-  setSession(session ?? null);
+void supabase.auth.onAuthStateChange((event, session) => {
+  setSession(session ?? null, event);
 });
 
 export async function getCurrentSession(): Promise<Session | null> {
@@ -102,10 +109,72 @@ export function subscribeToAuthChanges(listener: AuthListener) {
   listeners.add(listener);
 
   if (hasLoadedInitialSession) {
-    listener(currentSession);
+    listener(currentSession, "INITIAL_SESSION");
   }
 
   return () => {
     listeners.delete(listener);
   };
+}
+
+function sanitizeRedirectTarget(target: string | null | undefined): string | null {
+  if (!target || target === "undefined" || target === "null") {
+    return null;
+  }
+
+  if (target.startsWith("/")) {
+    return target;
+  }
+
+  try {
+    const url = new URL(target, "https://example.com");
+    const normalized = `${url.pathname}${url.search}${url.hash}`;
+    return normalized || "/";
+  } catch (error) {
+    console.error("Invalid redirect target provided for Supabase auth", { target, error });
+    return null;
+  }
+}
+
+export function cacheAuthRedirect(target: string | null | undefined) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const sanitized = sanitizeRedirectTarget(target);
+
+  if (sanitized) {
+    window.sessionStorage.setItem(AUTH_REDIRECT_STORAGE_KEY, sanitized);
+  } else {
+    window.sessionStorage.removeItem(AUTH_REDIRECT_STORAGE_KEY);
+  }
+}
+
+export function getCachedAuthRedirect(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const stored = window.sessionStorage.getItem(AUTH_REDIRECT_STORAGE_KEY);
+  const sanitized = sanitizeRedirectTarget(stored);
+
+  if (!sanitized) {
+    return null;
+  }
+
+  return sanitized;
+}
+
+export function clearCachedAuthRedirect() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.removeItem(AUTH_REDIRECT_STORAGE_KEY);
+}
+
+export function consumeCachedAuthRedirect(fallback: string = "/") {
+  const target = getCachedAuthRedirect();
+  clearCachedAuthRedirect();
+  return target ?? fallback;
 }

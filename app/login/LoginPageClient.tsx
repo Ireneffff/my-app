@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode, type SVGP
 import { useSupabaseAuth } from "@/components/providers/SupabaseAuthProvider";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import { cacheAuthRedirect } from "@/lib/authSession";
 import { supabase } from "@/lib/supabaseClient";
 
 interface LoginPageClientProps {
@@ -46,6 +47,10 @@ export default function LoginPageClient({ loading }: LoginPageClientProps) {
   const isBusy = useMemo(() => isSubmitting || isGitHubRedirecting, [isSubmitting, isGitHubRedirecting]);
 
   useEffect(() => {
+    cacheAuthRedirect(redirectTo);
+  }, [redirectTo]);
+
+  useEffect(() => {
     if (isAuthLoading) {
       return;
     }
@@ -68,6 +73,8 @@ export default function LoginPageClient({ loading }: LoginPageClientProps) {
 
     setErrorMessage(null);
     setIsSubmitting(true);
+
+    cacheAuthRedirect(redirectTo);
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -96,6 +103,7 @@ export default function LoginPageClient({ loading }: LoginPageClientProps) {
 
     setErrorMessage(null);
     setIsGitHubRedirecting(true);
+    cacheAuthRedirect(redirectTo);
 
     try {
       const origin = typeof window === "undefined" ? null : window.location.origin;
