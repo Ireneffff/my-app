@@ -13,13 +13,13 @@ import {
   type ChangeEvent,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
-  type ReactNode,
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
+import { StyledSelect } from "@/components/StyledSelect";
 import {
   loadTrades,
   saveTrade,
@@ -83,41 +83,6 @@ const emotionalTriggerOptions = [
 const followedPlanOptions = ["Sì", "No", "Parziale"] as const;
 const respectedRiskOptions = ["Sì", "No"] as const;
 const repeatTradeOptions = ["Sì", "No", "Forse"] as const;
-
-const base =
-  "w-full rounded-lg border border-gray-200 bg-white text-sm p-2 focus:outline-none focus:ring-2 focus:ring-gray-300 appearance-none";
-
-type StyledSelectProps = {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  children: ReactNode;
-};
-
-export function StyledSelect({
-  label,
-  value,
-  onChange,
-  placeholder,
-  children,
-}: StyledSelectProps) {
-  return (
-    <div className="mb-4">
-      <label className="text-gray-600 text-xs font-medium mb-1 block">{label}</label>
-      <select
-        className={`${base} ${value ? "text-gray-800" : "text-gray-400"}`}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        <option value="" disabled hidden>
-          {placeholder}
-        </option>
-        {children}
-      </select>
-    </div>
-  );
-}
 
 type LibraryItem = StoredLibraryItem;
 
