@@ -14,6 +14,13 @@ export type StoredTrade = {
   imageData?: string | null;
   libraryItems?: StoredLibraryItem[];
   position: "LONG" | "SHORT";
+  entryPrice?: string | null;
+  exitPrice?: string | null;
+  stopLoss?: string | null;
+  takeProfit?: string | null;
+  pnl?: string | null;
+  confidenceLevel?: string | null;
+  mentalState?: string | null;
   riskReward?: string | null;
   risk?: string | null;
   pips?: string | null;
@@ -136,6 +143,70 @@ function parseTrades(raw: string | null): StoredTrade[] {
 
         if (storedItem.riskReward === undefined) {
           storedItem.riskReward = null;
+        }
+
+        if (storedItem.entryPrice !== undefined && storedItem.entryPrice !== null && typeof storedItem.entryPrice !== "string") {
+          storedItem.entryPrice = null;
+        }
+
+        if (storedItem.entryPrice === undefined) {
+          storedItem.entryPrice = null;
+        }
+
+        if (storedItem.exitPrice !== undefined && storedItem.exitPrice !== null && typeof storedItem.exitPrice !== "string") {
+          storedItem.exitPrice = null;
+        }
+
+        if (storedItem.exitPrice === undefined) {
+          storedItem.exitPrice = null;
+        }
+
+        if (storedItem.stopLoss !== undefined && storedItem.stopLoss !== null && typeof storedItem.stopLoss !== "string") {
+          storedItem.stopLoss = null;
+        }
+
+        if (storedItem.stopLoss === undefined) {
+          storedItem.stopLoss = null;
+        }
+
+        if (storedItem.takeProfit !== undefined && storedItem.takeProfit !== null && typeof storedItem.takeProfit !== "string") {
+          storedItem.takeProfit = null;
+        }
+
+        if (storedItem.takeProfit === undefined) {
+          storedItem.takeProfit = null;
+        }
+
+        if (storedItem.pnl !== undefined && storedItem.pnl !== null && typeof storedItem.pnl !== "string") {
+          storedItem.pnl = null;
+        }
+
+        if (storedItem.pnl === undefined) {
+          storedItem.pnl = null;
+        }
+
+        if (
+          storedItem.confidenceLevel !== undefined &&
+          storedItem.confidenceLevel !== null &&
+          typeof storedItem.confidenceLevel !== "string"
+        ) {
+          storedItem.confidenceLevel = null;
+        }
+
+        if (storedItem.confidenceLevel === undefined) {
+          storedItem.confidenceLevel = null;
+        }
+
+        if (
+          storedItem.mentalState !== undefined &&
+          storedItem.mentalState !== null &&
+          typeof storedItem.mentalState !== "string"
+        ) {
+          storedItem.mentalState = null;
+        }
+
+        if (storedItem.mentalState === undefined) {
+          storedItem.mentalState = null;
         }
 
         if (storedItem.risk !== undefined && storedItem.risk !== null && typeof storedItem.risk !== "string") {

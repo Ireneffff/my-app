@@ -42,6 +42,14 @@ const availableSymbols: SymbolOption[] = [
   { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
 ];
 
+const mentalStateOptions = [
+  "Calmo e concentrato",
+  "Stressato / stanco",
+  "Distratto (telefono, rumori, multitasking)",
+  "Troppo euforico (dopo un trade vinto)",
+  "Frustrato (dopo un trade perso)",
+];
+
 type LibraryItem = StoredLibraryItem;
 
 function createLibraryItem(imageData: string | null = null): LibraryItem {
@@ -221,6 +229,8 @@ function NewTradePageContent() {
   const [stopLoss, setStopLoss] = useState("");
   const [takeProfit, setTakeProfit] = useState("");
   const [pnl, setPnl] = useState("");
+  const [confidenceLevel, setConfidenceLevel] = useState("");
+  const [mentalState, setMentalState] = useState("");
   const [riskReward, setRiskReward] = useState("");
   const [risk, setRisk] = useState("");
   const [pips, setPips] = useState("");
@@ -796,6 +806,13 @@ function NewTradePageContent() {
     setImageError(null);
 
     setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
+    setEntryPrice(match.entryPrice ?? "");
+    setExitPrice(match.exitPrice ?? "");
+    setStopLoss(match.stopLoss ?? "");
+    setTakeProfit(match.takeProfit ?? "");
+    setPnl(match.pnl ?? "");
+    setConfidenceLevel(match.confidenceLevel ?? "");
+    setMentalState(match.mentalState ?? "");
     setRiskReward(match.riskReward ?? "");
     setRisk(match.risk ?? "");
     setPips(match.pips ?? "");
@@ -1793,6 +1810,72 @@ function NewTradePageContent() {
                         />
                       </div>
                     </div>
+
+                    <div className="border-t border-gray-200 mt-6" />
+                    <span className="mt-6 mb-2 block text-gray-700 text-sm font-semibold">
+                      Psychology & Mindset
+                    </span>
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="confidence-level-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Confidence Level (1–10)
+                        </label>
+                        <input
+                          id="confidence-level-input"
+                          type="number"
+                          min={1}
+                          max={10}
+                          step={1}
+                          value={confidenceLevel}
+                          onChange={(event) => {
+                            const rawValue = event.target.value;
+
+                            if (rawValue === "") {
+                              setConfidenceLevel("");
+                              return;
+                            }
+
+                            const numericValue = Number(rawValue);
+
+                            if (Number.isNaN(numericValue)) {
+                              return;
+                            }
+
+                            const clampedValue = Math.min(10, Math.max(1, numericValue));
+                            setConfidenceLevel(String(clampedValue));
+                          }}
+                          placeholder="Select level"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="mental-state-select"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Mental State Before Trade
+                        </label>
+                        <select
+                          id="mental-state-select"
+                          value={mentalState}
+                          onChange={(event) => setMentalState(event.target.value)}
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        >
+                          <option value="">
+                            Select state
+                          </option>
+                          {mentalStateOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1851,6 +1934,13 @@ function NewTradePageContent() {
                 notes: item.notes ?? "",
               })),
               position,
+              entryPrice: entryPrice.trim() || null,
+              exitPrice: exitPrice.trim() || null,
+              stopLoss: stopLoss.trim() || null,
+              takeProfit: takeProfit.trim() || null,
+              pnl: pnl.trim() || null,
+              confidenceLevel: confidenceLevel.trim() || null,
+              mentalState: mentalState.trim() || null,
               riskReward: riskReward.trim() || null,
               risk: risk.trim() || null,
               pips: pips.trim() || null,
