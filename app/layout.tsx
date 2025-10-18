@@ -2,6 +2,8 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import SwUpdateBanner from "@/components/SwUpdateBanner";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import AuthButton from "@/components/auth/AuthButton";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -25,10 +27,18 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-dvh bg-bg text-fg antialiased">
-        <main id="main">{children}</main>
+        <AuthProvider>
+          <div className="relative min-h-dvh">
+            <div className="fixed right-4 top-4 z-50 sm:right-6 sm:top-6">
+              <AuthButton />
+            </div>
 
-        {/* Banner "Update available" */}
-        <SwUpdateBanner />
+            <main id="main">{children}</main>
+
+            {/* Banner "Update available" */}
+            <SwUpdateBanner />
+          </div>
+        </AuthProvider>
 
         {/* Registra il Service Worker */}
         <script

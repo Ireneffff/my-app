@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
-import { supabase } from "@/lib/supabaseClient";
 import {
   loadTrades,
   REGISTERED_TRADES_UPDATED_EVENT,
@@ -43,23 +42,6 @@ function getCalendarDays(activeDate: Date) {
 export default function Home() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [trades, setTrades] = useState<StoredTrade[]>([]);
-
-  useEffect(() => {
-    async function checkSupabase() {
-      const { data: session, error: sessionError } =
-        await supabase.auth.getSession();
-      console.log("Supabase session:", session, "Error:", sessionError);
-
-      const { data, error } = await supabase.from("profiles").select("*").limit(5);
-      if (error) {
-        console.error("Supabase error:", error.message);
-      } else {
-        console.log("Supabase profiles:", data);
-      }
-    }
-
-    checkSupabase();
-  }, []);
 
   useEffect(() => {
     function refreshTrades() {
