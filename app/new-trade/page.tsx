@@ -1626,8 +1626,10 @@ function NewTradePageContent() {
                     </p>
                   </div>
 
-                  <div className="flex flex-col gap-3">
-                    <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Conditions</span>
+                  <div className="flex flex-col gap-4">
+                    <span className="mt-6 mb-2 block text-gray-700 text-sm font-semibold">
+                      General Details
+                    </span>
                     <div className="flex flex-col gap-4">
                       <div className="flex flex-col gap-2">
                         <label
@@ -1647,99 +1649,6 @@ function NewTradePageContent() {
                           <option value="LONG">Long</option>
                           <option value="SHORT">Short</option>
                         </select>
-                      </div>
-
-                      <div className="flex flex-col">
-                        <div className="border-t border-gray-200 mt-6 mb-4" />
-                        <span className="mb-2 block text-gray-700 text-sm font-semibold">
-                          Price & Risk Details
-                        </span>
-                        <div className="flex flex-col gap-4">
-                          <div className="flex flex-col gap-2">
-                            <label
-                              htmlFor="entry-price-input"
-                              className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                            >
-                              Entry Price
-                            </label>
-                            <input
-                              id="entry-price-input"
-                              type="number"
-                              value={entryPrice}
-                              onChange={(event) => setEntryPrice(event.target.value)}
-                              placeholder="Insert price"
-                              className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
-                            />
-                          </div>
-
-                          <div className="flex flex-col gap-2">
-                            <label
-                              htmlFor="exit-price-input"
-                              className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                            >
-                              Exit Price
-                            </label>
-                            <input
-                              id="exit-price-input"
-                              type="number"
-                              value={exitPrice}
-                              onChange={(event) => setExitPrice(event.target.value)}
-                              placeholder="Insert price"
-                              className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
-                            />
-                          </div>
-
-                          <div className="flex flex-col gap-2">
-                            <label
-                              htmlFor="stop-loss-input"
-                              className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                            >
-                              Stop Loss
-                            </label>
-                            <input
-                              id="stop-loss-input"
-                              type="number"
-                              value={stopLoss}
-                              onChange={(event) => setStopLoss(event.target.value)}
-                              placeholder="Insert price"
-                              className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
-                            />
-                          </div>
-
-                          <div className="flex flex-col gap-2">
-                            <label
-                              htmlFor="take-profit-input"
-                              className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                            >
-                              Take Profit
-                            </label>
-                            <input
-                              id="take-profit-input"
-                              type="number"
-                              value={takeProfit}
-                              onChange={(event) => setTakeProfit(event.target.value)}
-                              placeholder="Insert price"
-                              className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
-                            />
-                          </div>
-
-                          <div className="flex flex-col gap-2">
-                            <label
-                              htmlFor="pnl-input"
-                              className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                            >
-                              P&amp;L
-                            </label>
-                            <input
-                              id="pnl-input"
-                              type="number"
-                              value={pnl}
-                              onChange={(event) => setPnl(event.target.value)}
-                              placeholder="Insert"
-                              className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
-                            />
-                          </div>
-                        </div>
                       </div>
 
                       <div className="flex flex-col gap-2">
@@ -1789,6 +1698,97 @@ function NewTradePageContent() {
                           value={pips}
                           onChange={(event) => setPips(event.target.value)}
                           placeholder="55"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="border-t border-gray-200 mt-6" />
+                    <span className="mt-6 mb-2 block text-gray-700 text-sm font-semibold">
+                      Price & Risk Details
+                    </span>
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="entry-price-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Entry Price
+                        </label>
+                        <input
+                          id="entry-price-input"
+                          type="number"
+                          value={entryPrice}
+                          onChange={(event) => setEntryPrice(event.target.value)}
+                          placeholder="Insert price"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="exit-price-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Exit Price
+                        </label>
+                        <input
+                          id="exit-price-input"
+                          type="number"
+                          value={exitPrice}
+                          onChange={(event) => setExitPrice(event.target.value)}
+                          placeholder="Insert price"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="stop-loss-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Stop Loss
+                        </label>
+                        <input
+                          id="stop-loss-input"
+                          type="number"
+                          value={stopLoss}
+                          onChange={(event) => setStopLoss(event.target.value)}
+                          placeholder="Insert price"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="take-profit-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Take Profit
+                        </label>
+                        <input
+                          id="take-profit-input"
+                          type="number"
+                          value={takeProfit}
+                          onChange={(event) => setTakeProfit(event.target.value)}
+                          placeholder="Insert price"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="pnl-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          P&amp;L
+                        </label>
+                        <input
+                          id="pnl-input"
+                          type="number"
+                          value={pnl}
+                          onChange={(event) => setPnl(event.target.value)}
+                          placeholder="Insert"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
                         />
                       </div>
