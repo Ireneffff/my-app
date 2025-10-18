@@ -1860,11 +1860,11 @@ function NewTradePageContent() {
                     <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
                       Psychology & Mindset
                     </span>
-                    <div className="flex flex-col">
-                      <div className="mt-3 flex flex-col first:mt-0">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-2">
                         <label
                           htmlFor="pre-trade-mental-state"
-                          className="text-gray-600 text-xs font-medium mb-1"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                         >
                           Stato mentale prima del trade
                         </label>
@@ -1872,7 +1872,7 @@ function NewTradePageContent() {
                           id="pre-trade-mental-state"
                           value={preTradeMentalState}
                           onChange={(event) => setPreTradeMentalState(event.target.value)}
-                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
                         >
                           <option value="">Seleziona opzione</option>
                           {preTradeMentalStateOptions.map((option) => (
@@ -1883,10 +1883,10 @@ function NewTradePageContent() {
                         </select>
                       </div>
 
-                      <div className="mt-3 flex flex-col first:mt-0">
+                      <div className="flex flex-col gap-2">
                         <label
                           htmlFor="emotions-during-trade"
-                          className="text-gray-600 text-xs font-medium mb-1"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                         >
                           Emozioni durante il trade
                         </label>
@@ -1894,7 +1894,7 @@ function NewTradePageContent() {
                           id="emotions-during-trade"
                           value={emotionsDuringTrade}
                           onChange={(event) => setEmotionsDuringTrade(event.target.value)}
-                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
                         >
                           <option value="">Seleziona opzione</option>
                           {emotionsDuringTradeOptions.map((option) => (
@@ -1905,10 +1905,10 @@ function NewTradePageContent() {
                         </select>
                       </div>
 
-                      <div className="mt-3 flex flex-col first:mt-0">
+                      <div className="flex flex-col gap-2">
                         <label
                           htmlFor="emotions-after-trade"
-                          className="text-gray-600 text-xs font-medium mb-1"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                         >
                           Emozioni dopo il trade
                         </label>
@@ -1916,7 +1916,7 @@ function NewTradePageContent() {
                           id="emotions-after-trade"
                           value={emotionsAfterTrade}
                           onChange={(event) => setEmotionsAfterTrade(event.target.value)}
-                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
                         >
                           <option value="">Seleziona opzione</option>
                           {emotionsAfterTradeOptions.map((option) => (
@@ -1927,10 +1927,10 @@ function NewTradePageContent() {
                         </select>
                       </div>
 
-                      <div className="mt-3 flex flex-col first:mt-0">
+                      <div className="flex flex-col gap-2">
                         <label
                           htmlFor="confidence-level-input"
-                          className="text-gray-600 text-xs font-medium mb-1"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                         >
                           Livello di fiducia (1–10)
                         </label>
@@ -1959,14 +1959,14 @@ function NewTradePageContent() {
                             setConfidenceLevel(String(clampedValue));
                           }}
                           placeholder="Seleziona livello"
-                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
                         />
                       </div>
 
-                      <div className="mt-3 flex flex-col first:mt-0">
+                      <div className="flex flex-col gap-2">
                         <label
                           htmlFor="emotional-trigger-select"
-                          className="text-gray-600 text-xs font-medium mb-1"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                         >
                           Trigger emotivi
                         </label>
@@ -1974,7 +1974,7 @@ function NewTradePageContent() {
                           id="emotional-trigger-select"
                           value={emotionalTrigger}
                           onChange={(event) => setEmotionalTrigger(event.target.value)}
-                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
                         >
                           <option value="">Seleziona opzione</option>
                           {emotionalTriggerOptions.map((option) => (
@@ -1985,10 +1985,10 @@ function NewTradePageContent() {
                         </select>
                       </div>
 
-                      <div className="mt-3 flex flex-col first:mt-0">
+                      <div className="flex flex-col gap-2">
                         <label
                           htmlFor="followed-plan-select"
-                          className="text-gray-600 text-xs font-medium mb-1"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                         >
                           Ho seguito il mio piano?
                         </label>
@@ -1996,7 +1996,7 @@ function NewTradePageContent() {
                           id="followed-plan-select"
                           value={followedPlan}
                           onChange={(event) => setFollowedPlan(event.target.value)}
-                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
                         >
                           <option value="">Seleziona risposta</option>
                           {followedPlanOptions.map((option) => (
@@ -2007,10 +2007,10 @@ function NewTradePageContent() {
                         </select>
                       </div>
 
-                      <div className="mt-3 flex flex-col first:mt-0">
+                      <div className="flex flex-col gap-2">
                         <label
                           htmlFor="respected-risk-select"
-                          className="text-gray-600 text-xs font-medium mb-1"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                         >
                           Ho rispettato il rischio prefissato?
                         </label>
@@ -2018,7 +2018,7 @@ function NewTradePageContent() {
                           id="respected-risk-select"
                           value={respectedRiskChoice}
                           onChange={(event) => setRespectedRiskChoice(event.target.value)}
-                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
                         >
                           <option value="">Seleziona risposta</option>
                           {respectedRiskOptions.map((option) => (
@@ -2029,10 +2029,10 @@ function NewTradePageContent() {
                         </select>
                       </div>
 
-                      <div className="mt-3 flex flex-col first:mt-0">
+                      <div className="flex flex-col gap-2">
                         <label
                           htmlFor="would-repeat-trade-select"
-                          className="text-gray-600 text-xs font-medium mb-1"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                         >
                           Rifarei questo trade?
                         </label>
@@ -2040,7 +2040,7 @@ function NewTradePageContent() {
                           id="would-repeat-trade-select"
                           value={wouldRepeatTrade}
                           onChange={(event) => setWouldRepeatTrade(event.target.value)}
-                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
                         >
                           <option value="">Seleziona risposta</option>
                           {repeatTradeOptions.map((option) => (
