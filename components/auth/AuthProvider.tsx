@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import type { ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
@@ -26,9 +33,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
-    supabase.auth
-      .getSession()
-      .then(({ data, error }) => {
+    const clearOAuthFragments = () => {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      const hasHashParams = window.location.hash.includes("access_token") || window.location.hash.includes("refresh_token");
+
+      if (!hasHashParams) {
+        return;
+      }
+
+      const cleanUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
+      window.history.replaceState({}, document.title, cleanUrl);
+    };
+
+    const syncSessionFromUrl = async () => {
+      try {
+        const {
+          data: { session: activeSession },
+          error,
+        } = await supabase.auth.getSession();
+
         if (!isMounted) {
           return;
         }
@@ -40,11 +66,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const activeSession = data.session ?? null;
-        setSession(activeSession);
+        setSession(activeSession ?? null);
         setStatus(activeSession ? "authenticated" : "unauthenticated");
-      })
-      .catch((error) => {
+
+        if (activeSession) {
+          clearOAuthFragments();
+        }
+      } catch (error) {
         if (!isMounted) {
           return;
         }
@@ -52,11 +80,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("Unexpected error while restoring Supabase session:", error);
         setSession(null);
         setStatus("unauthenticated");
-      });
+      }
+    };
+
+    void syncSessionFromUrl();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!isMounted) {
         return;
       }
@@ -64,6 +95,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(newSession);
       setStatus(newSession ? "authenticated" : "unauthenticated");
       setIsAuthenticating(false);
+
+      if (newSession && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION")) {
+        clearOAuthFragments();
+      }
     });
 
     return () => {
