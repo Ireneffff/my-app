@@ -96,9 +96,8 @@ function getDateTimeDisplayParts(date: Date | null) {
 function getStartOfWeek(date: Date) {
   const start = new Date(date);
   start.setHours(0, 0, 0, 0);
-  const day = start.getDay();
-  const diffFromMonday = (day + 6) % 7;
-  start.setDate(start.getDate() - diffFromMonday);
+  const day = start.getDay() || 7;
+  start.setDate(start.getDate() + 1 - day);
   return start;
 }
 
@@ -110,7 +109,7 @@ function getStartOfMonth(date: Date) {
 }
 
 function getWeekDays(weekStart: Date) {
-  return Array.from({ length: 7 }, (_, index) => {
+  return Array.from({ length: 5 }, (_, index) => {
     const date = new Date(weekStart);
     date.setDate(weekStart.getDate() + index);
     return date;

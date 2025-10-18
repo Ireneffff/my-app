@@ -64,9 +64,8 @@ function getDateTimeDisplay(isoValue?: string | null) {
 function getStartOfWeek(date: Date) {
   const start = new Date(date);
   start.setHours(0, 0, 0, 0);
-  const day = start.getDay();
-  const diffFromMonday = (day + 6) % 7;
-  start.setDate(start.getDate() - diffFromMonday);
+  const day = start.getDay() || 7;
+  start.setDate(start.getDate() + 1 - day);
   return start;
 }
 
