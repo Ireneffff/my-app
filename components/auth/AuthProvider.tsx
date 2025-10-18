@@ -50,15 +50,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const syncSessionFromUrl = async () => {
       try {
+        const currentHash = typeof window !== "undefined" ? window.location.hash : "";
+        console.log("[AuthProvider] syncSessionFromUrl: current hash", currentHash);
+
         const hasOAuthHash =
           typeof window !== "undefined" &&
           window.location.hash.length > 0 &&
           window.location.hash.includes("access_token");
 
+        let hasProcessedExchange = false;
+
         if (hasOAuthHash) {
-          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(
-            window.location.hash,
-          );
+          console.log("[AuthProvider] Found OAuth hash fragment, exchanging for session...");
+          const {
+            data: exchangeData,
+            error: exchangeError,
+          } = await supabase.auth.exchangeCodeForSession(window.location.hash);
+
+          console.log("[AuthProvider] exchangeCodeForSession response", {
+            data: exchangeData,
+            error: exchangeError,
+          });
 
           if (!isMounted) {
             return;
@@ -68,16 +80,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error(
               "Unable to exchange Supabase session:",
               exchangeError.message,
+              exchangeError,
             );
+          } else {
+            console.log("[AuthProvider] exchangeCodeForSession success", exchangeData);
+            const exchangedSession = exchangeData?.session ?? null;
+            setSession(exchangedSession);
+            setStatus(exchangedSession ? "authenticated" : "unauthenticated");
+            clearOAuthFragments();
+            hasProcessedExchange = true;
           }
-
-          clearOAuthFragments();
+        } else {
+          console.log("[AuthProvider] No OAuth hash fragment detected, skipping exchange.");
         }
 
         const {
           data: { session: activeSession },
           error,
         } = await supabase.auth.getSession();
+
+        console.log("[AuthProvider] getSession result", {
+          hasSession: Boolean(activeSession),
+          error,
+        });
 
         if (!isMounted) {
           return;
@@ -90,8 +115,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        setSession(activeSession ?? null);
-        setStatus(activeSession ? "authenticated" : "unauthenticated");
+        if (activeSession) {
+          setSession(activeSession);
+          setStatus("authenticated");
+        } else if (!hasProcessedExchange) {
+          setSession(null);
+          setStatus("unauthenticated");
+        }
 
         if (activeSession) {
           clearOAuthFragments();
