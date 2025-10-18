@@ -101,11 +101,19 @@ a { color: inherit; text-decoration: none; }
 /* iOS tap highlight meno invasivo */
 * { -webkit-tap-highlight-color: rgba(0, 0, 0, 0.04); }
 
-.psychology-select--placeholder {
-  color: rgba(var(--muted-fg), 0.6);
+.psychology-select {
+  color: rgb(var(--fg));
+  background-color: rgb(var(--surface));
 }
 
-.placeholder-option {
-  color: rgba(var(--muted-fg), 0.6);
-  font-weight: 500;
+.psychology-select--placeholder {
+  color: rgba(var(--muted-fg), 0.7);
+}
+
+.psychology-select option {
+  color: rgb(var(--fg));
+}
+
+.psychology-select option.placeholder-option {
+  color: rgba(var(--muted-fg), 0.7);
 }

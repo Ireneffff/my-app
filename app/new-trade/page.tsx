@@ -84,7 +84,7 @@ const respectedRiskOptions = ["Sì", "No"] as const;
 const repeatTradeOptions = ["Sì", "No", "Forse"] as const;
 
 const psychologySelectBaseClasses =
-  "rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30";
+  "psychology-select rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent/30";
 
 function getPsychologySelectClasses(value: string) {
   return value
