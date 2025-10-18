@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           window.location.hash.includes("access_token");
 
         if (hasOAuthHash) {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(
             window.location.hash,
           );
 
@@ -64,19 +64,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
           }
 
-          clearOAuthFragments();
-
-          if (error) {
-            console.error("Unable to exchange Supabase session:", error.message);
-            setSession(null);
-            setStatus("unauthenticated");
-            return;
+          if (exchangeError) {
+            console.error(
+              "Unable to exchange Supabase session:",
+              exchangeError.message,
+            );
           }
 
-          const activeSession = data.session ?? null;
-          setSession(activeSession);
-          setStatus(activeSession ? "authenticated" : "unauthenticated");
-          return;
+          clearOAuthFragments();
         }
 
         const {
