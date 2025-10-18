@@ -1689,7 +1689,7 @@ function NewTradePageContent() {
                   </div>
 
                   <div className="flex flex-col gap-4">
-                    <span className="mt-6 mb-2 block text-gray-700 text-sm font-semibold">
+                    <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
                       General Details
                     </span>
                     <div className="flex flex-col gap-4">
@@ -1766,7 +1766,7 @@ function NewTradePageContent() {
                     </div>
 
                     <div className="border-t border-gray-200 mt-6" />
-                    <span className="mt-6 mb-2 block text-gray-700 text-sm font-semibold">
+                    <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
                       Price & Risk Details
                     </span>
                     <div className="flex flex-col gap-4">
@@ -1857,7 +1857,7 @@ function NewTradePageContent() {
                     </div>
 
                     <div className="border-t border-gray-200 mt-6" />
-                    <span className="mt-6 mb-2 block text-gray-700 text-sm font-semibold">
+                    <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
                       Psychology & Mindset
                     </span>
                     <div className="flex flex-col">
@@ -1872,7 +1872,7 @@ function NewTradePageContent() {
                           id="pre-trade-mental-state"
                           value={preTradeMentalState}
                           onChange={(event) => setPreTradeMentalState(event.target.value)}
-                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         >
                           <option value="">Seleziona opzione</option>
                           {preTradeMentalStateOptions.map((option) => (
@@ -1894,7 +1894,7 @@ function NewTradePageContent() {
                           id="emotions-during-trade"
                           value={emotionsDuringTrade}
                           onChange={(event) => setEmotionsDuringTrade(event.target.value)}
-                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         >
                           <option value="">Seleziona opzione</option>
                           {emotionsDuringTradeOptions.map((option) => (
@@ -1916,7 +1916,7 @@ function NewTradePageContent() {
                           id="emotions-after-trade"
                           value={emotionsAfterTrade}
                           onChange={(event) => setEmotionsAfterTrade(event.target.value)}
-                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         >
                           <option value="">Seleziona opzione</option>
                           {emotionsAfterTradeOptions.map((option) => (
@@ -1959,7 +1959,7 @@ function NewTradePageContent() {
                             setConfidenceLevel(String(clampedValue));
                           }}
                           placeholder="Seleziona livello"
-                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         />
                       </div>
 
@@ -1974,7 +1974,7 @@ function NewTradePageContent() {
                           id="emotional-trigger-select"
                           value={emotionalTrigger}
                           onChange={(event) => setEmotionalTrigger(event.target.value)}
-                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         >
                           <option value="">Seleziona opzione</option>
                           {emotionalTriggerOptions.map((option) => (
@@ -1996,7 +1996,7 @@ function NewTradePageContent() {
                           id="followed-plan-select"
                           value={followedPlan}
                           onChange={(event) => setFollowedPlan(event.target.value)}
-                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         >
                           <option value="">Seleziona risposta</option>
                           {followedPlanOptions.map((option) => (
@@ -2018,7 +2018,7 @@ function NewTradePageContent() {
                           id="respected-risk-select"
                           value={respectedRiskChoice}
                           onChange={(event) => setRespectedRiskChoice(event.target.value)}
-                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         >
                           <option value="">Seleziona risposta</option>
                           {respectedRiskOptions.map((option) => (
@@ -2040,7 +2040,7 @@ function NewTradePageContent() {
                           id="would-repeat-trade-select"
                           value={wouldRepeatTrade}
                           onChange={(event) => setWouldRepeatTrade(event.target.value)}
-                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         >
                           <option value="">Seleziona risposta</option>
                           {repeatTradeOptions.map((option) => (
