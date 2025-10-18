@@ -1650,8 +1650,8 @@ function NewTradePageContent() {
                       </div>
 
                       <div className="flex flex-col">
-                        <span className="mt-6 mb-2 block text-gray-600 text-sm font-medium">
-                          Trade Details
+                        <span className="mt-6 mb-2 block text-gray-700 text-sm font-semibold">
+                          Price & Risk Details
                         </span>
                         <div className="flex flex-col gap-4">
                           <div className="flex flex-col gap-2">
