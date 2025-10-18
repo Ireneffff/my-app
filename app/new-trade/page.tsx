@@ -1872,7 +1872,11 @@ function NewTradePageContent() {
                           id="pre-trade-mental-state"
                           value={preTradeMentalState}
                           onChange={(event) => setPreTradeMentalState(event.target.value)}
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30 ${
+                            preTradeMentalState
+                              ? "text-fg text-gray-800"
+                              : "text-muted-fg text-gray-400"
+                          }`}
                         >
                           <option value="">Seleziona opzione</option>
                           {preTradeMentalStateOptions.map((option) => (
@@ -1894,7 +1898,11 @@ function NewTradePageContent() {
                           id="emotions-during-trade"
                           value={emotionsDuringTrade}
                           onChange={(event) => setEmotionsDuringTrade(event.target.value)}
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30 ${
+                            emotionsDuringTrade
+                              ? "text-fg text-gray-800"
+                              : "text-muted-fg text-gray-400"
+                          }`}
                         >
                           <option value="">Seleziona opzione</option>
                           {emotionsDuringTradeOptions.map((option) => (
@@ -1916,7 +1924,11 @@ function NewTradePageContent() {
                           id="emotions-after-trade"
                           value={emotionsAfterTrade}
                           onChange={(event) => setEmotionsAfterTrade(event.target.value)}
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30 ${
+                            emotionsAfterTrade
+                              ? "text-fg text-gray-800"
+                              : "text-muted-fg text-gray-400"
+                          }`}
                         >
                           <option value="">Seleziona opzione</option>
                           {emotionsAfterTradeOptions.map((option) => (
@@ -1974,7 +1986,11 @@ function NewTradePageContent() {
                           id="emotional-trigger-select"
                           value={emotionalTrigger}
                           onChange={(event) => setEmotionalTrigger(event.target.value)}
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30 ${
+                            emotionalTrigger
+                              ? "text-fg text-gray-800"
+                              : "text-muted-fg text-gray-400"
+                          }`}
                         >
                           <option value="">Seleziona opzione</option>
                           {emotionalTriggerOptions.map((option) => (
@@ -1996,7 +2012,11 @@ function NewTradePageContent() {
                           id="followed-plan-select"
                           value={followedPlan}
                           onChange={(event) => setFollowedPlan(event.target.value)}
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30 ${
+                            followedPlan
+                              ? "text-fg text-gray-800"
+                              : "text-muted-fg text-gray-400"
+                          }`}
                         >
                           <option value="">Seleziona risposta</option>
                           {followedPlanOptions.map((option) => (
@@ -2018,7 +2038,11 @@ function NewTradePageContent() {
                           id="respected-risk-select"
                           value={respectedRiskChoice}
                           onChange={(event) => setRespectedRiskChoice(event.target.value)}
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30 ${
+                            respectedRiskChoice
+                              ? "text-fg text-gray-800"
+                              : "text-muted-fg text-gray-400"
+                          }`}
                         >
                           <option value="">Seleziona risposta</option>
                           {respectedRiskOptions.map((option) => (
@@ -2040,7 +2064,11 @@ function NewTradePageContent() {
                           id="would-repeat-trade-select"
                           value={wouldRepeatTrade}
                           onChange={(event) => setWouldRepeatTrade(event.target.value)}
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30 ${
+                            wouldRepeatTrade
+                              ? "text-fg text-gray-800"
+                              : "text-muted-fg text-gray-400"
+                          }`}
                         >
                           <option value="">Seleziona risposta</option>
                           {repeatTradeOptions.map((option) => (
