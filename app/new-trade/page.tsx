@@ -84,12 +84,12 @@ const respectedRiskOptions = ["Sì", "No"] as const;
 const repeatTradeOptions = ["Sì", "No", "Forse"] as const;
 
 const psychologySelectBaseClasses =
-  "rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent/30";
+  "rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30";
 
 function getPsychologySelectClasses(value: string) {
-  return `${psychologySelectBaseClasses} ${
-    value ? "text-fg text-opacity-100" : "text-muted-fg text-opacity-60"
-  }`;
+  return value
+    ? psychologySelectBaseClasses
+    : `${psychologySelectBaseClasses} psychology-select--placeholder`;
 }
 
 type LibraryItem = StoredLibraryItem;
@@ -1883,7 +1883,14 @@ function NewTradePageContent() {
                           onChange={(event) => setPreTradeMentalState(event.target.value)}
                           className={getPsychologySelectClasses(preTradeMentalState)}
                         >
-                          <option value="">Seleziona opzione</option>
+                          <option
+                            value=""
+                            disabled
+                            hidden
+                            className="placeholder-option"
+                          >
+                            Seleziona opzione
+                          </option>
                           {preTradeMentalStateOptions.map((option) => (
                             <option key={option} value={option}>
                               {option}
@@ -1905,7 +1912,14 @@ function NewTradePageContent() {
                           onChange={(event) => setEmotionsDuringTrade(event.target.value)}
                           className={getPsychologySelectClasses(emotionsDuringTrade)}
                         >
-                          <option value="">Seleziona opzione</option>
+                          <option
+                            value=""
+                            disabled
+                            hidden
+                            className="placeholder-option"
+                          >
+                            Seleziona opzione
+                          </option>
                           {emotionsDuringTradeOptions.map((option) => (
                             <option key={option} value={option}>
                               {option}
@@ -1927,7 +1941,14 @@ function NewTradePageContent() {
                           onChange={(event) => setEmotionsAfterTrade(event.target.value)}
                           className={getPsychologySelectClasses(emotionsAfterTrade)}
                         >
-                          <option value="">Seleziona opzione</option>
+                          <option
+                            value=""
+                            disabled
+                            hidden
+                            className="placeholder-option"
+                          >
+                            Seleziona opzione
+                          </option>
                           {emotionsAfterTradeOptions.map((option) => (
                             <option key={option} value={option}>
                               {option}
@@ -1985,7 +2006,14 @@ function NewTradePageContent() {
                           onChange={(event) => setEmotionalTrigger(event.target.value)}
                           className={getPsychologySelectClasses(emotionalTrigger)}
                         >
-                          <option value="">Seleziona opzione</option>
+                          <option
+                            value=""
+                            disabled
+                            hidden
+                            className="placeholder-option"
+                          >
+                            Seleziona opzione
+                          </option>
                           {emotionalTriggerOptions.map((option) => (
                             <option key={option} value={option}>
                               {option}
@@ -2007,7 +2035,14 @@ function NewTradePageContent() {
                           onChange={(event) => setFollowedPlan(event.target.value)}
                           className={getPsychologySelectClasses(followedPlan)}
                         >
-                          <option value="">Seleziona risposta</option>
+                          <option
+                            value=""
+                            disabled
+                            hidden
+                            className="placeholder-option"
+                          >
+                            Seleziona risposta
+                          </option>
                           {followedPlanOptions.map((option) => (
                             <option key={option} value={option}>
                               {option}
@@ -2029,7 +2064,14 @@ function NewTradePageContent() {
                           onChange={(event) => setRespectedRiskChoice(event.target.value)}
                           className={getPsychologySelectClasses(respectedRiskChoice)}
                         >
-                          <option value="">Seleziona risposta</option>
+                          <option
+                            value=""
+                            disabled
+                            hidden
+                            className="placeholder-option"
+                          >
+                            Seleziona risposta
+                          </option>
                           {respectedRiskOptions.map((option) => (
                             <option key={option} value={option}>
                               {option}
@@ -2051,7 +2093,14 @@ function NewTradePageContent() {
                           onChange={(event) => setWouldRepeatTrade(event.target.value)}
                           className={getPsychologySelectClasses(wouldRepeatTrade)}
                         >
-                          <option value="">Seleziona risposta</option>
+                          <option
+                            value=""
+                            disabled
+                            hidden
+                            className="placeholder-option"
+                          >
+                            Seleziona risposta
+                          </option>
                           {repeatTradeOptions.map((option) => (
                             <option key={option} value={option}>
                               {option}
