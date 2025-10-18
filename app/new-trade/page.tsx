@@ -216,6 +216,11 @@ function NewTradePageContent() {
     initialLibraryItems[0]?.id ?? "",
   );
   const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
+  const [entryPrice, setEntryPrice] = useState("");
+  const [exitPrice, setExitPrice] = useState("");
+  const [stopLoss, setStopLoss] = useState("");
+  const [takeProfit, setTakeProfit] = useState("");
+  const [pnl, setPnl] = useState("");
   const [riskReward, setRiskReward] = useState("");
   const [risk, setRisk] = useState("");
   const [pips, setPips] = useState("");
@@ -1642,6 +1647,91 @@ function NewTradePageContent() {
                           <option value="LONG">Long</option>
                           <option value="SHORT">Short</option>
                         </select>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="entry-price-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Entry Price
+                        </label>
+                        <input
+                          id="entry-price-input"
+                          type="number"
+                          value={entryPrice}
+                          onChange={(event) => setEntryPrice(event.target.value)}
+                          placeholder="Insert price"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="exit-price-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Exit Price
+                        </label>
+                        <input
+                          id="exit-price-input"
+                          type="number"
+                          value={exitPrice}
+                          onChange={(event) => setExitPrice(event.target.value)}
+                          placeholder="Insert price"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="stop-loss-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Stop Loss
+                        </label>
+                        <input
+                          id="stop-loss-input"
+                          type="number"
+                          value={stopLoss}
+                          onChange={(event) => setStopLoss(event.target.value)}
+                          placeholder="Insert price"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="take-profit-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Take Profit
+                        </label>
+                        <input
+                          id="take-profit-input"
+                          type="number"
+                          value={takeProfit}
+                          onChange={(event) => setTakeProfit(event.target.value)}
+                          placeholder="Insert price"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="pnl-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          P&amp;L
+                        </label>
+                        <input
+                          id="pnl-input"
+                          type="number"
+                          value={pnl}
+                          onChange={(event) => setPnl(event.target.value)}
+                          placeholder="Insert"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
                       </div>
 
                       <div className="flex flex-col gap-2">
