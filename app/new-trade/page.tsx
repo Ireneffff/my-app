@@ -13,6 +13,7 @@ import {
   type ChangeEvent,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
@@ -83,13 +84,39 @@ const followedPlanOptions = ["Sì", "No", "Parziale"] as const;
 const respectedRiskOptions = ["Sì", "No"] as const;
 const repeatTradeOptions = ["Sì", "No", "Forse"] as const;
 
-const psychologySelectBaseClasses =
-  "psychology-select rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent/30";
+const base =
+  "w-full rounded-lg border border-gray-200 bg-white text-sm p-2 focus:outline-none focus:ring-2 focus:ring-gray-300 appearance-none";
 
-function getPsychologySelectClasses(value: string) {
-  return value
-    ? psychologySelectBaseClasses
-    : `${psychologySelectBaseClasses} psychology-select--placeholder`;
+type StyledSelectProps = {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  children: ReactNode;
+};
+
+export function StyledSelect({
+  label,
+  value,
+  onChange,
+  placeholder,
+  children,
+}: StyledSelectProps) {
+  return (
+    <div className="mb-4">
+      <label className="text-gray-600 text-xs font-medium mb-1 block">{label}</label>
+      <select
+        className={`${base} ${value ? "text-gray-800" : "text-gray-400"}`}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        <option value="" disabled hidden>
+          {placeholder}
+        </option>
+        {children}
+      </select>
+    </div>
+  );
 }
 
 type LibraryItem = StoredLibraryItem;
@@ -1869,98 +1896,50 @@ function NewTradePageContent() {
                     <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
                       Psychology & Mindset
                     </span>
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="pre-trade-mental-state"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Stato mentale prima del trade
-                        </label>
-                        <select
-                          id="pre-trade-mental-state"
-                          value={preTradeMentalState}
-                          onChange={(event) => setPreTradeMentalState(event.target.value)}
-                          className={getPsychologySelectClasses(preTradeMentalState)}
-                        >
-                          <option
-                            value=""
-                            disabled
-                            hidden
-                            className="placeholder-option"
-                          >
-                            Seleziona opzione
+                    <div className="flex flex-col">
+                      <StyledSelect
+                        label="Stato mentale prima del trade"
+                        value={preTradeMentalState}
+                        onChange={(nextValue) => setPreTradeMentalState(nextValue)}
+                        placeholder="Seleziona opzione"
+                      >
+                        {preTradeMentalStateOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
                           </option>
-                          {preTradeMentalStateOptions.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                        ))}
+                      </StyledSelect>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="emotions-during-trade"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Emozioni durante il trade
-                        </label>
-                        <select
-                          id="emotions-during-trade"
-                          value={emotionsDuringTrade}
-                          onChange={(event) => setEmotionsDuringTrade(event.target.value)}
-                          className={getPsychologySelectClasses(emotionsDuringTrade)}
-                        >
-                          <option
-                            value=""
-                            disabled
-                            hidden
-                            className="placeholder-option"
-                          >
-                            Seleziona opzione
+                      <StyledSelect
+                        label="Emozioni durante il trade"
+                        value={emotionsDuringTrade}
+                        onChange={(nextValue) => setEmotionsDuringTrade(nextValue)}
+                        placeholder="Seleziona opzione"
+                      >
+                        {emotionsDuringTradeOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
                           </option>
-                          {emotionsDuringTradeOptions.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                        ))}
+                      </StyledSelect>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="emotions-after-trade"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Emozioni dopo il trade
-                        </label>
-                        <select
-                          id="emotions-after-trade"
-                          value={emotionsAfterTrade}
-                          onChange={(event) => setEmotionsAfterTrade(event.target.value)}
-                          className={getPsychologySelectClasses(emotionsAfterTrade)}
-                        >
-                          <option
-                            value=""
-                            disabled
-                            hidden
-                            className="placeholder-option"
-                          >
-                            Seleziona opzione
+                      <StyledSelect
+                        label="Emozioni dopo il trade"
+                        value={emotionsAfterTrade}
+                        onChange={(nextValue) => setEmotionsAfterTrade(nextValue)}
+                        placeholder="Seleziona opzione"
+                      >
+                        {emotionsAfterTradeOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
                           </option>
-                          {emotionsAfterTradeOptions.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                        ))}
+                      </StyledSelect>
 
-                      <div className="flex flex-col gap-2">
+                      <div className="mb-4">
                         <label
                           htmlFor="confidence-level-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          className="text-gray-600 text-xs font-medium mb-1 block"
                         >
                           Livello di fiducia (1–10)
                         </label>
@@ -1989,125 +1968,61 @@ function NewTradePageContent() {
                             setConfidenceLevel(String(clampedValue));
                           }}
                           placeholder="Seleziona livello"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 text-sm placeholder-gray-400 p-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         />
                       </div>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="emotional-trigger-select"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Trigger emotivi
-                        </label>
-                        <select
-                          id="emotional-trigger-select"
-                          value={emotionalTrigger}
-                          onChange={(event) => setEmotionalTrigger(event.target.value)}
-                          className={getPsychologySelectClasses(emotionalTrigger)}
-                        >
-                          <option
-                            value=""
-                            disabled
-                            hidden
-                            className="placeholder-option"
-                          >
-                            Seleziona opzione
+                      <StyledSelect
+                        label="Trigger emotivi"
+                        value={emotionalTrigger}
+                        onChange={(nextValue) => setEmotionalTrigger(nextValue)}
+                        placeholder="Seleziona opzione"
+                      >
+                        {emotionalTriggerOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
                           </option>
-                          {emotionalTriggerOptions.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                        ))}
+                      </StyledSelect>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="followed-plan-select"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Ho seguito il mio piano?
-                        </label>
-                        <select
-                          id="followed-plan-select"
-                          value={followedPlan}
-                          onChange={(event) => setFollowedPlan(event.target.value)}
-                          className={getPsychologySelectClasses(followedPlan)}
-                        >
-                          <option
-                            value=""
-                            disabled
-                            hidden
-                            className="placeholder-option"
-                          >
-                            Seleziona risposta
+                      <StyledSelect
+                        label="Ho seguito il mio piano?"
+                        value={followedPlan}
+                        onChange={(nextValue) => setFollowedPlan(nextValue)}
+                        placeholder="Seleziona risposta"
+                      >
+                        {followedPlanOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
                           </option>
-                          {followedPlanOptions.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                        ))}
+                      </StyledSelect>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="respected-risk-select"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Ho rispettato il rischio prefissato?
-                        </label>
-                        <select
-                          id="respected-risk-select"
-                          value={respectedRiskChoice}
-                          onChange={(event) => setRespectedRiskChoice(event.target.value)}
-                          className={getPsychologySelectClasses(respectedRiskChoice)}
-                        >
-                          <option
-                            value=""
-                            disabled
-                            hidden
-                            className="placeholder-option"
-                          >
-                            Seleziona risposta
+                      <StyledSelect
+                        label="Ho rispettato il rischio prefissato?"
+                        value={respectedRiskChoice}
+                        onChange={(nextValue) => setRespectedRiskChoice(nextValue)}
+                        placeholder="Seleziona risposta"
+                      >
+                        {respectedRiskOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
                           </option>
-                          {respectedRiskOptions.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                        ))}
+                      </StyledSelect>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="would-repeat-trade-select"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Rifarei questo trade?
-                        </label>
-                        <select
-                          id="would-repeat-trade-select"
-                          value={wouldRepeatTrade}
-                          onChange={(event) => setWouldRepeatTrade(event.target.value)}
-                          className={getPsychologySelectClasses(wouldRepeatTrade)}
-                        >
-                          <option
-                            value=""
-                            disabled
-                            hidden
-                            className="placeholder-option"
-                          >
-                            Seleziona risposta
+                      <StyledSelect
+                        label="Rifarei questo trade?"
+                        value={wouldRepeatTrade}
+                        onChange={(nextValue) => setWouldRepeatTrade(nextValue)}
+                        placeholder="Seleziona risposta"
+                      >
+                        {repeatTradeOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
                           </option>
-                          {repeatTradeOptions.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                        ))}
+                      </StyledSelect>
                     </div>
                   </div>
                 </div>
