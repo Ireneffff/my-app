@@ -23,6 +23,7 @@ import {
   type StoredLibraryItem,
   type StoredTrade,
 } from "@/lib/tradesStorage";
+import { calculateDuration } from "@/lib/duration";
 
 type TradeState = {
   status: "loading" | "ready" | "missing";
@@ -343,6 +344,35 @@ export default function RegisteredTradePage() {
       weekday: "long",
     });
   }, [selectedDate]);
+  const openTimeValue = useMemo(() => {
+    const iso = state.trade?.openTime;
+    if (!iso) {
+      return null;
+    }
+
+    const parsed = new Date(iso);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }, [state.trade?.openTime]);
+  const closeTimeValue = useMemo(() => {
+    const iso = state.trade?.closeTime;
+    if (!iso) {
+      return null;
+    }
+
+    const parsed = new Date(iso);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }, [state.trade?.closeTime]);
+  const durationLabel = useMemo(() => {
+    if (!openTimeValue || !closeTimeValue) {
+      return "0h 00min";
+    }
+
+    if (closeTimeValue.getTime() <= openTimeValue.getTime()) {
+      return "0h 00min";
+    }
+
+    return calculateDuration(openTimeValue, closeTimeValue);
+  }, [openTimeValue, closeTimeValue]);
 
   const libraryItems = useMemo<StoredLibraryItem[]>(() => {
     if (!state.trade) {
@@ -893,96 +923,98 @@ export default function RegisteredTradePage() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <div className="flex flex-col gap-3">
-                <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Open Time</span>
-                <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
-                  <div className="flex flex-col">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      {openTimeDisplay.dateLabel}
-                    </span>
-                    <span className="text-lg font-medium tracking-[0.18em] text-fg md:text-xl">
-                      {openTimeDisplay.timeLabel}
-                    </span>
-                  </div>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="ml-auto h-6 w-6 text-muted-fg"
-                    aria-hidden="true"
-                  >
-                    <circle cx="12" cy="12" r="9" />
-                    <polyline points="12 7 12 12 15 15" />
-                  </svg>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Open Time</span>
+              <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                    {openTimeDisplay.dateLabel}
+                  </span>
+                  <span className="text-lg font-medium tracking-[0.18em] text-fg md:text-xl">
+                    {openTimeDisplay.timeLabel}
+                  </span>
                 </div>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Close Time</span>
-                <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
-                  <div className="flex flex-col">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      {closeTimeDisplay.dateLabel}
-                    </span>
-                    <span className="text-lg font-medium tracking-[0.18em] text-fg md:text-xl">
-                      {closeTimeDisplay.timeLabel}
-                    </span>
-                  </div>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="ml-auto h-6 w-6 text-muted-fg"
-                    aria-hidden="true"
-                  >
-                    <circle cx="12" cy="12" r="9" />
-                    <polyline points="12 7 12 12 15 15" />
-                  </svg>
-                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="ml-auto h-6 w-6 text-muted-fg"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <polyline points="12 7 12 12 15 15" />
+                </svg>
               </div>
             </div>
 
-            <div className="mt-6 flex flex-col gap-3">
-              <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Conditions</span>
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Position</span>
-                  <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                    <span className="text-sm font-medium text-fg">{positionLabel}</span>
-                  </div>
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Close Time</span>
+              <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                    {closeTimeDisplay.dateLabel}
+                  </span>
+                  <span className="text-lg font-medium tracking-[0.18em] text-fg md:text-xl">
+                    {closeTimeDisplay.timeLabel}
+                  </span>
                 </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="ml-auto h-6 w-6 text-muted-fg"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <polyline points="12 7 12 12 15 15" />
+                </svg>
+              </div>
+            </div>
+          </div>
 
-                <div className="flex flex-col gap-2">
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">R/R</span>
-                  <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                    <span className="text-sm font-medium text-fg">{riskRewardValue}</span>
-                  </div>
+          <p className="mt-2 text-center text-sm text-gray-500">Duration: {durationLabel}</p>
+
+          <div className="mt-6 flex flex-col gap-3">
+            <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Conditions</span>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Position</span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{positionLabel}</span>
                 </div>
+              </div>
 
-                <div className="flex flex-col gap-2">
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Risk</span>
-                  <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                    <span className="text-sm font-medium text-fg">{riskValue}</span>
-                  </div>
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">R/R</span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{riskRewardValue}</span>
                 </div>
+              </div>
 
-                <div className="flex flex-col gap-2">
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Nr. Pips</span>
-                  <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                    <span className="text-sm font-medium text-fg">{pipsValue}</span>
-                  </div>
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Risk</span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{riskValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Nr. Pips</span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{pipsValue}</span>
                 </div>
               </div>
             </div>
+          </div>
           </div>
             </>
           ) : (
