@@ -42,13 +42,46 @@ const availableSymbols: SymbolOption[] = [
   { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
 ];
 
-const mentalStateOptions = [
+const preTradeMentalStateOptions = [
   "Calmo e concentrato",
-  "Stressato / stanco",
-  "Distratto (telefono, rumori, multitasking)",
-  "Troppo euforico (dopo un trade vinto)",
-  "Frustrato (dopo un trade perso)",
-];
+  "Stanco o distratto",
+  "Euforico dopo un gain",
+  "Ansioso o insicuro",
+  "Impulsivo",
+  "Determinato e lucido",
+] as const;
+
+const emotionsDuringTradeOptions = [
+  "Paura di perdere",
+  "Euforia",
+  "Impazienza",
+  "Speranza",
+  "Rabbia",
+  "Fiducia calma",
+] as const;
+
+const emotionsAfterTradeOptions = [
+  "Soddisfatto",
+  "Frustrato",
+  "Sollevato",
+  "Arrabbiato",
+  "Indifferente",
+  "Pentito",
+  "Orgoglioso",
+] as const;
+
+const emotionalTriggerOptions = [
+  "FOMO",
+  "Revenge trading",
+  "Overconfidence",
+  "Noia",
+  "Disciplina",
+  "Pressione esterna",
+] as const;
+
+const followedPlanOptions = ["Sì", "No", "Parziale"] as const;
+const respectedRiskOptions = ["Sì", "No"] as const;
+const repeatTradeOptions = ["Sì", "No", "Forse"] as const;
 
 type LibraryItem = StoredLibraryItem;
 
@@ -229,8 +262,14 @@ function NewTradePageContent() {
   const [stopLoss, setStopLoss] = useState("");
   const [takeProfit, setTakeProfit] = useState("");
   const [pnl, setPnl] = useState("");
+  const [preTradeMentalState, setPreTradeMentalState] = useState("");
+  const [emotionsDuringTrade, setEmotionsDuringTrade] = useState("");
+  const [emotionsAfterTrade, setEmotionsAfterTrade] = useState("");
   const [confidenceLevel, setConfidenceLevel] = useState("");
-  const [mentalState, setMentalState] = useState("");
+  const [emotionalTrigger, setEmotionalTrigger] = useState("");
+  const [followedPlan, setFollowedPlan] = useState("");
+  const [respectedRiskChoice, setRespectedRiskChoice] = useState("");
+  const [wouldRepeatTrade, setWouldRepeatTrade] = useState("");
   const [riskReward, setRiskReward] = useState("");
   const [risk, setRisk] = useState("");
   const [pips, setPips] = useState("");
@@ -811,8 +850,14 @@ function NewTradePageContent() {
     setStopLoss(match.stopLoss ?? "");
     setTakeProfit(match.takeProfit ?? "");
     setPnl(match.pnl ?? "");
+    setPreTradeMentalState(match.preTradeMentalState ?? match.mentalState ?? "");
+    setEmotionsDuringTrade(match.emotionsDuringTrade ?? "");
+    setEmotionsAfterTrade(match.emotionsAfterTrade ?? "");
     setConfidenceLevel(match.confidenceLevel ?? "");
-    setMentalState(match.mentalState ?? "");
+    setEmotionalTrigger(match.emotionalTrigger ?? "");
+    setFollowedPlan(match.followedPlan ?? "");
+    setRespectedRiskChoice(match.respectedRisk ?? "");
+    setWouldRepeatTrade(match.wouldRepeatTrade ?? "");
     setRiskReward(match.riskReward ?? "");
     setRisk(match.risk ?? "");
     setPips(match.pips ?? "");
@@ -1815,13 +1860,79 @@ function NewTradePageContent() {
                     <span className="mt-6 mb-2 block text-gray-700 text-sm font-semibold">
                       Psychology & Mindset
                     </span>
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-2">
+                    <div className="flex flex-col">
+                      <div className="flex flex-col first:mt-0 mt-3">
+                        <label
+                          htmlFor="pre-trade-mental-state"
+                          className="text-gray-600 text-xs font-medium"
+                        >
+                          Stato mentale prima del trade
+                        </label>
+                        <select
+                          id="pre-trade-mental-state"
+                          value={preTradeMentalState}
+                          onChange={(event) => setPreTradeMentalState(event.target.value)}
+                          className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        >
+                          <option value="">Seleziona opzione</option>
+                          {preTradeMentalStateOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col first:mt-0 mt-3">
+                        <label
+                          htmlFor="emotions-during-trade"
+                          className="text-gray-600 text-xs font-medium"
+                        >
+                          Emozioni durante il trade
+                        </label>
+                        <select
+                          id="emotions-during-trade"
+                          value={emotionsDuringTrade}
+                          onChange={(event) => setEmotionsDuringTrade(event.target.value)}
+                          className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        >
+                          <option value="">Seleziona opzione</option>
+                          {emotionsDuringTradeOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col first:mt-0 mt-3">
+                        <label
+                          htmlFor="emotions-after-trade"
+                          className="text-gray-600 text-xs font-medium"
+                        >
+                          Emozioni dopo il trade
+                        </label>
+                        <select
+                          id="emotions-after-trade"
+                          value={emotionsAfterTrade}
+                          onChange={(event) => setEmotionsAfterTrade(event.target.value)}
+                          className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        >
+                          <option value="">Seleziona opzione</option>
+                          {emotionsAfterTradeOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col first:mt-0 mt-3">
                         <label
                           htmlFor="confidence-level-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          className="text-gray-600 text-xs font-medium"
                         >
-                          Confidence Level (1–10)
+                          Livello di fiducia (1–10)
                         </label>
                         <input
                           id="confidence-level-input"
@@ -1847,28 +1958,92 @@ function NewTradePageContent() {
                             const clampedValue = Math.min(10, Math.max(1, numericValue));
                             setConfidenceLevel(String(clampedValue));
                           }}
-                          placeholder="Select level"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          placeholder="Seleziona livello"
+                          className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
                         />
                       </div>
 
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col first:mt-0 mt-3">
                         <label
-                          htmlFor="mental-state-select"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          htmlFor="emotional-trigger-select"
+                          className="text-gray-600 text-xs font-medium"
                         >
-                          Mental State Before Trade
+                          Trigger emotivi
                         </label>
                         <select
-                          id="mental-state-select"
-                          value={mentalState}
-                          onChange={(event) => setMentalState(event.target.value)}
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          id="emotional-trigger-select"
+                          value={emotionalTrigger}
+                          onChange={(event) => setEmotionalTrigger(event.target.value)}
+                          className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
                         >
-                          <option value="">
-                            Select state
-                          </option>
-                          {mentalStateOptions.map((option) => (
+                          <option value="">Seleziona opzione</option>
+                          {emotionalTriggerOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col first:mt-0 mt-3">
+                        <label
+                          htmlFor="followed-plan-select"
+                          className="text-gray-600 text-xs font-medium"
+                        >
+                          Ho seguito il mio piano?
+                        </label>
+                        <select
+                          id="followed-plan-select"
+                          value={followedPlan}
+                          onChange={(event) => setFollowedPlan(event.target.value)}
+                          className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        >
+                          <option value="">Seleziona risposta</option>
+                          {followedPlanOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col first:mt-0 mt-3">
+                        <label
+                          htmlFor="respected-risk-select"
+                          className="text-gray-600 text-xs font-medium"
+                        >
+                          Ho rispettato il rischio prefissato?
+                        </label>
+                        <select
+                          id="respected-risk-select"
+                          value={respectedRiskChoice}
+                          onChange={(event) => setRespectedRiskChoice(event.target.value)}
+                          className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        >
+                          <option value="">Seleziona risposta</option>
+                          {respectedRiskOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col first:mt-0 mt-3">
+                        <label
+                          htmlFor="would-repeat-trade-select"
+                          className="text-gray-600 text-xs font-medium"
+                        >
+                          Rifarei questo trade?
+                        </label>
+                        <select
+                          id="would-repeat-trade-select"
+                          value={wouldRepeatTrade}
+                          onChange={(event) => setWouldRepeatTrade(event.target.value)}
+                          className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        >
+                          <option value="">Seleziona risposta</option>
+                          {repeatTradeOptions.map((option) => (
                             <option key={option} value={option}>
                               {option}
                             </option>
@@ -1939,8 +2114,15 @@ function NewTradePageContent() {
               stopLoss: stopLoss.trim() || null,
               takeProfit: takeProfit.trim() || null,
               pnl: pnl.trim() || null,
+              preTradeMentalState: preTradeMentalState.trim() || null,
+              emotionsDuringTrade: emotionsDuringTrade.trim() || null,
+              emotionsAfterTrade: emotionsAfterTrade.trim() || null,
               confidenceLevel: confidenceLevel.trim() || null,
-              mentalState: mentalState.trim() || null,
+              emotionalTrigger: emotionalTrigger.trim() || null,
+              followedPlan: followedPlan.trim() || null,
+              respectedRisk: respectedRiskChoice.trim() || null,
+              wouldRepeatTrade: wouldRepeatTrade.trim() || null,
+              mentalState: preTradeMentalState.trim() || null,
               riskReward: riskReward.trim() || null,
               risk: risk.trim() || null,
               pips: pips.trim() || null,

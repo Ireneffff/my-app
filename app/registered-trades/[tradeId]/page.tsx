@@ -771,6 +771,16 @@ export default function RegisteredTradePage() {
   const riskRewardValue = formatOptionalText(state.trade.riskReward);
   const riskValue = formatOptionalText(state.trade.risk);
   const pipsValue = formatOptionalText(state.trade.pips);
+  const preTradeMentalStateValue = formatOptionalText(
+    state.trade.preTradeMentalState ?? state.trade.mentalState,
+  );
+  const emotionsDuringTradeValue = formatOptionalText(state.trade.emotionsDuringTrade);
+  const emotionsAfterTradeValue = formatOptionalText(state.trade.emotionsAfterTrade);
+  const confidenceLevelValue = formatOptionalText(state.trade.confidenceLevel);
+  const emotionalTriggerValue = formatOptionalText(state.trade.emotionalTrigger);
+  const followedPlanValue = formatOptionalText(state.trade.followedPlan);
+  const respectedRiskValue = formatOptionalText(state.trade.respectedRisk);
+  const wouldRepeatTradeValue = formatOptionalText(state.trade.wouldRepeatTrade);
 
   const handleEditTrade = () => {
     if (!state.trade) {
@@ -1011,6 +1021,85 @@ export default function RegisteredTradePage() {
                 <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Nr. Pips</span>
                 <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                   <span className="text-sm font-medium text-fg">{pipsValue}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-3">
+            <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">
+              Psychology & Mindset
+            </span>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Stato mentale prima del trade
+                </span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{preTradeMentalStateValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Emozioni durante il trade
+                </span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{emotionsDuringTradeValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Emozioni dopo il trade
+                </span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{emotionsAfterTradeValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Livello di fiducia (1–10)
+                </span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{confidenceLevelValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Trigger emotivi
+                </span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{emotionalTriggerValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Ho seguito il mio piano?
+                </span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{followedPlanValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Ho rispettato il rischio prefissato?
+                </span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{respectedRiskValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Rifarei questo trade?
+                </span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{wouldRepeatTradeValue}</span>
                 </div>
               </div>
             </div>

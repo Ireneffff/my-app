@@ -19,7 +19,14 @@ export type StoredTrade = {
   stopLoss?: string | null;
   takeProfit?: string | null;
   pnl?: string | null;
+  preTradeMentalState?: string | null;
+  emotionsDuringTrade?: string | null;
+  emotionsAfterTrade?: string | null;
   confidenceLevel?: string | null;
+  emotionalTrigger?: string | null;
+  followedPlan?: string | null;
+  respectedRisk?: string | null;
+  wouldRepeatTrade?: string | null;
   mentalState?: string | null;
   riskReward?: string | null;
   risk?: string | null;
@@ -133,97 +140,34 @@ function parseTrades(raw: string | null): StoredTrade[] {
           storedItem.position = "LONG";
         }
 
-        if (
-          storedItem.riskReward !== undefined &&
-          storedItem.riskReward !== null &&
-          typeof storedItem.riskReward !== "string"
-        ) {
-          storedItem.riskReward = null;
-        }
+        const normalizeOptionalString = (value: unknown): string | null => {
+          if (typeof value === "string") {
+            return value;
+          }
 
-        if (storedItem.riskReward === undefined) {
-          storedItem.riskReward = null;
-        }
+          return null;
+        };
 
-        if (storedItem.entryPrice !== undefined && storedItem.entryPrice !== null && typeof storedItem.entryPrice !== "string") {
-          storedItem.entryPrice = null;
-        }
-
-        if (storedItem.entryPrice === undefined) {
-          storedItem.entryPrice = null;
-        }
-
-        if (storedItem.exitPrice !== undefined && storedItem.exitPrice !== null && typeof storedItem.exitPrice !== "string") {
-          storedItem.exitPrice = null;
-        }
-
-        if (storedItem.exitPrice === undefined) {
-          storedItem.exitPrice = null;
-        }
-
-        if (storedItem.stopLoss !== undefined && storedItem.stopLoss !== null && typeof storedItem.stopLoss !== "string") {
-          storedItem.stopLoss = null;
-        }
-
-        if (storedItem.stopLoss === undefined) {
-          storedItem.stopLoss = null;
-        }
-
-        if (storedItem.takeProfit !== undefined && storedItem.takeProfit !== null && typeof storedItem.takeProfit !== "string") {
-          storedItem.takeProfit = null;
-        }
-
-        if (storedItem.takeProfit === undefined) {
-          storedItem.takeProfit = null;
-        }
-
-        if (storedItem.pnl !== undefined && storedItem.pnl !== null && typeof storedItem.pnl !== "string") {
-          storedItem.pnl = null;
-        }
-
-        if (storedItem.pnl === undefined) {
-          storedItem.pnl = null;
-        }
-
-        if (
-          storedItem.confidenceLevel !== undefined &&
-          storedItem.confidenceLevel !== null &&
-          typeof storedItem.confidenceLevel !== "string"
-        ) {
-          storedItem.confidenceLevel = null;
-        }
-
-        if (storedItem.confidenceLevel === undefined) {
-          storedItem.confidenceLevel = null;
-        }
-
-        if (
-          storedItem.mentalState !== undefined &&
-          storedItem.mentalState !== null &&
-          typeof storedItem.mentalState !== "string"
-        ) {
-          storedItem.mentalState = null;
-        }
-
-        if (storedItem.mentalState === undefined) {
-          storedItem.mentalState = null;
-        }
-
-        if (storedItem.risk !== undefined && storedItem.risk !== null && typeof storedItem.risk !== "string") {
-          storedItem.risk = null;
-        }
-
-        if (storedItem.risk === undefined) {
-          storedItem.risk = null;
-        }
-
-        if (storedItem.pips !== undefined && storedItem.pips !== null && typeof storedItem.pips !== "string") {
-          storedItem.pips = null;
-        }
-
-        if (storedItem.pips === undefined) {
-          storedItem.pips = null;
-        }
+        storedItem.riskReward = normalizeOptionalString(storedItem.riskReward);
+        storedItem.entryPrice = normalizeOptionalString(storedItem.entryPrice);
+        storedItem.exitPrice = normalizeOptionalString(storedItem.exitPrice);
+        storedItem.stopLoss = normalizeOptionalString(storedItem.stopLoss);
+        storedItem.takeProfit = normalizeOptionalString(storedItem.takeProfit);
+        storedItem.pnl = normalizeOptionalString(storedItem.pnl);
+        storedItem.confidenceLevel = normalizeOptionalString(storedItem.confidenceLevel);
+        const normalizedPreTradeMentalState = normalizeOptionalString(
+          (storedItem as StoredTrade).preTradeMentalState ?? storedItem.mentalState,
+        );
+        storedItem.preTradeMentalState = normalizedPreTradeMentalState;
+        storedItem.mentalState = normalizedPreTradeMentalState;
+        storedItem.emotionsDuringTrade = normalizeOptionalString(storedItem.emotionsDuringTrade);
+        storedItem.emotionsAfterTrade = normalizeOptionalString(storedItem.emotionsAfterTrade);
+        storedItem.emotionalTrigger = normalizeOptionalString(storedItem.emotionalTrigger);
+        storedItem.followedPlan = normalizeOptionalString(storedItem.followedPlan);
+        storedItem.respectedRisk = normalizeOptionalString(storedItem.respectedRisk);
+        storedItem.wouldRepeatTrade = normalizeOptionalString(storedItem.wouldRepeatTrade);
+        storedItem.risk = normalizeOptionalString(storedItem.risk);
+        storedItem.pips = normalizeOptionalString(storedItem.pips);
 
         return storedItem;
       })
