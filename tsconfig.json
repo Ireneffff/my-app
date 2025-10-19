@@ -17,7 +17,9 @@
     "plugins": [{ "name": "next" }],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]                    // alias per import "@/components/ThemeToggle"
+      // alias per import "@/components/ThemeToggle"
+      "@/*": ["./*"],
+      "lucide-react": ["./lib/lucide-react"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
