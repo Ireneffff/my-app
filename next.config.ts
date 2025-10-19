@@ -8,7 +8,14 @@ const nextConfig: NextConfig = {
     config.resolve = config.resolve ?? {};
     config.resolve.alias = {
       ...(config.resolve.alias ?? {}),
-      "lucide-react": path.join(__dirname, "lib", "lucide-react.ts"),
+      "@heroicons/react/24/solid": path.join(
+        __dirname,
+        "lib",
+        "heroicons",
+        "react",
+        "24",
+        "solid.tsx",
+      ),
     };
 
     return config;

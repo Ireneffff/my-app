@@ -16,7 +16,7 @@ import {
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { ThumbsUp } from "lucide-react";
+import { HandThumbUpIcon } from "@heroicons/react/24/solid";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
@@ -1468,11 +1468,9 @@ function NewTradePageContent() {
                           }`}
                           aria-pressed={isRealTrade}
                         >
-                          <ThumbsUp
+                          <HandThumbUpIcon
                             aria-hidden="true"
-                            size={18}
-                            strokeWidth={2.5}
-                            className={`transition-transform transition-colors duration-200 ${
+                            className={`h-5 w-5 -translate-y-[1px] align-middle transition-transform transition-colors duration-200 ease-in-out ${
                               isRealTrade
                                 ? "scale-110 text-green-500 hover:text-green-600"
                                 : "text-gray-400"
