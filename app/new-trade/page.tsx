@@ -19,6 +19,7 @@ import {
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
+import { StyledSelect } from "@/components/StyledSelect";
 import {
   loadTrades,
   saveTrade,
@@ -26,6 +27,7 @@ import {
   type StoredLibraryItem,
   type StoredTrade,
 } from "@/lib/tradesStorage";
+import { calculateDuration } from "@/lib/duration";
 
 type SymbolOption = {
   code: string;
@@ -40,6 +42,47 @@ const availableSymbols: SymbolOption[] = [
   { code: "USDCAD", flag: "🇺🇸 🇨🇦" },
   { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
 ];
+
+const preTradeMentalStateOptions = [
+  "Calmo e concentrato",
+  "Stanco o distratto",
+  "Euforico dopo un gain",
+  "Ansioso o insicuro",
+  "Impulsivo",
+  "Determinato e lucido",
+] as const;
+
+const emotionsDuringTradeOptions = [
+  "Paura di perdere",
+  "Euforia",
+  "Impazienza",
+  "Speranza",
+  "Rabbia",
+  "Fiducia calma",
+] as const;
+
+const emotionsAfterTradeOptions = [
+  "Soddisfatto",
+  "Frustrato",
+  "Sollevato",
+  "Arrabbiato",
+  "Indifferente",
+  "Pentito",
+  "Orgoglioso",
+] as const;
+
+const emotionalTriggerOptions = [
+  "FOMO",
+  "Revenge trading",
+  "Overconfidence",
+  "Noia",
+  "Disciplina",
+  "Pressione esterna",
+] as const;
+
+const followedPlanOptions = ["Sì", "No", "Parziale"] as const;
+const respectedRiskOptions = ["Sì", "No"] as const;
+const repeatTradeOptions = ["Sì", "No", "Forse"] as const;
 
 type LibraryItem = StoredLibraryItem;
 
@@ -96,9 +139,8 @@ function getDateTimeDisplayParts(date: Date | null) {
 function getStartOfWeek(date: Date) {
   const start = new Date(date);
   start.setHours(0, 0, 0, 0);
-  const day = start.getDay();
-  const diffFromMonday = (day + 6) % 7;
-  start.setDate(start.getDate() - diffFromMonday);
+  const day = start.getDay() || 7;
+  start.setDate(start.getDate() + 1 - day);
   return start;
 }
 
@@ -110,7 +152,7 @@ function getStartOfMonth(date: Date) {
 }
 
 function getWeekDays(weekStart: Date) {
-  return Array.from({ length: 7 }, (_, index) => {
+  return Array.from({ length: 5 }, (_, index) => {
     const date = new Date(weekStart);
     date.setDate(weekStart.getDate() + index);
     return date;
@@ -163,6 +205,17 @@ function NewTradePageContent() {
     initial.setHours(17, 0, 0, 0);
     return initial;
   });
+  const durationLabel = useMemo(() => {
+    if (!openTime || !closeTime) {
+      return "0h 00min";
+    }
+
+    if (closeTime.getTime() <= openTime.getTime()) {
+      return "0h 00min";
+    }
+
+    return calculateDuration(openTime, closeTime);
+  }, [openTime, closeTime]);
 
   const openTimeInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimeInputRef = useRef<HTMLInputElement | null>(null);
@@ -205,6 +258,19 @@ function NewTradePageContent() {
     initialLibraryItems[0]?.id ?? "",
   );
   const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
+  const [entryPrice, setEntryPrice] = useState("");
+  const [exitPrice, setExitPrice] = useState("");
+  const [stopLoss, setStopLoss] = useState("");
+  const [takeProfit, setTakeProfit] = useState("");
+  const [pnl, setPnl] = useState("");
+  const [preTradeMentalState, setPreTradeMentalState] = useState("");
+  const [emotionsDuringTrade, setEmotionsDuringTrade] = useState("");
+  const [emotionsAfterTrade, setEmotionsAfterTrade] = useState("");
+  const [confidenceLevel, setConfidenceLevel] = useState("");
+  const [emotionalTrigger, setEmotionalTrigger] = useState("");
+  const [followedPlan, setFollowedPlan] = useState("");
+  const [respectedRiskChoice, setRespectedRiskChoice] = useState("");
+  const [wouldRepeatTrade, setWouldRepeatTrade] = useState("");
   const [riskReward, setRiskReward] = useState("");
   const [risk, setRisk] = useState("");
   const [pips, setPips] = useState("");
@@ -780,6 +846,19 @@ function NewTradePageContent() {
     setImageError(null);
 
     setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
+    setEntryPrice(match.entryPrice ?? "");
+    setExitPrice(match.exitPrice ?? "");
+    setStopLoss(match.stopLoss ?? "");
+    setTakeProfit(match.takeProfit ?? "");
+    setPnl(match.pnl ?? "");
+    setPreTradeMentalState(match.preTradeMentalState ?? match.mentalState ?? "");
+    setEmotionsDuringTrade(match.emotionsDuringTrade ?? "");
+    setEmotionsAfterTrade(match.emotionsAfterTrade ?? "");
+    setConfidenceLevel(match.confidenceLevel ?? "");
+    setEmotionalTrigger(match.emotionalTrigger ?? "");
+    setFollowedPlan(match.followedPlan ?? "");
+    setRespectedRiskChoice(match.respectedRisk ?? "");
+    setWouldRepeatTrade(match.wouldRepeatTrade ?? "");
     setRiskReward(match.riskReward ?? "");
     setRisk(match.risk ?? "");
     setPips(match.pips ?? "");
@@ -1442,170 +1521,178 @@ function NewTradePageContent() {
                     </div>
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="flex flex-col gap-3">
-                      <label
-                        htmlFor="open-time-input"
-                        className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          toggleOpenTimePicker();
-                        }}
-                      >
-                        Open Time
-                      </label>
-                      <div
-                        className="relative"
-                        onPointerDown={(event) => {
-                          const input = openTimeInputRef.current;
-                          if (!input) {
-                            return;
-                          }
-
-                          const clickedInsideInput =
-                            event.target instanceof Node && input.contains(event.target);
-
-                          const wasActive = document.activeElement === input;
-
-                          if (wasActive || !clickedInsideInput) {
+                  <div className="flex flex-col">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="flex flex-col gap-3">
+                        <label
+                          htmlFor="open-time-input"
+                          className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg"
+                          onClick={(event) => {
                             event.preventDefault();
-                          }
-
-                          toggleOpenTimePicker();
-                        }}
-                      >
-                        <input
-                          id="open-time-input"
-                          ref={openTimeInputRef}
-                          type="datetime-local"
-                          className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40"
-                          value={openTime ? formatDateTimeLocal(openTime) : ""}
-                          onChange={(event) => {
-                            const { value } = event.target;
-                            if (!value) {
-                              setOpenTime(null);
-                              return;
-                            }
-
-                            const parsed = new Date(value);
-                            if (Number.isNaN(parsed.getTime())) {
-                              return;
-                            }
-
-                            setOpenTime(parsed);
+                            toggleOpenTimePicker();
                           }}
-                          aria-label="Select open date and time"
-                        />
-                        <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left">
-                          <div className="flex items-center gap-2">
-                            <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
-                              {openTimeDisplay.dateLabel}
-                            </span>
-                            <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
-                              {openTimeDisplay.timeLabel}
-                            </span>
+                        >
+                          Open Time
+                        </label>
+                        <div
+                          className="relative"
+                          onPointerDown={(event) => {
+                            const input = openTimeInputRef.current;
+                            if (!input) {
+                              return;
+                            }
+
+                            const clickedInsideInput =
+                              event.target instanceof Node && input.contains(event.target);
+
+                            const wasActive = document.activeElement === input;
+
+                            if (wasActive || !clickedInsideInput) {
+                              event.preventDefault();
+                            }
+
+                            toggleOpenTimePicker();
+                          }}
+                        >
+                          <input
+                            id="open-time-input"
+                            ref={openTimeInputRef}
+                            type="datetime-local"
+                            className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40"
+                            value={openTime ? formatDateTimeLocal(openTime) : ""}
+                            onChange={(event) => {
+                              const { value } = event.target;
+                              if (!value) {
+                                setOpenTime(null);
+                                return;
+                              }
+
+                              const parsed = new Date(value);
+                              if (Number.isNaN(parsed.getTime())) {
+                                return;
+                              }
+
+                              setOpenTime(parsed);
+                            }}
+                            aria-label="Select open date and time"
+                          />
+                          <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left">
+                            <div className="flex items-center gap-2">
+                              <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
+                                {openTimeDisplay.dateLabel}
+                              </span>
+                              <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
+                                {openTimeDisplay.timeLabel}
+                              </span>
+                            </div>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="ml-auto h-6 w-6 text-muted-fg"
+                              aria-hidden="true"
+                            >
+                              <circle cx="12" cy="12" r="9" />
+                              <polyline points="12 7 12 12 15 15" />
+                            </svg>
                           </div>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="ml-auto h-6 w-6 text-muted-fg"
-                            aria-hidden="true"
-                          >
-                            <circle cx="12" cy="12" r="9" />
-                            <polyline points="12 7 12 12 15 15" />
-                          </svg>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-3">
+                        <label
+                          htmlFor="close-time-input"
+                          className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            toggleCloseTimePicker();
+                          }}
+                        >
+                          Close Time
+                        </label>
+                        <div
+                          className="relative"
+                          onPointerDown={(event) => {
+                            const input = closeTimeInputRef.current;
+                            if (!input) {
+                              return;
+                            }
+
+                            const clickedInsideInput =
+                              event.target instanceof Node && input.contains(event.target);
+
+                            const wasActive = document.activeElement === input;
+
+                            if (wasActive || !clickedInsideInput) {
+                              event.preventDefault();
+                            }
+
+                            toggleCloseTimePicker();
+                          }}
+                        >
+                          <input
+                            id="close-time-input"
+                            ref={closeTimeInputRef}
+                            type="datetime-local"
+                            className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40"
+                            value={closeTime ? formatDateTimeLocal(closeTime) : ""}
+                            onChange={(event) => {
+                              const { value } = event.target;
+                              if (!value) {
+                                setCloseTime(null);
+                                return;
+                              }
+
+                              const parsed = new Date(value);
+                              if (Number.isNaN(parsed.getTime())) {
+                                return;
+                              }
+
+                              setCloseTime(parsed);
+                            }}
+                            aria-label="Select close date and time"
+                          />
+                          <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left">
+                            <div className="flex items-center gap-2">
+                              <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
+                                {closeTimeDisplay.dateLabel}
+                              </span>
+                              <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
+                                {closeTimeDisplay.timeLabel}
+                              </span>
+                            </div>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="ml-auto h-6 w-6 text-muted-fg"
+                              aria-hidden="true"
+                            >
+                              <circle cx="12" cy="12" r="9" />
+                              <polyline points="12 7 12 12 15 15" />
+                            </svg>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-3">
-                      <label
-                        htmlFor="close-time-input"
-                        className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          toggleCloseTimePicker();
-                        }}
-                      >
-                        Close Time
-                      </label>
-                      <div
-                        className="relative"
-                        onPointerDown={(event) => {
-                          const input = closeTimeInputRef.current;
-                          if (!input) {
-                            return;
-                          }
-
-                          const clickedInsideInput =
-                            event.target instanceof Node && input.contains(event.target);
-
-                          const wasActive = document.activeElement === input;
-
-                          if (wasActive || !clickedInsideInput) {
-                            event.preventDefault();
-                          }
-
-                          toggleCloseTimePicker();
-                        }}
-                      >
-                        <input
-                          id="close-time-input"
-                          ref={closeTimeInputRef}
-                          type="datetime-local"
-                          className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40"
-                          value={closeTime ? formatDateTimeLocal(closeTime) : ""}
-                          onChange={(event) => {
-                            const { value } = event.target;
-                            if (!value) {
-                              setCloseTime(null);
-                              return;
-                            }
-
-                            const parsed = new Date(value);
-                            if (Number.isNaN(parsed.getTime())) {
-                              return;
-                            }
-
-                            setCloseTime(parsed);
-                          }}
-                          aria-label="Select close date and time"
-                        />
-                        <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left">
-                          <div className="flex items-center gap-2">
-                            <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
-                              {closeTimeDisplay.dateLabel}
-                            </span>
-                            <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
-                              {closeTimeDisplay.timeLabel}
-                            </span>
-                          </div>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="ml-auto h-6 w-6 text-muted-fg"
-                            aria-hidden="true"
-                          >
-                            <circle cx="12" cy="12" r="9" />
-                            <polyline points="12 7 12 12 15 15" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
+                    <p className="mt-2 text-center text-sm text-gray-500">
+                      Duration: {durationLabel}
+                    </p>
                   </div>
 
-                  <div className="mt-6 flex flex-col gap-3">
-                    <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Conditions</span>
+                  <div className="flex flex-col gap-4">
+                    <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
+                      General Details
+                    </span>
                     <div className="flex flex-col gap-4">
                       <div className="flex flex-col gap-2">
                         <label
@@ -1678,13 +1765,236 @@ function NewTradePageContent() {
                         />
                       </div>
                     </div>
+
+                    <div className="border-t border-gray-200 mt-6" />
+                    <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
+                      Price & Risk Details
+                    </span>
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="entry-price-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Entry Price
+                        </label>
+                        <input
+                          id="entry-price-input"
+                          type="number"
+                          value={entryPrice}
+                          onChange={(event) => setEntryPrice(event.target.value)}
+                          placeholder="Insert price"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="exit-price-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Exit Price
+                        </label>
+                        <input
+                          id="exit-price-input"
+                          type="number"
+                          value={exitPrice}
+                          onChange={(event) => setExitPrice(event.target.value)}
+                          placeholder="Insert price"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="stop-loss-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Stop Loss
+                        </label>
+                        <input
+                          id="stop-loss-input"
+                          type="number"
+                          value={stopLoss}
+                          onChange={(event) => setStopLoss(event.target.value)}
+                          placeholder="Insert price"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="take-profit-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Take Profit
+                        </label>
+                        <input
+                          id="take-profit-input"
+                          type="number"
+                          value={takeProfit}
+                          onChange={(event) => setTakeProfit(event.target.value)}
+                          placeholder="Insert price"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="pnl-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          P&amp;L
+                        </label>
+                        <input
+                          id="pnl-input"
+                          type="number"
+                          value={pnl}
+                          onChange={(event) => setPnl(event.target.value)}
+                          placeholder="Insert"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="border-t border-gray-200 mt-6" />
+                    <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
+                      Psychology & Mindset
+                    </span>
+                    <div className="flex flex-col">
+                      <StyledSelect
+                        label="Stato mentale prima del trade"
+                        value={preTradeMentalState}
+                        onChange={(nextValue) => setPreTradeMentalState(nextValue)}
+                        placeholder="Seleziona opzione"
+                      >
+                        {preTradeMentalStateOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </StyledSelect>
+
+                      <StyledSelect
+                        label="Emozioni durante il trade"
+                        value={emotionsDuringTrade}
+                        onChange={(nextValue) => setEmotionsDuringTrade(nextValue)}
+                        placeholder="Seleziona opzione"
+                      >
+                        {emotionsDuringTradeOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </StyledSelect>
+
+                      <StyledSelect
+                        label="Emozioni dopo il trade"
+                        value={emotionsAfterTrade}
+                        onChange={(nextValue) => setEmotionsAfterTrade(nextValue)}
+                        placeholder="Seleziona opzione"
+                      >
+                        {emotionsAfterTradeOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </StyledSelect>
+
+                      <div className="mb-4">
+                        <label
+                          htmlFor="confidence-level-input"
+                          className="text-gray-600 text-xs font-medium mb-1 block"
+                        >
+                          Livello di fiducia (1–10)
+                        </label>
+                        <input
+                          id="confidence-level-input"
+                          type="number"
+                          min={1}
+                          max={10}
+                          step={1}
+                          value={confidenceLevel}
+                          onChange={(event) => {
+                            const rawValue = event.target.value;
+
+                            if (rawValue === "") {
+                              setConfidenceLevel("");
+                              return;
+                            }
+
+                            const numericValue = Number(rawValue);
+
+                            if (Number.isNaN(numericValue)) {
+                              return;
+                            }
+
+                            const clampedValue = Math.min(10, Math.max(1, numericValue));
+                            setConfidenceLevel(String(clampedValue));
+                          }}
+                          placeholder="Seleziona livello"
+                          className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 text-sm placeholder-gray-400 p-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                        />
+                      </div>
+
+                      <StyledSelect
+                        label="Trigger emotivi"
+                        value={emotionalTrigger}
+                        onChange={(nextValue) => setEmotionalTrigger(nextValue)}
+                        placeholder="Seleziona opzione"
+                      >
+                        {emotionalTriggerOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </StyledSelect>
+
+                      <StyledSelect
+                        label="Ho seguito il mio piano?"
+                        value={followedPlan}
+                        onChange={(nextValue) => setFollowedPlan(nextValue)}
+                        placeholder="Seleziona risposta"
+                      >
+                        {followedPlanOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </StyledSelect>
+
+                      <StyledSelect
+                        label="Ho rispettato il rischio prefissato?"
+                        value={respectedRiskChoice}
+                        onChange={(nextValue) => setRespectedRiskChoice(nextValue)}
+                        placeholder="Seleziona risposta"
+                      >
+                        {respectedRiskOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </StyledSelect>
+
+                      <StyledSelect
+                        label="Rifarei questo trade?"
+                        value={wouldRepeatTrade}
+                        onChange={(nextValue) => setWouldRepeatTrade(nextValue)}
+                        placeholder="Seleziona risposta"
+                      >
+                        {repeatTradeOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </StyledSelect>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        )
-      : (
+        ) : (
           <LibrarySection
             preview={libraryPreview}
             notes={libraryNotesField}
@@ -1737,6 +2047,20 @@ function NewTradePageContent() {
                 notes: item.notes ?? "",
               })),
               position,
+              entryPrice: entryPrice.trim() || null,
+              exitPrice: exitPrice.trim() || null,
+              stopLoss: stopLoss.trim() || null,
+              takeProfit: takeProfit.trim() || null,
+              pnl: pnl.trim() || null,
+              preTradeMentalState: preTradeMentalState.trim() || null,
+              emotionsDuringTrade: emotionsDuringTrade.trim() || null,
+              emotionsAfterTrade: emotionsAfterTrade.trim() || null,
+              confidenceLevel: confidenceLevel.trim() || null,
+              emotionalTrigger: emotionalTrigger.trim() || null,
+              followedPlan: followedPlan.trim() || null,
+              respectedRisk: respectedRiskChoice.trim() || null,
+              wouldRepeatTrade: wouldRepeatTrade.trim() || null,
+              mentalState: preTradeMentalState.trim() || null,
               riskReward: riskReward.trim() || null,
               risk: risk.trim() || null,
               pips: pips.trim() || null,

@@ -23,6 +23,7 @@ import {
   type StoredLibraryItem,
   type StoredTrade,
 } from "@/lib/tradesStorage";
+import { calculateDuration } from "@/lib/duration";
 
 type TradeState = {
   status: "loading" | "ready" | "missing";
@@ -61,20 +62,26 @@ function getDateTimeDisplay(isoValue?: string | null) {
   return { dateLabel: `${dayLabel} ${monthLabel}`, timeLabel };
 }
 
-function getWorkWeekDays(referenceDate: Date) {
-  const baseDate = new Date(referenceDate);
-  baseDate.setHours(0, 0, 0, 0);
+function getStartOfWeek(date: Date) {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  const day = start.getDay() || 7;
+  start.setDate(start.getDate() + 1 - day);
+  return start;
+}
 
-  const baseDay = baseDate.getDay();
-  const diffFromMonday = (baseDay + 6) % 7;
-  const monday = new Date(baseDate);
-  monday.setDate(baseDate.getDate() - diffFromMonday);
+function getWorkWeekDays(referenceDate: Date) {
+  const weekStart = getStartOfWeek(referenceDate);
 
   return Array.from({ length: 5 }, (_, index) => {
-    const date = new Date(monday);
-    date.setDate(monday.getDate() + index);
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + index);
     return date;
   });
+}
+
+function isSameDay(a: Date, b: Date) {
+  return a.toDateString() === b.toDateString();
 }
 
 function formatOptionalText(value?: string | null) {
@@ -93,6 +100,12 @@ const LIBRARY_NAVIGATION_SCROLL_LOCK_DURATION_MS = 400;
 export default function RegisteredTradePage() {
   const params = useParams<{ tradeId: string }>();
   const router = useRouter();
+
+  const today = useMemo(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return now;
+  }, []);
 
   const [state, setState] = useState<TradeState>({ status: "loading", trade: null });
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
@@ -261,6 +274,67 @@ export default function RegisteredTradePage() {
     return getWorkWeekDays(selectedDate);
   }, [selectedDate]);
 
+  const renderWeekDayPill = useCallback(
+    (date: Date) => {
+      const isSelected = selectedDate ? isSameDay(date, selectedDate) : false;
+      const isToday = isSameDay(date, today);
+      const dayNumber = date.getDate();
+      const monthLabel = date
+        .toLocaleDateString(undefined, {
+          month: "short",
+        })
+        .toUpperCase();
+
+      const pillClasses = [
+        "flex min-w-[62px] flex-col items-center gap-1 rounded-full border border-transparent px-2 py-2 text-xs font-medium transition md:min-w-[88px] md:text-sm",
+      ];
+
+      if (isSelected) {
+        pillClasses.push("text-fg");
+      } else if (isToday) {
+        pillClasses.push("text-accent hover:text-accent");
+      } else {
+        pillClasses.push("text-muted-fg hover:text-fg");
+      }
+
+      const dayNumberClasses = [
+        "flex h-10 w-10 items-center justify-center rounded-full text-lg font-medium transition-colors md:h-12 md:w-12 md:text-xl",
+      ];
+
+      const dayNumberStyle: CSSProperties | undefined = isSelected
+        ? {
+            backgroundColor:
+              "color-mix(in srgb, rgb(var(--muted-fg)) 20%, rgb(var(--surface)))",
+          }
+        : undefined;
+
+      if (isSelected) {
+        dayNumberClasses.push("text-fg font-semibold");
+      } else if (isToday) {
+        dayNumberClasses.push("border border-accent/60 text-accent");
+      } else {
+        dayNumberClasses.push("border border-transparent text-fg");
+      }
+
+      return (
+        <div key={date.toISOString()} className={pillClasses.join(" ")} role="presentation">
+          <span className={dayNumberClasses.join(" ")} style={dayNumberStyle}>
+            {dayNumber}
+          </span>
+          <span
+            className={`text-[10px] tracking-[0.3em] md:text-xs ${
+              isSelected ? "text-fg" : "text-muted-fg"
+            }`}
+          >
+            {monthLabel}
+          </span>
+          {isToday ? <span className="sr-only">Today</span> : null}
+        </div>
+      );
+    },
+    [selectedDate, today],
+  );
+
   const dayOfWeekLabel = useMemo(() => {
     if (!selectedDate) {
       return "";
@@ -270,6 +344,35 @@ export default function RegisteredTradePage() {
       weekday: "long",
     });
   }, [selectedDate]);
+  const openTimeValue = useMemo(() => {
+    const iso = state.trade?.openTime;
+    if (!iso) {
+      return null;
+    }
+
+    const parsed = new Date(iso);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }, [state.trade?.openTime]);
+  const closeTimeValue = useMemo(() => {
+    const iso = state.trade?.closeTime;
+    if (!iso) {
+      return null;
+    }
+
+    const parsed = new Date(iso);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }, [state.trade?.closeTime]);
+  const durationLabel = useMemo(() => {
+    if (!openTimeValue || !closeTimeValue) {
+      return "0h 00min";
+    }
+
+    if (closeTimeValue.getTime() <= openTimeValue.getTime()) {
+      return "0h 00min";
+    }
+
+    return calculateDuration(openTimeValue, closeTimeValue);
+  }, [openTimeValue, closeTimeValue]);
 
   const libraryItems = useMemo<StoredLibraryItem[]>(() => {
     if (!state.trade) {
@@ -668,6 +771,16 @@ export default function RegisteredTradePage() {
   const riskRewardValue = formatOptionalText(state.trade.riskReward);
   const riskValue = formatOptionalText(state.trade.risk);
   const pipsValue = formatOptionalText(state.trade.pips);
+  const preTradeMentalStateValue = formatOptionalText(
+    state.trade.preTradeMentalState ?? state.trade.mentalState,
+  );
+  const emotionsDuringTradeValue = formatOptionalText(state.trade.emotionsDuringTrade);
+  const emotionsAfterTradeValue = formatOptionalText(state.trade.emotionsAfterTrade);
+  const confidenceLevelValue = formatOptionalText(state.trade.confidenceLevel);
+  const emotionalTriggerValue = formatOptionalText(state.trade.emotionalTrigger);
+  const followedPlanValue = formatOptionalText(state.trade.followedPlan);
+  const respectedRiskValue = formatOptionalText(state.trade.respectedRisk);
+  const wouldRepeatTradeValue = formatOptionalText(state.trade.wouldRepeatTrade);
 
   const handleEditTrade = () => {
     if (!state.trade) {
@@ -770,50 +883,17 @@ export default function RegisteredTradePage() {
           {activeTab === "main" ? (
             <>
           <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6">
-            <div className="mx-auto flex w-full max-w-xl items-center gap-2 overflow-x-auto rounded-full border border-border bg-surface px-1 py-1">
-              {currentWeekDays.map((date) => {
-                const isSelected = date.toDateString() === selectedDate.toDateString();
-                const dayNumber = date.getDate();
-                const monthLabel = date
-                  .toLocaleDateString(undefined, {
-                    month: "short",
-                  })
-                  .toUpperCase();
+            <div className="mx-auto flex w-full max-w-xl items-center gap-3">
+              <div className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1">
+                <div className="flex w-full items-center justify-center gap-2">
+                  {currentWeekDays.map((date) => renderWeekDayPill(date))}
+                </div>
+              </div>
 
-                const dayNumberClasses = [
-                  "flex h-10 w-10 items-center justify-center rounded-full text-lg font-medium transition-colors md:h-12 md:w-12 md:text-xl",
-                ];
-
-                const dayNumberStyle: CSSProperties | undefined = isSelected
-                  ? {
-                      backgroundColor: "color-mix(in srgb, rgb(var(--muted-fg)) 20%, rgb(var(--surface)))",
-                    }
-                  : undefined;
-
-                if (isSelected) {
-                  dayNumberClasses.push("text-fg font-semibold");
-                } else {
-                  dayNumberClasses.push("border border-border text-fg");
-                }
-
-                return (
-                  <div
-                    key={date.toISOString()}
-                    className={`flex min-w-[62px] flex-col items-center gap-2 rounded-full px-3 py-2 text-xs font-medium md:min-w-[88px] md:text-sm ${
-                      isSelected ? "text-fg" : "text-muted-fg"
-                    }`}
-                  >
-                    <span className={dayNumberClasses.join(" ")} style={dayNumberStyle}>
-                      {dayNumber}
-                    </span>
-                    <span className={`text-[10px] tracking-[0.3em] md:text-xs ${isSelected ? "text-fg" : "text-muted-fg"}`}>
-                      {monthLabel}
-                    </span>
-                  </div>
-                );
-              })}
-
-              <div className="ml-auto hidden h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg md:flex">
+              <div
+                className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition"
+                aria-hidden="true"
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -823,7 +903,6 @@ export default function RegisteredTradePage() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   className="h-6 w-6"
-                  aria-hidden="true"
                 >
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                   <line x1="16" y1="2" x2="16" y2="6" />
@@ -854,96 +933,177 @@ export default function RegisteredTradePage() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <div className="flex flex-col gap-3">
-                <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Open Time</span>
-                <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
-                  <div className="flex flex-col">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      {openTimeDisplay.dateLabel}
-                    </span>
-                    <span className="text-lg font-medium tracking-[0.18em] text-fg md:text-xl">
-                      {openTimeDisplay.timeLabel}
-                    </span>
-                  </div>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="ml-auto h-6 w-6 text-muted-fg"
-                    aria-hidden="true"
-                  >
-                    <circle cx="12" cy="12" r="9" />
-                    <polyline points="12 7 12 12 15 15" />
-                  </svg>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Open Time</span>
+              <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                    {openTimeDisplay.dateLabel}
+                  </span>
+                  <span className="text-lg font-medium tracking-[0.18em] text-fg md:text-xl">
+                    {openTimeDisplay.timeLabel}
+                  </span>
                 </div>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Close Time</span>
-                <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
-                  <div className="flex flex-col">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      {closeTimeDisplay.dateLabel}
-                    </span>
-                    <span className="text-lg font-medium tracking-[0.18em] text-fg md:text-xl">
-                      {closeTimeDisplay.timeLabel}
-                    </span>
-                  </div>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="ml-auto h-6 w-6 text-muted-fg"
-                    aria-hidden="true"
-                  >
-                    <circle cx="12" cy="12" r="9" />
-                    <polyline points="12 7 12 12 15 15" />
-                  </svg>
-                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="ml-auto h-6 w-6 text-muted-fg"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <polyline points="12 7 12 12 15 15" />
+                </svg>
               </div>
             </div>
 
-            <div className="mt-6 flex flex-col gap-3">
-              <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Conditions</span>
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Position</span>
-                  <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                    <span className="text-sm font-medium text-fg">{positionLabel}</span>
-                  </div>
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Close Time</span>
+              <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                    {closeTimeDisplay.dateLabel}
+                  </span>
+                  <span className="text-lg font-medium tracking-[0.18em] text-fg md:text-xl">
+                    {closeTimeDisplay.timeLabel}
+                  </span>
                 </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="ml-auto h-6 w-6 text-muted-fg"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <polyline points="12 7 12 12 15 15" />
+                </svg>
+              </div>
+            </div>
+          </div>
 
-                <div className="flex flex-col gap-2">
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">R/R</span>
-                  <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                    <span className="text-sm font-medium text-fg">{riskRewardValue}</span>
-                  </div>
+          <p className="mt-2 text-center text-sm text-gray-500">Duration: {durationLabel}</p>
+
+          <div className="mt-6 flex flex-col gap-3">
+            <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Conditions</span>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Position</span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{positionLabel}</span>
                 </div>
+              </div>
 
-                <div className="flex flex-col gap-2">
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Risk</span>
-                  <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                    <span className="text-sm font-medium text-fg">{riskValue}</span>
-                  </div>
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">R/R</span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{riskRewardValue}</span>
                 </div>
+              </div>
 
-                <div className="flex flex-col gap-2">
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Nr. Pips</span>
-                  <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                    <span className="text-sm font-medium text-fg">{pipsValue}</span>
-                  </div>
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Risk</span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{riskValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Nr. Pips</span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{pipsValue}</span>
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-3">
+            <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">
+              Psychology & Mindset
+            </span>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Stato mentale prima del trade
+                </span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{preTradeMentalStateValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Emozioni durante il trade
+                </span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{emotionsDuringTradeValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Emozioni dopo il trade
+                </span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{emotionsAfterTradeValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Livello di fiducia (1–10)
+                </span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{confidenceLevelValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Trigger emotivi
+                </span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{emotionalTriggerValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Ho seguito il mio piano?
+                </span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{followedPlanValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Ho rispettato il rischio prefissato?
+                </span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{respectedRiskValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Rifarei questo trade?
+                </span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{wouldRepeatTradeValue}</span>
+                </div>
+              </div>
+            </div>
+          </div>
           </div>
             </>
           ) : (
