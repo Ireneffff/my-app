@@ -1429,7 +1429,7 @@ function NewTradePageContent() {
                       <button
                         type="button"
                         onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                        className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left transition focus:outline-none focus:ring-2 focus:ring-accent/40"
+                        className="group flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left transition focus:outline-none focus:ring-2 focus:ring-accent/40"
                         aria-haspopup="listbox"
                         aria-expanded={isSymbolListOpen}
                       >
@@ -1439,32 +1439,23 @@ function NewTradePageContent() {
                         <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
                           {selectedSymbol.code}
                         </span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className={`ml-auto h-4 w-4 text-gray-500 opacity-100 transition-transform transition-opacity group-hover:opacity-80 ${
+                            isSymbolListOpen ? "rotate-180" : ""
+                          }`}
+                          aria-hidden="true"
+                        >
+                          <path d="m6 9 6 6 6-6" />
+                        </svg>
                       </button>
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="ml-auto rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-muted-fg hover:text-fg"
-                      onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                      aria-haspopup="listbox"
-                      aria-expanded={isSymbolListOpen}
-                    >
-                      {isSymbolListOpen ? "Hide symbols" : "Show symbols"}
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className={`h-4 w-4 transition-transform ${isSymbolListOpen ? "rotate-180" : ""}`}
-                        aria-hidden="true"
-                      >
-                        <path d="m6 9 6 6 6-6" />
-                      </svg>
-                    </Button>
                   </div>
 
                   <div
