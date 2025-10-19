@@ -19,7 +19,7 @@
     "paths": {
       // alias per import "@/components/ThemeToggle"
       "@/*": ["./*"],
-      "@heroicons/react/24/solid": ["./lib/heroicons/react/24/solid"]
+      "lucide-react": ["./lib/lucide-react"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

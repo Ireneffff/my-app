@@ -16,7 +16,7 @@ import {
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { HandThumbUpIcon } from "@heroicons/react/24/solid";
+import { Circle, CheckCircle } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
@@ -1461,21 +1461,24 @@ function NewTradePageContent() {
                         <button
                           type="button"
                           onClick={() => setIsRealTrade((prev) => !prev)}
-                          className={`group flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent/40 ${
+                          className={`group flex items-center gap-3 rounded-2xl border px-4 py-3 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent/40 ${
                             isRealTrade
                               ? "border-green-200 bg-green-100 text-green-700"
                               : "border-gray-200 bg-gray-100 text-gray-600"
                           }`}
                           aria-pressed={isRealTrade}
                         >
-                          <HandThumbUpIcon
-                            aria-hidden="true"
-                            className={`h-5 w-5 -translate-y-[1px] align-middle transition-transform transition-colors duration-200 ease-in-out ${
-                              isRealTrade
-                                ? "scale-110 text-green-500 hover:text-green-600"
-                                : "text-gray-400"
-                            }`}
-                          />
+                          {isRealTrade ? (
+                            <CheckCircle
+                              className="h-5 w-5 text-green-500 transition-colors duration-200 ease-in-out"
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <Circle
+                              className="h-5 w-5 text-gray-400 transition-colors duration-200 ease-in-out"
+                              aria-hidden="true"
+                            />
+                          )}
                           <span className="text-sm font-medium tracking-[0.08em] md:text-base">
                             {isRealTrade ? "Real Trade" : "Paper Trade"}
                           </span>
