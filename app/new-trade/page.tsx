@@ -1428,40 +1428,42 @@ function NewTradePageContent() {
                   <div className="flex flex-wrap items-start gap-4">
                     <div className="flex flex-col gap-3">
                       <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
-                      <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-4">
                         <button
                           type="button"
                           onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                          className="group flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left transition focus:outline-none focus:ring-0"
+                          className="group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-lg border border-border bg-surface text-center transition focus:outline-none focus:ring-0"
                           aria-haspopup="listbox"
                           aria-expanded={isSymbolListOpen}
                         >
                           <span className="text-2xl" aria-hidden="true">
                             {selectedSymbol.flag}
                           </span>
-                          <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
-                            {selectedSymbol.code}
-                          </span>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className={`ml-auto h-4 w-4 text-gray-500 opacity-100 transition-transform transition-opacity group-hover:opacity-80 ${
-                              isSymbolListOpen ? "rotate-180" : ""
-                            }`}
-                            aria-hidden="true"
-                          >
-                            <path d="m6 9 6 6 6-6" />
-                          </svg>
+                          <div className="flex items-center justify-center gap-1">
+                            <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                              {selectedSymbol.code}
+                            </span>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className={`h-4 w-4 text-gray-500 opacity-100 transition-transform transition-opacity group-hover:opacity-80 ${
+                                isSymbolListOpen ? "rotate-180" : ""
+                              }`}
+                              aria-hidden="true"
+                            >
+                              <path d="m6 9 6 6 6-6" />
+                            </svg>
+                          </div>
                         </button>
                         <button
                           type="button"
                           onClick={() => setIsRealTrade((prev) => !prev)}
-                          className={`group flex items-center gap-3 rounded-2xl border px-4 py-3 transition-all duration-200 ease-in-out focus:outline-none focus:ring-0 ${
+                          className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-lg border transition-all duration-200 ease-in-out focus:outline-none focus:ring-0 ${
                             isRealTrade
                               ? "border-green-200 bg-green-100 text-green-700"
                               : "border-gray-200 bg-gray-100 text-gray-600"
@@ -1479,7 +1481,7 @@ function NewTradePageContent() {
                               aria-hidden="true"
                             />
                           )}
-                          <span className="text-sm font-medium tracking-[0.08em] md:text-base">
+                          <span className="text-sm font-medium tracking-[0.08em] text-center md:text-base">
                             {isRealTrade ? "Real Trade" : "Paper Trade"}
                           </span>
                         </button>
