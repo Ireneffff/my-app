@@ -1467,14 +1467,23 @@ function NewTradePageContent() {
                           }`}
                           aria-pressed={isRealTrade}
                         >
-                          <span
+                          <svg
                             aria-hidden="true"
-                            className={`text-xl transition-transform ${
-                              isRealTrade ? "scale-110" : ""
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={`h-5 w-5 transition-transform transition-colors duration-200 ${
+                              isRealTrade ? "scale-110 text-green-500" : "text-gray-400"
                             }`}
                           >
-                            👍
-                          </span>
+                            <path d="M7 10v12" />
+                            <path d="M15 3h2a2 2 0 0 1 2 2v7a4 4 0 0 1-4 4h-5a2 2 0 0 1-2-2v-5l4-6V3a2 2 0 0 1 2-2Z" />
+                            <path d="M7 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3" />
+                          </svg>
                           <span className="text-sm font-medium tracking-[0.08em] md:text-base">
                             {isRealTrade ? "Real Trade" : "Paper Trade"}
                           </span>
