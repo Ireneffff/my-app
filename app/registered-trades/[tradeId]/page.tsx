@@ -724,7 +724,7 @@ export default function RegisteredTradePage() {
         readOnly
         aria-readonly="true"
         placeholder="Note salvate"
-        className="min-h-[120px] w-full resize-none rounded-none border border-[#D9D9D9] bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg opacity-80 focus-visible:outline-none"
+        className="min-h-[120px] w-full resize-none rounded-none border border-[#D9D9D9] bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg opacity-80 focus:outline-none focus:ring-2 focus:ring-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
       />
     </div>
   );

@@ -1314,7 +1314,7 @@ function NewTradePageContent() {
 
               openImagePicker();
             }}
-            className="block w-full cursor-pointer border-0 bg-transparent p-0 focus-visible:outline-none"
+            className="block w-full cursor-pointer border-0 bg-transparent p-0 focus:outline-none focus:ring-2 focus:ring-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
             aria-label="Aggiorna immagine della libreria"
           >
             <span
@@ -1364,7 +1364,7 @@ function NewTradePageContent() {
       }}
       placeholder="Scrivi le tue note"
       aria-label="Note"
-      className="min-h-[120px] w-full resize-none rounded-none border border-[#D9D9D9] bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg transition focus-visible:outline-none"
+      className="min-h-[120px] w-full resize-none rounded-none border border-[#D9D9D9] bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg transition focus:outline-none focus:ring-2 focus:ring-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
     />
   );
 
@@ -1432,7 +1432,7 @@ function NewTradePageContent() {
                         <button
                           type="button"
                           onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                          className="group flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left transition focus:outline-none focus:ring-2 focus:ring-accent/40"
+                          className="group flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left transition focus:outline-none focus:ring-2 focus:ring-gray-300"
                           aria-haspopup="listbox"
                           aria-expanded={isSymbolListOpen}
                         >
@@ -1461,7 +1461,7 @@ function NewTradePageContent() {
                         <button
                           type="button"
                           onClick={() => setIsRealTrade((prev) => !prev)}
-                          className={`group flex items-center gap-3 rounded-2xl border px-4 py-3 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent/40 ${
+                          className={`group flex items-center gap-3 rounded-2xl border px-4 py-3 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-300 ${
                             isRealTrade
                               ? "border-green-200 bg-green-100 text-green-700"
                               : "border-gray-200 bg-gray-100 text-gray-600"
@@ -1578,7 +1578,7 @@ function NewTradePageContent() {
                             id="open-time-input"
                             ref={openTimeInputRef}
                             type="datetime-local"
-                            className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40"
+                            className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus:outline-none focus:ring-2 focus:ring-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
                             value={openTime ? formatDateTimeLocal(openTime) : ""}
                             onChange={(event) => {
                               const { value } = event.target;
@@ -1658,7 +1658,7 @@ function NewTradePageContent() {
                             id="close-time-input"
                             ref={closeTimeInputRef}
                             type="datetime-local"
-                            className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40"
+                            className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus:outline-none focus:ring-2 focus:ring-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
                             value={closeTime ? formatDateTimeLocal(closeTime) : ""}
                             onChange={(event) => {
                               const { value } = event.target;
@@ -1727,7 +1727,7 @@ function NewTradePageContent() {
                           onChange={(event) =>
                             setPosition(event.target.value === "SHORT" ? "SHORT" : "LONG")
                           }
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-gray-300"
                         >
                           <option value="LONG">Long</option>
                           <option value="SHORT">Short</option>
@@ -1747,7 +1747,7 @@ function NewTradePageContent() {
                           value={riskReward}
                           onChange={(event) => setRiskReward(event.target.value)}
                           placeholder="1:4"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         />
                       </div>
 
@@ -1764,7 +1764,7 @@ function NewTradePageContent() {
                           value={risk}
                           onChange={(event) => setRisk(event.target.value)}
                           placeholder="2%"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         />
                       </div>
 
@@ -1781,7 +1781,7 @@ function NewTradePageContent() {
                           value={pips}
                           onChange={(event) => setPips(event.target.value)}
                           placeholder="55"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         />
                       </div>
                     </div>
@@ -1804,7 +1804,7 @@ function NewTradePageContent() {
                           value={entryPrice}
                           onChange={(event) => setEntryPrice(event.target.value)}
                           placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         />
                       </div>
 
@@ -1821,7 +1821,7 @@ function NewTradePageContent() {
                           value={exitPrice}
                           onChange={(event) => setExitPrice(event.target.value)}
                           placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         />
                       </div>
 
@@ -1838,7 +1838,7 @@ function NewTradePageContent() {
                           value={stopLoss}
                           onChange={(event) => setStopLoss(event.target.value)}
                           placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         />
                       </div>
 
@@ -1855,7 +1855,7 @@ function NewTradePageContent() {
                           value={takeProfit}
                           onChange={(event) => setTakeProfit(event.target.value)}
                           placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         />
                       </div>
 
@@ -1872,7 +1872,7 @@ function NewTradePageContent() {
                           value={pnl}
                           onChange={(event) => setPnl(event.target.value)}
                           placeholder="Insert"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         />
                       </div>
                     </div>
