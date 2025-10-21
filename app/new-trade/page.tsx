@@ -1432,14 +1432,14 @@ function NewTradePageContent() {
                         <button
                           type="button"
                           onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                          className="group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-lg border border-border bg-surface text-center transition focus:outline-none focus:ring-0"
+                          className="group flex h-24 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-6 text-center shadow-sm transition-all focus:outline-none focus:ring-0 hover:shadow-md"
                           aria-haspopup="listbox"
                           aria-expanded={isSymbolListOpen}
                         >
                           <span className="text-2xl" aria-hidden="true">
                             {selectedSymbol.flag}
                           </span>
-                          <div className="flex items-center justify-center gap-1">
+                          <div className="flex items-center justify-center gap-2">
                             <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
                               {selectedSymbol.code}
                             </span>
@@ -1463,10 +1463,10 @@ function NewTradePageContent() {
                         <button
                           type="button"
                           onClick={() => setIsRealTrade((prev) => !prev)}
-                          className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-lg border transition-all duration-200 ease-in-out focus:outline-none focus:ring-0 ${
+                          className={`group flex h-24 flex-col items-center justify-center gap-2 rounded-2xl border px-6 text-center shadow-sm transition-all duration-200 ease-in-out focus:outline-none focus:ring-0 hover:shadow-md ${
                             isRealTrade
                               ? "border-green-200 bg-green-100 text-green-700"
-                              : "border-gray-200 bg-gray-100 text-gray-600"
+                              : "border-gray-200 bg-gray-50 text-gray-600"
                           }`}
                           aria-pressed={isRealTrade}
                         >
@@ -1481,7 +1481,7 @@ function NewTradePageContent() {
                               aria-hidden="true"
                             />
                           )}
-                          <span className="text-sm font-medium tracking-[0.08em] text-center md:text-base">
+                          <span className="text-sm font-medium tracking-[0.08em]">
                             {isRealTrade ? "Real Trade" : "Paper Trade"}
                           </span>
                         </button>
