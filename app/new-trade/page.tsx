@@ -22,27 +22,18 @@ import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
 import { StyledSelect } from "@/components/StyledSelect";
 import {
+  initializeRegisteredTrades,
   loadTrades,
+  REGISTERED_TRADES_UPDATED_EVENT,
   saveTrade,
   updateTrade,
   type StoredLibraryItem,
   type StoredTrade,
 } from "@/lib/tradesStorage";
 import { calculateDuration } from "@/lib/duration";
+import { AVAILABLE_SYMBOLS, type SymbolMetadata } from "@/lib/symbols";
 
-type SymbolOption = {
-  code: string;
-  flag: string;
-};
-
-const availableSymbols: SymbolOption[] = [
-  { code: "EURUSD", flag: "🇪🇺 🇺🇸" },
-  { code: "GBPUSD", flag: "🇬🇧 🇺🇸" },
-  { code: "USDJPY", flag: "🇺🇸 🇯🇵" },
-  { code: "AUDUSD", flag: "🇦🇺 🇺🇸" },
-  { code: "USDCAD", flag: "🇺🇸 🇨🇦" },
-  { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
-];
+type SymbolOption = SymbolMetadata;
 
 const preTradeMentalStateOptions = [
   "Calmo e concentrato",
@@ -249,7 +240,7 @@ function NewTradePageContent() {
     scrollUnlockTimeoutsRef.current.clear();
   }, []);
 
-  const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
+  const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(AVAILABLE_SYMBOLS[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
   const [isRealTrade, setIsRealTrade] = useState(false);
   const initialLibraryItems = useMemo(() => [createLibraryItem(null)], []);
@@ -282,6 +273,12 @@ function NewTradePageContent() {
     getStartOfMonth(initialSelectedDate),
   );
   const [, startNavigation] = useTransition();
+
+  useEffect(() => {
+    initializeRegisteredTrades().catch((error) => {
+      console.error("Failed to load registered trades", error);
+    });
+  }, []);
 
   const lockBodyScroll = useCallback(() => {
     if (typeof document === "undefined") {
@@ -795,79 +792,106 @@ function NewTradePageContent() {
       return;
     }
 
-    const trades = loadTrades();
-    const match = trades.find((trade) => trade.id === editingTradeId);
+    const hydrateTrade = () => {
+      const trades = loadTrades();
+      const match = trades.find((trade) => trade.id === editingTradeId) ?? null;
 
-    if (!match) {
-      router.replace("/");
+      if (!match) {
+        if (trades.length === 0) {
+          return;
+        }
+
+        router.replace("/");
+        return;
+      }
+
+      const matchedSymbol =
+        AVAILABLE_SYMBOLS.find((symbol) => symbol.code === match.symbolCode) ?? {
+          code: match.symbolCode,
+          flag: match.symbolFlag,
+        };
+
+      setSelectedSymbol(matchedSymbol);
+
+      const parsedDate = new Date(match.date);
+      const isDateValid = !Number.isNaN(parsedDate.getTime());
+      const effectiveDate = isDateValid ? parsedDate : selectedDate;
+
+      if (isDateValid) {
+        handleSelectDate(parsedDate);
+      }
+
+      if (match.openTime) {
+        const parsedOpen = new Date(match.openTime);
+        setOpenTime(!Number.isNaN(parsedOpen.getTime()) ? parsedOpen : alignTimeWithDate(null, effectiveDate, 9));
+      } else {
+        setOpenTime((prev) => alignTimeWithDate(prev, effectiveDate, 9));
+      }
+
+      if (match.closeTime) {
+        const parsedClose = new Date(match.closeTime);
+        setCloseTime(!Number.isNaN(parsedClose.getTime()) ? parsedClose : alignTimeWithDate(null, effectiveDate, 17));
+      } else {
+        setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate, 17));
+      }
+
+      const hydratedLibraryItems =
+        Array.isArray(match.libraryItems) && match.libraryItems.length > 0
+          ? match.libraryItems.map((item) => ({
+              id: item.id,
+              imageData: item.imageData ?? null,
+              notes: typeof item.notes === "string" ? item.notes : "",
+            }))
+          : [createLibraryItem(match.imageData ?? null)];
+
+      setLibraryItems(hydratedLibraryItems);
+      setSelectedLibraryItemId(hydratedLibraryItems[0]?.id ?? initialLibraryItems[0].id);
+      setRecentlyAddedLibraryItemId(null);
+      setImageError(null);
+
+      setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
+      setEntryPrice(match.entryPrice ?? "");
+      setExitPrice(match.exitPrice ?? "");
+      setStopLoss(match.stopLoss ?? "");
+      setTakeProfit(match.takeProfit ?? "");
+      setPnl(match.pnl ?? "");
+      setPreTradeMentalState(match.preTradeMentalState ?? match.mentalState ?? "");
+      setEmotionsDuringTrade(match.emotionsDuringTrade ?? "");
+      setEmotionsAfterTrade(match.emotionsAfterTrade ?? "");
+      setConfidenceLevel(match.confidenceLevel ?? "");
+      setEmotionalTrigger(match.emotionalTrigger ?? "");
+      setFollowedPlan(match.followedPlan ?? "");
+      setRespectedRiskChoice(match.respectedRisk ?? "");
+      setWouldRepeatTrade(match.wouldRepeatTrade ?? "");
+      setRiskReward(match.riskReward ?? "");
+      setRisk(match.risk ?? "");
+      setPips(match.pips ?? "");
+
+      if (imageInputRef.current) {
+        imageInputRef.current.value = "";
+      }
+
+      const matchedLibraryItem = hydratedLibraryItems.find((item) => item.id === selectedLibraryItemId);
+      if (!matchedLibraryItem) {
+        setSelectedLibraryItemId(hydratedLibraryItems[0]?.id ?? initialLibraryItems[0].id);
+      }
+    };
+
+    hydrateTrade();
+
+    if (typeof window === "undefined") {
       return;
     }
 
-    const matchedSymbol =
-      availableSymbols.find((symbol) => symbol.code === match.symbolCode) ?? {
-        code: match.symbolCode,
-        flag: match.symbolFlag,
-      };
+    const handleTradesUpdated = () => {
+      hydrateTrade();
+    };
 
-    setSelectedSymbol(matchedSymbol);
+    window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleTradesUpdated);
 
-    const parsedDate = new Date(match.date);
-    const isDateValid = !Number.isNaN(parsedDate.getTime());
-    const effectiveDate = isDateValid ? parsedDate : selectedDate;
-
-    if (isDateValid) {
-      handleSelectDate(parsedDate);
-    }
-
-    if (match.openTime) {
-      const parsedOpen = new Date(match.openTime);
-      setOpenTime(!Number.isNaN(parsedOpen.getTime()) ? parsedOpen : alignTimeWithDate(null, effectiveDate, 9));
-    } else {
-      setOpenTime((prev) => alignTimeWithDate(prev, effectiveDate, 9));
-    }
-
-    if (match.closeTime) {
-      const parsedClose = new Date(match.closeTime);
-      setCloseTime(!Number.isNaN(parsedClose.getTime()) ? parsedClose : alignTimeWithDate(null, effectiveDate, 17));
-    } else {
-      setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate, 17));
-    }
-
-    const hydratedLibraryItems =
-      Array.isArray(match.libraryItems) && match.libraryItems.length > 0
-        ? match.libraryItems.map((item) => ({
-            id: item.id,
-            imageData: item.imageData ?? null,
-            notes: typeof item.notes === "string" ? item.notes : "",
-          }))
-        : [createLibraryItem(match.imageData ?? null)];
-
-    setLibraryItems(hydratedLibraryItems);
-    setSelectedLibraryItemId(hydratedLibraryItems[0]?.id ?? initialLibraryItems[0].id);
-    setRecentlyAddedLibraryItemId(null);
-    setImageError(null);
-
-    setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
-    setEntryPrice(match.entryPrice ?? "");
-    setExitPrice(match.exitPrice ?? "");
-    setStopLoss(match.stopLoss ?? "");
-    setTakeProfit(match.takeProfit ?? "");
-    setPnl(match.pnl ?? "");
-    setPreTradeMentalState(match.preTradeMentalState ?? match.mentalState ?? "");
-    setEmotionsDuringTrade(match.emotionsDuringTrade ?? "");
-    setEmotionsAfterTrade(match.emotionsAfterTrade ?? "");
-    setConfidenceLevel(match.confidenceLevel ?? "");
-    setEmotionalTrigger(match.emotionalTrigger ?? "");
-    setFollowedPlan(match.followedPlan ?? "");
-    setRespectedRiskChoice(match.respectedRisk ?? "");
-    setWouldRepeatTrade(match.wouldRepeatTrade ?? "");
-    setRiskReward(match.riskReward ?? "");
-    setRisk(match.risk ?? "");
-    setPips(match.pips ?? "");
-
-    if (imageInputRef.current) {
-      imageInputRef.current.value = "";
-    }
+    return () => {
+      window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleTradesUpdated);
+    };
   }, [
     editingTradeId,
     handleSelectDate,
@@ -876,6 +900,7 @@ function NewTradePageContent() {
     isEditing,
     router,
     selectedDate,
+    selectedLibraryItemId,
   ]);
 
   const dayOfWeekLabel = useMemo(
@@ -1500,7 +1525,7 @@ function NewTradePageContent() {
                         role="listbox"
                         aria-activedescendant={`symbol-${selectedSymbol.code}`}
                       >
-                        {availableSymbols.map((symbol) => {
+                        {AVAILABLE_SYMBOLS.map((symbol) => {
                           const isActive = symbol.code === selectedSymbol.code;
 
                           return (
@@ -2053,8 +2078,8 @@ function NewTradePageContent() {
           variant="primary"
           size="md"
           className="ml-auto min-w-[140px]"
-          onClick={() => {
-            const targetTradeId = editingTradeId ?? Date.now().toString(36);
+          onClick={async () => {
+            const targetTradeId = editingTradeId ?? crypto.randomUUID();
             const trade: StoredTrade = {
               id: targetTradeId,
               symbolCode: selectedSymbol.code,
@@ -2088,23 +2113,27 @@ function NewTradePageContent() {
               pips: pips.trim() || null,
             };
 
-            if (isEditing && editingTradeId) {
-              updateTrade(trade);
-            } else {
-              saveTrade(trade);
+            try {
+              const storedTrade =
+                isEditing && editingTradeId ? await updateTrade(trade) : await saveTrade(trade);
+
+              const destination = isEditing && editingTradeId
+                ? `/registered-trades/${storedTrade.id}`
+                : "/";
+
+              startNavigation(() => {
+                router.push(destination);
+              });
+
+              window.setTimeout(() => {
+                if (window.location.pathname.startsWith("/new-trade")) {
+                  window.location.href = destination;
+                }
+              }, 150);
+            } catch (error) {
+              console.error("Failed to save trade", error);
+              window.alert("Impossibile salvare la trade. Riprova più tardi.");
             }
-
-            const destination = isEditing && editingTradeId ? `/registered-trades/${editingTradeId}` : "/";
-
-            startNavigation(() => {
-              router.push(destination);
-            });
-
-            window.setTimeout(() => {
-              if (window.location.pathname.startsWith("/new-trade")) {
-                window.location.href = destination;
-              }
-            }, 150);
           }}
         >
           {isEditing ? "Update" : "Save"}

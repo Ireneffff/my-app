@@ -17,6 +17,7 @@ import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
 import {
+  initializeRegisteredTrades,
   deleteTrade,
   loadTrades,
   REGISTERED_TRADES_UPDATED_EVENT,
@@ -24,20 +25,12 @@ import {
   type StoredTrade,
 } from "@/lib/tradesStorage";
 import { calculateDuration } from "@/lib/duration";
+import { AVAILABLE_SYMBOLS } from "@/lib/symbols";
 
 type TradeState = {
   status: "loading" | "ready" | "missing";
   trade: StoredTrade | null;
 };
-
-const availableSymbols = [
-  { code: "EURUSD", flag: "🇪🇺 🇺🇸" },
-  { code: "GBPUSD", flag: "🇬🇧 🇺🇸" },
-  { code: "USDJPY", flag: "🇺🇸 🇯🇵" },
-  { code: "AUDUSD", flag: "🇦🇺 🇺🇸" },
-  { code: "USDCAD", flag: "🇺🇸 🇨🇦" },
-  { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
-] as const;
 
 function getDateTimeDisplay(isoValue?: string | null) {
   if (!isoValue) {
@@ -228,6 +221,12 @@ export default function RegisteredTradePage() {
       resetBodyScrollLock();
     };
   }, [clearScheduledScrollUnlocks, resetBodyScrollLock]);
+
+  useEffect(() => {
+    initializeRegisteredTrades().catch((error) => {
+      console.error("Failed to initialize registered trades", error);
+    });
+  }, []);
 
   useEffect(() => {
     if (!tradeId) {
@@ -754,7 +753,7 @@ export default function RegisteredTradePage() {
   }
 
   const activeSymbol =
-    availableSymbols.find((symbol) => symbol.code === state.trade?.symbolCode) ?? {
+    AVAILABLE_SYMBOLS.find((symbol) => symbol.code === state.trade?.symbolCode) ?? {
       code: state.trade.symbolCode,
       flag: state.trade.symbolFlag,
     };
@@ -790,7 +789,7 @@ export default function RegisteredTradePage() {
     router.push(`/new-trade?tradeId=${state.trade.id}`);
   };
 
-  const handleDeleteTrade = () => {
+  const handleDeleteTrade = async () => {
     if (!state.trade) {
       return;
     }
@@ -800,9 +799,14 @@ export default function RegisteredTradePage() {
       return;
     }
 
-    deleteTrade(state.trade.id);
-    setState({ status: "missing", trade: null });
-    router.push("/");
+    try {
+      await deleteTrade(state.trade.id);
+      setState({ status: "missing", trade: null });
+      router.push("/");
+    } catch (error) {
+      console.error("Failed to delete trade", error);
+      window.alert("Impossibile eliminare la trade. Riprova più tardi.");
+    }
   };
 
   return (
