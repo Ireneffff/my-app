@@ -1428,11 +1428,11 @@ function NewTradePageContent() {
                   <div className="flex flex-wrap items-start gap-4">
                     <div className="flex flex-col gap-3">
                       <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
-                      <div className="flex flex-wrap items-center gap-4">
+                      <div className="flex flex-wrap justify-center gap-6">
                         <button
                           type="button"
                           onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                          className="group flex h-24 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-6 text-center shadow-sm transition-all focus:outline-none focus:ring-0 hover:shadow-md"
+                          className="group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface text-center shadow-sm transition-all focus:outline-none focus:ring-0 hover:shadow-md"
                           aria-haspopup="listbox"
                           aria-expanded={isSymbolListOpen}
                         >
@@ -1463,7 +1463,7 @@ function NewTradePageContent() {
                         <button
                           type="button"
                           onClick={() => setIsRealTrade((prev) => !prev)}
-                          className={`group flex h-24 flex-col items-center justify-center gap-2 rounded-2xl border px-6 text-center shadow-sm transition-all duration-200 ease-in-out focus:outline-none focus:ring-0 hover:shadow-md ${
+                          className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border text-center shadow-sm transition-all duration-200 ease-in-out focus:outline-none focus:ring-0 hover:shadow-md ${
                             isRealTrade
                               ? "border-green-200 bg-green-100 text-green-700"
                               : "border-gray-200 bg-gray-50 text-gray-600"
