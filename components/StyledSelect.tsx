@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 
 const base =
-  "w-full rounded-lg border border-gray-200 bg-white text-sm p-2 focus:outline-none focus:ring-2 focus:ring-gray-300 appearance-none";
+  "w-full rounded-lg border border-gray-200 bg-white text-sm p-2 focus:outline-none focus:ring-0 appearance-none";
 
 type StyledSelectProps = {
   label: string;

@@ -16,6 +16,7 @@ import {
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
+import { Circle, CheckCircle } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
@@ -250,6 +251,7 @@ function NewTradePageContent() {
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
+  const [isRealTrade, setIsRealTrade] = useState(false);
   const initialLibraryItems = useMemo(() => [createLibraryItem(null)], []);
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>(initialLibraryItems);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -1312,7 +1314,7 @@ function NewTradePageContent() {
 
               openImagePicker();
             }}
-            className="block w-full cursor-pointer border-0 bg-transparent p-0 focus-visible:outline-none"
+            className="block w-full cursor-pointer border-0 bg-transparent p-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
             aria-label="Aggiorna immagine della libreria"
           >
             <span
@@ -1362,7 +1364,7 @@ function NewTradePageContent() {
       }}
       placeholder="Scrivi le tue note"
       aria-label="Note"
-      className="min-h-[120px] w-full resize-none rounded-none border border-[#D9D9D9] bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg transition focus-visible:outline-none"
+      className="min-h-[120px] w-full resize-none rounded-none border border-[#D9D9D9] bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg transition focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
     />
   );
 
@@ -1423,48 +1425,68 @@ function NewTradePageContent() {
 
               <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
                 <div className="flex flex-col gap-6">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="flex flex-wrap items-start gap-4">
                     <div className="flex flex-col gap-3">
                       <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
-                      <button
-                        type="button"
-                        onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                        className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left transition focus:outline-none focus:ring-2 focus:ring-accent/40"
-                        aria-haspopup="listbox"
-                        aria-expanded={isSymbolListOpen}
-                      >
-                        <span className="text-2xl" aria-hidden="true">
-                          {selectedSymbol.flag}
-                        </span>
-                        <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
-                          {selectedSymbol.code}
-                        </span>
-                      </button>
+                      <div className="flex flex-wrap justify-center gap-6">
+                        <button
+                          type="button"
+                          onClick={() => setIsSymbolListOpen((prev) => !prev)}
+                          className="group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface text-center shadow-sm transition-all focus:outline-none focus:ring-0 hover:shadow-md"
+                          aria-haspopup="listbox"
+                          aria-expanded={isSymbolListOpen}
+                        >
+                          <span className="text-2xl" aria-hidden="true">
+                            {selectedSymbol.flag}
+                          </span>
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                              {selectedSymbol.code}
+                            </span>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className={`h-4 w-4 text-gray-500 opacity-100 transition-transform transition-opacity group-hover:opacity-80 ${
+                                isSymbolListOpen ? "rotate-180" : ""
+                              }`}
+                              aria-hidden="true"
+                            >
+                              <path d="m6 9 6 6 6-6" />
+                            </svg>
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsRealTrade((prev) => !prev)}
+                          className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border text-center shadow-sm transition-all duration-200 ease-in-out focus:outline-none focus:ring-0 hover:shadow-md ${
+                            isRealTrade
+                              ? "border-green-200 bg-green-100 text-green-700"
+                              : "border-gray-200 bg-gray-50 text-gray-600"
+                          }`}
+                          aria-pressed={isRealTrade}
+                        >
+                          {isRealTrade ? (
+                            <CheckCircle
+                              className="h-5 w-5 text-green-500 transition-colors duration-200 ease-in-out"
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <Circle
+                              className="h-5 w-5 text-gray-400 transition-colors duration-200 ease-in-out"
+                              aria-hidden="true"
+                            />
+                          )}
+                          <span className="text-sm font-medium tracking-[0.08em]">
+                            {isRealTrade ? "Real Trade" : "Paper Trade"}
+                          </span>
+                        </button>
+                      </div>
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="ml-auto rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-muted-fg hover:text-fg"
-                      onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                      aria-haspopup="listbox"
-                      aria-expanded={isSymbolListOpen}
-                    >
-                      {isSymbolListOpen ? "Hide symbols" : "Show symbols"}
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className={`h-4 w-4 transition-transform ${isSymbolListOpen ? "rotate-180" : ""}`}
-                        aria-hidden="true"
-                      >
-                        <path d="m6 9 6 6 6-6" />
-                      </svg>
-                    </Button>
                   </div>
 
                   <div
@@ -1558,7 +1580,7 @@ function NewTradePageContent() {
                             id="open-time-input"
                             ref={openTimeInputRef}
                             type="datetime-local"
-                            className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40"
+                            className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                             value={openTime ? formatDateTimeLocal(openTime) : ""}
                             onChange={(event) => {
                               const { value } = event.target;
@@ -1638,7 +1660,7 @@ function NewTradePageContent() {
                             id="close-time-input"
                             ref={closeTimeInputRef}
                             type="datetime-local"
-                            className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40"
+                            className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                             value={closeTime ? formatDateTimeLocal(closeTime) : ""}
                             onChange={(event) => {
                               const { value } = event.target;
@@ -1707,7 +1729,7 @@ function NewTradePageContent() {
                           onChange={(event) =>
                             setPosition(event.target.value === "SHORT" ? "SHORT" : "LONG")
                           }
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-0"
                         >
                           <option value="LONG">Long</option>
                           <option value="SHORT">Short</option>
@@ -1727,7 +1749,7 @@ function NewTradePageContent() {
                           value={riskReward}
                           onChange={(event) => setRiskReward(event.target.value)}
                           placeholder="1:4"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
 
@@ -1744,7 +1766,7 @@ function NewTradePageContent() {
                           value={risk}
                           onChange={(event) => setRisk(event.target.value)}
                           placeholder="2%"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
 
@@ -1761,7 +1783,7 @@ function NewTradePageContent() {
                           value={pips}
                           onChange={(event) => setPips(event.target.value)}
                           placeholder="55"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
                     </div>
@@ -1784,7 +1806,7 @@ function NewTradePageContent() {
                           value={entryPrice}
                           onChange={(event) => setEntryPrice(event.target.value)}
                           placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
 
@@ -1801,7 +1823,7 @@ function NewTradePageContent() {
                           value={exitPrice}
                           onChange={(event) => setExitPrice(event.target.value)}
                           placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
 
@@ -1818,7 +1840,7 @@ function NewTradePageContent() {
                           value={stopLoss}
                           onChange={(event) => setStopLoss(event.target.value)}
                           placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
 
@@ -1835,7 +1857,7 @@ function NewTradePageContent() {
                           value={takeProfit}
                           onChange={(event) => setTakeProfit(event.target.value)}
                           placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
 
@@ -1852,7 +1874,7 @@ function NewTradePageContent() {
                           value={pnl}
                           onChange={(event) => setPnl(event.target.value)}
                           placeholder="Insert"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
                     </div>
@@ -1933,7 +1955,7 @@ function NewTradePageContent() {
                             setConfidenceLevel(String(clampedValue));
                           }}
                           placeholder="Seleziona livello"
-                          className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 text-sm placeholder-gray-400 p-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                          className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 text-sm placeholder-gray-400 p-2 focus:outline-none focus:ring-0"
                         />
                       </div>
 
