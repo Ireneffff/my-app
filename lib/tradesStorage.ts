@@ -1,7 +1,7 @@
 import { Buffer } from "buffer";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
-import { supabase } from "./supabaseClient";
+import { supabase, assertSupabaseConfigured } from "./supabaseClient";
 import { getSymbolMetadata } from "./symbols";
 
 export type StoredLibraryItem = {
@@ -49,7 +49,7 @@ let cachedTrades: StoredTrade[] = [];
 let tradesRealtimeChannel: RealtimeChannel | null = null;
 let initializePromise: Promise<void> | null = null;
 
-const DATA_URL_REGEX = /^data:(?<mime>[^;]+);base64,(?<data>.+)$/i;
+const DATA_URL_REGEX = /^data:([^;]+);base64,(.+)$/i;
 
 function notifyTradesChanged() {
   if (typeof window === "undefined") {
@@ -219,6 +219,7 @@ function ensureTradesRealtimeSubscription() {
     return;
   }
 
+  assertSupabaseConfigured();
   tradesRealtimeChannel = supabase
     .channel("registered_trades_changes")
     .on(
@@ -243,11 +244,11 @@ function ensureTradesRealtimeSubscription() {
 
 function decodeDataUrl(dataUrl: string) {
   const match = DATA_URL_REGEX.exec(dataUrl);
-  if (!match || !match.groups) {
+  if (!match) {
     throw new Error("Invalid data URL provided for trade image");
   }
 
-  const { mime, data } = match.groups;
+  const [, mime, data] = match;
   const byteCharacters = typeof window === "undefined" ? Buffer.from(data, "base64").toString("binary") : atob(data);
   const byteNumbers = new Array(byteCharacters.length);
   for (let i = 0; i < byteCharacters.length; i += 1) {
@@ -304,6 +305,7 @@ async function resolveLibraryAttachment(
   }
 
   const fileName = `${tradeId}/${crypto.randomUUID()}.${extension}`;
+  assertSupabaseConfigured();
   const { error } = await supabase.storage
     .from(TRADE_PHOTOS_BUCKET)
     .upload(fileName, blob, {
@@ -341,8 +343,9 @@ export async function initializeRegisteredTrades() {
 }
 
 export async function refreshTrades() {
+  assertSupabaseConfigured();
   const { data, error } = await supabase
-    .from<RegisteredTradeRow>(TRADES_TABLE)
+    .from(TRADES_TABLE)
     .select("*")
     .order("open_time", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
@@ -351,7 +354,8 @@ export async function refreshTrades() {
     throw error;
   }
 
-  const trades = (data ?? []).map(mapRowToStoredTrade);
+  const rows = (data ?? []) as RegisteredTradeRow[];
+  const trades = rows.map(mapRowToStoredTrade);
   setCachedTrades(trades);
   return trades;
 }
@@ -362,8 +366,9 @@ export async function saveTrade(trade: StoredTrade) {
   const { libraryPhotoUrl, libraryNote } = await resolveLibraryAttachment(tradeId, primaryLibraryItem);
   const payload = buildTradePayload({ ...trade, id: tradeId }, { libraryPhotoUrl, libraryNote });
 
+  assertSupabaseConfigured();
   const { data, error } = await supabase
-    .from<RegisteredTradeRow>(TRADES_TABLE)
+    .from(TRADES_TABLE)
     .insert(payload)
     .select("*")
     .single();
@@ -372,7 +377,7 @@ export async function saveTrade(trade: StoredTrade) {
     throw error;
   }
 
-  const storedTrade = mapRowToStoredTrade(data);
+  const storedTrade = mapRowToStoredTrade(data as RegisteredTradeRow);
   upsertCachedTrade(storedTrade);
   return storedTrade;
 }
@@ -388,8 +393,9 @@ export async function updateTrade(trade: StoredTrade) {
   const payload = buildTradePayload(trade, { libraryPhotoUrl, libraryNote });
   delete (payload as { id?: string }).id;
 
+  assertSupabaseConfigured();
   const { data, error } = await supabase
-    .from<RegisteredTradeRow>(TRADES_TABLE)
+    .from(TRADES_TABLE)
     .update(payload)
     .eq("id", tradeId)
     .select("*")
@@ -399,7 +405,7 @@ export async function updateTrade(trade: StoredTrade) {
     throw error;
   }
 
-  const storedTrade = mapRowToStoredTrade(data);
+  const storedTrade = mapRowToStoredTrade(data as RegisteredTradeRow);
   upsertCachedTrade(storedTrade);
   return storedTrade;
 }
@@ -410,6 +416,7 @@ export async function deleteTrade(tradeId: string) {
     return;
   }
 
+  assertSupabaseConfigured();
   const { error } = await supabase.from(TRADES_TABLE).delete().eq("id", normalizedId);
 
   if (error) {
@@ -441,6 +448,7 @@ export async function uploadTradePhoto(tradeId: string, file: File | Blob | stri
 
   const extension = guessExtensionFromBlob(file);
   const fileName = `${tradeId}/${crypto.randomUUID()}.${extension}`;
+  assertSupabaseConfigured();
   const { error } = await supabase.storage
     .from(TRADE_PHOTOS_BUCKET)
     .upload(fileName, file, {
@@ -462,8 +470,9 @@ export async function uploadTradePhoto(tradeId: string, file: File | Blob | stri
 }
 
 async function saveLibraryPhotoUrl(tradeId: string, photoUrl: string) {
+  assertSupabaseConfigured();
   const { data, error } = await supabase
-    .from<RegisteredTradeRow>(TRADES_TABLE)
+    .from(TRADES_TABLE)
     .update({ library_photo_url: photoUrl })
     .eq("id", tradeId)
     .select("*")
@@ -473,7 +482,7 @@ async function saveLibraryPhotoUrl(tradeId: string, photoUrl: string) {
     throw error;
   }
 
-  const storedTrade = mapRowToStoredTrade(data);
+  const storedTrade = mapRowToStoredTrade(data as RegisteredTradeRow);
   upsertCachedTrade(storedTrade);
 }
 
@@ -482,8 +491,9 @@ export async function saveLibraryNote(tradeId: string, note: string) {
     throw new Error("Missing trade id for note update");
   }
 
+  assertSupabaseConfigured();
   const { data, error } = await supabase
-    .from<RegisteredTradeRow>(TRADES_TABLE)
+    .from(TRADES_TABLE)
     .update({ library_note: note })
     .eq("id", tradeId)
     .select("*")
@@ -493,7 +503,7 @@ export async function saveLibraryNote(tradeId: string, note: string) {
     throw error;
   }
 
-  const storedTrade = mapRowToStoredTrade(data);
+  const storedTrade = mapRowToStoredTrade(data as RegisteredTradeRow);
   upsertCachedTrade(storedTrade);
   return storedTrade;
 }
