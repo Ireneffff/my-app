@@ -218,6 +218,40 @@ function hasLibraryImage(value: string | null | undefined) {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+function collectEffectiveLibraryItems(trade: StoredTrade): StoredLibraryItem[] {
+  const libraryItems = Array.isArray(trade.libraryItems) ? trade.libraryItems : [];
+  const filteredItems = libraryItems.filter((item): item is StoredLibraryItem => Boolean(item));
+
+  if (filteredItems.length > 0) {
+    return filteredItems;
+  }
+
+  if (hasLibraryImage(trade.imageData)) {
+    return [
+      {
+        id: "library-fallback",
+        imageData: trade.imageData ?? null,
+        notes: "",
+      },
+    ];
+  }
+
+  return [];
+}
+
+function libraryItemsContainContent(items: StoredLibraryItem[]): boolean {
+  return items.some((item) => {
+    if (!item) {
+      return false;
+    }
+
+    const hasImage = hasLibraryImage(item.imageData);
+    const hasNote = typeof item.notes === "string" && item.notes.trim().length > 0;
+
+    return hasImage || hasNote;
+  });
+}
+
 function buildTradePayload(trade: StoredTrade) {
   return {
     id: trade.id,
@@ -446,6 +480,20 @@ async function synchronizeTradeLibrary(
     .map((entry) => entry.row);
 }
 
+async function rollbackTradeAfterFailure(tradeId: string, reason: string) {
+  assertSupabaseConfigured();
+
+  try {
+    await supabase.from(TRADES_TABLE).delete().eq("id", tradeId);
+  } catch (cleanupError) {
+    console.error(
+      `Failed to rollback trade ${tradeId} after ${reason}`,
+      cleanupError instanceof Error ? cleanupError.message : cleanupError,
+      cleanupError,
+    );
+  }
+}
+
 function ensureTradesRealtimeSubscription() {
   if (tradesRealtimeChannel) {
     return;
@@ -590,64 +638,70 @@ export async function refreshTrades() {
 }
 
 export async function saveTrade(trade: StoredTrade) {
-  const tradeId = normalizeOptionalString(trade.id) ?? crypto.randomUUID();
-  const libraryItems = Array.isArray(trade.libraryItems) ? trade.libraryItems : [];
-  const effectiveLibraryItems =
-    libraryItems.length > 0
-      ? libraryItems
-      : hasLibraryImage(trade.imageData)
-      ? [
-          {
-            id: "library-fallback",
-            imageData: trade.imageData ?? null,
-            notes: "",
-          } satisfies StoredLibraryItem,
-        ]
-      : [];
-  const normalizedLibraryItems = await Promise.all(
-    effectiveLibraryItems.map((item, index) => normalizeLibraryItemForPersistence(tradeId, item, index)),
-  );
-  const payload = buildTradePayload({ ...trade, id: tradeId });
+  const effectiveLibraryItems = collectEffectiveLibraryItems(trade);
+  const hasLibraryContent = libraryItemsContainContent(effectiveLibraryItems);
+  const payload = buildTradePayload(trade);
+
+  const providedId =
+    typeof payload.id === "string" && payload.id.trim().length > 0 ? payload.id.trim() : null;
+  if (providedId) {
+    payload.id = providedId;
+  } else {
+    delete (payload as { id?: string }).id;
+  }
 
   assertSupabaseConfigured();
-  const { data, error } = await supabase
-    .from(TRADES_TABLE)
-    .insert(payload)
-    .select("*, trade_library(*)")
-    .single();
+  const insertContextId = providedId ?? "(new)";
+  const { data, error } = await supabase.from(TRADES_TABLE).insert(payload).select("*").single();
 
   if (error) {
     console.error(
-      `Supabase insert failed while saving trade ${tradeId}`,
+      `Supabase insert failed while saving trade ${insertContextId}`,
       error.message,
       error,
     );
     throw error;
   }
 
+  const insertedRow = data as RegisteredTradeRow;
+  const tradeId = insertedRow.id;
+
   let libraryRows: TradeLibraryRow[] = [];
-  try {
-    libraryRows = await synchronizeTradeLibrary(tradeId, normalizedLibraryItems);
-  } catch (libraryError) {
-    console.error(
-      `Failed to synchronize library entries while saving trade ${tradeId}`,
-      libraryError instanceof Error ? libraryError.message : libraryError,
-      libraryError,
-    );
+
+  if (hasLibraryContent) {
+    let normalizedLibraryItems: NormalizedLibraryItem[] = [];
+
     try {
-      await supabase.from(TRADES_TABLE).delete().eq("id", tradeId);
-    } catch (cleanupError) {
-      console.error(
-        `Failed to rollback trade ${tradeId} after library sync error`,
-        cleanupError instanceof Error ? cleanupError.message : cleanupError,
-        cleanupError,
+      normalizedLibraryItems = await Promise.all(
+        effectiveLibraryItems.map((item, index) =>
+          normalizeLibraryItemForPersistence(tradeId, item, index),
+        ),
       );
+    } catch (normalizationError) {
+      console.error(
+        `Failed to prepare library entries while saving trade ${tradeId}`,
+        normalizationError instanceof Error ? normalizationError.message : normalizationError,
+        normalizationError,
+      );
+      await rollbackTradeAfterFailure(tradeId, "library attachment preparation");
+      throw normalizationError;
     }
-    throw libraryError;
+
+    try {
+      libraryRows = await synchronizeTradeLibrary(tradeId, normalizedLibraryItems);
+    } catch (libraryError) {
+      console.error(
+        `Failed to synchronize library entries while saving trade ${tradeId}`,
+        libraryError instanceof Error ? libraryError.message : libraryError,
+        libraryError,
+      );
+      await rollbackTradeAfterFailure(tradeId, "library synchronization failure");
+      throw libraryError;
+    }
   }
 
   const storedTrade = mapRowToStoredTrade({
-    ...(data as RegisteredTradeRow),
+    ...insertedRow,
     trade_library: libraryRows,
   });
   upsertCachedTrade(storedTrade);
@@ -660,19 +714,7 @@ export async function updateTrade(trade: StoredTrade) {
     throw new Error("Cannot update trade without a valid id");
   }
 
-  const libraryItems = Array.isArray(trade.libraryItems) ? trade.libraryItems : [];
-  const effectiveLibraryItems =
-    libraryItems.length > 0
-      ? libraryItems
-      : hasLibraryImage(trade.imageData)
-      ? [
-          {
-            id: "library-fallback",
-            imageData: trade.imageData ?? null,
-            notes: "",
-          } satisfies StoredLibraryItem,
-        ]
-      : [];
+  const effectiveLibraryItems = collectEffectiveLibraryItems(trade);
   const normalizedLibraryItems = await Promise.all(
     effectiveLibraryItems.map((item, index) => normalizeLibraryItemForPersistence(tradeId, item, index)),
   );
