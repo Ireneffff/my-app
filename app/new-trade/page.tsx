@@ -2131,7 +2131,11 @@ function NewTradePageContent() {
                 }
               }, 150);
             } catch (error) {
-              console.error("Failed to save trade", error);
+              const errorMessage =
+                error && typeof error === "object" && "message" in error
+                  ? String((error as { message?: unknown }).message)
+                  : String(error);
+              console.error("Failed to save trade", errorMessage, error);
               window.alert("Impossibile salvare la trade. Riprova più tardi.");
             }
           }}

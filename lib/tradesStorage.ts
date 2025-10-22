@@ -355,12 +355,23 @@ async function resolveLibraryAttachment(
     });
 
   if (error) {
+    console.error(
+      `Supabase storage upload failed for trade ${tradeId} while saving library attachment`,
+      error.message,
+      error,
+    );
     throw error;
   }
 
   const {
     data: { publicUrl },
   } = supabase.storage.from(TRADE_PHOTOS_BUCKET).getPublicUrl(fileName);
+
+  if (!publicUrl) {
+    const message = `Missing public URL for uploaded library attachment at path ${fileName}`;
+    console.error(message);
+    throw new Error(message);
+  }
 
   return { libraryPhotoUrl: publicUrl, libraryNote: libraryItem.notes ?? "" };
 }
@@ -418,6 +429,11 @@ export async function saveTrade(trade: StoredTrade) {
     .single();
 
   if (error) {
+    console.error(
+      `Supabase insert failed while saving trade ${tradeId}`,
+      error.message,
+      error,
+    );
     throw error;
   }
 
@@ -446,6 +462,11 @@ export async function updateTrade(trade: StoredTrade) {
     .single();
 
   if (error) {
+    console.error(
+      `Supabase update failed while saving trade ${tradeId}`,
+      error.message,
+      error,
+    );
     throw error;
   }
 
@@ -464,6 +485,11 @@ export async function deleteTrade(tradeId: string) {
   const { error } = await supabase.from(TRADES_TABLE).delete().eq("id", normalizedId);
 
   if (error) {
+    console.error(
+      `Supabase delete failed while removing trade ${normalizedId}`,
+      error.message,
+      error,
+    );
     throw error;
   }
 
@@ -502,12 +528,23 @@ export async function uploadTradePhoto(tradeId: string, file: File | Blob | stri
     });
 
   if (error) {
+    console.error(
+      `Supabase storage upload failed for trade ${tradeId} while uploading photo`,
+      error.message,
+      error,
+    );
     throw error;
   }
 
   const {
     data: { publicUrl },
   } = supabase.storage.from(TRADE_PHOTOS_BUCKET).getPublicUrl(fileName);
+
+  if (!publicUrl) {
+    const message = `Missing public URL for uploaded trade photo at path ${fileName}`;
+    console.error(message);
+    throw new Error(message);
+  }
 
   await saveLibraryPhotoUrl(tradeId, publicUrl);
   return publicUrl;
@@ -523,6 +560,11 @@ async function saveLibraryPhotoUrl(tradeId: string, photoUrl: string) {
     .single();
 
   if (error) {
+    console.error(
+      `Supabase update failed while saving library photo URL for trade ${tradeId}`,
+      error.message,
+      error,
+    );
     throw error;
   }
 
@@ -544,6 +586,11 @@ export async function saveLibraryNote(tradeId: string, note: string) {
     .single();
 
   if (error) {
+    console.error(
+      `Supabase update failed while saving library note for trade ${tradeId}`,
+      error.message,
+      error,
+    );
     throw error;
   }
 
