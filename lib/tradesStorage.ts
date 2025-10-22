@@ -135,13 +135,15 @@ function mapRowToStoredTrade(row: RegisteredTradeRow): StoredTrade {
   const symbolMetadata = getSymbolMetadata(symbolCode);
   const libraryPhotoUrl = normalizeOptionalString(row.library_photo_url);
   const libraryNote = row.library_note ?? "";
-  const primaryLibraryItem: StoredLibraryItem | null = libraryPhotoUrl
-    ? {
-        id: "library-primary",
-        imageData: libraryPhotoUrl,
-        notes: libraryNote,
-      }
-    : null;
+  const hasLibraryNote = libraryNote.trim().length > 0;
+  const primaryLibraryItem: StoredLibraryItem | null =
+    libraryPhotoUrl || hasLibraryNote
+      ? {
+          id: "library-primary",
+          imageData: libraryPhotoUrl,
+          notes: libraryNote,
+        }
+      : null;
 
   return {
     id: row.id,
@@ -175,12 +177,50 @@ function mapRowToStoredTrade(row: RegisteredTradeRow): StoredTrade {
   } satisfies StoredTrade;
 }
 
+function hasLibraryImage(value: string | null | undefined) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function getPrimaryLibraryItem(trade: StoredTrade): StoredLibraryItem | null {
+  const candidates = Array.isArray(trade.libraryItems) ? trade.libraryItems : [];
+
+  for (const candidate of candidates) {
+    if (!candidate) {
+      continue;
+    }
+
+    const imageData = typeof candidate.imageData === "string" ? candidate.imageData : null;
+    const notes = typeof candidate.notes === "string" ? candidate.notes : "";
+    const hasImage = hasLibraryImage(imageData);
+    const hasNote = notes.trim().length > 0;
+
+    if (hasImage || hasNote) {
+      return {
+        id: candidate.id,
+        imageData: hasImage ? imageData : null,
+        notes,
+      } satisfies StoredLibraryItem;
+    }
+  }
+
+  if (hasLibraryImage(trade.imageData)) {
+    return {
+      id: "library-fallback",
+      imageData: trade.imageData ?? null,
+      notes: "",
+    } satisfies StoredLibraryItem;
+  }
+
+  return null;
+}
+
 function buildTradePayload(
   trade: StoredTrade,
   overrides: { libraryPhotoUrl?: string | null; libraryNote?: string | null } = {},
+  primaryLibraryItem: StoredLibraryItem | null = getPrimaryLibraryItem(trade),
 ) {
-  const primaryLibraryItem = trade.libraryItems?.[0] ?? null;
-  const resolvedPhotoUrl = overrides.libraryPhotoUrl ?? primaryLibraryItem?.imageData ?? trade.imageData ?? null;
+  const resolvedPhotoUrl =
+    overrides.libraryPhotoUrl ?? primaryLibraryItem?.imageData ?? trade.imageData ?? null;
   const resolvedLibraryNote = overrides.libraryNote ?? primaryLibraryItem?.notes ?? "";
 
   return {
@@ -362,9 +402,13 @@ export async function refreshTrades() {
 
 export async function saveTrade(trade: StoredTrade) {
   const tradeId = normalizeOptionalString(trade.id) ?? crypto.randomUUID();
-  const primaryLibraryItem = trade.libraryItems?.[0] ?? null;
+  const primaryLibraryItem = getPrimaryLibraryItem(trade);
   const { libraryPhotoUrl, libraryNote } = await resolveLibraryAttachment(tradeId, primaryLibraryItem);
-  const payload = buildTradePayload({ ...trade, id: tradeId }, { libraryPhotoUrl, libraryNote });
+  const payload = buildTradePayload(
+    { ...trade, id: tradeId },
+    { libraryPhotoUrl, libraryNote },
+    primaryLibraryItem,
+  );
 
   assertSupabaseConfigured();
   const { data, error } = await supabase
@@ -388,9 +432,9 @@ export async function updateTrade(trade: StoredTrade) {
     throw new Error("Cannot update trade without a valid id");
   }
 
-  const primaryLibraryItem = trade.libraryItems?.[0] ?? null;
+  const primaryLibraryItem = getPrimaryLibraryItem(trade);
   const { libraryPhotoUrl, libraryNote } = await resolveLibraryAttachment(tradeId, primaryLibraryItem);
-  const payload = buildTradePayload(trade, { libraryPhotoUrl, libraryNote });
+  const payload = buildTradePayload(trade, { libraryPhotoUrl, libraryNote }, primaryLibraryItem);
   delete (payload as { id?: string }).id;
 
   assertSupabaseConfigured();
