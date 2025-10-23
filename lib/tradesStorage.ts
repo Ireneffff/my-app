@@ -261,11 +261,14 @@ async function uploadImageDataUrl(dataUrl: string, tradeId: string) {
 
 async function fetchLibraryItems(tradeId: string) {
   if (!tradeId) {
-    console.error("Cannot fetch library items without a trade id");
-    return [] as StoredLibraryItem[];
+    throw new Error("tradeId is missing before fetching trade_library");
   }
 
-  const normalizedTradeId = tradeId.toString();
+  const normalizedTradeId = tradeId.toString().trim();
+
+  if (!normalizedTradeId) {
+    throw new Error("tradeId is empty before fetching trade_library");
+  }
 
   const { data, error } = await supabase
     .from("trade_library")
@@ -474,7 +477,15 @@ export async function loadTradeById(tradeId: string): Promise<StoredTrade | null
   }
 
   const trade = mapTradeRow(data);
-  trade.libraryItems = await fetchLibraryItems(tradeId);
+
+  try {
+    trade.libraryItems = await fetchLibraryItems(tradeId);
+  } catch (libraryError) {
+    const normalizedError =
+      libraryError instanceof Error ? libraryError : new Error(String(libraryError));
+    console.error("Failed to load trade library", normalizedError);
+    trade.libraryItems = [];
+  }
   return trade;
 }
 
@@ -619,7 +630,15 @@ export async function deleteTrade(tradeId: string) {
     return;
   }
 
-  const existingLibrary = await fetchLibraryItems(tradeId);
+  let existingLibrary: StoredLibraryItem[] = [];
+
+  try {
+    existingLibrary = await fetchLibraryItems(tradeId);
+  } catch (libraryError) {
+    const normalizedError =
+      libraryError instanceof Error ? libraryError : new Error(String(libraryError));
+    console.error("Failed to load trade library before delete", normalizedError);
+  }
   await removeStoragePaths(existingLibrary.map((item) => item.storagePath));
 
   const { error } = await supabase.from("registered_trades").delete().eq("id", tradeId);
