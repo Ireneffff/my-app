@@ -2133,8 +2133,15 @@ function NewTradePageContent() {
         await updateTrade(payload, { removedLibraryItems });
         destination = `/registered-trades/${editingTradeId}`;
       } else {
-        await saveTrade(payload);
+        const { libraryFailures } = await saveTrade(payload);
         destination = "/";
+
+        if (libraryFailures.length > 0) {
+          console.error("Alcune immagini non sono state salvate", libraryFailures);
+          window.alert(
+            "Trade salvato, ma alcune immagini non sono state caricate correttamente. Riprova a caricarle.",
+          );
+        }
       }
 
       setRemovedLibraryItems([]);

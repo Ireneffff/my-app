@@ -12,6 +12,15 @@ export type StoredLibraryItem = {
   persisted?: boolean;
 };
 
+export type LibraryItemFailureStage = "upload" | "insert" | "unknown";
+
+export type LibraryItemFailure = {
+  itemId: string;
+  stage: LibraryItemFailureStage;
+  message: string;
+  cause?: Error;
+};
+
 export type StoredTrade = {
   id: string;
   symbolCode: string;
@@ -285,15 +294,21 @@ function buildTradeRecord(payload: TradePayload) {
   };
 }
 
-async function saveLibraryItems(tradeId: string, items: StoredLibraryItem[]) {
-  const failures: Error[] = [];
+async function saveLibraryItems(
+  tradeId: string,
+  items: StoredLibraryItem[],
+): Promise<LibraryItemFailure[]> {
+  const failures: LibraryItemFailure[] = [];
 
   for (const item of items) {
+    let stage: LibraryItemFailureStage = "unknown";
+
     try {
       let photoUrl: string | null = null;
       let storagePath: string | null = null;
 
       if (item.imageData && item.imageData.startsWith("data:")) {
+        stage = "upload";
         const uploadResult = await uploadImageDataUrl(item.imageData, tradeId);
         photoUrl = uploadResult.photoUrl;
         storagePath = uploadResult.storagePath;
@@ -302,10 +317,16 @@ async function saveLibraryItems(tradeId: string, items: StoredLibraryItem[]) {
         storagePath = item.storagePath ?? extractStoragePathFromUrl(photoUrl);
       }
 
+      const hasNote = typeof item.notes === "string" && item.notes.trim().length > 0;
+      if (!photoUrl && !hasNote) {
+        continue;
+      }
+
+      stage = "insert";
       const { error } = await supabase.from("trade_library").insert({
         trade_id: tradeId,
-        photo_url: photoUrl,
-        note: item.notes ?? "",
+        photo_url: photoUrl ?? null,
+        note: hasNote ? item.notes.trim() : "",
       });
 
       if (error) {
@@ -315,21 +336,30 @@ async function saveLibraryItems(tradeId: string, items: StoredLibraryItem[]) {
       if (storagePath) {
         item.storagePath = storagePath;
       }
+
+      console.log("✅ Library item salvato correttamente:", photoUrl ?? "note-only");
     } catch (rawError) {
       const baseError = rawError instanceof Error ? rawError : new Error(String(rawError));
-      console.error("Failed to persist trade library item", baseError);
+      const failure: LibraryItemFailure = {
+        itemId: item.id ?? "",
+        stage,
+        message: baseError.message,
+        cause: baseError,
+      };
 
-      const failure = new Error(
-        `Failed to persist trade library item ${item.id ?? ""}: ${baseError.message}`,
-      );
-      (failure as { cause?: unknown }).cause = baseError;
+      const logPrefix =
+        stage === "upload"
+          ? "❌ Errore upload trade_library:"
+          : stage === "insert"
+            ? "❌ Errore insert trade_library:"
+            : "❌ Errore imprevisto in saveLibraryItems:";
+
+      console.error(logPrefix, baseError);
       failures.push(failure);
     }
   }
 
-  if (failures.length > 0) {
-    throw new AggregateError(failures, `Failed to save ${failures.length} trade library item(s)`);
-  }
+  return failures;
 }
 
 export async function loadTrades(): Promise<StoredTrade[]> {
@@ -372,7 +402,12 @@ export async function loadTradeById(tradeId: string): Promise<StoredTrade | null
   return trade;
 }
 
-export async function saveTrade(payload: TradePayload) {
+export type SaveTradeResult = {
+  tradeId: string;
+  libraryFailures: LibraryItemFailure[];
+};
+
+export async function saveTrade(payload: TradePayload): Promise<SaveTradeResult> {
   const record = buildTradeRecord(payload);
 
   const { data, error } = await supabase
@@ -391,9 +426,9 @@ export async function saveTrade(payload: TradePayload) {
     throw new Error("Missing trade identifier after insert");
   }
 
-  await saveLibraryItems(tradeId, payload.libraryItems ?? []);
+  const libraryFailures = await saveLibraryItems(tradeId, payload.libraryItems ?? []);
   notifyTradesChanged();
-  return tradeId;
+  return { tradeId, libraryFailures };
 }
 
 export async function updateTrade(
