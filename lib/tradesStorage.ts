@@ -260,10 +260,17 @@ async function uploadImageDataUrl(dataUrl: string, tradeId: string) {
 }
 
 async function fetchLibraryItems(tradeId: string) {
+  if (!tradeId) {
+    console.error("Cannot fetch library items without a trade id");
+    return [] as StoredLibraryItem[];
+  }
+
+  const normalizedTradeId = tradeId.toString();
+
   const { data, error } = await supabase
     .from("trade_library")
     .select("id, photo_url, note, created_at")
-    .eq("trade_id", tradeId)
+    .eq("trade_id", normalizedTradeId)
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -322,6 +329,17 @@ async function saveLibraryItems(
 ): Promise<LibraryItemFailure[]> {
   const failures: LibraryItemFailure[] = [];
 
+  const normalizedTradeId = tradeId?.toString?.();
+
+  if (!normalizedTradeId) {
+    console.error("Cannot save library items without a trade id");
+    return (items ?? []).map((item) => ({
+      itemId: item?.id ?? "",
+      stage: "unknown" as const,
+      message: "Missing trade id while saving library items",
+    }));
+  }
+
   for (const item of items) {
     let stage: LibraryItemFailureStage = "unknown";
 
@@ -332,7 +350,7 @@ async function saveLibraryItems(
 
       if (item.imageData && item.imageData.startsWith("data:")) {
         stage = "upload";
-        const uploadResult = await uploadImageDataUrl(item.imageData, tradeId);
+        const uploadResult = await uploadImageDataUrl(item.imageData, normalizedTradeId);
         photoUrl = uploadResult.photoUrl;
         storagePath = uploadResult.storagePath;
       } else if (typeof item.imageData === "string" && item.imageData.length > 0) {
@@ -346,7 +364,7 @@ async function saveLibraryItems(
 
       stage = "insert";
       const { error } = await supabase.from("trade_library").insert({
-        trade_id: tradeId,
+        trade_id: normalizedTradeId,
         photo_url: photoUrl ?? null,
         note: hasNote ? item.notes.trim() : "",
       });
@@ -384,7 +402,7 @@ async function saveLibraryItems(
 
         try {
           const { error: fallbackError } = await supabase.from("trade_library").insert({
-            trade_id: tradeId,
+            trade_id: normalizedTradeId,
             photo_url: FALLBACK_TRADE_IMAGE_URL,
             note: noteValue,
           });
@@ -498,6 +516,7 @@ export async function updateTrade(
   }
 
   const tradeId = payload.id;
+  const normalizedTradeId = tradeId.toString();
   const record = buildTradeRecord(payload);
 
   const { error } = await supabase.from("registered_trades").update(record).eq("id", tradeId);
@@ -527,7 +546,7 @@ export async function updateTrade(
       if (photoUrl && photoUrl.startsWith("data:")) {
         await removeStoragePaths([item.storagePath]);
         try {
-          const uploadResult = await uploadImageDataUrl(photoUrl, tradeId);
+          const uploadResult = await uploadImageDataUrl(photoUrl, normalizedTradeId);
           photoUrl = uploadResult.photoUrl;
           storagePath = uploadResult.storagePath;
         } catch (uploadError) {
@@ -557,7 +576,7 @@ export async function updateTrade(
 
       if (item.imageData && item.imageData.startsWith("data:")) {
         try {
-          const uploadResult = await uploadImageDataUrl(item.imageData, tradeId);
+          const uploadResult = await uploadImageDataUrl(item.imageData, normalizedTradeId);
           photoUrl = uploadResult.photoUrl;
           storagePath = uploadResult.storagePath;
         } catch (uploadError) {
@@ -573,7 +592,7 @@ export async function updateTrade(
       const { data: inserted, error: insertError } = await supabase
         .from("trade_library")
         .insert({
-          trade_id: tradeId,
+          trade_id: normalizedTradeId,
           photo_url: photoUrl,
           note: item.notes ?? "",
         })
