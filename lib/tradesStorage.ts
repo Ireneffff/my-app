@@ -238,13 +238,9 @@ async function uploadImageDataUrl(dataUrl: string, tradeId: string) {
     }
 
     const storagePath = uploadData?.path ?? fileName;
-    const { data: publicData, error: publicUrlError } = supabase.storage
+    const { data: publicData } = supabase.storage
       .from(TRADE_PHOTOS_BUCKET)
       .getPublicUrl(storagePath);
-
-    if (publicUrlError) {
-      throw publicUrlError;
-    }
 
     const photoUrl = publicData?.publicUrl;
 
