@@ -100,7 +100,20 @@ function getSymbolFlag(symbolCode: string) {
   return SYMBOL_FLAGS[normalized] ?? "🏳️";
 }
 
-function sanitizeString(value: string | null | undefined) {
+function parseDateValue(value: unknown) {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value.toISOString();
+  }
+
+  if (typeof value === "string" || typeof value === "number") {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  }
+
+  return null;
+}
+
+function sanitizeString(value: unknown) {
   if (typeof value !== "string") {
     return null;
   }
@@ -111,9 +124,9 @@ function sanitizeString(value: string | null | undefined) {
 
 function mapTradeRow(row: Record<string, unknown>): StoredTrade {
   const symbolCode = (row?.symbol ?? "").toString();
-  const openTime = row?.open_time ? new Date(row.open_time).toISOString() : null;
-  const closeTime = row?.close_time ? new Date(row.close_time).toISOString() : null;
-  const createdAt = row?.created_at ? new Date(row.created_at).toISOString() : null;
+  const openTime = parseDateValue(row?.open_time);
+  const closeTime = parseDateValue(row?.close_time);
+  const createdAt = parseDateValue(row?.created_at);
 
   const dateSource = openTime ?? createdAt ?? new Date().toISOString();
 
