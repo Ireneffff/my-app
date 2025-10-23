@@ -282,28 +282,36 @@ function buildTradeRecord(payload: TradePayload) {
 
 async function saveLibraryItems(tradeId: string, items: StoredLibraryItem[]) {
   for (const item of items) {
-    let photoUrl: string | null = null;
-    let storagePath: string | null = null;
+    try {
+      let photoUrl: string | null = null;
+      let storagePath: string | null = null;
 
-    if (item.imageData && item.imageData.startsWith("data:")) {
-      const uploadResult = await uploadImageDataUrl(item.imageData, tradeId);
-      photoUrl = uploadResult.photoUrl;
-      storagePath = uploadResult.storagePath;
-    } else if (typeof item.imageData === "string" && item.imageData.length > 0) {
-      photoUrl = item.imageData;
-      storagePath = item.storagePath ?? extractStoragePathFromUrl(photoUrl);
-    }
+      if (item.imageData && item.imageData.startsWith("data:")) {
+        try {
+          const uploadResult = await uploadImageDataUrl(item.imageData, tradeId);
+          photoUrl = uploadResult.photoUrl;
+          storagePath = uploadResult.storagePath;
+        } catch (error) {
+          console.error("Failed to upload library image", error);
+        }
+      } else if (typeof item.imageData === "string" && item.imageData.length > 0) {
+        photoUrl = item.imageData;
+        storagePath = item.storagePath ?? extractStoragePathFromUrl(photoUrl);
+      }
 
-    const { error } = await supabase.from("trade_library").insert({
-      trade_id: tradeId,
-      photo_url: photoUrl,
-      note: item.notes ?? "",
-    });
+      const { error } = await supabase.from("trade_library").insert({
+        trade_id: tradeId,
+        photo_url: photoUrl,
+        note: item.notes ?? "",
+      });
 
-    if (error) {
-      console.error("Failed to insert trade library item", error);
-    } else if (storagePath) {
-      item.storagePath = storagePath;
+      if (error) {
+        console.error("Failed to insert trade library item", error);
+      } else if (storagePath) {
+        item.storagePath = storagePath;
+      }
+    } catch (error) {
+      console.error("Unexpected error while saving library item", error);
     }
   }
 }
@@ -367,7 +375,11 @@ export async function saveTrade(payload: TradePayload) {
     throw new Error("Missing trade identifier after insert");
   }
 
-  await saveLibraryItems(tradeId, payload.libraryItems ?? []);
+  try {
+    await saveLibraryItems(tradeId, payload.libraryItems ?? []);
+  } catch (error) {
+    console.error("Failed to save trade library items", error);
+  }
   notifyTradesChanged();
   return tradeId;
 }
