@@ -272,9 +272,8 @@ async function fetchLibraryItems(tradeId: string) {
 
   const { data, error } = await supabase
     .from("trade_library")
-    .select("id, photo_url, note, created_at")
-    .eq("trade_id", normalizedTradeId)
-    .order("created_at", { ascending: true });
+    .select("id, photo_url, note")
+    .eq("trade_id", normalizedTradeId);
 
   if (error) {
     console.error("Failed to load trade library", error);
@@ -289,7 +288,7 @@ async function fetchLibraryItems(tradeId: string) {
       recordId,
       imageData: photoUrl,
       notes: typeof item.note === "string" ? item.note : "",
-      createdAt: item.created_at ?? null,
+      createdAt: null,
       storagePath: extractStoragePathFromUrl(photoUrl),
       persisted: true,
     } satisfies StoredLibraryItem;
