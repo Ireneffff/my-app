@@ -2,6 +2,10 @@
 
 import { supabase } from "./supabaseClient";
 
+const TRADE_PHOTOS_BUCKET = "trade_photos";
+const FALLBACK_TRADE_IMAGE_URL =
+  "https://dummyimage.com/600x400/cccccc/000000&text=Trade";
+
 export type StoredLibraryItem = {
   id: string;
   imageData: string | null;
@@ -201,16 +205,29 @@ async function removeStoragePaths(paths: (string | null | undefined)[]) {
 async function uploadImageDataUrl(dataUrl: string, tradeId: string) {
   try {
     const mimeMatch = dataUrl.match(/^data:([^;]+);base64,/);
-    const mimeType = mimeMatch?.[1] ?? "image/png";
+    if (!mimeMatch) {
+      throw new Error("Invalid data URL provided for trade image upload");
+    }
+
+    const mimeType = mimeMatch[1];
     const extension = mimeType.split("/")[1] ?? "png";
-    const fileName = `${tradeId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
+    const uniqueSuffix =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2);
+    const fileName = `${tradeId}/${Date.now()}-${uniqueSuffix}.${extension}`;
 
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
+    const base64Data = dataUrl.replace(/^data:[^;]+;base64,/, "");
+    const binaryString = atob(base64Data);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i += 1) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
 
-    const { error: uploadError } = await supabase.storage
-      .from("trade_photos")
-      .upload(fileName, blob, {
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(TRADE_PHOTOS_BUCKET)
+      .upload(fileName, bytes.buffer, {
         contentType: mimeType,
         cacheControl: "3600",
         upsert: false,
@@ -220,7 +237,15 @@ async function uploadImageDataUrl(dataUrl: string, tradeId: string) {
       throw uploadError;
     }
 
-    const { data: publicData } = supabase.storage.from("trade_photos").getPublicUrl(fileName);
+    const storagePath = uploadData?.path ?? fileName;
+    const { data: publicData, error: publicUrlError } = supabase.storage
+      .from(TRADE_PHOTOS_BUCKET)
+      .getPublicUrl(storagePath);
+
+    if (publicUrlError) {
+      throw publicUrlError;
+    }
+
     const photoUrl = publicData?.publicUrl;
 
     if (!photoUrl) {
@@ -229,11 +254,12 @@ async function uploadImageDataUrl(dataUrl: string, tradeId: string) {
 
     return {
       photoUrl,
-      storagePath: fileName,
+      storagePath,
     };
   } catch (error) {
-    console.error("Failed to upload trade image", error);
-    throw error;
+    const normalizedError = error instanceof Error ? error : new Error(String(error));
+    console.error("Failed to upload trade image", normalizedError);
+    throw normalizedError;
   }
 }
 
@@ -306,6 +332,7 @@ async function saveLibraryItems(
     try {
       let photoUrl: string | null = null;
       let storagePath: string | null = null;
+      const hasNote = typeof item.notes === "string" && item.notes.trim().length > 0;
 
       if (item.imageData && item.imageData.startsWith("data:")) {
         stage = "upload";
@@ -317,7 +344,6 @@ async function saveLibraryItems(
         storagePath = item.storagePath ?? extractStoragePathFromUrl(photoUrl);
       }
 
-      const hasNote = typeof item.notes === "string" && item.notes.trim().length > 0;
       if (!photoUrl && !hasNote) {
         continue;
       }
@@ -356,6 +382,42 @@ async function saveLibraryItems(
 
       console.error(logPrefix, baseError);
       failures.push(failure);
+
+      if (stage === "upload") {
+        const noteValue = typeof item.notes === "string" ? item.notes.trim() : "";
+
+        try {
+          const { error: fallbackError } = await supabase.from("trade_library").insert({
+            trade_id: tradeId,
+            photo_url: FALLBACK_TRADE_IMAGE_URL,
+            note: noteValue,
+          });
+
+          if (fallbackError) {
+            console.error("❌ Errore insert fallback trade_library:", fallbackError);
+            failures.push({
+              itemId: item.id ?? "",
+              stage: "insert",
+              message: fallbackError.message,
+              cause: fallbackError,
+            });
+          } else {
+            console.warn("⚠️ Library item salvato con immagine di fallback");
+          }
+        } catch (fallbackException) {
+          const normalizedFallbackError =
+            fallbackException instanceof Error
+              ? fallbackException
+              : new Error(String(fallbackException));
+          console.error("❌ Errore imprevisto durante insert fallback trade_library:", normalizedFallbackError);
+          failures.push({
+            itemId: item.id ?? "",
+            stage: "insert",
+            message: normalizedFallbackError.message,
+            cause: normalizedFallbackError,
+          });
+        }
+      }
     }
   }
 
@@ -468,9 +530,15 @@ export async function updateTrade(
 
       if (photoUrl && photoUrl.startsWith("data:")) {
         await removeStoragePaths([item.storagePath]);
-        const uploadResult = await uploadImageDataUrl(photoUrl, tradeId);
-        photoUrl = uploadResult.photoUrl;
-        storagePath = uploadResult.storagePath;
+        try {
+          const uploadResult = await uploadImageDataUrl(photoUrl, tradeId);
+          photoUrl = uploadResult.photoUrl;
+          storagePath = uploadResult.storagePath;
+        } catch (uploadError) {
+          console.error("Failed to refresh library image during update", uploadError);
+          photoUrl = FALLBACK_TRADE_IMAGE_URL;
+          storagePath = null;
+        }
       }
 
       const { error: updateError } = await supabase
@@ -492,9 +560,15 @@ export async function updateTrade(
       let storagePath: string | null = null;
 
       if (item.imageData && item.imageData.startsWith("data:")) {
-        const uploadResult = await uploadImageDataUrl(item.imageData, tradeId);
-        photoUrl = uploadResult.photoUrl;
-        storagePath = uploadResult.storagePath;
+        try {
+          const uploadResult = await uploadImageDataUrl(item.imageData, tradeId);
+          photoUrl = uploadResult.photoUrl;
+          storagePath = uploadResult.storagePath;
+        } catch (uploadError) {
+          console.error("Failed to upload new library image during update", uploadError);
+          photoUrl = FALLBACK_TRADE_IMAGE_URL;
+          storagePath = null;
+        }
       } else if (item.imageData) {
         photoUrl = item.imageData;
         storagePath = item.storagePath ?? extractStoragePathFromUrl(photoUrl);
