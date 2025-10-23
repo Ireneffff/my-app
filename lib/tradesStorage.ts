@@ -212,9 +212,14 @@ async function uploadImageDataUrl(dataUrl: string, tradeId: string) {
     }
 
     const { data: publicData } = supabase.storage.from("trade_photos").getPublicUrl(fileName);
+    const photoUrl = publicData?.publicUrl;
+
+    if (!photoUrl) {
+      throw new Error("Missing public URL for uploaded trade image");
+    }
 
     return {
-      photoUrl: publicData.publicUrl,
+      photoUrl,
       storagePath: fileName,
     };
   } catch (error) {
@@ -281,19 +286,17 @@ function buildTradeRecord(payload: TradePayload) {
 }
 
 async function saveLibraryItems(tradeId: string, items: StoredLibraryItem[]) {
+  const failures: Error[] = [];
+
   for (const item of items) {
     try {
       let photoUrl: string | null = null;
       let storagePath: string | null = null;
 
       if (item.imageData && item.imageData.startsWith("data:")) {
-        try {
-          const uploadResult = await uploadImageDataUrl(item.imageData, tradeId);
-          photoUrl = uploadResult.photoUrl;
-          storagePath = uploadResult.storagePath;
-        } catch (error) {
-          console.error("Failed to upload library image", error);
-        }
+        const uploadResult = await uploadImageDataUrl(item.imageData, tradeId);
+        photoUrl = uploadResult.photoUrl;
+        storagePath = uploadResult.storagePath;
       } else if (typeof item.imageData === "string" && item.imageData.length > 0) {
         photoUrl = item.imageData;
         storagePath = item.storagePath ?? extractStoragePathFromUrl(photoUrl);
@@ -306,13 +309,26 @@ async function saveLibraryItems(tradeId: string, items: StoredLibraryItem[]) {
       });
 
       if (error) {
-        console.error("Failed to insert trade library item", error);
-      } else if (storagePath) {
+        throw error;
+      }
+
+      if (storagePath) {
         item.storagePath = storagePath;
       }
-    } catch (error) {
-      console.error("Unexpected error while saving library item", error);
+    } catch (rawError) {
+      const baseError = rawError instanceof Error ? rawError : new Error(String(rawError));
+      console.error("Failed to persist trade library item", baseError);
+
+      const failure = new Error(
+        `Failed to persist trade library item ${item.id ?? ""}: ${baseError.message}`,
+      );
+      (failure as { cause?: unknown }).cause = baseError;
+      failures.push(failure);
     }
+  }
+
+  if (failures.length > 0) {
+    throw new AggregateError(failures, `Failed to save ${failures.length} trade library item(s)`);
   }
 }
 
@@ -375,11 +391,7 @@ export async function saveTrade(payload: TradePayload) {
     throw new Error("Missing trade identifier after insert");
   }
 
-  try {
-    await saveLibraryItems(tradeId, payload.libraryItems ?? []);
-  } catch (error) {
-    console.error("Failed to save trade library items", error);
-  }
+  await saveLibraryItems(tradeId, payload.libraryItems ?? []);
   notifyTradesChanged();
   return tradeId;
 }
