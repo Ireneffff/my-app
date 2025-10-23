@@ -22,11 +22,12 @@ import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
 import { StyledSelect } from "@/components/StyledSelect";
 import {
-  loadTrades,
+  loadTradeById,
   saveTrade,
   updateTrade,
   type StoredLibraryItem,
-  type StoredTrade,
+  type TradePayload,
+  type RemovedLibraryItem,
 } from "@/lib/tradesStorage";
 import { calculateDuration } from "@/lib/duration";
 
@@ -92,6 +93,8 @@ function createLibraryItem(imageData: string | null = null): LibraryItem {
     id: `library-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
     imageData,
     notes: "",
+    createdAt: null,
+    persisted: false,
   } satisfies LibraryItem;
 }
 
@@ -259,6 +262,9 @@ function NewTradePageContent() {
   const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>(
     initialLibraryItems[0]?.id ?? "",
   );
+  const [removedLibraryItems, setRemovedLibraryItems] = useState<RemovedLibraryItem[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingTrade, setIsLoadingTrade] = useState(isEditing);
   const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
   const [entryPrice, setEntryPrice] = useState("");
   const [exitPrice, setExitPrice] = useState("");
@@ -792,82 +798,111 @@ function NewTradePageContent() {
 
   useEffect(() => {
     if (!isEditing || !editingTradeId) {
+      setIsLoadingTrade(false);
       return;
     }
 
-    const trades = loadTrades();
-    const match = trades.find((trade) => trade.id === editingTradeId);
+    let cancelled = false;
+    setIsLoadingTrade(true);
 
-    if (!match) {
-      router.replace("/");
-      return;
-    }
+    const hydrateTrade = async () => {
+      try {
+        const match = await loadTradeById(editingTradeId);
 
-    const matchedSymbol =
-      availableSymbols.find((symbol) => symbol.code === match.symbolCode) ?? {
-        code: match.symbolCode,
-        flag: match.symbolFlag,
-      };
+        if (cancelled) {
+          return;
+        }
 
-    setSelectedSymbol(matchedSymbol);
+        if (!match) {
+          router.replace("/");
+          return;
+        }
 
-    const parsedDate = new Date(match.date);
-    const isDateValid = !Number.isNaN(parsedDate.getTime());
-    const effectiveDate = isDateValid ? parsedDate : selectedDate;
+        const matchedSymbol =
+          availableSymbols.find((symbol) => symbol.code === match.symbolCode) ?? {
+            code: match.symbolCode,
+            flag: match.symbolFlag,
+          };
 
-    if (isDateValid) {
-      handleSelectDate(parsedDate);
-    }
+        setSelectedSymbol(matchedSymbol);
+        setIsRealTrade(!match.isPaperTrade);
 
-    if (match.openTime) {
-      const parsedOpen = new Date(match.openTime);
-      setOpenTime(!Number.isNaN(parsedOpen.getTime()) ? parsedOpen : alignTimeWithDate(null, effectiveDate, 9));
-    } else {
-      setOpenTime((prev) => alignTimeWithDate(prev, effectiveDate, 9));
-    }
+        const parsedDate = new Date(match.date);
+        const isDateValid = !Number.isNaN(parsedDate.getTime());
+        const effectiveDate = isDateValid ? parsedDate : selectedDate;
 
-    if (match.closeTime) {
-      const parsedClose = new Date(match.closeTime);
-      setCloseTime(!Number.isNaN(parsedClose.getTime()) ? parsedClose : alignTimeWithDate(null, effectiveDate, 17));
-    } else {
-      setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate, 17));
-    }
+        if (isDateValid) {
+          handleSelectDate(parsedDate);
+        }
 
-    const hydratedLibraryItems =
-      Array.isArray(match.libraryItems) && match.libraryItems.length > 0
-        ? match.libraryItems.map((item) => ({
-            id: item.id,
-            imageData: item.imageData ?? null,
-            notes: typeof item.notes === "string" ? item.notes : "",
-          }))
-        : [createLibraryItem(match.imageData ?? null)];
+        if (match.openTime) {
+          const parsedOpen = new Date(match.openTime);
+          setOpenTime(!Number.isNaN(parsedOpen.getTime()) ? parsedOpen : alignTimeWithDate(null, effectiveDate, 9));
+        } else {
+          setOpenTime((prev) => alignTimeWithDate(prev, effectiveDate, 9));
+        }
 
-    setLibraryItems(hydratedLibraryItems);
-    setSelectedLibraryItemId(hydratedLibraryItems[0]?.id ?? initialLibraryItems[0].id);
-    setRecentlyAddedLibraryItemId(null);
-    setImageError(null);
+        if (match.closeTime) {
+          const parsedClose = new Date(match.closeTime);
+          setCloseTime(!Number.isNaN(parsedClose.getTime()) ? parsedClose : alignTimeWithDate(null, effectiveDate, 17));
+        } else {
+          setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate, 17));
+        }
 
-    setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
-    setEntryPrice(match.entryPrice ?? "");
-    setExitPrice(match.exitPrice ?? "");
-    setStopLoss(match.stopLoss ?? "");
-    setTakeProfit(match.takeProfit ?? "");
-    setPnl(match.pnl ?? "");
-    setPreTradeMentalState(match.preTradeMentalState ?? match.mentalState ?? "");
-    setEmotionsDuringTrade(match.emotionsDuringTrade ?? "");
-    setEmotionsAfterTrade(match.emotionsAfterTrade ?? "");
-    setConfidenceLevel(match.confidenceLevel ?? "");
-    setEmotionalTrigger(match.emotionalTrigger ?? "");
-    setFollowedPlan(match.followedPlan ?? "");
-    setRespectedRiskChoice(match.respectedRisk ?? "");
-    setWouldRepeatTrade(match.wouldRepeatTrade ?? "");
-    setRiskReward(match.riskReward ?? "");
-    setRisk(match.risk ?? "");
-    setPips(match.pips ?? "");
+        const hydratedLibraryItems: LibraryItem[] =
+          Array.isArray(match.libraryItems) && match.libraryItems.length > 0
+            ? match.libraryItems.map((item) => ({
+                ...item,
+                imageData: item.imageData ?? null,
+                notes: typeof item.notes === "string" ? item.notes : "",
+                persisted: item.persisted ?? Boolean(item.recordId ?? item.id),
+              }))
+            : [createLibraryItem(null)];
 
-    if (imageInputRef.current) {
-      imageInputRef.current.value = "";
-    }
+        setLibraryItems(hydratedLibraryItems);
+        setSelectedLibraryItemId(hydratedLibraryItems[0]?.id ?? initialLibraryItems[0].id);
+        setRecentlyAddedLibraryItemId(null);
+        setRemovedLibraryItems([]);
+        setImageError(null);
+
+        setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
+        setEntryPrice(match.entryPrice ?? "");
+        setExitPrice(match.exitPrice ?? "");
+        setStopLoss(match.stopLoss ?? "");
+        setTakeProfit(match.takeProfit ?? "");
+        setPnl(match.pnl ?? "");
+        setPreTradeMentalState(match.preTradeMentalState ?? "");
+        setEmotionsDuringTrade(match.emotionsDuringTrade ?? "");
+        setEmotionsAfterTrade(match.emotionsAfterTrade ?? "");
+        setConfidenceLevel(match.confidenceLevel ?? "");
+        setEmotionalTrigger(match.emotionalTrigger ?? "");
+        setFollowedPlan(match.followedPlan ?? "");
+        setRespectedRiskChoice(match.respectedRisk ?? "");
+        setWouldRepeatTrade(match.wouldRepeatTrade ?? "");
+        setRiskReward(match.riskReward ?? "");
+        setRisk(match.risk ?? "");
+        setPips(match.pips ?? "");
+
+        if (imageInputRef.current) {
+          imageInputRef.current.value = "";
+        }
+      } catch (error) {
+        console.error("Failed to load trade", error);
+        if (!cancelled) {
+          router.replace("/");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingTrade(false);
+        }
+      }
+    };
+
+    hydrateTrade();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     editingTradeId,
     handleSelectDate,
@@ -1192,6 +1227,17 @@ function NewTradePageContent() {
 
       if (targetIndex === -1) {
         return prev;
+      }
+
+      const targetItem = prev[targetIndex];
+      if (targetItem.persisted && targetItem.recordId) {
+        setRemovedLibraryItems((current) => [
+          ...current,
+          {
+            recordId: targetItem.recordId!,
+            storagePath: targetItem.storagePath ?? null,
+          },
+        ]);
       }
 
       const nextItems = [...prev.slice(0, targetIndex), ...prev.slice(targetIndex + 1)];
@@ -2029,6 +2075,118 @@ function NewTradePageContent() {
           />
         );
 
+  const handleSaveTrade = useCallback(async () => {
+    if (isSaving || isLoadingTrade) {
+      return;
+    }
+
+    const normalizedLibraryItems = libraryItems
+      .map((item) => ({
+        ...item,
+        imageData: item.imageData ?? null,
+        notes: typeof item.notes === "string" ? item.notes : "",
+      }))
+      .filter((item) => {
+        if (item.persisted && item.recordId) {
+          return true;
+        }
+
+        const hasImage = typeof item.imageData === "string" && item.imageData.length > 0;
+        const hasNotes = item.notes.trim().length > 0;
+        return hasImage || hasNotes;
+      });
+
+    const payload: TradePayload = {
+      id: editingTradeId ?? undefined,
+      symbolCode: selectedSymbol.code,
+      isPaperTrade: !isRealTrade,
+      date: selectedDate.toISOString(),
+      openTime: openTime ? openTime.toISOString() : null,
+      closeTime: closeTime ? closeTime.toISOString() : null,
+      position,
+      riskReward: riskReward.trim() || null,
+      risk: risk.trim() || null,
+      pips: pips.trim() || null,
+      entryPrice: entryPrice.trim() || null,
+      exitPrice: exitPrice.trim() || null,
+      stopLoss: stopLoss.trim() || null,
+      takeProfit: takeProfit.trim() || null,
+      pnl: pnl.trim() || null,
+      preTradeMentalState: preTradeMentalState.trim() || null,
+      emotionsDuringTrade: emotionsDuringTrade.trim() || null,
+      emotionsAfterTrade: emotionsAfterTrade.trim() || null,
+      confidenceLevel: confidenceLevel.trim() || null,
+      emotionalTrigger: emotionalTrigger.trim() || null,
+      followedPlan: followedPlan.trim() || null,
+      respectedRisk: respectedRiskChoice.trim() || null,
+      wouldRepeatTrade: wouldRepeatTrade.trim() || null,
+      notes: null,
+      libraryItems: normalizedLibraryItems,
+    };
+
+    setIsSaving(true);
+
+    try {
+      let destination: string;
+
+      if (isEditing && editingTradeId) {
+        await updateTrade(payload, { removedLibraryItems });
+        destination = `/registered-trades/${editingTradeId}`;
+      } else {
+        await saveTrade(payload);
+        destination = "/";
+      }
+
+      setRemovedLibraryItems([]);
+
+      startNavigation(() => {
+        router.push(destination);
+      });
+
+      window.setTimeout(() => {
+        if (window.location.pathname.startsWith("/new-trade")) {
+          window.location.href = destination;
+        }
+      }, 150);
+    } catch (error) {
+      console.error("Failed to save trade", error);
+      window.alert("Impossibile salvare il trade. Riprova.");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    closeTime,
+    editingTradeId,
+    emotionsAfterTrade,
+    emotionsDuringTrade,
+    entryPrice,
+    exitPrice,
+    followedPlan,
+    isEditing,
+    isLoadingTrade,
+    isRealTrade,
+    isSaving,
+    libraryItems,
+    openTime,
+    pips,
+    position,
+    preTradeMentalState,
+    removedLibraryItems,
+    respectedRiskChoice,
+    risk,
+    riskReward,
+    router,
+    selectedDate,
+    selectedSymbol.code,
+    startNavigation,
+    stopLoss,
+    takeProfit,
+    pnl,
+    confidenceLevel,
+    emotionalTrigger,
+    wouldRepeatTrade,
+  ]);
+
   return (
     <section
       className="relative flex min-h-dvh flex-col gap-12 bg-bg px-4 pb-16 text-fg sm:px-6 md:px-10"
@@ -2053,61 +2211,10 @@ function NewTradePageContent() {
           variant="primary"
           size="md"
           className="ml-auto min-w-[140px]"
-          onClick={() => {
-            const targetTradeId = editingTradeId ?? Date.now().toString(36);
-            const trade: StoredTrade = {
-              id: targetTradeId,
-              symbolCode: selectedSymbol.code,
-              symbolFlag: selectedSymbol.flag,
-              date: selectedDate.toISOString(),
-              openTime: openTime ? openTime.toISOString() : null,
-              closeTime: closeTime ? closeTime.toISOString() : null,
-              imageData: selectedImageData ?? null,
-              libraryItems: libraryItems.map((item) => ({
-                id: item.id,
-                imageData: item.imageData ?? null,
-                notes: item.notes ?? "",
-              })),
-              position,
-              entryPrice: entryPrice.trim() || null,
-              exitPrice: exitPrice.trim() || null,
-              stopLoss: stopLoss.trim() || null,
-              takeProfit: takeProfit.trim() || null,
-              pnl: pnl.trim() || null,
-              preTradeMentalState: preTradeMentalState.trim() || null,
-              emotionsDuringTrade: emotionsDuringTrade.trim() || null,
-              emotionsAfterTrade: emotionsAfterTrade.trim() || null,
-              confidenceLevel: confidenceLevel.trim() || null,
-              emotionalTrigger: emotionalTrigger.trim() || null,
-              followedPlan: followedPlan.trim() || null,
-              respectedRisk: respectedRiskChoice.trim() || null,
-              wouldRepeatTrade: wouldRepeatTrade.trim() || null,
-              mentalState: preTradeMentalState.trim() || null,
-              riskReward: riskReward.trim() || null,
-              risk: risk.trim() || null,
-              pips: pips.trim() || null,
-            };
-
-            if (isEditing && editingTradeId) {
-              updateTrade(trade);
-            } else {
-              saveTrade(trade);
-            }
-
-            const destination = isEditing && editingTradeId ? `/registered-trades/${editingTradeId}` : "/";
-
-            startNavigation(() => {
-              router.push(destination);
-            });
-
-            window.setTimeout(() => {
-              if (window.location.pathname.startsWith("/new-trade")) {
-                window.location.href = destination;
-              }
-            }, 150);
-          }}
+          onClick={handleSaveTrade}
+          disabled={isSaving || isLoadingTrade}
         >
-          {isEditing ? "Update" : "Save"}
+          {isSaving ? "Saving..." : isEditing ? "Update" : "Save"}
         </Button>
       </div>
 
