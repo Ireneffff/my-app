@@ -1,229 +1,681 @@
+"use client";
+
+import { supabase } from "./supabaseClient";
+
+const TRADE_PHOTOS_BUCKET = "trade_photos";
+const FALLBACK_TRADE_IMAGE_URL =
+  "https://dummyimage.com/600x400/cccccc/000000&text=Trade";
+
 export type StoredLibraryItem = {
   id: string;
   imageData: string | null;
   notes: string;
+  createdAt: string | null;
+  storagePath?: string | null;
+  recordId?: string;
+  persisted?: boolean;
+};
+
+export type LibraryItemFailureStage = "upload" | "insert" | "unknown";
+
+export type LibraryItemFailure = {
+  itemId: string;
+  stage: LibraryItemFailureStage;
+  message: string;
+  cause?: Error;
 };
 
 export type StoredTrade = {
   id: string;
   symbolCode: string;
   symbolFlag: string;
-  date: string;
-  openTime?: string | null;
-  closeTime?: string | null;
-  imageData?: string | null;
-  libraryItems?: StoredLibraryItem[];
+  isPaperTrade: boolean;
+  openTime: string | null;
+  closeTime: string | null;
   position: "LONG" | "SHORT";
-  entryPrice?: string | null;
-  exitPrice?: string | null;
-  stopLoss?: string | null;
-  takeProfit?: string | null;
-  pnl?: string | null;
-  preTradeMentalState?: string | null;
-  emotionsDuringTrade?: string | null;
-  emotionsAfterTrade?: string | null;
-  confidenceLevel?: string | null;
-  emotionalTrigger?: string | null;
-  followedPlan?: string | null;
-  respectedRisk?: string | null;
-  wouldRepeatTrade?: string | null;
-  mentalState?: string | null;
-  riskReward?: string | null;
-  risk?: string | null;
-  pips?: string | null;
+  riskReward: string | null;
+  risk: string | null;
+  pips: string | null;
+  entryPrice: string | null;
+  exitPrice: string | null;
+  stopLoss: string | null;
+  takeProfit: string | null;
+  pnl: string | null;
+  preTradeMentalState: string | null;
+  mentalState: string | null;
+  emotionsDuringTrade: string | null;
+  emotionsAfterTrade: string | null;
+  confidenceLevel: string | null;
+  emotionalTrigger: string | null;
+  followedPlan: string | null;
+  respectedRisk: string | null;
+  wouldRepeatTrade: string | null;
+  notes: string | null;
+  date: string;
+  createdAt: string | null;
+  libraryItems: StoredLibraryItem[];
 };
 
-const STORAGE_KEY = "registeredTrades";
-const TRADES_UPDATED_EVENT = "registered-trades-changed";
+export type TradePayload = {
+  id?: string;
+  symbolCode: string;
+  isPaperTrade: boolean;
+  date: string;
+  openTime: string | null;
+  closeTime: string | null;
+  position: "LONG" | "SHORT";
+  riskReward: string | null;
+  risk: string | null;
+  pips: string | null;
+  entryPrice: string | null;
+  exitPrice: string | null;
+  stopLoss: string | null;
+  takeProfit: string | null;
+  pnl: string | null;
+  preTradeMentalState: string | null;
+  emotionsDuringTrade: string | null;
+  emotionsAfterTrade: string | null;
+  confidenceLevel: string | null;
+  emotionalTrigger: string | null;
+  followedPlan: string | null;
+  respectedRisk: string | null;
+  wouldRepeatTrade: string | null;
+  notes: string | null;
+  libraryItems: StoredLibraryItem[];
+};
+
+export type RemovedLibraryItem = {
+  recordId: string;
+  storagePath?: string | null;
+};
+
+export const REGISTERED_TRADES_UPDATED_EVENT = "registered-trades-changed";
+
+const SYMBOL_FLAGS: Record<string, string> = {
+  EURUSD: "🇪🇺 🇺🇸",
+  GBPUSD: "🇬🇧 🇺🇸",
+  USDJPY: "🇺🇸 🇯🇵",
+  AUDUSD: "🇦🇺 🇺🇸",
+  USDCAD: "🇺🇸 🇨🇦",
+  EURGBP: "🇪🇺 🇬🇧",
+};
 
 function notifyTradesChanged() {
   if (typeof window === "undefined") {
     return;
   }
 
-  window.dispatchEvent(new Event(TRADES_UPDATED_EVENT));
+  window.dispatchEvent(new Event(REGISTERED_TRADES_UPDATED_EVENT));
 }
 
-function parseTrades(raw: string | null): StoredTrade[] {
-  if (!raw) {
-    return [];
+function getSymbolFlag(symbolCode: string) {
+  const normalized = symbolCode?.toUpperCase?.() ?? "";
+  return SYMBOL_FLAGS[normalized] ?? "🏳️";
+}
+
+function parseDateValue(value: unknown) {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value.toISOString();
   }
 
-  try {
-    const parsed = JSON.parse(raw);
+  if (typeof value === "string" || typeof value === "number") {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  }
 
-    if (!Array.isArray(parsed)) {
-      return [];
+  return null;
+}
+
+function sanitizeString(value: unknown) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function mapTradeRow(row: Record<string, unknown>): StoredTrade {
+  const symbolCode = (row?.symbol ?? "").toString();
+  const openTime = parseDateValue(row?.open_time);
+  const closeTime = parseDateValue(row?.close_time);
+  const createdAt = parseDateValue(row?.created_at);
+
+  const dateSource = openTime ?? createdAt ?? new Date().toISOString();
+
+  return {
+    id: row?.id?.toString() ?? "",
+    symbolCode,
+    symbolFlag: getSymbolFlag(symbolCode),
+    isPaperTrade: Boolean(row?.is_paper_trade ?? false),
+    openTime,
+    closeTime,
+    position: row?.position === "SHORT" ? "SHORT" : "LONG",
+    riskReward: sanitizeString(row?.rr_ratio),
+    risk: sanitizeString(row?.risk_percent),
+    pips: sanitizeString(row?.pips),
+    entryPrice: sanitizeString(row?.entry_price),
+    exitPrice: sanitizeString(row?.exit_price),
+    stopLoss: sanitizeString(row?.stop_loss),
+    takeProfit: sanitizeString(row?.take_profit),
+    pnl: sanitizeString(row?.p_l),
+    preTradeMentalState: sanitizeString(row?.mental_state_before ?? row?.mental_state),
+    mentalState: sanitizeString(row?.mental_state_before ?? row?.mental_state),
+    emotionsDuringTrade: sanitizeString(row?.emotions_during),
+    emotionsAfterTrade: sanitizeString(row?.emotions_after),
+    confidenceLevel: sanitizeString(row?.confidence_level),
+    emotionalTrigger: sanitizeString(row?.emotional_triggers),
+    followedPlan: sanitizeString(row?.followed_plan),
+    respectedRisk: sanitizeString(row?.respected_risk),
+    wouldRepeatTrade: sanitizeString(row?.repeat_trade),
+    notes: sanitizeString(row?.notes),
+    date: dateSource,
+    createdAt,
+    libraryItems: [],
+  } satisfies StoredTrade;
+}
+
+function extractStoragePathFromUrl(url: string | null) {
+  if (!url || typeof url !== "string") {
+    return null;
+  }
+
+  const marker = "/storage/v1/object/public/trade_photos/";
+  const index = url.indexOf(marker);
+  if (index === -1) {
+    return null;
+  }
+
+  return url.slice(index + marker.length);
+}
+
+async function removeStoragePaths(paths: (string | null | undefined)[]) {
+  const targets = paths.filter((path): path is string => typeof path === "string" && path.length > 0);
+  const uniqueTargets = Array.from(new Set(targets));
+
+  if (uniqueTargets.length === 0) {
+    return;
+  }
+
+  const { error } = await supabase.storage.from(TRADE_PHOTOS_BUCKET).remove(uniqueTargets);
+  if (error) {
+    console.error("Failed to remove trade photos", error);
+  }
+}
+
+async function fetchLibraryPhotoUrls(tradeId: string) {
+  const normalizedTradeId = tradeId?.toString?.().trim();
+
+  if (!normalizedTradeId) {
+    console.error("Cannot load trade library photos without a trade id");
+    return [] as string[];
+  }
+
+  const { data, error } = await supabase
+    .from("trade_library")
+    .select("photo_url")
+    .eq("trade_id", normalizedTradeId);
+
+  if (error) {
+    console.error("Failed to load trade library photos", error);
+    return [] as string[];
+  }
+
+  return (data ?? [])
+    .map((row) => (typeof row.photo_url === "string" ? row.photo_url : null))
+    .filter((url): url is string => typeof url === "string" && url.length > 0);
+}
+
+async function uploadImageDataUrl(dataUrl: string, tradeId: string) {
+  try {
+    const mimeMatch = dataUrl.match(/^data:([^;]+);base64,/);
+    if (!mimeMatch) {
+      throw new Error("Invalid data URL provided for trade image upload");
     }
 
-    return parsed
-      .map((item) => {
-        if (
-          !item ||
-          typeof item !== "object" ||
-          typeof (item as StoredTrade).id !== "string" ||
-          typeof (item as StoredTrade).symbolCode !== "string" ||
-          typeof (item as StoredTrade).symbolFlag !== "string" ||
-          typeof (item as StoredTrade).date !== "string"
-        ) {
-          return null;
-        }
+    const mimeType = mimeMatch[1];
+    const extension = mimeType.split("/")[1] ?? "png";
+    const uniqueSuffix =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2);
+    const fileName = `${tradeId}/${Date.now()}-${uniqueSuffix}.${extension}`;
 
-        const storedItem = item as StoredTrade;
+    const base64Data = dataUrl.replace(/^data:[^;]+;base64,/, "");
+    const binaryString = atob(base64Data);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i += 1) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
 
-        if (
-          storedItem.openTime !== undefined &&
-          storedItem.openTime !== null &&
-          typeof storedItem.openTime !== "string"
-        ) {
-          storedItem.openTime = null;
-        }
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(TRADE_PHOTOS_BUCKET)
+      .upload(fileName, bytes.buffer, {
+        contentType: mimeType,
+        cacheControl: "3600",
+        upsert: false,
+      });
 
-        if (
-          storedItem.closeTime !== undefined &&
-          storedItem.closeTime !== null &&
-          typeof storedItem.closeTime !== "string"
-        ) {
-          storedItem.closeTime = null;
-        }
+    if (uploadError) {
+      throw uploadError;
+    }
 
-        if (
-          storedItem.imageData !== undefined &&
-          storedItem.imageData !== null &&
-          typeof storedItem.imageData !== "string"
-        ) {
-          storedItem.imageData = null;
-        }
+    const storagePath = uploadData?.path ?? fileName;
+    const { data: publicData } = supabase.storage
+      .from(TRADE_PHOTOS_BUCKET)
+      .getPublicUrl(storagePath);
 
-        if (storedItem.imageData === undefined) {
-          storedItem.imageData = null;
-        }
+    const photoUrl = publicData?.publicUrl;
 
-        const rawLibraryItems = (storedItem as StoredTrade).libraryItems;
-        if (Array.isArray(rawLibraryItems)) {
-          storedItem.libraryItems = rawLibraryItems
-            .map((item) => {
-              if (!item || typeof item !== "object") {
-                return null;
-              }
+    if (!photoUrl) {
+      throw new Error("Missing public URL for uploaded trade image");
+    }
 
-              const parsedItem = item as StoredLibraryItem;
-
-              if (typeof parsedItem.id !== "string" || parsedItem.id.trim().length === 0) {
-                return null;
-              }
-
-              if (parsedItem.imageData !== null && typeof parsedItem.imageData !== "string") {
-                return null;
-              }
-
-              return {
-                id: parsedItem.id,
-                imageData: parsedItem.imageData ?? null,
-                notes: typeof parsedItem.notes === "string" ? parsedItem.notes : "",
-              } satisfies StoredLibraryItem;
-            })
-            .filter((item): item is StoredLibraryItem => item !== null);
-        } else {
-          storedItem.libraryItems = storedItem.imageData
-            ? [
-                {
-                  id: "library-primary",
-                  imageData: storedItem.imageData,
-                  notes: "",
-                },
-              ]
-            : [];
-        }
-
-        if (storedItem.position !== "LONG" && storedItem.position !== "SHORT") {
-          storedItem.position = "LONG";
-        }
-
-        const normalizeOptionalString = (value: unknown): string | null => {
-          if (typeof value === "string") {
-            return value;
-          }
-
-          return null;
-        };
-
-        storedItem.riskReward = normalizeOptionalString(storedItem.riskReward);
-        storedItem.entryPrice = normalizeOptionalString(storedItem.entryPrice);
-        storedItem.exitPrice = normalizeOptionalString(storedItem.exitPrice);
-        storedItem.stopLoss = normalizeOptionalString(storedItem.stopLoss);
-        storedItem.takeProfit = normalizeOptionalString(storedItem.takeProfit);
-        storedItem.pnl = normalizeOptionalString(storedItem.pnl);
-        storedItem.confidenceLevel = normalizeOptionalString(storedItem.confidenceLevel);
-        const normalizedPreTradeMentalState = normalizeOptionalString(
-          (storedItem as StoredTrade).preTradeMentalState ?? storedItem.mentalState,
-        );
-        storedItem.preTradeMentalState = normalizedPreTradeMentalState;
-        storedItem.mentalState = normalizedPreTradeMentalState;
-        storedItem.emotionsDuringTrade = normalizeOptionalString(storedItem.emotionsDuringTrade);
-        storedItem.emotionsAfterTrade = normalizeOptionalString(storedItem.emotionsAfterTrade);
-        storedItem.emotionalTrigger = normalizeOptionalString(storedItem.emotionalTrigger);
-        storedItem.followedPlan = normalizeOptionalString(storedItem.followedPlan);
-        storedItem.respectedRisk = normalizeOptionalString(storedItem.respectedRisk);
-        storedItem.wouldRepeatTrade = normalizeOptionalString(storedItem.wouldRepeatTrade);
-        storedItem.risk = normalizeOptionalString(storedItem.risk);
-        storedItem.pips = normalizeOptionalString(storedItem.pips);
-
-        return storedItem;
-      })
-      .filter((item): item is StoredTrade => item !== null);
+    return {
+      photoUrl,
+      storagePath,
+    };
   } catch (error) {
-    console.error("Failed to parse stored trades", error);
+    const normalizedError = error instanceof Error ? error : new Error(String(error));
+    console.error("Failed to upload trade image", normalizedError);
+    throw normalizedError;
+  }
+}
+
+async function fetchLibraryItems(tradeId: string) {
+  if (!tradeId) {
+    throw new Error("tradeId is missing before fetching trade_library");
+  }
+
+  const normalizedTradeId = tradeId.toString().trim();
+
+  if (!normalizedTradeId) {
+    throw new Error("tradeId is empty before fetching trade_library");
+  }
+
+  const { data, error } = await supabase
+    .from("trade_library")
+    .select("id, photo_url, note")
+    .eq("trade_id", normalizedTradeId);
+
+  if (error) {
+    console.error("Failed to load trade library", error);
+    return [] as StoredLibraryItem[];
+  }
+
+  return (data ?? []).map((item) => {
+    const photoUrl = typeof item.photo_url === "string" ? item.photo_url : null;
+    const recordId = item.id?.toString();
+    return {
+      id: recordId ?? `library-${Math.random().toString(36).slice(2, 10)}`,
+      recordId,
+      imageData: photoUrl,
+      notes: typeof item.note === "string" ? item.note : "",
+      createdAt: null,
+      storagePath: extractStoragePathFromUrl(photoUrl),
+      persisted: true,
+    } satisfies StoredLibraryItem;
+  });
+}
+
+function buildTradeRecord(payload: TradePayload) {
+  const openTime = payload.openTime ?? payload.date;
+  const closeTime = payload.closeTime ?? null;
+
+  return {
+    symbol: payload.symbolCode,
+    is_paper_trade: payload.isPaperTrade,
+    open_time: openTime,
+    close_time: closeTime,
+    position: payload.position,
+    rr_ratio: sanitizeString(payload.riskReward),
+    risk_percent: sanitizeString(payload.risk),
+    pips: sanitizeString(payload.pips),
+    entry_price: sanitizeString(payload.entryPrice),
+    exit_price: sanitizeString(payload.exitPrice),
+    stop_loss: sanitizeString(payload.stopLoss),
+    take_profit: sanitizeString(payload.takeProfit),
+    p_l: sanitizeString(payload.pnl),
+    mental_state_before: sanitizeString(payload.preTradeMentalState),
+    emotions_during: sanitizeString(payload.emotionsDuringTrade),
+    emotions_after: sanitizeString(payload.emotionsAfterTrade),
+    confidence_level: sanitizeString(payload.confidenceLevel),
+    emotional_triggers: sanitizeString(payload.emotionalTrigger),
+    followed_plan: sanitizeString(payload.followedPlan),
+    respected_risk: sanitizeString(payload.respectedRisk),
+    repeat_trade: sanitizeString(payload.wouldRepeatTrade),
+    notes: sanitizeString(payload.notes),
+  };
+}
+
+async function saveLibraryItems(
+  tradeId: string,
+  items: StoredLibraryItem[],
+): Promise<LibraryItemFailure[]> {
+  const failures: LibraryItemFailure[] = [];
+
+  const normalizedTradeId = tradeId?.toString?.();
+
+  if (!normalizedTradeId) {
+    console.error("Cannot save library items without a trade id");
+    return (items ?? []).map((item) => ({
+      itemId: item?.id ?? "",
+      stage: "unknown" as const,
+      message: "Missing trade id while saving library items",
+    }));
+  }
+
+  for (const item of items) {
+    let stage: LibraryItemFailureStage = "unknown";
+
+    try {
+      let photoUrl: string | null = null;
+      let storagePath: string | null = null;
+      const hasNote = typeof item.notes === "string" && item.notes.trim().length > 0;
+
+      if (item.imageData && item.imageData.startsWith("data:")) {
+        stage = "upload";
+        const uploadResult = await uploadImageDataUrl(item.imageData, normalizedTradeId);
+        photoUrl = uploadResult.photoUrl;
+        storagePath = uploadResult.storagePath;
+      } else if (typeof item.imageData === "string" && item.imageData.length > 0) {
+        photoUrl = item.imageData;
+        storagePath = item.storagePath ?? extractStoragePathFromUrl(photoUrl);
+      }
+
+      if (!photoUrl && !hasNote) {
+        continue;
+      }
+
+      stage = "insert";
+      const { error } = await supabase.from("trade_library").insert({
+        trade_id: normalizedTradeId,
+        photo_url: photoUrl ?? null,
+        note: hasNote ? item.notes.trim() : "",
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (storagePath) {
+        item.storagePath = storagePath;
+      }
+
+      console.log("✅ Library item salvato correttamente:", photoUrl ?? "note-only");
+    } catch (rawError) {
+      const baseError = rawError instanceof Error ? rawError : new Error(String(rawError));
+      const failure: LibraryItemFailure = {
+        itemId: item.id ?? "",
+        stage,
+        message: baseError.message,
+        cause: baseError,
+      };
+
+      const logPrefix =
+        stage === "upload"
+          ? "❌ Errore upload trade_library:"
+          : stage === "insert"
+            ? "❌ Errore insert trade_library:"
+            : "❌ Errore imprevisto in saveLibraryItems:";
+
+      console.error(logPrefix, baseError);
+      failures.push(failure);
+
+      if (stage === "upload") {
+        const noteValue = typeof item.notes === "string" ? item.notes.trim() : "";
+
+        try {
+          const { error: fallbackError } = await supabase.from("trade_library").insert({
+            trade_id: normalizedTradeId,
+            photo_url: FALLBACK_TRADE_IMAGE_URL,
+            note: noteValue,
+          });
+
+          if (fallbackError) {
+            console.error("❌ Errore insert fallback trade_library:", fallbackError);
+            failures.push({
+              itemId: item.id ?? "",
+              stage: "insert",
+              message: fallbackError.message,
+              cause: fallbackError,
+            });
+          } else {
+            console.warn("⚠️ Library item salvato con immagine di fallback");
+          }
+        } catch (fallbackException) {
+          const normalizedFallbackError =
+            fallbackException instanceof Error
+              ? fallbackException
+              : new Error(String(fallbackException));
+          console.error("❌ Errore imprevisto durante insert fallback trade_library:", normalizedFallbackError);
+          failures.push({
+            itemId: item.id ?? "",
+            stage: "insert",
+            message: normalizedFallbackError.message,
+            cause: normalizedFallbackError,
+          });
+        }
+      }
+    }
+  }
+
+  return failures;
+}
+
+export async function loadTrades(): Promise<StoredTrade[]> {
+  const { data, error } = await supabase
+    .from("registered_trades")
+    .select("*")
+    .order("open_time", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Failed to load trades", error);
     return [];
   }
+
+  return (data ?? []).map((row) => mapTradeRow(row));
 }
 
-export function loadTrades(): StoredTrade[] {
-  if (typeof window === "undefined") {
-    return [];
+export async function loadTradeById(tradeId: string): Promise<StoredTrade | null> {
+  if (!tradeId) {
+    return null;
   }
 
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  return parseTrades(raw);
+  const { data, error } = await supabase
+    .from("registered_trades")
+    .select("*")
+    .eq("id", tradeId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to load trade", error);
+    return null;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  const trade = mapTradeRow(data);
+
+  try {
+    trade.libraryItems = await fetchLibraryItems(tradeId);
+  } catch (libraryError) {
+    const normalizedError =
+      libraryError instanceof Error ? libraryError : new Error(String(libraryError));
+    console.error("Failed to load trade library", normalizedError);
+    trade.libraryItems = [];
+  }
+  return trade;
 }
 
-export function saveTrade(trade: StoredTrade) {
-  if (typeof window === "undefined") {
-    return;
+export type SaveTradeResult = {
+  tradeId: string;
+  libraryFailures: LibraryItemFailure[];
+};
+
+export async function saveTrade(payload: TradePayload): Promise<SaveTradeResult> {
+  const record = buildTradeRecord(payload);
+
+  const { data, error } = await supabase
+    .from("registered_trades")
+    .insert(record)
+    .select("id")
+    .single();
+
+  if (error) {
+    console.error("Failed to save trade", error);
+    throw error;
   }
 
-  const currentTrades = loadTrades();
-  const updatedTrades = [trade, ...currentTrades];
+  const tradeId = data?.id?.toString();
+  if (!tradeId) {
+    throw new Error("Missing trade identifier after insert");
+  }
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTrades));
+  const libraryFailures = await saveLibraryItems(tradeId, payload.libraryItems ?? []);
+  notifyTradesChanged();
+  return { tradeId, libraryFailures };
+}
+
+export async function updateTrade(
+  payload: TradePayload,
+  options?: { removedLibraryItems?: RemovedLibraryItem[] },
+) {
+  if (!payload.id) {
+    throw new Error("Trade id is required for update");
+  }
+
+  const tradeId = payload.id;
+  const normalizedTradeId = tradeId.toString();
+  const record = buildTradeRecord(payload);
+
+  const { error } = await supabase.from("registered_trades").update(record).eq("id", tradeId);
+
+  if (error) {
+    console.error("Failed to update trade", error);
+    throw error;
+  }
+
+  const removedItems = options?.removedLibraryItems ?? [];
+  if (removedItems.length > 0) {
+    const recordIds = removedItems.map((item) => item.recordId);
+    const { error: removeError } = await supabase.from("trade_library").delete().in("id", recordIds);
+
+    if (removeError) {
+      console.error("Failed to delete library entries", removeError);
+    }
+
+    await removeStoragePaths(removedItems.map((item) => item.storagePath));
+  }
+
+  for (const item of payload.libraryItems ?? []) {
+    if (item.persisted && item.recordId) {
+      let photoUrl = item.imageData ? item.imageData : null;
+      let storagePath = item.storagePath ?? extractStoragePathFromUrl(photoUrl);
+
+      if (photoUrl && photoUrl.startsWith("data:")) {
+        await removeStoragePaths([item.storagePath]);
+        try {
+          const uploadResult = await uploadImageDataUrl(photoUrl, normalizedTradeId);
+          photoUrl = uploadResult.photoUrl;
+          storagePath = uploadResult.storagePath;
+        } catch (uploadError) {
+          console.error("Failed to refresh library image during update", uploadError);
+          photoUrl = FALLBACK_TRADE_IMAGE_URL;
+          storagePath = null;
+        }
+      }
+
+      const { error: updateError } = await supabase
+        .from("trade_library")
+        .update({
+          photo_url: photoUrl,
+          note: item.notes ?? "",
+        })
+        .eq("id", item.recordId);
+
+      if (updateError) {
+        console.error("Failed to update library item", updateError);
+      } else {
+        item.imageData = photoUrl;
+        item.storagePath = storagePath;
+      }
+    } else {
+      let photoUrl: string | null = null;
+      let storagePath: string | null = null;
+
+      if (item.imageData && item.imageData.startsWith("data:")) {
+        try {
+          const uploadResult = await uploadImageDataUrl(item.imageData, normalizedTradeId);
+          photoUrl = uploadResult.photoUrl;
+          storagePath = uploadResult.storagePath;
+        } catch (uploadError) {
+          console.error("Failed to upload new library image during update", uploadError);
+          photoUrl = FALLBACK_TRADE_IMAGE_URL;
+          storagePath = null;
+        }
+      } else if (item.imageData) {
+        photoUrl = item.imageData;
+        storagePath = item.storagePath ?? extractStoragePathFromUrl(photoUrl);
+      }
+
+      const { data: inserted, error: insertError } = await supabase
+        .from("trade_library")
+        .insert({
+          trade_id: normalizedTradeId,
+          photo_url: photoUrl,
+          note: item.notes ?? "",
+        })
+        .select("id")
+        .single();
+
+      if (insertError) {
+        console.error("Failed to insert library item", insertError);
+      } else {
+        item.recordId = inserted?.id?.toString();
+        item.id = item.recordId ?? item.id;
+        item.persisted = true;
+        item.storagePath = storagePath;
+        item.imageData = photoUrl;
+      }
+    }
+  }
+
   notifyTradesChanged();
 }
 
-export function updateTrade(trade: StoredTrade) {
-  if (typeof window === "undefined") {
+export async function deleteTrade(tradeId: string) {
+  if (!tradeId) {
     return;
   }
 
-  const currentTrades = loadTrades();
-  const updatedTrades = currentTrades.map((storedTrade) =>
-    storedTrade.id === trade.id ? trade : storedTrade,
-  );
+  const normalizedTradeId = tradeId?.toString?.().trim();
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTrades));
-  notifyTradesChanged();
-}
-
-export function deleteTrade(tradeId: string) {
-  if (typeof window === "undefined") {
+  if (!normalizedTradeId) {
+    console.error("Cannot delete trade without a valid identifier");
     return;
   }
 
-  const currentTrades = loadTrades();
-  const updatedTrades = currentTrades.filter((trade) => trade.id !== tradeId);
+  const libraryPhotoUrls = await fetchLibraryPhotoUrls(normalizedTradeId);
+  const storagePaths = libraryPhotoUrls
+    .map((url) => extractStoragePathFromUrl(url))
+    .filter((path): path is string => typeof path === "string" && path.length > 0);
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTrades));
+  await removeStoragePaths(storagePaths);
+
+  const { error } = await supabase
+    .from("registered_trades")
+    .delete()
+    .eq("id", normalizedTradeId);
+
+  if (error) {
+    console.error("Failed to delete trade", error);
+    throw error;
+  }
+
   notifyTradesChanged();
 }
-
-export const REGISTERED_TRADES_STORAGE_KEY = STORAGE_KEY;
-export const REGISTERED_TRADES_UPDATED_EVENT = TRADES_UPDATED_EVENT;

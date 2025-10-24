@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
-import { supabase } from "@/lib/supabaseClient";
 import {
   loadTrades,
   REGISTERED_TRADES_UPDATED_EVENT,
@@ -44,40 +43,30 @@ export default function Home() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [trades, setTrades] = useState<StoredTrade[]>([]);
 
-  useEffect(() => {
-    async function checkSupabase() {
-      const { data: session, error: sessionError } =
-        await supabase.auth.getSession();
-      console.log("Supabase session:", session, "Error:", sessionError);
-
-      const { data, error } = await supabase.from("profiles").select("*").limit(5);
-      if (error) {
-        console.error("Supabase error:", error.message);
-      } else {
-        console.log("Supabase profiles:", data);
-      }
-    }
-
-    checkSupabase();
+  const refreshTrades = useCallback(async () => {
+    const nextTrades = await loadTrades();
+    setTrades(nextTrades);
   }, []);
 
   useEffect(() => {
-    function refreshTrades() {
-      setTrades(loadTrades());
-    }
-
     refreshTrades();
+  }, [refreshTrades]);
 
+  useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
 
-    window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrades);
+    const handleUpdate = () => {
+      refreshTrades();
+    };
+
+    window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleUpdate);
 
     return () => {
-      window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrades);
+      window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleUpdate);
     };
-  }, []);
+  }, [refreshTrades]);
 
   const monthDays = useMemo(() => getCalendarDays(currentDate), [currentDate]);
   const todayKey = new Date().toDateString();

@@ -18,7 +18,7 @@ import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
 import {
   deleteTrade,
-  loadTrades,
+  loadTradeById,
   REGISTERED_TRADES_UPDATED_EVENT,
   type StoredLibraryItem,
   type StoredTrade,
@@ -229,31 +229,37 @@ export default function RegisteredTradePage() {
     };
   }, [clearScheduledScrollUnlocks, resetBodyScrollLock]);
 
-  useEffect(() => {
+  const refreshTrade = useCallback(async () => {
     if (!tradeId) {
       setState({ status: "missing", trade: null });
       return;
     }
 
-    function refreshTrade() {
-      const trades = loadTrades();
-      const match = trades.find((storedTrade) => storedTrade.id === tradeId) ?? null;
+    setState((prev) => ({ status: "loading", trade: prev.trade }));
 
-      setState({ status: match ? "ready" : "missing", trade: match });
-    }
+    const match = await loadTradeById(tradeId);
+    setState({ status: match ? "ready" : "missing", trade: match });
+  }, [tradeId]);
 
+  useEffect(() => {
     refreshTrade();
+  }, [refreshTrade]);
 
+  useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
 
-    window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrade);
+    const handleUpdate = () => {
+      refreshTrade();
+    };
+
+    window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleUpdate);
 
     return () => {
-      window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, refreshTrade);
+      window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleUpdate);
     };
-  }, [tradeId]);
+  }, [refreshTrade]);
 
   const selectedDate = useMemo(() => {
     if (state.trade?.date) {
@@ -381,6 +387,7 @@ export default function RegisteredTradePage() {
           id: "snapshot",
           imageData: null,
           notes: "",
+          createdAt: null,
         },
       ];
     }
@@ -389,9 +396,11 @@ export default function RegisteredTradePage() {
       ? state.trade.libraryItems
           .filter((item): item is StoredLibraryItem => Boolean(item) && typeof item.id === "string")
           .map((item) => ({
+            ...item,
             id: item.id,
             imageData: item.imageData ?? null,
             notes: typeof item.notes === "string" ? item.notes : "",
+            persisted: item.persisted ?? Boolean(item.recordId ?? item.id),
           }))
       : [];
 
@@ -399,21 +408,12 @@ export default function RegisteredTradePage() {
       return hydrated;
     }
 
-    if (state.trade.imageData) {
-      return [
-        {
-          id: "snapshot",
-          imageData: state.trade.imageData,
-          notes: "",
-        },
-      ];
-    }
-
     return [
       {
         id: "snapshot",
         imageData: null,
         notes: "",
+        createdAt: null,
       },
     ];
   }, [state.trade]);
@@ -790,7 +790,7 @@ export default function RegisteredTradePage() {
     router.push(`/new-trade?tradeId=${state.trade.id}`);
   };
 
-  const handleDeleteTrade = () => {
+  const handleDeleteTrade = async () => {
     if (!state.trade) {
       return;
     }
@@ -800,9 +800,14 @@ export default function RegisteredTradePage() {
       return;
     }
 
-    deleteTrade(state.trade.id);
-    setState({ status: "missing", trade: null });
-    router.push("/");
+    try {
+      await deleteTrade(state.trade.id);
+      setState({ status: "missing", trade: null });
+      router.push("/");
+    } catch (error) {
+      console.error("Failed to delete trade", error);
+      window.alert("Impossibile eliminare il trade. Riprova.");
+    }
   };
 
   return (
