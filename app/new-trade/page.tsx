@@ -1223,6 +1223,47 @@ function NewTradePageContent() {
     }
   }, [selectedLibraryItemId]);
 
+  const handleReorderLibraryItem = useCallback(
+    (draggedItemId: string, targetItemId: string | null) => {
+      if (!draggedItemId || draggedItemId === targetItemId) {
+        return;
+      }
+
+      setLibraryItems((prev) => {
+        const sourceIndex = prev.findIndex((item) => item.id === draggedItemId);
+
+        if (sourceIndex === -1) {
+          return prev;
+        }
+
+        const nextItems = [...prev];
+        const [movedItem] = nextItems.splice(sourceIndex, 1);
+
+        if (!targetItemId) {
+          nextItems.push(movedItem);
+          return nextItems;
+        }
+
+        let targetIndex = prev.findIndex((item) => item.id === targetItemId);
+
+        if (targetIndex === -1) {
+          nextItems.splice(sourceIndex, 0, movedItem);
+          return prev;
+        }
+
+        if (targetIndex > sourceIndex) {
+          targetIndex -= 1;
+        }
+
+        nextItems.splice(targetIndex, 0, movedItem);
+        return nextItems;
+      });
+
+      setSelectedLibraryItemId((current) => (current === draggedItemId ? draggedItemId : current));
+    },
+    [],
+  );
+
   const handleRemoveLibraryItem = useCallback((itemId: string) => {
     setLibraryItems((prev) => {
       const targetIndex = prev.findIndex((item) => item.id === itemId);
@@ -2106,6 +2147,7 @@ function NewTradePageContent() {
             onSelectAction={setSelectedLibraryItemId}
             onAddAction={handleAddLibraryItem}
             onRemoveAction={handleRemoveLibraryItem}
+            onReorderAction={handleReorderLibraryItem}
             errorMessage={imageError}
           />
         );
