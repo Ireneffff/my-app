@@ -265,7 +265,7 @@ function NewTradePageContent() {
   const [removedLibraryItems, setRemovedLibraryItems] = useState<RemovedLibraryItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingTrade, setIsLoadingTrade] = useState(isEditing);
-  const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
+  const [position, setPosition] = useState<"LONG" | "SHORT" | "">("");
   const [entryPrice, setEntryPrice] = useState("");
   const [exitPrice, setExitPrice] = useState("");
   const [stopLoss, setStopLoss] = useState("");
@@ -288,6 +288,59 @@ function NewTradePageContent() {
     getStartOfMonth(initialSelectedDate),
   );
   const [, startNavigation] = useTransition();
+
+  const formatRiskNumericValue = useCallback((value: string) => {
+    const withoutPercent = value.replace(/%/g, "");
+    const digitsAndSeparators = withoutPercent.replace(/[^0-9.,]/g, "");
+
+    if (!digitsAndSeparators) {
+      return "";
+    }
+
+    const normalizedSeparators = digitsAndSeparators.replace(/,/g, ".");
+    const [rawIntegerPart, ...rawDecimalParts] = normalizedSeparators.split(".");
+    const integerPart = (rawIntegerPart ?? "").replace(/\D/g, "");
+    const decimalPart = rawDecimalParts.join("").replace(/\D/g, "");
+    const trimmedInteger = integerPart.replace(/^0+(?=\d)/, "");
+    const safeInteger = trimmedInteger || (decimalPart ? "0" : "");
+
+    if (decimalPart.length > 0) {
+      return `${safeInteger}.${decimalPart}`;
+    }
+
+    return safeInteger;
+  }, []);
+
+  const formatRiskDisplayValue = useCallback(
+    (value: string) => {
+      const numericPortion = formatRiskNumericValue(value);
+      return numericPortion ? `${numericPortion}%` : "";
+    },
+    [formatRiskNumericValue],
+  );
+
+  const formatRiskRewardValue = useCallback((value: string) => {
+    const sanitized = value.replace(/[^0-9:]/g, "");
+
+    if (!sanitized) {
+      return "";
+    }
+
+    const [riskPart, ...rewardParts] = sanitized.split(":");
+    const hasColon = rewardParts.length > 0;
+    const rewardPart = rewardParts.join("");
+    const normalizedRisk = riskPart.replace(/^0+(?=\d)/, "") || (hasColon ? "0" : "");
+
+    if (hasColon) {
+      return `${normalizedRisk}:${rewardPart}`;
+    }
+
+    if (normalizedRisk) {
+      return `${normalizedRisk}:`;
+    }
+
+    return "";
+  }, []);
 
   const lockBodyScroll = useCallback(() => {
     if (typeof document === "undefined") {
@@ -879,8 +932,8 @@ function NewTradePageContent() {
         setFollowedPlan(match.followedPlan ?? "");
         setRespectedRiskChoice(match.respectedRisk ?? "");
         setWouldRepeatTrade(match.wouldRepeatTrade ?? "");
-        setRiskReward(match.riskReward ?? "");
-        setRisk(match.risk ?? "");
+        setRiskReward(formatRiskRewardValue(match.riskReward ?? ""));
+        setRisk(formatRiskDisplayValue(match.risk ?? ""));
         setPips(match.pips ?? "");
 
         if (imageInputRef.current) {
@@ -908,6 +961,8 @@ function NewTradePageContent() {
     handleSelectDate,
     imageInputRef,
     initialLibraryItems,
+    formatRiskDisplayValue,
+    formatRiskRewardValue,
     isEditing,
     router,
     selectedDate,
@@ -1772,11 +1827,25 @@ function NewTradePageContent() {
                         <select
                           id="position-select"
                           value={position}
-                          onChange={(event) =>
-                            setPosition(event.target.value === "SHORT" ? "SHORT" : "LONG")
-                          }
+                          onChange={(event) => {
+                            const { value } = event.target;
+                            if (value === "SHORT") {
+                              setPosition("SHORT");
+                              return;
+                            }
+
+                            if (value === "LONG") {
+                              setPosition("LONG");
+                              return;
+                            }
+
+                            setPosition("");
+                          }}
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-0"
                         >
+                          <option value="" disabled>
+                            Insert
+                          </option>
                           <option value="LONG">Long</option>
                           <option value="SHORT">Short</option>
                         </select>
@@ -1793,8 +1862,10 @@ function NewTradePageContent() {
                           id="risk-reward-input"
                           type="text"
                           value={riskReward}
-                          onChange={(event) => setRiskReward(event.target.value)}
-                          placeholder="1:4"
+                          onChange={(event) =>
+                            setRiskReward(formatRiskRewardValue(event.target.value))
+                          }
+                          placeholder="Insert"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
@@ -1810,8 +1881,8 @@ function NewTradePageContent() {
                           id="risk-input"
                           type="text"
                           value={risk}
-                          onChange={(event) => setRisk(event.target.value)}
-                          placeholder="2%"
+                          onChange={(event) => setRisk(formatRiskDisplayValue(event.target.value))}
+                          placeholder="Insert"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
@@ -1828,7 +1899,7 @@ function NewTradePageContent() {
                           type="text"
                           value={pips}
                           onChange={(event) => setPips(event.target.value)}
-                          placeholder="55"
+                          placeholder="Insert"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
@@ -2080,6 +2151,8 @@ function NewTradePageContent() {
       return;
     }
 
+    const normalizedPosition = position === "SHORT" ? "SHORT" : "LONG";
+
     const normalizedLibraryItems = libraryItems
       .map((item) => ({
         ...item,
@@ -2103,7 +2176,7 @@ function NewTradePageContent() {
       date: selectedDate.toISOString(),
       openTime: openTime ? openTime.toISOString() : null,
       closeTime: closeTime ? closeTime.toISOString() : null,
-      position,
+      position: normalizedPosition,
       riskReward: riskReward.trim() || null,
       risk: risk.trim() || null,
       pips: pips.trim() || null,
