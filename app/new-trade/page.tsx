@@ -281,6 +281,7 @@ function NewTradePageContent() {
   const [wouldRepeatTrade, setWouldRepeatTrade] = useState("");
   const [riskReward, setRiskReward] = useState("");
   const [risk, setRisk] = useState("");
+  const [lotSize, setLotSize] = useState("");
   const [pips, setPips] = useState("");
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -288,59 +289,6 @@ function NewTradePageContent() {
     getStartOfMonth(initialSelectedDate),
   );
   const [, startNavigation] = useTransition();
-
-  const formatRiskNumericValue = useCallback((value: string) => {
-    const withoutPercent = value.replace(/%/g, "");
-    const digitsAndSeparators = withoutPercent.replace(/[^0-9.,]/g, "");
-
-    if (!digitsAndSeparators) {
-      return "";
-    }
-
-    const normalizedSeparators = digitsAndSeparators.replace(/,/g, ".");
-    const [rawIntegerPart, ...rawDecimalParts] = normalizedSeparators.split(".");
-    const integerPart = (rawIntegerPart ?? "").replace(/\D/g, "");
-    const decimalPart = rawDecimalParts.join("").replace(/\D/g, "");
-    const trimmedInteger = integerPart.replace(/^0+(?=\d)/, "");
-    const safeInteger = trimmedInteger || (decimalPart ? "0" : "");
-
-    if (decimalPart.length > 0) {
-      return `${safeInteger}.${decimalPart}`;
-    }
-
-    return safeInteger;
-  }, []);
-
-  const formatRiskDisplayValue = useCallback(
-    (value: string) => {
-      const numericPortion = formatRiskNumericValue(value);
-      return numericPortion ? `${numericPortion}%` : "";
-    },
-    [formatRiskNumericValue],
-  );
-
-  const formatRiskRewardValue = useCallback((value: string) => {
-    const sanitized = value.replace(/[^0-9:]/g, "");
-
-    if (!sanitized) {
-      return "";
-    }
-
-    const [riskPart, ...rewardParts] = sanitized.split(":");
-    const hasColon = rewardParts.length > 0;
-    const rewardPart = rewardParts.join("");
-    const normalizedRisk = riskPart.replace(/^0+(?=\d)/, "") || (hasColon ? "0" : "");
-
-    if (hasColon) {
-      return `${normalizedRisk}:${rewardPart}`;
-    }
-
-    if (normalizedRisk) {
-      return `${normalizedRisk}:`;
-    }
-
-    return "";
-  }, []);
 
   const lockBodyScroll = useCallback(() => {
     if (typeof document === "undefined") {
@@ -932,8 +880,9 @@ function NewTradePageContent() {
         setFollowedPlan(match.followedPlan ?? "");
         setRespectedRiskChoice(match.respectedRisk ?? "");
         setWouldRepeatTrade(match.wouldRepeatTrade ?? "");
-        setRiskReward(formatRiskRewardValue(match.riskReward ?? ""));
-        setRisk(formatRiskDisplayValue(match.risk ?? ""));
+        setRiskReward(match.riskReward ?? "");
+        setRisk(match.risk ?? "");
+        setLotSize(match.lotSize ?? "");
         setPips(match.pips ?? "");
 
         if (imageInputRef.current) {
@@ -961,8 +910,6 @@ function NewTradePageContent() {
     handleSelectDate,
     imageInputRef,
     initialLibraryItems,
-    formatRiskDisplayValue,
-    formatRiskRewardValue,
     isEditing,
     router,
     selectedDate,
@@ -1841,7 +1788,9 @@ function NewTradePageContent() {
 
                             setPosition("");
                           }}
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-0"
+                          className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium focus:outline-none focus:ring-0 ${
+                            position ? "text-fg" : "text-muted-fg"
+                          }`}
                         >
                           <option value="" disabled>
                             Insert
@@ -1862,10 +1811,8 @@ function NewTradePageContent() {
                           id="risk-reward-input"
                           type="text"
                           value={riskReward}
-                          onChange={(event) =>
-                            setRiskReward(formatRiskRewardValue(event.target.value))
-                          }
-                          placeholder="Insert"
+                          onChange={(event) => setRiskReward(event.target.value)}
+                          placeholder="Insert risk/reward ratio…"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
@@ -1881,8 +1828,25 @@ function NewTradePageContent() {
                           id="risk-input"
                           type="text"
                           value={risk}
-                          onChange={(event) => setRisk(formatRiskDisplayValue(event.target.value))}
-                          placeholder="Insert"
+                          onChange={(event) => setRisk(event.target.value)}
+                          placeholder="Insert risk %…"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="lot-size-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Lot Size
+                        </label>
+                        <input
+                          id="lot-size-input"
+                          type="text"
+                          value={lotSize}
+                          onChange={(event) => setLotSize(event.target.value)}
+                          placeholder="Insert lot size…"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
@@ -2179,6 +2143,7 @@ function NewTradePageContent() {
       position: normalizedPosition,
       riskReward: riskReward.trim() || null,
       risk: risk.trim() || null,
+      lotSize: lotSize.trim() || null,
       pips: pips.trim() || null,
       entryPrice: entryPrice.trim() || null,
       exitPrice: exitPrice.trim() || null,
@@ -2254,6 +2219,7 @@ function NewTradePageContent() {
     removedLibraryItems,
     respectedRiskChoice,
     risk,
+    lotSize,
     riskReward,
     router,
     selectedDate,
