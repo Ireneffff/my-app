@@ -191,15 +191,39 @@ function extractStoragePathFromUrl(url: string | null) {
 
 async function removeStoragePaths(paths: (string | null | undefined)[]) {
   const targets = paths.filter((path): path is string => typeof path === "string" && path.length > 0);
+  const uniqueTargets = Array.from(new Set(targets));
 
-  if (targets.length === 0) {
+  if (uniqueTargets.length === 0) {
     return;
   }
 
-  const { error } = await supabase.storage.from("trade_photos").remove(targets);
+  const { error } = await supabase.storage.from(TRADE_PHOTOS_BUCKET).remove(uniqueTargets);
   if (error) {
     console.error("Failed to remove trade photos", error);
   }
+}
+
+async function fetchLibraryPhotoUrls(tradeId: string) {
+  const normalizedTradeId = tradeId?.toString?.().trim();
+
+  if (!normalizedTradeId) {
+    console.error("Cannot load trade library photos without a trade id");
+    return [] as string[];
+  }
+
+  const { data, error } = await supabase
+    .from("trade_library")
+    .select("photo_url")
+    .eq("trade_id", normalizedTradeId);
+
+  if (error) {
+    console.error("Failed to load trade library photos", error);
+    return [] as string[];
+  }
+
+  return (data ?? [])
+    .map((row) => (typeof row.photo_url === "string" ? row.photo_url : null))
+    .filter((url): url is string => typeof url === "string" && url.length > 0);
 }
 
 async function uploadImageDataUrl(dataUrl: string, tradeId: string) {
@@ -629,18 +653,24 @@ export async function deleteTrade(tradeId: string) {
     return;
   }
 
-  let existingLibrary: StoredLibraryItem[] = [];
+  const normalizedTradeId = tradeId?.toString?.().trim();
 
-  try {
-    existingLibrary = await fetchLibraryItems(tradeId);
-  } catch (libraryError) {
-    const normalizedError =
-      libraryError instanceof Error ? libraryError : new Error(String(libraryError));
-    console.error("Failed to load trade library before delete", normalizedError);
+  if (!normalizedTradeId) {
+    console.error("Cannot delete trade without a valid identifier");
+    return;
   }
-  await removeStoragePaths(existingLibrary.map((item) => item.storagePath));
 
-  const { error } = await supabase.from("registered_trades").delete().eq("id", tradeId);
+  const libraryPhotoUrls = await fetchLibraryPhotoUrls(normalizedTradeId);
+  const storagePaths = libraryPhotoUrls
+    .map((url) => extractStoragePathFromUrl(url))
+    .filter((path): path is string => typeof path === "string" && path.length > 0);
+
+  await removeStoragePaths(storagePaths);
+
+  const { error } = await supabase
+    .from("registered_trades")
+    .delete()
+    .eq("id", normalizedTradeId);
 
   if (error) {
     console.error("Failed to delete trade", error);
