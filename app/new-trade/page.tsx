@@ -265,7 +265,7 @@ function NewTradePageContent() {
   const [removedLibraryItems, setRemovedLibraryItems] = useState<RemovedLibraryItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingTrade, setIsLoadingTrade] = useState(isEditing);
-  const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
+  const [position, setPosition] = useState<"LONG" | "SHORT" | "">("");
   const [entryPrice, setEntryPrice] = useState("");
   const [exitPrice, setExitPrice] = useState("");
   const [stopLoss, setStopLoss] = useState("");
@@ -281,6 +281,7 @@ function NewTradePageContent() {
   const [wouldRepeatTrade, setWouldRepeatTrade] = useState("");
   const [riskReward, setRiskReward] = useState("");
   const [risk, setRisk] = useState("");
+  const [lotSize, setLotSize] = useState("");
   const [pips, setPips] = useState("");
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -881,6 +882,7 @@ function NewTradePageContent() {
         setWouldRepeatTrade(match.wouldRepeatTrade ?? "");
         setRiskReward(match.riskReward ?? "");
         setRisk(match.risk ?? "");
+        setLotSize(match.lotSize ?? "");
         setPips(match.pips ?? "");
 
         if (imageInputRef.current) {
@@ -1220,6 +1222,47 @@ function NewTradePageContent() {
       imageInputRef.current.value = "";
     }
   }, [selectedLibraryItemId]);
+
+  const handleReorderLibraryItem = useCallback(
+    (draggedItemId: string, targetItemId: string | null) => {
+      if (!draggedItemId || draggedItemId === targetItemId) {
+        return;
+      }
+
+      setLibraryItems((prev) => {
+        const sourceIndex = prev.findIndex((item) => item.id === draggedItemId);
+
+        if (sourceIndex === -1) {
+          return prev;
+        }
+
+        const nextItems = [...prev];
+        const [movedItem] = nextItems.splice(sourceIndex, 1);
+
+        if (!targetItemId) {
+          nextItems.push(movedItem);
+          return nextItems;
+        }
+
+        let targetIndex = prev.findIndex((item) => item.id === targetItemId);
+
+        if (targetIndex === -1) {
+          nextItems.splice(sourceIndex, 0, movedItem);
+          return prev;
+        }
+
+        if (targetIndex > sourceIndex) {
+          targetIndex -= 1;
+        }
+
+        nextItems.splice(targetIndex, 0, movedItem);
+        return nextItems;
+      });
+
+      setSelectedLibraryItemId((current) => (current === draggedItemId ? draggedItemId : current));
+    },
+    [],
+  );
 
   const handleRemoveLibraryItem = useCallback((itemId: string) => {
     setLibraryItems((prev) => {
@@ -1772,11 +1815,27 @@ function NewTradePageContent() {
                         <select
                           id="position-select"
                           value={position}
-                          onChange={(event) =>
-                            setPosition(event.target.value === "SHORT" ? "SHORT" : "LONG")
-                          }
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-0"
+                          onChange={(event) => {
+                            const { value } = event.target;
+                            if (value === "SHORT") {
+                              setPosition("SHORT");
+                              return;
+                            }
+
+                            if (value === "LONG") {
+                              setPosition("LONG");
+                              return;
+                            }
+
+                            setPosition("");
+                          }}
+                          className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium focus:outline-none focus:ring-0 ${
+                            position ? "text-fg" : "text-muted-fg"
+                          }`}
                         >
+                          <option value="" disabled>
+                            Insert
+                          </option>
                           <option value="LONG">Long</option>
                           <option value="SHORT">Short</option>
                         </select>
@@ -1794,7 +1853,7 @@ function NewTradePageContent() {
                           type="text"
                           value={riskReward}
                           onChange={(event) => setRiskReward(event.target.value)}
-                          placeholder="1:4"
+                          placeholder="Insert risk/reward ratio…"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
@@ -1811,7 +1870,24 @@ function NewTradePageContent() {
                           type="text"
                           value={risk}
                           onChange={(event) => setRisk(event.target.value)}
-                          placeholder="2%"
+                          placeholder="Insert risk %…"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="lot-size-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Lot Size
+                        </label>
+                        <input
+                          id="lot-size-input"
+                          type="text"
+                          value={lotSize}
+                          onChange={(event) => setLotSize(event.target.value)}
+                          placeholder="Insert lot size…"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
@@ -1828,7 +1904,7 @@ function NewTradePageContent() {
                           type="text"
                           value={pips}
                           onChange={(event) => setPips(event.target.value)}
-                          placeholder="55"
+                          placeholder="Insert"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
@@ -2071,6 +2147,7 @@ function NewTradePageContent() {
             onSelectAction={setSelectedLibraryItemId}
             onAddAction={handleAddLibraryItem}
             onRemoveAction={handleRemoveLibraryItem}
+            onReorderAction={handleReorderLibraryItem}
             errorMessage={imageError}
           />
         );
@@ -2079,6 +2156,8 @@ function NewTradePageContent() {
     if (isSaving || isLoadingTrade) {
       return;
     }
+
+    const normalizedPosition = position === "SHORT" ? "SHORT" : "LONG";
 
     const normalizedLibraryItems = libraryItems
       .map((item) => ({
@@ -2103,9 +2182,10 @@ function NewTradePageContent() {
       date: selectedDate.toISOString(),
       openTime: openTime ? openTime.toISOString() : null,
       closeTime: closeTime ? closeTime.toISOString() : null,
-      position,
+      position: normalizedPosition,
       riskReward: riskReward.trim() || null,
       risk: risk.trim() || null,
+      lotSize: lotSize.trim() || null,
       pips: pips.trim() || null,
       entryPrice: entryPrice.trim() || null,
       exitPrice: exitPrice.trim() || null,
@@ -2181,6 +2261,7 @@ function NewTradePageContent() {
     removedLibraryItems,
     respectedRiskChoice,
     risk,
+    lotSize,
     riskReward,
     router,
     selectedDate,

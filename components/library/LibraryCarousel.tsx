@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { LibraryCard, type LibraryCardProps } from "./LibraryCard";
 
@@ -14,6 +14,7 @@ interface LibraryCarouselProps {
   onSelectItem?: (itemId: string) => void;
   onAddItem?: () => void;
   onRemoveItem?: (itemId: string) => void;
+  onReorderItem?: (draggedItemId: string, targetItemId: string | null) => void;
 }
 
 export function LibraryCarousel({
@@ -22,10 +23,13 @@ export function LibraryCarousel({
   onSelectItem,
   onAddItem,
   onRemoveItem,
+  onReorderItem,
 }: LibraryCarouselProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
   const hasItems = items.length > 0;
   const activeItemId = selectedId ?? items[0]?.id;
+  const canReorderItems = typeof onReorderItem === "function";
 
   useEffect(() => {
     const container = containerRef.current;
@@ -57,10 +61,37 @@ export function LibraryCarousel({
       ref={containerRef}
       className="flex h-full flex-col"
     >
-      <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto scroll-smooth snap-y snap-mandatory py-3 scroll-py-6">
+      <div
+        className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto scroll-smooth snap-y snap-mandatory py-3 scroll-py-6"
+        onDragOver={(event) => {
+          if (!draggingId || !canReorderItems) {
+            return;
+          }
+
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+        }}
+        onDrop={(event) => {
+          if (!canReorderItems) {
+            return;
+          }
+
+          event.preventDefault();
+          const draggedItemId = event.dataTransfer.getData("text/plain") || draggingId;
+
+          if (!draggedItemId) {
+            setDraggingId(null);
+            return;
+          }
+
+          onReorderItem?.(draggedItemId, null);
+          setDraggingId(null);
+        }}
+      >
         {hasItems ? (
           items.map((item) => {
             const isActive = item.id === activeItemId;
+            const isDragging = item.id === draggingId;
             const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
             const combinedClassName = itemClassName
               ? `${itemClassName} w-full max-w-[calc(100%-1rem)]`
@@ -68,7 +99,49 @@ export function LibraryCarousel({
             const shouldDim = hasItems && !isActive;
 
             return (
-              <div key={item.id} className="relative flex snap-start justify-center">
+              <div
+                key={item.id}
+                className="relative flex snap-start justify-center"
+                draggable={canReorderItems}
+                onDragStart={(event) => {
+                  if (!canReorderItems) {
+                    return;
+                  }
+
+                  event.stopPropagation();
+                  event.dataTransfer.effectAllowed = "move";
+                  event.dataTransfer.setData("text/plain", item.id);
+                  setDraggingId(item.id);
+                }}
+                onDragEnd={() => {
+                  setDraggingId(null);
+                }}
+                onDragOver={(event) => {
+                  if (!canReorderItems || draggingId === item.id) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = "move";
+                }}
+                onDrop={(event) => {
+                  if (!canReorderItems) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  event.stopPropagation();
+                  const draggedItemId = event.dataTransfer.getData("text/plain") || draggingId;
+
+                  if (!draggedItemId || draggedItemId === item.id) {
+                    setDraggingId(null);
+                    return;
+                  }
+
+                  onReorderItem?.(draggedItemId, item.id);
+                  setDraggingId(null);
+                }}
+              >
                 {onRemoveItem ? (
                   <button
                     type="button"
@@ -89,7 +162,12 @@ export function LibraryCarousel({
                   isActive={isActive}
                   isDimmed={shouldDim}
                   data-library-carousel-item={item.id}
-                  className={`${combinedClassName} mx-auto`}
+                  aria-grabbed={isDragging}
+                  className={`${combinedClassName} mx-auto ${
+                    isDragging
+                      ? "scale-[1.08] shadow-[0_32px_80px_-48px_rgba(15,23,42,0.55)]"
+                      : ""
+                  }`}
                   onClick={(event) => {
                     onSelectItem?.(item.id);
                     itemOnClick?.(event);
