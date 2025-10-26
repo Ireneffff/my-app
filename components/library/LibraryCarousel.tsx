@@ -155,15 +155,31 @@ export function LibraryCarousel({
           {hasItems ? (
             items.map((item, index) => {
               const isActive = item.id === activeItemId;
-              const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
+              const {
+                className: itemClassName,
+                onClick: itemOnClick,
+                hideLabel: itemHideLabel,
+                visualWrapperClassName: itemVisualWrapperClassName,
+                ["aria-label"]: itemAriaLabel,
+                ...restItem
+              } = item;
               const baseWidthClasses =
-                "w-full basis-full flex-shrink-0 md:basis-auto md:flex-shrink md:max-w-[calc(100%-1rem)]";
+                "h-full w-full basis-full flex-shrink-0 md:h-auto md:basis-auto md:flex-shrink md:max-w-[calc(100%-1rem)]";
               const combinedClassName = itemClassName
-                ? `${itemClassName} ${baseWidthClasses} md:h-auto`
-                : `${baseWidthClasses} md:h-auto`;
+                ? `${itemClassName} ${baseWidthClasses}`
+                : baseWidthClasses;
               const shouldDim = hasItems && !isActive;
               const canMoveUp = canReorderItems && index > 0;
               const canMoveDown = canReorderItems && index < items.length - 1;
+              const shouldHideLabel = isMobile ? true : Boolean(itemHideLabel);
+              const shouldRenderOverlayLabel = isMobile && !itemHideLabel;
+
+              const mergedVisualWrapperClassName = isMobile
+                ? [itemVisualWrapperClassName, "h-full w-full"].filter(Boolean).join(" ")
+                : itemVisualWrapperClassName;
+              const resolvedAriaLabel =
+                itemAriaLabel ??
+                (shouldHideLabel && !itemHideLabel ? item.label : undefined);
 
               const handleMoveUp = (event: ReactMouseEvent<HTMLButtonElement>) => {
                 event.preventDefault();
@@ -199,9 +215,9 @@ export function LibraryCarousel({
                   key={item.id}
                   ref={(node) => setItemRef(item.id, node)}
                   data-library-carousel-wrapper={item.id}
-                  className="group/item relative flex w-full snap-center justify-center md:w-auto md:snap-start"
+                  className="group/item relative flex h-full w-full snap-center items-stretch justify-center md:w-auto md:snap-start"
                 >
-                  <div className="absolute right-4 top-4 z-40 flex flex-col items-end gap-2">
+                  <div className="absolute right-3 top-3 z-40 flex flex-col items-end gap-2 md:right-4 md:top-4">
                     {onRemoveItem ? (
                       <button
                         type="button"
@@ -235,7 +251,7 @@ export function LibraryCarousel({
                     ) : null}
                   </div>
 
-                  <div className="absolute inset-y-0 left-0 z-40 flex items-center md:hidden">
+                  <div className="absolute inset-y-3 left-3 z-40 flex items-center md:hidden">
                     {canReorderItems ? (
                       <ReorderArrowButton
                         direction="left"
@@ -246,7 +262,7 @@ export function LibraryCarousel({
                     ) : null}
                   </div>
 
-                  <div className="absolute inset-y-0 right-0 z-40 flex items-center md:hidden">
+                  <div className="absolute inset-y-3 right-3 z-40 flex items-center md:hidden">
                     {canReorderItems ? (
                       <ReorderArrowButton
                         direction="right"
@@ -258,7 +274,7 @@ export function LibraryCarousel({
                   </div>
 
                   <div
-                    className="flex w-full items-center justify-center md:block"
+                    className="relative flex w-full items-stretch justify-center md:block"
                     style={cardFrameStyle}
                   >
                     <LibraryCard
@@ -267,11 +283,19 @@ export function LibraryCarousel({
                       isDimmed={shouldDim}
                       data-library-carousel-item={item.id}
                       className={`${combinedClassName} mx-0 md:mx-auto`}
+                      hideLabel={shouldHideLabel}
+                      aria-label={resolvedAriaLabel}
+                      visualWrapperClassName={mergedVisualWrapperClassName || undefined}
                       onClick={(event) => {
                         onSelectItem?.(item.id);
                         itemOnClick?.(event);
                       }}
                     />
+                    {shouldRenderOverlayLabel ? (
+                      <span className="pointer-events-none absolute bottom-3 left-3 right-3 rounded-full bg-white/90 px-3 py-1 text-center text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow-[0_10px_24px_-20px_rgba(15,23,42,0.45)]">
+                        {item.label}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               );
@@ -297,7 +321,7 @@ export function LibraryCarousel({
                 isActive={false}
                 isDimmed={false}
                 data-library-carousel-item="add"
-                className="w-full max-w-full md:mx-auto md:h-auto"
+                className="h-full w-full max-w-full md:mx-auto md:h-auto"
                 hideLabel
                 visualWrapperClassName="aspect-[4/3] w-full overflow-visible bg-transparent"
                 onClick={() => {
