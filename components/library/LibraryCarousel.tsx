@@ -49,7 +49,6 @@ export function LibraryCarousel({
   );
   const canReorderItems = typeof onReorderItem === "function";
   const itemFrameStyle = useMemo(() => {
-    const desktopMaxWidth = 520;
     const mobileMaxWidth = 220;
 
     if (isMobile) {
@@ -58,14 +57,14 @@ export function LibraryCarousel({
       };
     }
 
-    const maxWidthFromHeight =
+    const heightLimitedWidth =
       typeof availableHeight === "number"
-        ? Math.min(availableHeight * (4 / 3), desktopMaxWidth)
-        : desktopMaxWidth;
+        ? Math.min(availableHeight * (4 / 3), 420)
+        : 360;
 
     return {
       width: "100%",
-      maxWidth: `${maxWidthFromHeight}px`,
+      maxWidth: `${heightLimitedWidth}px`,
     };
   }, [availableHeight, isMobile]);
 
@@ -254,7 +253,7 @@ export function LibraryCarousel({
                 ["aria-label"]: itemAriaLabel,
                 ...restItem
               } = item;
-              const baseWidthClasses = "h-full w-full";
+              const baseWidthClasses = "w-full";
               const combinedClassName = itemClassName
                 ? `${itemClassName} ${baseWidthClasses}`
                 : baseWidthClasses;
@@ -400,7 +399,7 @@ export function LibraryCarousel({
                   hideLabel
                   isActive={false}
                   isDimmed={false}
-                  className="h-full w-full"
+                  className="w-full"
                   data-library-carousel-item="empty"
                   visual={
                     <span className="flex h-full w-full items-center justify-center rounded-xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
@@ -427,7 +426,7 @@ export function LibraryCarousel({
                   isActive={false}
                   isDimmed={false}
                   data-library-carousel-item="add"
-                  className="h-full w-full"
+                  className="w-full"
                   hideLabel
                   onClick={() => {
                     onAddItem?.();

@@ -162,16 +162,19 @@ export function LibrarySection({
             </header>
           ) : null}
 
-          <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,6.2fr)_minmax(0,3.8fr)] lg:grid-rows-[minmax(0,1fr)_auto] lg:items-stretch lg:gap-x-6 lg:gap-y-0">
-            <div ref={previewWrapperRef} className="w-full">
+          <div className="grid w-full gap-6 lg:[grid-template-areas:'preview_carousel''notes_carousel'] lg:grid-cols-[minmax(0,6.4fr)_minmax(0,3.6fr)] lg:items-start lg:gap-x-10 lg:gap-y-0">
+            <div
+              ref={previewWrapperRef}
+              className="w-full lg:[grid-area:preview]"
+            >
               {preview}
             </div>
 
             <div
-              className="box-border flex w-full min-w-0 flex-col items-stretch lg:h-full lg:max-w-[520px]"
+              className="box-border flex w-full min-w-0 flex-col items-center lg:[grid-area:carousel] lg:h-full"
               style={carouselHeight ? { height: `${carouselHeight}px` } : undefined}
             >
-              <div className="min-h-0 w-full flex-1">
+              <div className="flex h-full w-full items-stretch">
                 <LibraryCarousel
                   items={actions}
                   selectedId={selectedActionId}
@@ -186,7 +189,7 @@ export function LibrarySection({
             </div>
 
             {notes ? (
-              <div className="mt-4 w-full lg:col-span-2 lg:mt-0">{notes}</div>
+              <div className="w-full lg:[grid-area:notes]">{notes}</div>
             ) : null}
           </div>
 
