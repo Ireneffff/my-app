@@ -43,6 +43,10 @@ export function LibraryCarousel({
     [items, selectedId],
   );
   const canReorderItems = typeof onReorderItem === "function";
+  const itemFrameStyle = useMemo(
+    () => ({ width: "clamp(220px, 82vw, 340px)" }),
+    [],
+  );
 
   const setItemRef = useCallback((itemId: string, node: HTMLDivElement | null) => {
     if (!node) {
@@ -200,45 +204,46 @@ export function LibraryCarousel({
                   <div
                     ref={(node) => setItemRef(item.id, node)}
                     data-library-carousel-wrapper={item.id}
-                    className="group/item relative aspect-[4/3] w-auto flex-shrink-0"
+                    className="group/item relative flex-shrink-0"
+                    style={itemFrameStyle}
                   >
-                    <div className="absolute right-3 top-3 z-40 flex flex-col items-end gap-2 md:right-4 md:top-4">
+                    <div className="absolute right-2 top-2 z-40 flex flex-col items-end gap-2 md:right-3 md:top-3">
                       {onRemoveItem ? (
                         <button
                           type="button"
-                        aria-label={`Rimuovi ${item.label}`}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          onRemoveItem(item.id);
-                        }}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-white/95 text-neutral-500 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] transition-colors hover:text-neutral-900 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
-                      >
-                        <CloseIcon />
-                      </button>
-                    ) : null}
+                          aria-label={`Rimuovi ${item.label}`}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onRemoveItem(item.id);
+                          }}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-white/95 text-neutral-500 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] transition-colors hover:text-neutral-900 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                        >
+                          <CloseIcon />
+                        </button>
+                      ) : null}
 
-                    {canReorderItems ? (
-                      <div className="pointer-events-none hidden flex-col items-center gap-1 opacity-0 transition-opacity duration-200 group-hover/item:opacity-100 md:flex">
-                        <ReorderArrowButton
-                          direction="up"
-                          ariaLabel={`Sposta ${item.label} in alto`}
-                          onClick={handleMoveUp}
-                          disabled={!canMoveUp}
-                        />
-                        <ReorderArrowButton
-                          direction="down"
-                          ariaLabel={`Sposta ${item.label} in basso`}
-                          onClick={handleMoveDown}
-                          disabled={!canMoveDown}
-                        />
-                      </div>
-                    ) : null}
-                  </div>
+                      {canReorderItems ? (
+                        <div className="pointer-events-none hidden flex-col items-center gap-1 opacity-0 transition-opacity duration-200 group-hover/item:opacity-100 md:flex">
+                          <ReorderArrowButton
+                            direction="up"
+                            ariaLabel={`Sposta ${item.label} in alto`}
+                            onClick={handleMoveUp}
+                            disabled={!canMoveUp}
+                          />
+                          <ReorderArrowButton
+                            direction="down"
+                            ariaLabel={`Sposta ${item.label} in basso`}
+                            onClick={handleMoveDown}
+                            disabled={!canMoveDown}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
 
-                  <div className="absolute inset-y-3 left-3 z-40 flex items-center md:hidden">
-                    {canReorderItems ? (
-                      <ReorderArrowButton
+                    <div className="absolute inset-y-2 left-2 z-40 flex items-center md:hidden">
+                      {canReorderItems ? (
+                        <ReorderArrowButton
                           direction="left"
                           ariaLabel={`Sposta ${item.label} a sinistra`}
                           onClick={handleMoveUp}
@@ -247,7 +252,7 @@ export function LibraryCarousel({
                       ) : null}
                     </div>
 
-                    <div className="absolute inset-y-3 right-3 z-40 flex items-center md:hidden">
+                    <div className="absolute inset-y-2 right-2 z-40 flex items-center md:hidden">
                       {canReorderItems ? (
                         <ReorderArrowButton
                           direction="right"
@@ -283,7 +288,7 @@ export function LibraryCarousel({
             })
           ) : (
             <div className="flex snap-center justify-center md:snap-start">
-              <div className="relative aspect-[4/3] w-auto flex-shrink-0">
+              <div className="relative flex-shrink-0" style={itemFrameStyle}>
                 <LibraryCard
                   label="Nessuna card"
                   aria-label="Nessuna card disponibile"
@@ -293,7 +298,7 @@ export function LibraryCarousel({
                   isDimmed={false}
                   className="h-full w-full"
                   visual={
-                    <span className="flex h-full w-full items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
+                    <span className="flex h-full w-full items-center justify-center rounded-xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
                       Nessuna card
                     </span>
                   }
@@ -307,7 +312,7 @@ export function LibraryCarousel({
               key="library-add-card-wrapper"
               className="flex items-center justify-center snap-center md:snap-start"
             >
-              <div className="relative aspect-[4/3] w-auto flex-shrink-0">
+              <div className="relative flex-shrink-0" style={itemFrameStyle}>
                 <LibraryCard
                   label="Nuova immagine"
                   aria-label="Aggiungi una nuova card libreria"
@@ -316,16 +321,15 @@ export function LibraryCarousel({
                   data-library-carousel-item="add"
                   className="h-full w-full"
                   hideLabel
-                  visualWrapperClassName="w-full overflow-visible bg-transparent"
                   onClick={() => {
                     onAddItem?.();
                   }}
                   visual={
-                    <span className="flex h-full w-full items-center justify-center">
+                    <div className="flex h-full w-full items-center justify-center">
                       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_22px_48px_-34px_rgba(15,23,42,0.45)]">
                         <PlusIcon className="h-5 w-5 text-accent" />
                       </span>
-                    </span>
+                    </div>
                   }
                 />
               </div>

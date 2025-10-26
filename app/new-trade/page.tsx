@@ -1341,6 +1341,7 @@ function NewTradePageContent() {
             }
           },
           className: isRecentlyAdded ? "animate-fade-slide-in" : undefined,
+          visualWrapperClassName: hasImage ? "p-0" : undefined,
           visual: hasImage ? (
             <div className="relative h-full w-full">
               <Image
@@ -1353,7 +1354,7 @@ function NewTradePageContent() {
               />
             </div>
           ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center rounded-md bg-[#F4F4F4] text-muted-fg">
+            <div className="flex h-full w-full items-center justify-center rounded-xl bg-[#F4F4F4] text-muted-fg">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 48 48"
