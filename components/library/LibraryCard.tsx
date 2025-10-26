@@ -27,7 +27,7 @@ export function LibraryCard({
     "flex items-center justify-center overflow-hidden transition-colors duration-300";
   const resolvedVisualWrapperClassName = visualWrapperClassName
     ? `${baseVisualWrapperClassName} ${visualWrapperClassName}`
-    : `${baseVisualWrapperClassName} h-32 w-full rounded-md bg-white`;
+    : `${baseVisualWrapperClassName} aspect-[4/3] w-full rounded-md bg-white`;
 
   return (
     <button

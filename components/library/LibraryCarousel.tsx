@@ -159,8 +159,8 @@ export function LibraryCarousel({
               const baseWidthClasses =
                 "w-full basis-full flex-shrink-0 md:basis-auto md:flex-shrink md:max-w-[calc(100%-1rem)]";
               const combinedClassName = itemClassName
-                ? `${itemClassName} ${baseWidthClasses}${isMobile ? " h-full" : ""} md:h-auto`
-                : `${baseWidthClasses}${isMobile ? " h-full" : ""} md:h-auto`;
+                ? `${itemClassName} ${baseWidthClasses} md:h-auto`
+                : `${baseWidthClasses} md:h-auto`;
               const shouldDim = hasItems && !isActive;
               const canMoveUp = canReorderItems && index > 0;
               const canMoveDown = canReorderItems && index < items.length - 1;
@@ -258,7 +258,7 @@ export function LibraryCarousel({
                   </div>
 
                   <div
-                    className="flex w-full items-stretch justify-center md:block"
+                    className="flex w-full items-center justify-center md:block"
                     style={cardFrameStyle}
                   >
                     <LibraryCard
@@ -288,7 +288,7 @@ export function LibraryCarousel({
           {onAddItem ? (
             <div
               key="library-add-card-wrapper"
-              className="flex w-full items-stretch justify-center snap-center md:mx-auto md:block md:max-w-[calc(100%-1rem)] md:snap-start"
+              className="flex w-full items-center justify-center snap-center md:mx-auto md:block md:max-w-[calc(100%-1rem)] md:snap-start"
               style={cardFrameStyle}
             >
               <LibraryCard
@@ -297,9 +297,9 @@ export function LibraryCarousel({
                 isActive={false}
                 isDimmed={false}
                 data-library-carousel-item="add"
-                className={`w-full max-w-full${isMobile ? " h-full" : ""} md:mx-auto md:h-auto`}
+                className="w-full max-w-full md:mx-auto md:h-auto"
                 hideLabel
-                visualWrapperClassName="h-32 w-full overflow-visible bg-transparent"
+                visualWrapperClassName="aspect-[4/3] w-full overflow-visible bg-transparent"
                 onClick={() => {
                   onAddItem?.();
                 }}
