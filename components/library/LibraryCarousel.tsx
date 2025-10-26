@@ -164,7 +164,7 @@ export function LibraryCarousel({
                 ...restItem
               } = item;
               const baseWidthClasses =
-                "w-full flex-none basis-full md:basis-auto md:flex-none md:max-w-[calc(100%-1rem)]";
+                "w-full shrink-0 basis-full md:basis-auto md:shrink md:max-w-[calc(100%-1rem)]";
               const combinedClassName = itemClassName
                 ? `${itemClassName} ${baseWidthClasses}`
                 : baseWidthClasses;
