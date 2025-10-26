@@ -41,6 +41,10 @@ export function LibraryCarousel({
   const itemRefs = useRef(new Map<string, HTMLDivElement>());
   const previousPositionsRef = useRef(new Map<string, DOMRect>());
   const dropTargetIdRef = useRef<string | null>(null);
+  const pointerUpdateRef = useRef<number | null>(null);
+  const pointerFrameRef = useRef<number | null>(null);
+  const dragPointerRef = useRef<{ x: number; y: number } | null>(null);
+  const dragFrameRef = useRef<number | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragPreview, setDragPreview] = useState<{
     id: string;
@@ -57,6 +61,8 @@ export function LibraryCarousel({
   const hasItems = items.length > 0;
   const activeItemId = selectedId ?? items[0]?.id;
   const canReorderItems = typeof onReorderItem === "function";
+  const draggingIdRef = useRef<string | null>(draggingId);
+  const canReorderRef = useRef(canReorderItems);
   const emptyDragImage = useMemo(() => {
     if (typeof window === "undefined") {
       return null;
@@ -142,9 +148,105 @@ export function LibraryCarousel({
     dropTargetIdRef.current = dropTargetId;
   }, [dropTargetId]);
 
+  const resetScheduledFrames = useCallback(() => {
+    if (pointerFrameRef.current !== null) {
+      cancelAnimationFrame(pointerFrameRef.current);
+      pointerFrameRef.current = null;
+    }
+
+    if (dragFrameRef.current !== null) {
+      cancelAnimationFrame(dragFrameRef.current);
+      dragFrameRef.current = null;
+    }
+
+    pointerUpdateRef.current = null;
+    dragPointerRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    draggingIdRef.current = draggingId;
+  }, [draggingId]);
+
+  useEffect(() => {
+    canReorderRef.current = canReorderItems;
+  }, [canReorderItems]);
+
+  useEffect(() => {
+    return () => {
+      if (pointerFrameRef.current !== null) {
+        cancelAnimationFrame(pointerFrameRef.current);
+      }
+
+      if (dragFrameRef.current !== null) {
+        cancelAnimationFrame(dragFrameRef.current);
+      }
+    };
+  }, []);
+
+  const flushPointerUpdate = useCallback(() => {
+    pointerFrameRef.current = null;
+    const activeDraggingId = draggingIdRef.current;
+
+    if (!canReorderRef.current || !activeDraggingId) {
+      return;
+    }
+
+    const pointerY = pointerUpdateRef.current;
+    pointerUpdateRef.current = null;
+
+    if (typeof pointerY !== "number" || Number.isNaN(pointerY)) {
+      return;
+    }
+
+    const entries = Array.from(itemRefs.current.entries())
+      .filter(([id]) => id !== activeDraggingId)
+      .map(([id, element]) => ({ id, rect: element.getBoundingClientRect() }))
+      .sort((a, b) => a.rect.top - b.rect.top);
+
+    if (entries.length === 0) {
+      commitReorderPreview(null);
+      return;
+    }
+
+    const firstEntry = entries[0];
+    if (pointerY < firstEntry.rect.top + firstEntry.rect.height / 2) {
+      commitReorderPreview({ targetId: firstEntry.id, position: "before" });
+      return;
+    }
+
+    for (let index = 0; index < entries.length - 1; index += 1) {
+      const current = entries[index];
+      const next = entries[index + 1];
+
+      if (pointerY > current.rect.bottom && pointerY < next.rect.top) {
+        commitReorderPreview({ targetId: next.id, position: "before" });
+        return;
+      }
+    }
+
+    for (const entry of entries) {
+      if (pointerY >= entry.rect.top && pointerY <= entry.rect.bottom) {
+        const isBefore = pointerY < entry.rect.top + entry.rect.height / 2;
+        commitReorderPreview({
+          targetId: entry.id,
+          position: isBefore ? "before" : "after",
+        });
+        return;
+      }
+    }
+
+    const lastEntry = entries[entries.length - 1];
+    if (pointerY > lastEntry.rect.top + lastEntry.rect.height / 2) {
+      commitReorderPreview({ targetId: lastEntry.id, position: "after" });
+      return;
+    }
+
+    commitReorderPreview(null);
+  }, [commitReorderPreview]);
+
   const updatePreviewFromPointer = useCallback(
     (clientY: number | null) => {
-      if (!draggingId || !canReorderItems) {
+      if (!canReorderRef.current || !draggingIdRef.current) {
         return;
       }
 
@@ -152,61 +254,65 @@ export function LibraryCarousel({
         return;
       }
 
-      const pointerY = clientY;
+      pointerUpdateRef.current = clientY;
 
-      const entries = Array.from(itemRefs.current.entries())
-        .filter(([id]) => id !== draggingId)
-        .map(([id, element]) => ({ id, rect: element.getBoundingClientRect() }))
-        .sort((a, b) => a.rect.top - b.rect.top);
-
-      if (entries.length === 0) {
-        commitReorderPreview(null);
-        return;
+      if (pointerFrameRef.current === null) {
+        pointerFrameRef.current = requestAnimationFrame(flushPointerUpdate);
       }
-
-      const firstEntry = entries[0];
-      if (pointerY < firstEntry.rect.top + firstEntry.rect.height / 2) {
-        commitReorderPreview({ targetId: firstEntry.id, position: "before" });
-        return;
-      }
-
-      for (let index = 0; index < entries.length - 1; index += 1) {
-        const current = entries[index];
-        const next = entries[index + 1];
-
-        if (pointerY > current.rect.bottom && pointerY < next.rect.top) {
-          commitReorderPreview({ targetId: next.id, position: "before" });
-          return;
-        }
-      }
-
-      for (const entry of entries) {
-        if (pointerY >= entry.rect.top && pointerY <= entry.rect.bottom) {
-          const isBefore = pointerY < entry.rect.top + entry.rect.height / 2;
-          commitReorderPreview({
-            targetId: entry.id,
-            position: isBefore ? "before" : "after",
-          });
-          return;
-        }
-      }
-
-      const lastEntry = entries[entries.length - 1];
-      if (pointerY > lastEntry.rect.top + lastEntry.rect.height / 2) {
-        commitReorderPreview({ targetId: lastEntry.id, position: "after" });
-        return;
-      }
-
-      commitReorderPreview(null);
     },
-    [canReorderItems, commitReorderPreview, draggingId],
+    [flushPointerUpdate],
+  );
+
+  const flushDragPreview = useCallback(() => {
+    dragFrameRef.current = null;
+
+    const pointer = dragPointerRef.current;
+    dragPointerRef.current = null;
+
+    if (!pointer) {
+      return;
+    }
+
+    setDragPreview((previous) => {
+      if (!previous || draggingIdRef.current !== previous.id) {
+        return previous;
+      }
+
+      const translateX = pointer.x - previous.originLeft - previous.offsetX;
+      const translateY = pointer.y - previous.originTop - previous.offsetY;
+
+      if (
+        Math.abs(translateX - previous.translateX) < 0.5 &&
+        Math.abs(translateY - previous.translateY) < 0.5
+      ) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        translateX,
+        translateY,
+      };
+    });
+  }, []);
+
+  const queueDragPreviewUpdate = useCallback(
+    (clientX: number, clientY: number) => {
+      dragPointerRef.current = { x: clientX, y: clientY };
+
+      if (dragFrameRef.current === null) {
+        dragFrameRef.current = requestAnimationFrame(flushDragPreview);
+      }
+    },
+    [flushDragPreview],
   );
 
   useEffect(() => {
     if (!draggingId) {
+      resetScheduledFrames();
       commitReorderPreview(null);
     }
-  }, [draggingId, commitReorderPreview]);
+  }, [draggingId, commitReorderPreview, resetScheduledFrames]);
 
   useLayoutEffect(() => {
     const nextPositions = new Map<string, DOMRect>();
@@ -241,10 +347,12 @@ export function LibraryCarousel({
       }
 
       element.style.transition = "none";
-      element.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+      element.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0)`;
+      element.style.willChange = "transform";
 
       requestAnimationFrame(() => {
-        element.style.transition = "transform 200ms ease";
+        element.style.transition =
+          "transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1)";
         element.style.transform = "";
       });
 
@@ -252,6 +360,7 @@ export function LibraryCarousel({
         "transitionend",
         () => {
           element.style.transition = "";
+          element.style.willChange = "";
         },
         { once: true },
       );
@@ -314,6 +423,7 @@ export function LibraryCarousel({
             setDraggingId(null);
             setDragPreview(null);
             commitReorderPreview(null);
+            resetScheduledFrames();
             return;
           }
 
@@ -323,6 +433,7 @@ export function LibraryCarousel({
           setDraggingId(null);
           setDragPreview(null);
           commitReorderPreview(null);
+          resetScheduledFrames();
         }}
       >
         {hasItems ? (
@@ -382,6 +493,7 @@ export function LibraryCarousel({
                   const rect = event.currentTarget.getBoundingClientRect();
                   const offsetX = event.clientX - rect.left;
                   const offsetY = event.clientY - rect.top;
+                  resetScheduledFrames();
                   setDraggingId(item.id);
                   commitReorderPreview(null);
                   setDragPreview({
@@ -393,11 +505,13 @@ export function LibraryCarousel({
                     translateX: 0,
                     translateY: 0,
                   });
+                  queueDragPreviewUpdate(event.clientX, event.clientY);
                 }}
                 onDragEnd={() => {
                   setDraggingId(null);
                   setDragPreview(null);
                   commitReorderPreview(null);
+                  resetScheduledFrames();
                 }}
                 onDrag={(event) => {
                   if (!canReorderItems || draggingId !== item.id) {
@@ -408,20 +522,7 @@ export function LibraryCarousel({
                     return;
                   }
 
-                  setDragPreview((previous) => {
-                    if (!previous || previous.id !== item.id) {
-                      return previous;
-                    }
-
-                    const translateX = event.clientX - previous.originLeft - previous.offsetX;
-                    const translateY = event.clientY - previous.originTop - previous.offsetY;
-
-                    return {
-                      ...previous,
-                      translateX,
-                      translateY,
-                    };
-                  });
+                  queueDragPreviewUpdate(event.clientX, event.clientY);
                   updatePreviewFromPointer(event.clientY);
                 }}
                 onDragOver={(event) => {
@@ -447,6 +548,7 @@ export function LibraryCarousel({
                     setDraggingId(null);
                     setDragPreview(null);
                     commitReorderPreview(null);
+                    resetScheduledFrames();
                     return;
                   }
 
@@ -454,6 +556,7 @@ export function LibraryCarousel({
                     setDraggingId(null);
                     setDragPreview(null);
                     commitReorderPreview(null);
+                    resetScheduledFrames();
                     return;
                   }
 
@@ -463,6 +566,7 @@ export function LibraryCarousel({
                   setDraggingId(null);
                   setDragPreview(null);
                   commitReorderPreview(null);
+                  resetScheduledFrames();
                 }}
               >
                 {onRemoveItem ? (
