@@ -36,6 +36,7 @@ export function LibraryCarousel({
   const itemRefs = useRef(new Map<string, HTMLDivElement>());
   const previousPositionsRef = useRef(new Map<string, DOMRect>());
   const [isMobile, setIsMobile] = useState(false);
+  const [cardHeight, setCardHeight] = useState<number | null>(null);
 
   const hasItems = items.length > 0;
   const activeItemId = useMemo(
@@ -43,10 +44,13 @@ export function LibraryCarousel({
     [items, selectedId],
   );
   const canReorderItems = typeof onReorderItem === "function";
-  const itemFrameStyle = useMemo(
-    () => ({ width: "clamp(220px, 82vw, 340px)" }),
-    [],
-  );
+  const itemFrameStyle = useMemo(() => {
+    const targetWidth = isMobile ? 220 : 300;
+
+    return {
+      width: `min(100%, ${targetWidth}px)`,
+    };
+  }, [isMobile]);
 
   const setItemRef = useCallback((itemId: string, node: HTMLDivElement | null) => {
     if (!node) {
@@ -74,6 +78,53 @@ export function LibraryCarousel({
       mediaQuery.removeEventListener("change", updateIsMobile);
     };
   }, []);
+
+  const measureCardHeight = useCallback(() => {
+    const container = containerRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    const cardElement = container.querySelector<HTMLElement>(
+      "[data-library-carousel-item]",
+    );
+
+    if (!cardElement) {
+      setCardHeight(null);
+      return;
+    }
+
+    const nextHeight = cardElement.offsetHeight;
+
+    setCardHeight((previousHeight) => {
+      if (previousHeight === null) {
+        return nextHeight;
+      }
+
+      return Math.abs(previousHeight - nextHeight) < 1 ? previousHeight : nextHeight;
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    measureCardHeight();
+  }, [measureCardHeight, items, activeItemId, isMobile]);
+
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleResize = () => {
+      measureCardHeight();
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [measureCardHeight]);
 
   useLayoutEffect(() => {
     if (!hasItems) {
@@ -133,14 +184,29 @@ export function LibraryCarousel({
     };
   }, [items, hasItems]);
 
+  const scrollContainerClassName = useMemo(() => {
+    const baseClassName = "flex h-full items-start gap-4 scroll-smooth";
+    const directionClassName = isMobile
+      ? "flex-col overflow-y-auto overflow-x-hidden"
+      : "flex-row overflow-x-auto overflow-y-hidden";
+
+    return `${baseClassName} ${directionClassName}`;
+  }, [isMobile]);
+
+  const scrollContainerStyle = useMemo(
+    () => (cardHeight ? { height: `${cardHeight}px` } : undefined),
+    [cardHeight],
+  );
+
   return (
     <div className="relative flex w-full flex-col overflow-hidden rounded-3xl border border-[#E6E6E6] bg-[#F7F7F7] p-4 shadow-[0_20px_60px_-50px_rgba(15,23,42,0.45)]">
       <div
         ref={containerRef}
-        className="flex flex-col"
+        className="flex h-full flex-col"
       >
         <div
-          className="flex snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden scroll-smooth py-3 md:flex-col md:snap-y md:overflow-x-hidden md:overflow-y-auto md:scroll-py-6"
+          className={scrollContainerClassName}
+          style={scrollContainerStyle}
         >
           {hasItems ? (
             items.map((item, index) => {
@@ -199,7 +265,9 @@ export function LibraryCarousel({
               return (
                 <div
                   key={item.id}
-                  className="flex snap-center justify-center md:snap-start"
+                  className={`flex flex-shrink-0 snap-start justify-center ${
+                    isMobile ? "w-full" : "w-auto"
+                  }`}
                 >
                   <div
                     ref={(node) => setItemRef(item.id, node)}
@@ -287,8 +355,15 @@ export function LibraryCarousel({
               );
             })
           ) : (
-            <div className="flex snap-center justify-center md:snap-start">
-              <div className="relative flex-shrink-0" style={itemFrameStyle}>
+            <div
+              className={`flex flex-shrink-0 snap-start justify-center ${
+                isMobile ? "w-full" : "w-auto"
+              }`}
+            >
+              <div
+                className="relative flex-shrink-0"
+                style={itemFrameStyle}
+              >
                 <LibraryCard
                   label="Nessuna card"
                   aria-label="Nessuna card disponibile"
@@ -297,6 +372,7 @@ export function LibraryCarousel({
                   isActive={false}
                   isDimmed={false}
                   className="h-full w-full"
+                  data-library-carousel-item="empty"
                   visual={
                     <span className="flex h-full w-full items-center justify-center rounded-xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
                       Nessuna card
@@ -310,9 +386,14 @@ export function LibraryCarousel({
           {onAddItem ? (
             <div
               key="library-add-card-wrapper"
-              className="flex items-center justify-center snap-center md:snap-start"
+              className={`flex flex-shrink-0 snap-start items-center justify-center ${
+                isMobile ? "w-full" : "w-auto"
+              }`}
             >
-              <div className="relative flex-shrink-0" style={itemFrameStyle}>
+              <div
+                className="relative flex-shrink-0"
+                style={itemFrameStyle}
+              >
                 <LibraryCard
                   label="Nuova immagine"
                   aria-label="Aggiungi una nuova card libreria"
