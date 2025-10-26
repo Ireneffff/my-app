@@ -177,7 +177,7 @@ export function LibrarySection({
               className="box-border flex w-full min-w-0 flex-col lg:row-span-2 lg:h-full lg:max-w-[344px]"
               style={carouselHeightStyle}
             >
-              <div className="flex-1 min-h-0">
+              <div className="min-h-0">
                 <LibraryCarousel
                   items={actions}
                   selectedId={selectedActionId}

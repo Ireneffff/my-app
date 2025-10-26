@@ -40,11 +40,12 @@ export function LibraryCarousel({
 
   const cardFrameStyle = useMemo<CSSProperties>(() => {
     const baseStyle: CSSProperties = {
+      width: "100%",
+      height: "auto",
       aspectRatio: "4 / 3",
     };
 
-    if (isMobile) {
-      baseStyle.width = "100%";
+    if (!isMobile) {
       baseStyle.maxWidth = "360px";
     }
 
@@ -144,13 +145,13 @@ export function LibraryCarousel({
   }, [items, hasItems]);
 
   return (
-    <div className="relative flex h-full min-h-[45vh] w-full flex-col overflow-hidden rounded-3xl border border-[#E6E6E6] bg-[#F7F7F7] p-4 shadow-[0_20px_60px_-50px_rgba(15,23,42,0.45)] md:min-h-0">
+    <div className="relative flex w-full flex-col overflow-hidden rounded-3xl border border-[#E6E6E6] bg-[#F7F7F7] p-4 shadow-[0_20px_60px_-50px_rgba(15,23,42,0.45)]">
       <div
         ref={containerRef}
-        className="flex h-full flex-col"
+        className="flex flex-col"
       >
         <div
-          className="flex h-full min-h-0 snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden scroll-smooth py-3 md:flex-col md:snap-y md:overflow-x-hidden md:overflow-y-auto md:scroll-py-6"
+          className="flex snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden scroll-smooth py-3 md:flex-col md:snap-y md:overflow-x-hidden md:overflow-y-auto md:scroll-py-6"
         >
           {hasItems ? (
             items.map((item, index) => {
@@ -164,7 +165,7 @@ export function LibraryCarousel({
                 ...restItem
               } = item;
               const baseWidthClasses =
-                "h-full w-full basis-full flex-shrink-0 md:h-auto md:basis-auto md:flex-shrink md:max-w-[calc(100%-1rem)]";
+                "w-full flex-none basis-full md:basis-auto md:flex-none md:max-w-[calc(100%-1rem)]";
               const combinedClassName = itemClassName
                 ? `${itemClassName} ${baseWidthClasses}`
                 : baseWidthClasses;
@@ -217,7 +218,7 @@ export function LibraryCarousel({
                   key={item.id}
                   ref={(node) => setItemRef(item.id, node)}
                   data-library-carousel-wrapper={item.id}
-                  className="group/item relative flex h-full w-full snap-center items-stretch justify-center md:w-auto md:snap-start"
+                  className="group/item relative flex w-full snap-center items-stretch justify-center md:w-auto md:snap-start"
                 >
                   <div className="absolute right-3 top-3 z-40 flex flex-col items-end gap-2 md:right-4 md:top-4">
                     {onRemoveItem ? (
@@ -323,7 +324,7 @@ export function LibraryCarousel({
                 isActive={false}
                 isDimmed={false}
                 data-library-carousel-item="add"
-                className="h-full w-full max-w-full md:mx-auto md:h-auto"
+                className="w-full max-w-full md:mx-auto"
                 hideLabel
                 visualWrapperClassName="aspect-[4/3] w-full overflow-visible bg-transparent"
                 onClick={() => {
