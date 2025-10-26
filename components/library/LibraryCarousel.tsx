@@ -175,7 +175,9 @@ export function LibraryCarousel({
               const shouldRenderOverlayLabel = isMobile && !itemHideLabel;
 
               const mergedVisualWrapperClassName = isMobile
-                ? [itemVisualWrapperClassName, "h-full w-full"].filter(Boolean).join(" ")
+                ? [itemVisualWrapperClassName, "aspect-[4/3] w-full"]
+                    .filter(Boolean)
+                    .join(" ")
                 : itemVisualWrapperClassName;
               const resolvedAriaLabel =
                 itemAriaLabel ??
