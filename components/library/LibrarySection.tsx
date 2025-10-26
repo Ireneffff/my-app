@@ -37,6 +37,35 @@ export function LibrarySection({
 }: LibrarySectionProps) {
   const previewWrapperRef = useRef<HTMLDivElement | null>(null);
   const [previewHeight, setPreviewHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const handleChange = () => {
+      setIsDesktop(mediaQuery.matches);
+    };
+
+    handleChange();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+    } else {
+      // Safari < 14 fallback
+      mediaQuery.addListener(handleChange);
+    }
+
+    return () => {
+      if (typeof mediaQuery.removeEventListener === "function") {
+        mediaQuery.removeEventListener("change", handleChange);
+      } else {
+        mediaQuery.removeListener(handleChange);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -114,7 +143,7 @@ export function LibrarySection({
     };
   }, [actions.length, selectedActionId]);
 
-  const carouselHeightStyle = previewHeight
+  const carouselHeightStyle = previewHeight && isDesktop
     ? {
         height: `${previewHeight}px`,
         maxHeight: `${previewHeight}px`,

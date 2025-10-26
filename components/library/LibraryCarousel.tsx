@@ -143,7 +143,7 @@ export function LibraryCarousel({
   }, [items, hasItems]);
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden rounded-3xl border border-[#E6E6E6] bg-[#F7F7F7] p-4 shadow-[0_20px_60px_-50px_rgba(15,23,42,0.45)]">
+    <div className="relative flex h-full min-h-[45vh] w-full flex-col overflow-hidden rounded-3xl border border-[#E6E6E6] bg-[#F7F7F7] p-4 shadow-[0_20px_60px_-50px_rgba(15,23,42,0.45)] md:min-h-0">
       <div
         ref={containerRef}
         className="flex h-full flex-col"
