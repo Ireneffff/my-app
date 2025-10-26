@@ -24,10 +24,10 @@ export function LibraryCard({
   ...buttonProps
 }: LibraryCardProps) {
   const baseVisualWrapperClassName =
-    "relative w-full overflow-hidden transition-colors duration-300 [&>img]:h-full [&>img]:w-full [&>img]:object-cover";
+    "relative aspect-[4/3] w-full overflow-hidden rounded-md bg-white transition-colors duration-300 [&>img]:h-full [&>img]:w-full [&>img]:object-cover";
   const resolvedVisualWrapperClassName = visualWrapperClassName
     ? `${baseVisualWrapperClassName} ${visualWrapperClassName}`
-    : `${baseVisualWrapperClassName} aspect-[4/3] rounded-md bg-white`;
+    : baseVisualWrapperClassName;
 
   return (
     <button

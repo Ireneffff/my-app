@@ -41,7 +41,6 @@ export function LibraryCarousel({
   const cardFrameStyle = useMemo<CSSProperties>(() => {
     const baseStyle: CSSProperties = {
       width: "100%",
-      height: "auto",
       aspectRatio: "4 / 3",
     };
 
@@ -175,11 +174,12 @@ export function LibraryCarousel({
               const shouldHideLabel = isMobile ? true : Boolean(itemHideLabel);
               const shouldRenderOverlayLabel = isMobile && !itemHideLabel;
 
-              const mergedVisualWrapperClassName = isMobile
-                ? [itemVisualWrapperClassName, "aspect-[4/3] w-full"]
-                    .filter(Boolean)
-                    .join(" ")
-                : itemVisualWrapperClassName;
+              const mergedVisualWrapperClassName = [
+                "aspect-[4/3] w-full",
+                itemVisualWrapperClassName,
+              ]
+                .filter(Boolean)
+                .join(" ");
               const resolvedAriaLabel =
                 itemAriaLabel ??
                 (shouldHideLabel && !itemHideLabel ? item.label : undefined);
@@ -277,7 +277,7 @@ export function LibraryCarousel({
                   </div>
 
                   <div
-                    className="relative flex w-full items-stretch justify-center md:block"
+                    className="relative w-full"
                     style={cardFrameStyle}
                   >
                     <LibraryCard
