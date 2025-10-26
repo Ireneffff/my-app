@@ -143,13 +143,8 @@ export function LibrarySection({
     };
   }, [actions.length, selectedActionId]);
 
-  const carouselHeightStyle = previewHeight && isDesktop
-    ? {
-        height: `${previewHeight}px`,
-        maxHeight: `${previewHeight}px`,
-        minHeight: `${previewHeight}px`,
-      }
-    : undefined;
+  const carouselMaxHeightStyle =
+    previewHeight && isDesktop ? { maxHeight: `${previewHeight}px` } : undefined;
 
   const titleText = title?.trim() ?? "";
   const subtitleText = subtitle?.trim() ?? "";
@@ -174,10 +169,10 @@ export function LibrarySection({
             </div>
 
             <div
-              className="box-border flex w-full min-w-0 flex-col lg:row-span-2 lg:h-full lg:max-w-[344px]"
-              style={carouselHeightStyle}
+              className="box-border flex h-auto w-full min-w-0 flex-col items-start lg:row-span-2 lg:max-w-[344px]"
+              style={carouselMaxHeightStyle}
             >
-              <div className="min-h-0">
+              <div className="min-h-0 w-full">
                 <LibraryCarousel
                   items={actions}
                   selectedId={selectedActionId}
@@ -187,7 +182,6 @@ export function LibrarySection({
                   onReorderItem={onReorderAction}
                 />
               </div>
-
               {notes ? <div className="mt-4 w-full">{notes}</div> : null}
             </div>
           </div>
