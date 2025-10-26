@@ -40,7 +40,7 @@ export function LibraryCarousel({
 
   const cardFrameStyle = useMemo<CSSProperties>(() => {
     const baseStyle: CSSProperties = {
-      aspectRatio: isMobile ? "3 / 4" : "4 / 3",
+      aspectRatio: "4 / 3",
     };
 
     if (isMobile) {
@@ -175,7 +175,7 @@ export function LibraryCarousel({
               const shouldRenderOverlayLabel = isMobile && !itemHideLabel;
 
               const mergedVisualWrapperClassName = isMobile
-                ? [itemVisualWrapperClassName, "aspect-[3/4] w-full md:aspect-[4/3]"]
+                ? [itemVisualWrapperClassName, "aspect-[4/3] w-full"]
                     .filter(Boolean)
                     .join(" ")
                 : itemVisualWrapperClassName;
@@ -325,7 +325,7 @@ export function LibraryCarousel({
                 data-library-carousel-item="add"
                 className="h-full w-full max-w-full md:mx-auto md:h-auto"
                 hideLabel
-                visualWrapperClassName="aspect-[3/4] w-full overflow-visible bg-transparent md:aspect-[4/3]"
+                visualWrapperClassName="aspect-[4/3] w-full overflow-visible bg-transparent"
                 onClick={() => {
                   onAddItem?.();
                 }}
