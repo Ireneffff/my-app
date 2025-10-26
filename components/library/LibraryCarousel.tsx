@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { LibraryCard, type LibraryCardProps } from "./LibraryCard";
 
@@ -17,6 +24,11 @@ interface LibraryCarouselProps {
   onReorderItem?: (draggedItemId: string, targetItemId: string | null) => void;
 }
 
+type ReorderPreview = {
+  targetId: string;
+  position: "before" | "after";
+};
+
 export function LibraryCarousel({
   items,
   selectedId,
@@ -26,6 +38,9 @@ export function LibraryCarousel({
   onReorderItem,
 }: LibraryCarouselProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const itemRefs = useRef(new Map<string, HTMLDivElement>());
+  const previousPositionsRef = useRef(new Map<string, DOMRect>());
+  const dropTargetIdRef = useRef<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragPreview, setDragPreview] = useState<{
     id: string;
@@ -36,6 +51,9 @@ export function LibraryCarousel({
     translateX: number;
     translateY: number;
   } | null>(null);
+  const [reorderPreview, setReorderPreview] = useState<ReorderPreview | null>(
+    null,
+  );
   const hasItems = items.length > 0;
   const activeItemId = selectedId ?? items[0]?.id;
   const canReorderItems = typeof onReorderItem === "function";
@@ -48,6 +66,199 @@ export function LibraryCarousel({
     image.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
     return image;
   }, []);
+
+  const commitReorderPreview = useCallback((next: ReorderPreview | null) => {
+    setReorderPreview((previous) => {
+      if (
+        previous?.targetId === next?.targetId &&
+        previous?.position === next?.position
+      ) {
+        return previous;
+      }
+
+      return next;
+    });
+  }, []);
+
+  const renderedItems = useMemo(() => {
+    if (!draggingId) {
+      return items;
+    }
+
+    const draggedItem = items.find((item) => item.id === draggingId);
+
+    if (!draggedItem) {
+      return items;
+    }
+
+    const remainingItems = items.filter((item) => item.id !== draggingId);
+
+    if (!reorderPreview) {
+      const originalIndex = items.findIndex((item) => item.id === draggingId);
+      const safeIndex = Math.max(
+        0,
+        Math.min(originalIndex, remainingItems.length),
+      );
+      const nextItems = [...remainingItems];
+      nextItems.splice(safeIndex, 0, draggedItem);
+      return nextItems;
+    }
+
+    const nextItems = [...remainingItems];
+
+    const targetIndex = nextItems.findIndex(
+      (item) => item.id === reorderPreview.targetId,
+    );
+
+    if (targetIndex === -1) {
+      nextItems.push(draggedItem);
+      return nextItems;
+    }
+
+    const insertIndex =
+      reorderPreview.position === "before" ? targetIndex : targetIndex + 1;
+    const boundedIndex = Math.max(0, Math.min(insertIndex, nextItems.length));
+    nextItems.splice(boundedIndex, 0, draggedItem);
+    return nextItems;
+  }, [draggingId, items, reorderPreview]);
+
+  const dropTargetId = useMemo(() => {
+    if (!draggingId) {
+      return null;
+    }
+
+    const previewIndex = renderedItems.findIndex(
+      (item) => item.id === draggingId,
+    );
+
+    if (previewIndex === -1) {
+      return null;
+    }
+
+    return renderedItems[previewIndex + 1]?.id ?? null;
+  }, [draggingId, renderedItems]);
+
+  useEffect(() => {
+    dropTargetIdRef.current = dropTargetId;
+  }, [dropTargetId]);
+
+  const updatePreviewFromPointer = useCallback(
+    (clientY: number | null) => {
+      if (!draggingId || !canReorderItems) {
+        return;
+      }
+
+      if (typeof clientY !== "number" || Number.isNaN(clientY)) {
+        return;
+      }
+
+      const pointerY = clientY;
+
+      const entries = Array.from(itemRefs.current.entries())
+        .filter(([id]) => id !== draggingId)
+        .map(([id, element]) => ({ id, rect: element.getBoundingClientRect() }))
+        .sort((a, b) => a.rect.top - b.rect.top);
+
+      if (entries.length === 0) {
+        commitReorderPreview(null);
+        return;
+      }
+
+      const firstEntry = entries[0];
+      if (pointerY < firstEntry.rect.top + firstEntry.rect.height / 2) {
+        commitReorderPreview({ targetId: firstEntry.id, position: "before" });
+        return;
+      }
+
+      for (let index = 0; index < entries.length - 1; index += 1) {
+        const current = entries[index];
+        const next = entries[index + 1];
+
+        if (pointerY > current.rect.bottom && pointerY < next.rect.top) {
+          commitReorderPreview({ targetId: next.id, position: "before" });
+          return;
+        }
+      }
+
+      for (const entry of entries) {
+        if (pointerY >= entry.rect.top && pointerY <= entry.rect.bottom) {
+          const isBefore = pointerY < entry.rect.top + entry.rect.height / 2;
+          commitReorderPreview({
+            targetId: entry.id,
+            position: isBefore ? "before" : "after",
+          });
+          return;
+        }
+      }
+
+      const lastEntry = entries[entries.length - 1];
+      if (pointerY > lastEntry.rect.top + lastEntry.rect.height / 2) {
+        commitReorderPreview({ targetId: lastEntry.id, position: "after" });
+        return;
+      }
+
+      commitReorderPreview(null);
+    },
+    [canReorderItems, commitReorderPreview, draggingId],
+  );
+
+  useEffect(() => {
+    if (!draggingId) {
+      commitReorderPreview(null);
+    }
+  }, [draggingId, commitReorderPreview]);
+
+  useLayoutEffect(() => {
+    const nextPositions = new Map<string, DOMRect>();
+
+    itemRefs.current.forEach((element, id) => {
+      if (!element) {
+        return;
+      }
+
+      nextPositions.set(id, element.getBoundingClientRect());
+    });
+
+    const previousPositions = previousPositionsRef.current;
+
+    nextPositions.forEach((rect, id) => {
+      if (id === draggingId) {
+        return;
+      }
+
+      const element = itemRefs.current.get(id);
+      const previousRect = previousPositions.get(id);
+
+      if (!element || !previousRect) {
+        return;
+      }
+
+      const deltaX = previousRect.left - rect.left;
+      const deltaY = previousRect.top - rect.top;
+
+      if (Math.abs(deltaX) < 0.5 && Math.abs(deltaY) < 0.5) {
+        return;
+      }
+
+      element.style.transition = "none";
+      element.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+
+      requestAnimationFrame(() => {
+        element.style.transition = "transform 200ms ease";
+        element.style.transform = "";
+      });
+
+      element.addEventListener(
+        "transitionend",
+        () => {
+          element.style.transition = "";
+        },
+        { once: true },
+      );
+    });
+
+    previousPositionsRef.current = nextPositions;
+  }, [draggingId, renderedItems]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -88,6 +299,7 @@ export function LibraryCarousel({
 
           event.preventDefault();
           event.dataTransfer.dropEffect = "move";
+          updatePreviewFromPointer(event.clientY);
         }}
         onDrop={(event) => {
           if (!canReorderItems) {
@@ -95,21 +307,26 @@ export function LibraryCarousel({
           }
 
           event.preventDefault();
-          const draggedItemId = event.dataTransfer.getData("text/plain") || draggingId;
+          const draggedItemId =
+            event.dataTransfer.getData("text/plain") || draggingId;
 
           if (!draggedItemId) {
             setDraggingId(null);
             setDragPreview(null);
+            commitReorderPreview(null);
             return;
           }
 
-          onReorderItem?.(draggedItemId, null);
+          const finalTargetId = dropTargetIdRef.current ?? null;
+
+          onReorderItem?.(draggedItemId, finalTargetId);
           setDraggingId(null);
           setDragPreview(null);
+          commitReorderPreview(null);
         }}
       >
         {hasItems ? (
-          items.map((item) => {
+          renderedItems.map((item) => {
             const isActive = item.id === activeItemId;
             const isDragging = item.id === draggingId;
             const isPreviewing = dragPreview?.id === item.id;
@@ -126,6 +343,15 @@ export function LibraryCarousel({
             return (
               <div
                 key={item.id}
+                ref={(element) => {
+                  if (!element) {
+                    itemRefs.current.delete(item.id);
+                    return;
+                  }
+
+                  itemRefs.current.set(item.id, element);
+                }}
+                data-library-carousel-wrapper={item.id}
                 className={`relative flex snap-start justify-center ${
                   isDragging
                     ? "z-50 cursor-grabbing"
@@ -157,6 +383,7 @@ export function LibraryCarousel({
                   const offsetX = event.clientX - rect.left;
                   const offsetY = event.clientY - rect.top;
                   setDraggingId(item.id);
+                  commitReorderPreview(null);
                   setDragPreview({
                     id: item.id,
                     originLeft: rect.left,
@@ -170,6 +397,7 @@ export function LibraryCarousel({
                 onDragEnd={() => {
                   setDraggingId(null);
                   setDragPreview(null);
+                  commitReorderPreview(null);
                 }}
                 onDrag={(event) => {
                   if (!canReorderItems || draggingId !== item.id) {
@@ -194,6 +422,7 @@ export function LibraryCarousel({
                       translateY,
                     };
                   });
+                  updatePreviewFromPointer(event.clientY);
                 }}
                 onDragOver={(event) => {
                   if (!canReorderItems || draggingId === item.id) {
@@ -202,6 +431,7 @@ export function LibraryCarousel({
 
                   event.preventDefault();
                   event.dataTransfer.dropEffect = "move";
+                  updatePreviewFromPointer(event.clientY);
                 }}
                 onDrop={(event) => {
                   if (!canReorderItems) {
@@ -210,17 +440,29 @@ export function LibraryCarousel({
 
                   event.preventDefault();
                   event.stopPropagation();
-                  const draggedItemId = event.dataTransfer.getData("text/plain") || draggingId;
+                  const draggedItemId =
+                    event.dataTransfer.getData("text/plain") || draggingId;
 
-                  if (!draggedItemId || draggedItemId === item.id) {
+                  if (!draggedItemId) {
                     setDraggingId(null);
                     setDragPreview(null);
+                    commitReorderPreview(null);
                     return;
                   }
 
-                  onReorderItem?.(draggedItemId, item.id);
+                  if (draggedItemId === item.id) {
+                    setDraggingId(null);
+                    setDragPreview(null);
+                    commitReorderPreview(null);
+                    return;
+                  }
+
+                  const finalTargetId = dropTargetIdRef.current ?? null;
+
+                  onReorderItem?.(draggedItemId, finalTargetId);
                   setDraggingId(null);
                   setDragPreview(null);
+                  commitReorderPreview(null);
                 }}
               >
                 {onRemoveItem ? (
