@@ -45,10 +45,10 @@ export function LibraryCarousel({
   );
   const canReorderItems = typeof onReorderItem === "function";
   const itemFrameStyle = useMemo(() => {
-    const targetWidth = isMobile ? 220 : 300;
+    const maxWidth = isMobile ? 220 : 320;
 
     return {
-      width: `min(100%, ${targetWidth}px)`,
+      width: `min(100%, ${maxWidth}px)`,
     };
   }, [isMobile]);
 
@@ -185,10 +185,10 @@ export function LibraryCarousel({
   }, [items, hasItems]);
 
   const scrollContainerClassName = useMemo(() => {
-    const baseClassName = "flex h-full items-start gap-4 scroll-smooth";
+    const baseClassName = "flex items-center gap-4 scroll-smooth snap-mandatory";
     const directionClassName = isMobile
-      ? "flex-col overflow-y-auto overflow-x-hidden"
-      : "flex-row overflow-x-auto overflow-y-hidden";
+      ? "flex-row overflow-x-auto overflow-y-hidden snap-x"
+      : "flex-col overflow-y-auto overflow-x-hidden snap-y";
 
     return `${baseClassName} ${directionClassName}`;
   }, [isMobile]);
@@ -265,9 +265,7 @@ export function LibraryCarousel({
               return (
                 <div
                   key={item.id}
-                  className={`flex flex-shrink-0 snap-start justify-center ${
-                    isMobile ? "w-full" : "w-auto"
-                  }`}
+                  className="flex flex-shrink-0 snap-center justify-center"
                 >
                   <div
                     ref={(node) => setItemRef(item.id, node)}
@@ -355,11 +353,7 @@ export function LibraryCarousel({
               );
             })
           ) : (
-            <div
-              className={`flex flex-shrink-0 snap-start justify-center ${
-                isMobile ? "w-full" : "w-auto"
-              }`}
-            >
+            <div className="flex flex-shrink-0 snap-center justify-center">
               <div
                 className="relative flex-shrink-0"
                 style={itemFrameStyle}
@@ -386,9 +380,7 @@ export function LibraryCarousel({
           {onAddItem ? (
             <div
               key="library-add-card-wrapper"
-              className={`flex flex-shrink-0 snap-start items-center justify-center ${
-                isMobile ? "w-full" : "w-auto"
-              }`}
+              className="flex flex-shrink-0 snap-center items-center justify-center"
             >
               <div
                 className="relative flex-shrink-0"
