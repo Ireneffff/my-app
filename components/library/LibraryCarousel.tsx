@@ -116,15 +116,17 @@ export function LibraryCarousel({
         className="flex h-full flex-col"
       >
         <div
-          className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto scroll-smooth snap-y snap-mandatory py-3 scroll-py-6"
+          className="flex h-full min-h-0 snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-visible scroll-smooth py-3 md:flex-col md:snap-y md:overflow-x-hidden md:overflow-y-auto md:scroll-py-6"
         >
           {hasItems ? (
             items.map((item, index) => {
               const isActive = item.id === activeItemId;
               const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
+              const baseWidthClasses =
+                "w-full basis-full flex-shrink-0 md:basis-auto md:flex-shrink md:max-w-[calc(100%-1rem)]";
               const combinedClassName = itemClassName
-                ? `${itemClassName} w-full max-w-[calc(100%-1rem)]`
-                : "w-full max-w-[calc(100%-1rem)]";
+                ? `${itemClassName} ${baseWidthClasses}`
+                : baseWidthClasses;
               const shouldDim = hasItems && !isActive;
               const canMoveUp = canReorderItems && index > 0;
               const canMoveDown = canReorderItems && index < items.length - 1;
@@ -163,7 +165,7 @@ export function LibraryCarousel({
                   key={item.id}
                   ref={(node) => setItemRef(item.id, node)}
                   data-library-carousel-wrapper={item.id}
-                  className="group/item relative flex snap-start justify-center"
+                  className="group/item relative flex snap-center justify-center md:snap-start"
                 >
                   <div className="absolute right-4 top-4 z-40 flex flex-col items-end gap-2">
                     {onRemoveItem ? (
@@ -199,12 +201,34 @@ export function LibraryCarousel({
                     ) : null}
                   </div>
 
+                  <div className="absolute inset-y-0 left-0 z-40 flex items-center md:hidden">
+                    {canReorderItems ? (
+                      <ReorderArrowButton
+                        direction="left"
+                        ariaLabel={`Sposta ${item.label} a sinistra`}
+                        onClick={handleMoveUp}
+                        disabled={!canMoveUp}
+                      />
+                    ) : null}
+                  </div>
+
+                  <div className="absolute inset-y-0 right-0 z-40 flex items-center md:hidden">
+                    {canReorderItems ? (
+                      <ReorderArrowButton
+                        direction="right"
+                        ariaLabel={`Sposta ${item.label} a destra`}
+                        onClick={handleMoveDown}
+                        disabled={!canMoveDown}
+                      />
+                    ) : null}
+                  </div>
+
                   <LibraryCard
                     {...restItem}
                     isActive={isActive}
                     isDimmed={shouldDim}
                     data-library-carousel-item={item.id}
-                    className={`${combinedClassName} mx-auto`}
+                    className={`${combinedClassName} mx-0 md:mx-auto`}
                     onClick={(event) => {
                       onSelectItem?.(item.id);
                       itemOnClick?.(event);
@@ -214,7 +238,7 @@ export function LibraryCarousel({
               );
             })
           ) : (
-            <div className="mx-auto flex h-[180px] w-full max-w-[calc(100%-1rem)] snap-start items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
+            <div className="flex h-[180px] w-full max-w-full snap-center items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg md:mx-auto md:max-w-[calc(100%-1rem)] md:snap-start">
               Nessuna card
             </div>
           )}
@@ -227,7 +251,7 @@ export function LibraryCarousel({
               isActive={false}
               isDimmed={false}
               data-library-carousel-item="add"
-              className="mx-auto w-full max-w-[calc(100%-1rem)] snap-start"
+              className="w-full max-w-full snap-center md:mx-auto md:max-w-[calc(100%-1rem)] md:snap-start"
               hideLabel
               visualWrapperClassName="h-32 w-full overflow-visible bg-transparent"
               onClick={() => {
@@ -249,7 +273,7 @@ export function LibraryCarousel({
 }
 
 interface ReorderArrowButtonProps {
-  direction: "up" | "down";
+  direction: "up" | "down" | "left" | "right";
   ariaLabel: string;
   disabled?: boolean;
   onClick: (event: ReactMouseEvent<HTMLButtonElement>) => void;
@@ -267,15 +291,20 @@ function ReorderArrowButton({
       aria-label={ariaLabel}
       onClick={onClick}
       disabled={disabled}
-      className="pointer-events-auto inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/60 bg-white/95 text-neutral-500 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.45)] transition-colors hover:text-neutral-900 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:opacity-40 disabled:hover:text-neutral-500"
+      className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/60 bg-white/95 text-neutral-500 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.45)] transition-colors hover:text-neutral-900 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:opacity-40 disabled:hover:text-neutral-500 md:h-7 md:w-7"
     >
       <ArrowIcon direction={direction} />
     </button>
   );
 }
 
-function ArrowIcon({ direction }: { direction: "up" | "down" }) {
-  const rotation = direction === "up" ? "rotate(0deg)" : "rotate(180deg)";
+function ArrowIcon({ direction }: { direction: "up" | "down" | "left" | "right" }) {
+  const rotation = {
+    up: "rotate(0deg)",
+    right: "rotate(90deg)",
+    down: "rotate(180deg)",
+    left: "rotate(270deg)",
+  }[direction];
 
   return (
     <svg
