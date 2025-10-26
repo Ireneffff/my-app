@@ -6,7 +6,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
   type MouseEvent as ReactMouseEvent,
 } from "react";
 
@@ -37,19 +36,6 @@ export function LibraryCarousel({
   const itemRefs = useRef(new Map<string, HTMLDivElement>());
   const previousPositionsRef = useRef(new Map<string, DOMRect>());
   const [isMobile, setIsMobile] = useState(false);
-
-  const cardFrameStyle = useMemo<CSSProperties>(() => {
-    const baseStyle: CSSProperties = {
-      width: "100%",
-      aspectRatio: "4 / 3",
-    };
-
-    if (!isMobile) {
-      baseStyle.maxWidth = "360px";
-    }
-
-    return baseStyle;
-  }, [isMobile]);
 
   const hasItems = items.length > 0;
   const activeItemId = useMemo(
@@ -174,12 +160,6 @@ export function LibraryCarousel({
               const shouldHideLabel = isMobile ? true : Boolean(itemHideLabel);
               const shouldRenderOverlayLabel = isMobile && !itemHideLabel;
 
-              const mergedVisualWrapperClassName = [
-                "aspect-[4/3] w-full",
-                itemVisualWrapperClassName,
-              ]
-                .filter(Boolean)
-                .join(" ");
               const resolvedAriaLabel =
                 itemAriaLabel ??
                 (shouldHideLabel && !itemHideLabel ? item.label : undefined);
@@ -218,7 +198,7 @@ export function LibraryCarousel({
                   key={item.id}
                   ref={(node) => setItemRef(item.id, node)}
                   data-library-carousel-wrapper={item.id}
-                  className="group/item relative flex w-full snap-center items-stretch justify-center md:w-auto md:snap-start"
+                  className="group/item relative flex w-full snap-center items-center justify-center md:w-auto md:snap-start"
                 >
                   <div className="absolute right-3 top-3 z-40 flex flex-col items-end gap-2 md:right-4 md:top-4">
                     {onRemoveItem ? (
@@ -276,10 +256,7 @@ export function LibraryCarousel({
                     ) : null}
                   </div>
 
-                  <div
-                    className="relative w-full"
-                    style={cardFrameStyle}
-                  >
+                  <div className="relative w-full md:max-w-[360px]">
                     <LibraryCard
                       {...restItem}
                       isActive={isActive}
@@ -288,7 +265,7 @@ export function LibraryCarousel({
                       className={`${combinedClassName} mx-0 md:mx-auto`}
                       hideLabel={shouldHideLabel}
                       aria-label={resolvedAriaLabel}
-                      visualWrapperClassName={mergedVisualWrapperClassName || undefined}
+                      visualWrapperClassName={itemVisualWrapperClassName}
                       onClick={(event) => {
                         onSelectItem?.(item.id);
                         itemOnClick?.(event);
@@ -304,11 +281,21 @@ export function LibraryCarousel({
               );
             })
           ) : (
-            <div
-              className="flex w-full max-w-full snap-center items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg md:mx-auto md:max-w-[calc(100%-1rem)] md:snap-start"
-              style={cardFrameStyle}
-            >
-              Nessuna card
+            <div className="flex w-full snap-center justify-center md:w-auto md:snap-start">
+              <LibraryCard
+                label="Nessuna card"
+                aria-label="Nessuna card disponibile"
+                disabled
+                hideLabel
+                isActive={false}
+                isDimmed={false}
+                className="w-full max-w-full md:mx-auto md:max-w-[360px]"
+                visual={
+                  <span className="flex h-full w-full items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
+                    Nessuna card
+                  </span>
+                }
+              />
             </div>
           )}
 
@@ -316,7 +303,6 @@ export function LibraryCarousel({
             <div
               key="library-add-card-wrapper"
               className="flex w-full items-center justify-center snap-center md:mx-auto md:block md:max-w-[calc(100%-1rem)] md:snap-start"
-              style={cardFrameStyle}
             >
               <LibraryCard
                 label="Nuova immagine"
@@ -326,7 +312,7 @@ export function LibraryCarousel({
                 data-library-carousel-item="add"
                 className="w-full max-w-full md:mx-auto"
                 hideLabel
-                visualWrapperClassName="aspect-[4/3] w-full overflow-visible bg-transparent"
+                visualWrapperClassName="w-full overflow-visible bg-transparent"
                 onClick={() => {
                   onAddItem?.();
                 }}
