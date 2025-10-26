@@ -2,11 +2,10 @@
 
 import {
   useCallback,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
-  useState,
+  type MouseEvent as ReactMouseEvent,
 } from "react";
 
 import { LibraryCard, type LibraryCardProps } from "./LibraryCard";
@@ -24,11 +23,6 @@ interface LibraryCarouselProps {
   onReorderItem?: (draggedItemId: string, targetItemId: string | null) => void;
 }
 
-type ReorderPreview = {
-  targetId: string;
-  position: "before" | "after";
-};
-
 export function LibraryCarousel({
   items,
   selectedId,
@@ -40,600 +34,264 @@ export function LibraryCarousel({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef(new Map<string, HTMLDivElement>());
   const previousPositionsRef = useRef(new Map<string, DOMRect>());
-  const dropTargetIdRef = useRef<string | null>(null);
-  const pointerUpdateRef = useRef<number | null>(null);
-  const pointerFrameRef = useRef<number | null>(null);
-  const dragPointerRef = useRef<{ x: number; y: number } | null>(null);
-  const dragFrameRef = useRef<number | null>(null);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dragPreview, setDragPreview] = useState<{
-    id: string;
-    originLeft: number;
-    originTop: number;
-    offsetX: number;
-    offsetY: number;
-    translateX: number;
-    translateY: number;
-  } | null>(null);
-  const [reorderPreview, setReorderPreview] = useState<ReorderPreview | null>(
-    null,
-  );
+
   const hasItems = items.length > 0;
-  const activeItemId = selectedId ?? items[0]?.id;
+  const activeItemId = useMemo(
+    () => selectedId ?? items[0]?.id,
+    [items, selectedId],
+  );
   const canReorderItems = typeof onReorderItem === "function";
-  const draggingIdRef = useRef<string | null>(draggingId);
-  const canReorderRef = useRef(canReorderItems);
-  const emptyDragImage = useMemo(() => {
-    if (typeof window === "undefined") {
-      return null;
+
+  const setItemRef = useCallback((itemId: string, node: HTMLDivElement | null) => {
+    if (!node) {
+      itemRefs.current.delete(itemId);
+      return;
     }
 
-    const image = new Image();
-    image.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
-    return image;
+    itemRefs.current.set(itemId, node);
   }, []);
-
-  const commitReorderPreview = useCallback((next: ReorderPreview | null) => {
-    setReorderPreview((previous) => {
-      if (
-        previous?.targetId === next?.targetId &&
-        previous?.position === next?.position
-      ) {
-        return previous;
-      }
-
-      return next;
-    });
-  }, []);
-
-  const renderedItems = useMemo(() => {
-    if (!draggingId) {
-      return items;
-    }
-
-    const draggedItem = items.find((item) => item.id === draggingId);
-
-    if (!draggedItem) {
-      return items;
-    }
-
-    const remainingItems = items.filter((item) => item.id !== draggingId);
-
-    if (!reorderPreview) {
-      const originalIndex = items.findIndex((item) => item.id === draggingId);
-      const safeIndex = Math.max(
-        0,
-        Math.min(originalIndex, remainingItems.length),
-      );
-      const nextItems = [...remainingItems];
-      nextItems.splice(safeIndex, 0, draggedItem);
-      return nextItems;
-    }
-
-    const nextItems = [...remainingItems];
-
-    const targetIndex = nextItems.findIndex(
-      (item) => item.id === reorderPreview.targetId,
-    );
-
-    if (targetIndex === -1) {
-      nextItems.push(draggedItem);
-      return nextItems;
-    }
-
-    const insertIndex =
-      reorderPreview.position === "before" ? targetIndex : targetIndex + 1;
-    const boundedIndex = Math.max(0, Math.min(insertIndex, nextItems.length));
-    nextItems.splice(boundedIndex, 0, draggedItem);
-    return nextItems;
-  }, [draggingId, items, reorderPreview]);
-
-  const dropTargetId = useMemo(() => {
-    if (!draggingId) {
-      return null;
-    }
-
-    const previewIndex = renderedItems.findIndex(
-      (item) => item.id === draggingId,
-    );
-
-    if (previewIndex === -1) {
-      return null;
-    }
-
-    return renderedItems[previewIndex + 1]?.id ?? null;
-  }, [draggingId, renderedItems]);
-
-  useEffect(() => {
-    dropTargetIdRef.current = dropTargetId;
-  }, [dropTargetId]);
-
-  const resetScheduledFrames = useCallback(() => {
-    if (pointerFrameRef.current !== null) {
-      cancelAnimationFrame(pointerFrameRef.current);
-      pointerFrameRef.current = null;
-    }
-
-    if (dragFrameRef.current !== null) {
-      cancelAnimationFrame(dragFrameRef.current);
-      dragFrameRef.current = null;
-    }
-
-    pointerUpdateRef.current = null;
-    dragPointerRef.current = null;
-  }, []);
-
-  useEffect(() => {
-    draggingIdRef.current = draggingId;
-  }, [draggingId]);
-
-  useEffect(() => {
-    canReorderRef.current = canReorderItems;
-  }, [canReorderItems]);
-
-  useEffect(() => {
-    return () => {
-      if (pointerFrameRef.current !== null) {
-        cancelAnimationFrame(pointerFrameRef.current);
-      }
-
-      if (dragFrameRef.current !== null) {
-        cancelAnimationFrame(dragFrameRef.current);
-      }
-    };
-  }, []);
-
-  const flushPointerUpdate = useCallback(() => {
-    pointerFrameRef.current = null;
-    const activeDraggingId = draggingIdRef.current;
-
-    if (!canReorderRef.current || !activeDraggingId) {
-      return;
-    }
-
-    const pointerY = pointerUpdateRef.current;
-    pointerUpdateRef.current = null;
-
-    if (typeof pointerY !== "number" || Number.isNaN(pointerY)) {
-      return;
-    }
-
-    const entries = Array.from(itemRefs.current.entries())
-      .filter(([id]) => id !== activeDraggingId)
-      .map(([id, element]) => ({ id, rect: element.getBoundingClientRect() }))
-      .sort((a, b) => a.rect.top - b.rect.top);
-
-    if (entries.length === 0) {
-      commitReorderPreview(null);
-      return;
-    }
-
-    const firstEntry = entries[0];
-    if (pointerY < firstEntry.rect.top + firstEntry.rect.height / 2) {
-      commitReorderPreview({ targetId: firstEntry.id, position: "before" });
-      return;
-    }
-
-    for (let index = 0; index < entries.length - 1; index += 1) {
-      const current = entries[index];
-      const next = entries[index + 1];
-
-      if (pointerY > current.rect.bottom && pointerY < next.rect.top) {
-        commitReorderPreview({ targetId: next.id, position: "before" });
-        return;
-      }
-    }
-
-    for (const entry of entries) {
-      if (pointerY >= entry.rect.top && pointerY <= entry.rect.bottom) {
-        const isBefore = pointerY < entry.rect.top + entry.rect.height / 2;
-        commitReorderPreview({
-          targetId: entry.id,
-          position: isBefore ? "before" : "after",
-        });
-        return;
-      }
-    }
-
-    const lastEntry = entries[entries.length - 1];
-    if (pointerY > lastEntry.rect.top + lastEntry.rect.height / 2) {
-      commitReorderPreview({ targetId: lastEntry.id, position: "after" });
-      return;
-    }
-
-    commitReorderPreview(null);
-  }, [commitReorderPreview]);
-
-  const updatePreviewFromPointer = useCallback(
-    (clientY: number | null) => {
-      if (!canReorderRef.current || !draggingIdRef.current) {
-        return;
-      }
-
-      if (typeof clientY !== "number" || Number.isNaN(clientY)) {
-        return;
-      }
-
-      pointerUpdateRef.current = clientY;
-
-      if (pointerFrameRef.current === null) {
-        pointerFrameRef.current = requestAnimationFrame(flushPointerUpdate);
-      }
-    },
-    [flushPointerUpdate],
-  );
-
-  const flushDragPreview = useCallback(() => {
-    dragFrameRef.current = null;
-
-    const pointer = dragPointerRef.current;
-    dragPointerRef.current = null;
-
-    if (!pointer) {
-      return;
-    }
-
-    setDragPreview((previous) => {
-      if (!previous || draggingIdRef.current !== previous.id) {
-        return previous;
-      }
-
-      const translateX = pointer.x - previous.originLeft - previous.offsetX;
-      const translateY = pointer.y - previous.originTop - previous.offsetY;
-
-      if (
-        Math.abs(translateX - previous.translateX) < 0.5 &&
-        Math.abs(translateY - previous.translateY) < 0.5
-      ) {
-        return previous;
-      }
-
-      return {
-        ...previous,
-        translateX,
-        translateY,
-      };
-    });
-  }, []);
-
-  const queueDragPreviewUpdate = useCallback(
-    (clientX: number, clientY: number) => {
-      dragPointerRef.current = { x: clientX, y: clientY };
-
-      if (dragFrameRef.current === null) {
-        dragFrameRef.current = requestAnimationFrame(flushDragPreview);
-      }
-    },
-    [flushDragPreview],
-  );
-
-  useEffect(() => {
-    if (!draggingId) {
-      resetScheduledFrames();
-      commitReorderPreview(null);
-    }
-  }, [draggingId, commitReorderPreview, resetScheduledFrames]);
 
   useLayoutEffect(() => {
-    const nextPositions = new Map<string, DOMRect>();
+    if (!hasItems) {
+      previousPositionsRef.current.clear();
+      return;
+    }
 
-    itemRefs.current.forEach((element, id) => {
+    const entries = Array.from(itemRefs.current.entries());
+    const newPositions = new Map<string, DOMRect>();
+    const frameIds: number[] = [];
+
+    for (const [id, element] of entries) {
       if (!element) {
-        return;
+        continue;
       }
 
-      nextPositions.set(id, element.getBoundingClientRect());
-    });
+      const rect = element.getBoundingClientRect();
+      newPositions.set(id, rect);
 
-    const previousPositions = previousPositionsRef.current;
+      const previousRect = previousPositionsRef.current.get(id);
 
-    nextPositions.forEach((rect, id) => {
-      if (id === draggingId) {
-        return;
-      }
-
-      const element = itemRefs.current.get(id);
-      const previousRect = previousPositions.get(id);
-
-      if (!element || !previousRect) {
-        return;
+      if (!previousRect) {
+        continue;
       }
 
       const deltaX = previousRect.left - rect.left;
       const deltaY = previousRect.top - rect.top;
 
       if (Math.abs(deltaX) < 0.5 && Math.abs(deltaY) < 0.5) {
-        return;
+        continue;
       }
 
       element.style.transition = "none";
       element.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0)`;
-      element.style.willChange = "transform";
+      element.getBoundingClientRect();
 
-      requestAnimationFrame(() => {
+      const frameId = window.requestAnimationFrame(() => {
         element.style.transition =
-          "transform 320ms cubic-bezier(0.22, 1, 0.36, 1)";
+          "transform 340ms cubic-bezier(0.22, 1, 0.36, 1)";
         element.style.transform = "";
       });
 
-      element.addEventListener(
-        "transitionend",
-        () => {
-          element.style.transition = "";
-          element.style.willChange = "";
-        },
-        { once: true },
-      );
-    });
+      frameIds.push(frameId);
 
-    previousPositionsRef.current = nextPositions;
-  }, [draggingId, renderedItems]);
+      const handleTransitionEnd = () => {
+        element.style.transition = "";
+        element.removeEventListener("transitionend", handleTransitionEnd);
+      };
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || !activeItemId) {
-      return;
+      element.addEventListener("transitionend", handleTransitionEnd);
     }
 
-    const escapedId = (() => {
-      if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
-        return CSS.escape(activeItemId);
-      }
+    previousPositionsRef.current = newPositions;
 
-      return activeItemId.replace(/['"\\]/g, "\\$&");
-    })();
-
-    const target = container.querySelector<HTMLElement>(
-      `[data-library-carousel-item="${escapedId}"]`,
-    );
-
-    if (!target) {
-      return;
-    }
-
-    target.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [activeItemId, items.length]);
+    return () => {
+      frameIds.forEach((id) => window.cancelAnimationFrame(id));
+    };
+  }, [items, hasItems]);
 
   return (
-    <div
-      ref={containerRef}
-      className="flex h-full flex-col"
-    >
+    <div className="relative flex h-full w-full flex-col overflow-hidden rounded-3xl border border-[#E6E6E6] bg-[#F7F7F7] p-4 shadow-[0_20px_60px_-50px_rgba(15,23,42,0.45)]">
       <div
-        className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto scroll-smooth snap-y snap-mandatory py-3 scroll-py-6"
-        onDragOver={(event) => {
-          if (!draggingId || !canReorderItems) {
-            return;
-          }
-
-          event.preventDefault();
-          event.dataTransfer.dropEffect = "move";
-          updatePreviewFromPointer(event.clientY);
-        }}
-        onDrop={(event) => {
-          if (!canReorderItems) {
-            return;
-          }
-
-          event.preventDefault();
-          const draggedItemId =
-            event.dataTransfer.getData("text/plain") || draggingId;
-
-          if (!draggedItemId) {
-            setDraggingId(null);
-            setDragPreview(null);
-            commitReorderPreview(null);
-            resetScheduledFrames();
-            return;
-          }
-
-          const finalTargetId = dropTargetIdRef.current ?? null;
-
-          onReorderItem?.(draggedItemId, finalTargetId);
-          setDraggingId(null);
-          setDragPreview(null);
-          commitReorderPreview(null);
-          resetScheduledFrames();
-        }}
+        ref={containerRef}
+        className="flex h-full flex-col"
       >
-        {hasItems ? (
-          renderedItems.map((item) => {
-            const isActive = item.id === activeItemId;
-            const isDragging = item.id === draggingId;
-            const isPreviewing = dragPreview?.id === item.id;
-            const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
-            const combinedClassName = itemClassName
-              ? `${itemClassName} w-full max-w-[calc(100%-1rem)]`
-              : "w-full max-w-[calc(100%-1rem)]";
-            const shouldDim = hasItems && !isActive;
-            const dragTranslation =
-              isDragging && isPreviewing
-                ? `translate3d(${dragPreview.translateX}px, ${dragPreview.translateY}px, 0)`
-                : undefined;
+        <div
+          className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto scroll-smooth snap-y snap-mandatory py-3 scroll-py-6"
+        >
+          {hasItems ? (
+            items.map((item, index) => {
+              const isActive = item.id === activeItemId;
+              const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
+              const combinedClassName = itemClassName
+                ? `${itemClassName} w-full max-w-[calc(100%-1rem)]`
+                : "w-full max-w-[calc(100%-1rem)]";
+              const shouldDim = hasItems && !isActive;
+              const canMoveUp = canReorderItems && index > 0;
+              const canMoveDown = canReorderItems && index < items.length - 1;
 
-            return (
-              <div
-                key={item.id}
-                ref={(element) => {
-                  if (!element) {
-                    itemRefs.current.delete(item.id);
-                    return;
-                  }
+              const handleMoveUp = (event: ReactMouseEvent<HTMLButtonElement>) => {
+                event.preventDefault();
+                event.stopPropagation();
 
-                  itemRefs.current.set(item.id, element);
-                }}
-                data-library-carousel-wrapper={item.id}
-                className={`relative flex snap-start justify-center ${
-                  isDragging
-                    ? "z-50 cursor-grabbing"
-                    : canReorderItems
-                      ? "cursor-grab"
-                      : ""
-                }`}
-                style={
-                  dragTranslation
-                    ? {
-                        transform: `${dragTranslation}`,
-                        transition: "none",
-                      }
-                    : undefined
+                if (!canReorderItems || !canMoveUp) {
+                  return;
                 }
-                draggable={canReorderItems}
-                onDragStart={(event) => {
-                  if (!canReorderItems) {
-                    return;
-                  }
 
-                  event.stopPropagation();
-                  event.dataTransfer.effectAllowed = "move";
-                  event.dataTransfer.setData("text/plain", item.id);
-                  if (emptyDragImage) {
-                    event.dataTransfer.setDragImage(emptyDragImage, 0, 0);
-                  }
-                  const rect = event.currentTarget.getBoundingClientRect();
-                  const offsetX = event.clientX - rect.left;
-                  const offsetY = event.clientY - rect.top;
-                  resetScheduledFrames();
-                  setDraggingId(item.id);
-                  commitReorderPreview(null);
-                  setDragPreview({
-                    id: item.id,
-                    originLeft: rect.left,
-                    originTop: rect.top,
-                    offsetX,
-                    offsetY,
-                    translateX: 0,
-                    translateY: 0,
-                  });
-                  queueDragPreviewUpdate(event.clientX, event.clientY);
-                }}
-                onDragEnd={() => {
-                  setDraggingId(null);
-                  setDragPreview(null);
-                  commitReorderPreview(null);
-                  resetScheduledFrames();
-                }}
-                onDrag={(event) => {
-                  if (!canReorderItems || draggingId !== item.id) {
-                    return;
-                  }
+                const targetItem = items[index - 1];
 
-                  if (event.clientX === 0 && event.clientY === 0) {
-                    return;
-                  }
+                if (!targetItem) {
+                  return;
+                }
 
-                  queueDragPreviewUpdate(event.clientX, event.clientY);
-                  updatePreviewFromPointer(event.clientY);
-                }}
-                onDragOver={(event) => {
-                  if (!canReorderItems || draggingId === item.id) {
-                    return;
-                  }
+                onReorderItem?.(item.id, targetItem.id);
+              };
 
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = "move";
-                  updatePreviewFromPointer(event.clientY);
-                }}
-                onDrop={(event) => {
-                  if (!canReorderItems) {
-                    return;
-                  }
+              const handleMoveDown = (event: ReactMouseEvent<HTMLButtonElement>) => {
+                event.preventDefault();
+                event.stopPropagation();
 
-                  event.preventDefault();
-                  event.stopPropagation();
-                  const draggedItemId =
-                    event.dataTransfer.getData("text/plain") || draggingId;
+                if (!canReorderItems || !canMoveDown) {
+                  return;
+                }
 
-                  if (!draggedItemId) {
-                    setDraggingId(null);
-                    setDragPreview(null);
-                    commitReorderPreview(null);
-                    resetScheduledFrames();
-                    return;
-                  }
+                const targetAfterItem = items[index + 2];
+                onReorderItem?.(item.id, targetAfterItem?.id ?? null);
+              };
 
-                  if (draggedItemId === item.id) {
-                    setDraggingId(null);
-                    setDragPreview(null);
-                    commitReorderPreview(null);
-                    resetScheduledFrames();
-                    return;
-                  }
+              return (
+                <div
+                  key={item.id}
+                  ref={(node) => setItemRef(item.id, node)}
+                  data-library-carousel-wrapper={item.id}
+                  className="group/item relative flex snap-start justify-center"
+                >
+                  <div className="absolute right-4 top-4 z-40 flex flex-col items-end gap-2">
+                    {onRemoveItem ? (
+                      <button
+                        type="button"
+                        aria-label={`Rimuovi ${item.label}`}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          onRemoveItem(item.id);
+                        }}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-white/95 text-neutral-500 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] transition-colors hover:text-neutral-900 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                      >
+                        <CloseIcon />
+                      </button>
+                    ) : null}
 
-                  const finalTargetId = dropTargetIdRef.current ?? null;
+                    {canReorderItems ? (
+                      <div className="pointer-events-none flex flex-col items-center gap-1 opacity-0 transition-opacity duration-200 group-hover/item:opacity-100">
+                        <ReorderArrowButton
+                          direction="up"
+                          ariaLabel={`Sposta ${item.label} in alto`}
+                          onClick={handleMoveUp}
+                          disabled={!canMoveUp}
+                        />
+                        <ReorderArrowButton
+                          direction="down"
+                          ariaLabel={`Sposta ${item.label} in basso`}
+                          onClick={handleMoveDown}
+                          disabled={!canMoveDown}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
 
-                  onReorderItem?.(draggedItemId, finalTargetId);
-                  setDraggingId(null);
-                  setDragPreview(null);
-                  commitReorderPreview(null);
-                  resetScheduledFrames();
-                }}
-              >
-                {onRemoveItem ? (
-                  <button
-                    type="button"
-                    aria-label={`Rimuovi ${item.label}`}
+                  <LibraryCard
+                    {...restItem}
+                    isActive={isActive}
+                    isDimmed={shouldDim}
+                    data-library-carousel-item={item.id}
+                    className={`${combinedClassName} mx-auto`}
                     onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      onRemoveItem(item.id);
+                      onSelectItem?.(item.id);
+                      itemOnClick?.(event);
                     }}
-                    className="absolute right-4 top-4 z-40 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-white/95 text-neutral-500 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] transition-colors hover:text-neutral-900 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
-                  >
-                    <CloseIcon />
-                  </button>
-                ) : null}
+                  />
+                </div>
+              );
+            })
+          ) : (
+            <div className="mx-auto flex h-[180px] w-full max-w-[calc(100%-1rem)] snap-start items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
+              Nessuna card
+            </div>
+          )}
 
-                <LibraryCard
-                  {...restItem}
-                  isActive={isActive}
-                  isDimmed={shouldDim}
-                  data-library-carousel-item={item.id}
-                  aria-grabbed={isDragging}
-                  className={`${combinedClassName} mx-auto ${
-                    isDragging
-                      ? "scale-[1.08] opacity-90 shadow-[0_32px_80px_-48px_rgba(15,23,42,0.55)]"
-                      : ""
-                  }`}
-                  onClick={(event) => {
-                    onSelectItem?.(item.id);
-                    itemOnClick?.(event);
-                  }}
-                />
-              </div>
-            );
-          })
-        ) : (
-          <div className="mx-auto flex h-[180px] w-full max-w-[calc(100%-1rem)] snap-start items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
-            Nessuna card
-          </div>
-        )}
-
-        {onAddItem ? (
-          <LibraryCard
-            key="library-add-card"
-            label="Nuova immagine"
-            aria-label="Aggiungi una nuova card libreria"
-            isActive={false}
-            isDimmed={false}
-            data-library-carousel-item="add"
-            className="mx-auto w-full max-w-[calc(100%-1rem)] snap-start"
-            hideLabel
-            visualWrapperClassName="h-32 w-full overflow-visible bg-transparent"
-            onClick={() => {
-              onAddItem?.();
-            }}
-            visual={
-              <span className="flex h-full w-full items-center justify-center">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_22px_48px_-34px_rgba(15,23,42,0.45)]">
-                  <PlusIcon className="h-5 w-5 text-accent" />
+          {onAddItem ? (
+            <LibraryCard
+              key="library-add-card"
+              label="Nuova immagine"
+              aria-label="Aggiungi una nuova card libreria"
+              isActive={false}
+              isDimmed={false}
+              data-library-carousel-item="add"
+              className="mx-auto w-full max-w-[calc(100%-1rem)] snap-start"
+              hideLabel
+              visualWrapperClassName="h-32 w-full overflow-visible bg-transparent"
+              onClick={() => {
+                onAddItem?.();
+              }}
+              visual={
+                <span className="flex h-full w-full items-center justify-center">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_22px_48px_-34px_rgba(15,23,42,0.45)]">
+                    <PlusIcon className="h-5 w-5 text-accent" />
+                  </span>
                 </span>
-              </span>
-            }
-          />
-        ) : null}
+              }
+            />
+          ) : null}
+        </div>
       </div>
     </div>
+  );
+}
+
+interface ReorderArrowButtonProps {
+  direction: "up" | "down";
+  ariaLabel: string;
+  disabled?: boolean;
+  onClick: (event: ReactMouseEvent<HTMLButtonElement>) => void;
+}
+
+function ReorderArrowButton({
+  direction,
+  ariaLabel,
+  disabled = false,
+  onClick,
+}: ReorderArrowButtonProps) {
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      onClick={onClick}
+      disabled={disabled}
+      className="pointer-events-auto inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/60 bg-white/95 text-neutral-500 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.45)] transition-colors hover:text-neutral-900 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:opacity-40 disabled:hover:text-neutral-500"
+    >
+      <ArrowIcon direction={direction} />
+    </button>
+  );
+}
+
+function ArrowIcon({ direction }: { direction: "up" | "down" }) {
+  const rotation = direction === "up" ? "rotate(0deg)" : "rotate(180deg)";
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-3.5 w-3.5"
+      style={{ transform: rotation }}
+      aria-hidden="true"
+    >
+      <path d="m6 15 6-6 6 6" />
+    </svg>
   );
 }
 
