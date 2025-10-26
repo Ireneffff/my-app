@@ -5,6 +5,8 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
+  useState,
+  type CSSProperties,
   type MouseEvent as ReactMouseEvent,
 } from "react";
 
@@ -34,6 +36,29 @@ export function LibraryCarousel({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef(new Map<string, HTMLDivElement>());
   const previousPositionsRef = useRef(new Map<string, DOMRect>());
+  const [isMobile, setIsMobile] = useState(false);
+
+  const mobileCardFrameStyle = useMemo<CSSProperties | undefined>(() => {
+    if (!isMobile) {
+      return undefined;
+    }
+
+    return {
+      width: "100%",
+      maxWidth: "360px",
+      aspectRatio: "3 / 4",
+    } satisfies CSSProperties;
+  }, [isMobile]);
+
+  const mobileCarouselStyle = useMemo<CSSProperties | undefined>(() => {
+    if (!isMobile) {
+      return undefined;
+    }
+
+    return {
+      minHeight: "460px",
+    } satisfies CSSProperties;
+  }, [isMobile]);
 
   const hasItems = items.length > 0;
   const activeItemId = useMemo(
@@ -49,6 +74,24 @@ export function LibraryCarousel({
     }
 
     itemRefs.current.set(itemId, node);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+    const updateIsMobile = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+
+    updateIsMobile();
+    mediaQuery.addEventListener("change", updateIsMobile);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateIsMobile);
+    };
   }, []);
 
   useLayoutEffect(() => {
@@ -110,13 +153,16 @@ export function LibraryCarousel({
   }, [items, hasItems]);
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden rounded-3xl border border-[#E6E6E6] bg-[#F7F7F7] p-4 shadow-[0_20px_60px_-50px_rgba(15,23,42,0.45)]">
+    <div
+      className="relative flex h-full w-full flex-col overflow-hidden rounded-3xl border border-[#E6E6E6] bg-[#F7F7F7] p-4 shadow-[0_20px_60px_-50px_rgba(15,23,42,0.45)]"
+      style={mobileCarouselStyle}
+    >
       <div
         ref={containerRef}
         className="flex h-full flex-col"
       >
         <div
-          className="flex h-full min-h-0 snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-visible scroll-smooth py-3 md:flex-col md:snap-y md:overflow-x-hidden md:overflow-y-auto md:scroll-py-6"
+          className="flex h-full min-h-0 snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden scroll-smooth py-3 md:flex-col md:snap-y md:overflow-x-hidden md:overflow-y-auto md:scroll-py-6"
         >
           {hasItems ? (
             items.map((item, index) => {
@@ -125,8 +171,8 @@ export function LibraryCarousel({
               const baseWidthClasses =
                 "w-full basis-full flex-shrink-0 md:basis-auto md:flex-shrink md:max-w-[calc(100%-1rem)]";
               const combinedClassName = itemClassName
-                ? `${itemClassName} ${baseWidthClasses}`
-                : baseWidthClasses;
+                ? `${itemClassName} ${baseWidthClasses}${isMobile ? " h-full" : ""} md:h-auto`
+                : `${baseWidthClasses}${isMobile ? " h-full" : ""} md:h-auto`;
               const shouldDim = hasItems && !isActive;
               const canMoveUp = canReorderItems && index > 0;
               const canMoveDown = canReorderItems && index < items.length - 1;
@@ -165,7 +211,7 @@ export function LibraryCarousel({
                   key={item.id}
                   ref={(node) => setItemRef(item.id, node)}
                   data-library-carousel-wrapper={item.id}
-                  className="group/item relative flex snap-center justify-center md:snap-start"
+                  className="group/item relative flex w-full snap-center justify-center md:w-auto md:snap-start"
                 >
                   <div className="absolute right-4 top-4 z-40 flex flex-col items-end gap-2">
                     {onRemoveItem ? (
@@ -184,7 +230,7 @@ export function LibraryCarousel({
                     ) : null}
 
                     {canReorderItems ? (
-                      <div className="pointer-events-none flex flex-col items-center gap-1 opacity-0 transition-opacity duration-200 group-hover/item:opacity-100">
+                      <div className="pointer-events-none hidden flex-col items-center gap-1 opacity-0 transition-opacity duration-200 group-hover/item:opacity-100 md:flex">
                         <ReorderArrowButton
                           direction="up"
                           ariaLabel={`Sposta ${item.label} in alto`}
@@ -223,48 +269,61 @@ export function LibraryCarousel({
                     ) : null}
                   </div>
 
-                  <LibraryCard
-                    {...restItem}
-                    isActive={isActive}
-                    isDimmed={shouldDim}
-                    data-library-carousel-item={item.id}
-                    className={`${combinedClassName} mx-0 md:mx-auto`}
-                    onClick={(event) => {
-                      onSelectItem?.(item.id);
-                      itemOnClick?.(event);
-                    }}
-                  />
+                  <div
+                    className="flex w-full items-stretch justify-center md:block"
+                    style={mobileCardFrameStyle}
+                  >
+                    <LibraryCard
+                      {...restItem}
+                      isActive={isActive}
+                      isDimmed={shouldDim}
+                      data-library-carousel-item={item.id}
+                      className={`${combinedClassName} mx-0 md:mx-auto`}
+                      onClick={(event) => {
+                        onSelectItem?.(item.id);
+                        itemOnClick?.(event);
+                      }}
+                    />
+                  </div>
                 </div>
               );
             })
           ) : (
-            <div className="flex h-[180px] w-full max-w-full snap-center items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg md:mx-auto md:max-w-[calc(100%-1rem)] md:snap-start">
+            <div
+              className="flex w-full max-w-full snap-center items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg md:mx-auto md:max-w-[calc(100%-1rem)] md:snap-start"
+              style={mobileCardFrameStyle}
+            >
               Nessuna card
             </div>
           )}
 
           {onAddItem ? (
-            <LibraryCard
-              key="library-add-card"
-              label="Nuova immagine"
-              aria-label="Aggiungi una nuova card libreria"
-              isActive={false}
-              isDimmed={false}
-              data-library-carousel-item="add"
-              className="w-full max-w-full snap-center md:mx-auto md:max-w-[calc(100%-1rem)] md:snap-start"
-              hideLabel
-              visualWrapperClassName="h-32 w-full overflow-visible bg-transparent"
-              onClick={() => {
-                onAddItem?.();
-              }}
-              visual={
-                <span className="flex h-full w-full items-center justify-center">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_22px_48px_-34px_rgba(15,23,42,0.45)]">
-                    <PlusIcon className="h-5 w-5 text-accent" />
+            <div
+              key="library-add-card-wrapper"
+              className="flex w-full items-stretch justify-center snap-center md:mx-auto md:block md:max-w-[calc(100%-1rem)] md:snap-start"
+              style={mobileCardFrameStyle}
+            >
+              <LibraryCard
+                label="Nuova immagine"
+                aria-label="Aggiungi una nuova card libreria"
+                isActive={false}
+                isDimmed={false}
+                data-library-carousel-item="add"
+                className={`w-full max-w-full${isMobile ? " h-full" : ""} md:mx-auto md:h-auto`}
+                hideLabel
+                visualWrapperClassName="h-32 w-full overflow-visible bg-transparent"
+                onClick={() => {
+                  onAddItem?.();
+                }}
+                visual={
+                  <span className="flex h-full w-full items-center justify-center">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_22px_48px_-34px_rgba(15,23,42,0.45)]">
+                      <PlusIcon className="h-5 w-5 text-accent" />
+                    </span>
                   </span>
-                </span>
-              }
-            />
+                }
+              />
+            </div>
           ) : null}
         </div>
       </div>
