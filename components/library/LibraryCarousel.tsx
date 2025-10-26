@@ -38,16 +38,17 @@ export function LibraryCarousel({
   const previousPositionsRef = useRef(new Map<string, DOMRect>());
   const [isMobile, setIsMobile] = useState(false);
 
-  const mobileCardFrameStyle = useMemo<CSSProperties | undefined>(() => {
-    if (!isMobile) {
-      return undefined;
+  const cardFrameStyle = useMemo<CSSProperties>(() => {
+    const baseStyle: CSSProperties = {
+      aspectRatio: "4 / 3",
+    };
+
+    if (isMobile) {
+      baseStyle.width = "100%";
+      baseStyle.maxWidth = "360px";
     }
 
-    return {
-      width: "100%",
-      maxWidth: "360px",
-      aspectRatio: "4 / 3",
-    } satisfies CSSProperties;
+    return baseStyle;
   }, [isMobile]);
 
   const hasItems = items.length > 0;
@@ -258,7 +259,7 @@ export function LibraryCarousel({
 
                   <div
                     className="flex w-full items-stretch justify-center md:block"
-                    style={mobileCardFrameStyle}
+                    style={cardFrameStyle}
                   >
                     <LibraryCard
                       {...restItem}
@@ -278,7 +279,7 @@ export function LibraryCarousel({
           ) : (
             <div
               className="flex w-full max-w-full snap-center items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg md:mx-auto md:max-w-[calc(100%-1rem)] md:snap-start"
-              style={mobileCardFrameStyle}
+              style={cardFrameStyle}
             >
               Nessuna card
             </div>
@@ -288,7 +289,7 @@ export function LibraryCarousel({
             <div
               key="library-add-card-wrapper"
               className="flex w-full items-stretch justify-center snap-center md:mx-auto md:block md:max-w-[calc(100%-1rem)] md:snap-start"
-              style={mobileCardFrameStyle}
+              style={cardFrameStyle}
             >
               <LibraryCard
                 label="Nuova immagine"
