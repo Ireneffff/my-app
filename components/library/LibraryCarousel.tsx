@@ -22,6 +22,8 @@ interface LibraryCarouselProps {
   onAddItem?: () => void;
   onRemoveItem?: (itemId: string) => void;
   onReorderItem?: (draggedItemId: string, targetItemId: string | null) => void;
+  availableHeight?: number | null;
+  className?: string;
 }
 
 export function LibraryCarousel({
@@ -31,6 +33,8 @@ export function LibraryCarousel({
   onAddItem,
   onRemoveItem,
   onReorderItem,
+  availableHeight,
+  className,
 }: LibraryCarouselProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef(new Map<string, HTMLDivElement>());
@@ -45,12 +49,21 @@ export function LibraryCarousel({
   );
   const canReorderItems = typeof onReorderItem === "function";
   const itemFrameStyle = useMemo(() => {
-    const maxWidth = isMobile ? 220 : 320;
+    const desktopMaxWidth = 380;
+    const mobileMaxWidth = 220;
+    const baseMaxWidth = isMobile ? mobileMaxWidth : desktopMaxWidth;
+
+    const widthFromHeight =
+      !isMobile && typeof availableHeight === "number"
+        ? Math.min(availableHeight * (4 / 3), desktopMaxWidth)
+        : undefined;
+
+    const resolvedWidth = widthFromHeight ?? baseMaxWidth;
 
     return {
-      width: `min(100%, ${maxWidth}px)`,
+      width: `min(100%, ${resolvedWidth}px)`,
     };
-  }, [isMobile]);
+  }, [availableHeight, isMobile]);
 
   const setItemRef = useCallback((itemId: string, node: HTMLDivElement | null) => {
     if (!node) {
@@ -185,7 +198,7 @@ export function LibraryCarousel({
   }, [items, hasItems]);
 
   const scrollContainerClassName = useMemo(() => {
-    const baseClassName = "flex items-center gap-4 scroll-smooth snap-mandatory";
+    const baseClassName = "flex flex-1 items-center gap-4 scroll-smooth snap-mandatory";
     const directionClassName = isMobile
       ? "flex-row overflow-x-auto overflow-y-hidden snap-x"
       : "flex-col overflow-y-auto overflow-x-hidden snap-y";
@@ -193,16 +206,34 @@ export function LibraryCarousel({
     return `${baseClassName} ${directionClassName}`;
   }, [isMobile]);
 
-  const scrollContainerStyle = useMemo(
-    () => (cardHeight ? { height: `${cardHeight}px` } : undefined),
-    [cardHeight],
+  const scrollContainerStyle = useMemo(() => {
+    if (isMobile) {
+      return cardHeight ? { height: `${cardHeight}px` } : undefined;
+    }
+
+    if (typeof availableHeight === "number") {
+      return { height: `${availableHeight}px` };
+    }
+
+    return undefined;
+  }, [availableHeight, cardHeight, isMobile]);
+
+  const rootClassName = useMemo(
+    () =>
+      [
+        "relative flex w-full flex-col overflow-hidden rounded-3xl border border-[#E6E6E6] bg-[#F7F7F7] p-4 shadow-[0_20px_60px_-50px_rgba(15,23,42,0.45)]",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    [className],
   );
 
   return (
-    <div className="relative flex w-full flex-col overflow-hidden rounded-3xl border border-[#E6E6E6] bg-[#F7F7F7] p-4 shadow-[0_20px_60px_-50px_rgba(15,23,42,0.45)]">
+    <div className={rootClassName}>
       <div
         ref={containerRef}
-        className="flex h-full flex-col"
+        className="flex h-full min-h-0 flex-col"
       >
         <div
           className={scrollContainerClassName}

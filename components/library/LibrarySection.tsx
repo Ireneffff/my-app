@@ -143,8 +143,7 @@ export function LibrarySection({
     };
   }, [actions.length, selectedActionId]);
 
-  const carouselMaxHeightStyle =
-    previewHeight && isDesktop ? { maxHeight: `${previewHeight}px` } : undefined;
+  const carouselHeight = previewHeight && isDesktop ? previewHeight : null;
 
   const titleText = title?.trim() ?? "";
   const subtitleText = subtitle?.trim() ?? "";
@@ -163,16 +162,16 @@ export function LibrarySection({
             </header>
           ) : null}
 
-          <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,7.1fr)_minmax(0,2.2fr)] lg:grid-rows-[minmax(0,1fr)_auto] lg:items-start xl:gap-6">
-            <div ref={previewWrapperRef} className="w-full lg:row-span-2">
+          <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,7.1fr)_minmax(0,2.2fr)] lg:grid-rows-[minmax(0,1fr)_auto] lg:items-stretch lg:gap-x-6 lg:gap-y-0">
+            <div ref={previewWrapperRef} className="w-full">
               {preview}
             </div>
 
             <div
-              className="box-border flex h-auto w-full min-w-0 flex-col items-start lg:row-span-2 lg:max-w-[344px]"
-              style={carouselMaxHeightStyle}
+              className="box-border flex w-full min-w-0 flex-col items-stretch lg:h-full lg:max-w-[380px]"
+              style={carouselHeight ? { height: `${carouselHeight}px` } : undefined}
             >
-              <div className="min-h-0 w-full">
+              <div className="min-h-0 w-full flex-1">
                 <LibraryCarousel
                   items={actions}
                   selectedId={selectedActionId}
@@ -180,10 +179,15 @@ export function LibrarySection({
                   onAddItem={onAddAction}
                   onRemoveItem={onRemoveAction}
                   onReorderItem={onReorderAction}
+                  availableHeight={carouselHeight ?? undefined}
+                  className={carouselHeight ? "h-full" : undefined}
                 />
               </div>
-              {notes ? <div className="mt-4 w-full">{notes}</div> : null}
             </div>
+
+            {notes ? (
+              <div className="mt-4 w-full lg:col-span-2 lg:mt-0">{notes}</div>
+            ) : null}
           </div>
 
           {footer ? <div className="w-full text-left text-xs text-muted-fg">{footer}</div> : null}
