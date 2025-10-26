@@ -352,7 +352,7 @@ export function LibraryCarousel({
 
       requestAnimationFrame(() => {
         element.style.transition =
-          "transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1)";
+          "transform 320ms cubic-bezier(0.22, 1, 0.36, 1)";
         element.style.transform = "";
       });
 
