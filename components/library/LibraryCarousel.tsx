@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { LibraryCard, type LibraryCardProps } from "./LibraryCard";
 
@@ -27,9 +27,27 @@ export function LibraryCarousel({
 }: LibraryCarouselProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragPreview, setDragPreview] = useState<{
+    id: string;
+    originLeft: number;
+    originTop: number;
+    offsetX: number;
+    offsetY: number;
+    translateX: number;
+    translateY: number;
+  } | null>(null);
   const hasItems = items.length > 0;
   const activeItemId = selectedId ?? items[0]?.id;
   const canReorderItems = typeof onReorderItem === "function";
+  const emptyDragImage = useMemo(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    const image = new Image();
+    image.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
+    return image;
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -81,27 +99,48 @@ export function LibraryCarousel({
 
           if (!draggedItemId) {
             setDraggingId(null);
+            setDragPreview(null);
             return;
           }
 
           onReorderItem?.(draggedItemId, null);
           setDraggingId(null);
+          setDragPreview(null);
         }}
       >
         {hasItems ? (
           items.map((item) => {
             const isActive = item.id === activeItemId;
             const isDragging = item.id === draggingId;
+            const isPreviewing = dragPreview?.id === item.id;
             const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
             const combinedClassName = itemClassName
               ? `${itemClassName} w-full max-w-[calc(100%-1rem)]`
               : "w-full max-w-[calc(100%-1rem)]";
             const shouldDim = hasItems && !isActive;
+            const dragTranslation =
+              isDragging && isPreviewing
+                ? `translate3d(${dragPreview.translateX}px, ${dragPreview.translateY}px, 0)`
+                : undefined;
 
             return (
               <div
                 key={item.id}
-                className="relative flex snap-start justify-center"
+                className={`relative flex snap-start justify-center ${
+                  isDragging
+                    ? "z-50 cursor-grabbing"
+                    : canReorderItems
+                      ? "cursor-grab"
+                      : ""
+                }`}
+                style={
+                  dragTranslation
+                    ? {
+                        transform: `${dragTranslation}`,
+                        transition: "none",
+                      }
+                    : undefined
+                }
                 draggable={canReorderItems}
                 onDragStart={(event) => {
                   if (!canReorderItems) {
@@ -111,10 +150,50 @@ export function LibraryCarousel({
                   event.stopPropagation();
                   event.dataTransfer.effectAllowed = "move";
                   event.dataTransfer.setData("text/plain", item.id);
+                  if (emptyDragImage) {
+                    event.dataTransfer.setDragImage(emptyDragImage, 0, 0);
+                  }
+                  const rect = event.currentTarget.getBoundingClientRect();
+                  const offsetX = event.clientX - rect.left;
+                  const offsetY = event.clientY - rect.top;
                   setDraggingId(item.id);
+                  setDragPreview({
+                    id: item.id,
+                    originLeft: rect.left,
+                    originTop: rect.top,
+                    offsetX,
+                    offsetY,
+                    translateX: 0,
+                    translateY: 0,
+                  });
                 }}
                 onDragEnd={() => {
                   setDraggingId(null);
+                  setDragPreview(null);
+                }}
+                onDrag={(event) => {
+                  if (!canReorderItems || draggingId !== item.id) {
+                    return;
+                  }
+
+                  if (event.clientX === 0 && event.clientY === 0) {
+                    return;
+                  }
+
+                  setDragPreview((previous) => {
+                    if (!previous || previous.id !== item.id) {
+                      return previous;
+                    }
+
+                    const translateX = event.clientX - previous.originLeft - previous.offsetX;
+                    const translateY = event.clientY - previous.originTop - previous.offsetY;
+
+                    return {
+                      ...previous,
+                      translateX,
+                      translateY,
+                    };
+                  });
                 }}
                 onDragOver={(event) => {
                   if (!canReorderItems || draggingId === item.id) {
@@ -135,11 +214,13 @@ export function LibraryCarousel({
 
                   if (!draggedItemId || draggedItemId === item.id) {
                     setDraggingId(null);
+                    setDragPreview(null);
                     return;
                   }
 
                   onReorderItem?.(draggedItemId, item.id);
                   setDraggingId(null);
+                  setDragPreview(null);
                 }}
               >
                 {onRemoveItem ? (
@@ -165,7 +246,7 @@ export function LibraryCarousel({
                   aria-grabbed={isDragging}
                   className={`${combinedClassName} mx-auto ${
                     isDragging
-                      ? "scale-[1.08] shadow-[0_32px_80px_-48px_rgba(15,23,42,0.55)]"
+                      ? "scale-[1.08] opacity-90 shadow-[0_32px_80px_-48px_rgba(15,23,42,0.55)]"
                       : ""
                   }`}
                   onClick={(event) => {
