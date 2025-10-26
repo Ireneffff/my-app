@@ -149,8 +149,7 @@ export function LibraryCarousel({
                 ["aria-label"]: itemAriaLabel,
                 ...restItem
               } = item;
-              const baseWidthClasses =
-                "w-full shrink-0 basis-full md:basis-auto md:shrink md:max-w-[calc(100%-1rem)]";
+              const baseWidthClasses = "h-full w-full";
               const combinedClassName = itemClassName
                 ? `${itemClassName} ${baseWidthClasses}`
                 : baseWidthClasses;
@@ -196,14 +195,17 @@ export function LibraryCarousel({
               return (
                 <div
                   key={item.id}
-                  ref={(node) => setItemRef(item.id, node)}
-                  data-library-carousel-wrapper={item.id}
-                  className="group/item relative flex w-full snap-center items-center justify-center md:w-auto md:snap-start"
+                  className="flex snap-center justify-center md:snap-start"
                 >
-                  <div className="absolute right-3 top-3 z-40 flex flex-col items-end gap-2 md:right-4 md:top-4">
-                    {onRemoveItem ? (
-                      <button
-                        type="button"
+                  <div
+                    ref={(node) => setItemRef(item.id, node)}
+                    data-library-carousel-wrapper={item.id}
+                    className="group/item relative aspect-[4/3] w-auto flex-shrink-0"
+                  >
+                    <div className="absolute right-3 top-3 z-40 flex flex-col items-end gap-2 md:right-4 md:top-4">
+                      {onRemoveItem ? (
+                        <button
+                          type="button"
                         aria-label={`Rimuovi ${item.label}`}
                         onClick={(event) => {
                           event.preventDefault();
@@ -237,32 +239,31 @@ export function LibraryCarousel({
                   <div className="absolute inset-y-3 left-3 z-40 flex items-center md:hidden">
                     {canReorderItems ? (
                       <ReorderArrowButton
-                        direction="left"
-                        ariaLabel={`Sposta ${item.label} a sinistra`}
-                        onClick={handleMoveUp}
-                        disabled={!canMoveUp}
-                      />
-                    ) : null}
-                  </div>
+                          direction="left"
+                          ariaLabel={`Sposta ${item.label} a sinistra`}
+                          onClick={handleMoveUp}
+                          disabled={!canMoveUp}
+                        />
+                      ) : null}
+                    </div>
 
-                  <div className="absolute inset-y-3 right-3 z-40 flex items-center md:hidden">
-                    {canReorderItems ? (
-                      <ReorderArrowButton
-                        direction="right"
-                        ariaLabel={`Sposta ${item.label} a destra`}
-                        onClick={handleMoveDown}
-                        disabled={!canMoveDown}
-                      />
-                    ) : null}
-                  </div>
+                    <div className="absolute inset-y-3 right-3 z-40 flex items-center md:hidden">
+                      {canReorderItems ? (
+                        <ReorderArrowButton
+                          direction="right"
+                          ariaLabel={`Sposta ${item.label} a destra`}
+                          onClick={handleMoveDown}
+                          disabled={!canMoveDown}
+                        />
+                      ) : null}
+                    </div>
 
-                  <div className="relative w-full md:max-w-[360px]">
                     <LibraryCard
                       {...restItem}
                       isActive={isActive}
                       isDimmed={shouldDim}
                       data-library-carousel-item={item.id}
-                      className={`${combinedClassName} mx-0 md:mx-auto`}
+                      className={`${combinedClassName}`}
                       hideLabel={shouldHideLabel}
                       aria-label={resolvedAriaLabel}
                       visualWrapperClassName={itemVisualWrapperClassName}
@@ -281,49 +282,53 @@ export function LibraryCarousel({
               );
             })
           ) : (
-            <div className="flex w-full snap-center justify-center md:w-auto md:snap-start">
-              <LibraryCard
-                label="Nessuna card"
-                aria-label="Nessuna card disponibile"
-                disabled
-                hideLabel
-                isActive={false}
-                isDimmed={false}
-                className="w-full max-w-full md:mx-auto md:max-w-[360px]"
-                visual={
-                  <span className="flex h-full w-full items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
-                    Nessuna card
-                  </span>
-                }
-              />
+            <div className="flex snap-center justify-center md:snap-start">
+              <div className="relative aspect-[4/3] w-auto flex-shrink-0">
+                <LibraryCard
+                  label="Nessuna card"
+                  aria-label="Nessuna card disponibile"
+                  disabled
+                  hideLabel
+                  isActive={false}
+                  isDimmed={false}
+                  className="h-full w-full"
+                  visual={
+                    <span className="flex h-full w-full items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
+                      Nessuna card
+                    </span>
+                  }
+                />
+              </div>
             </div>
           )}
 
           {onAddItem ? (
             <div
               key="library-add-card-wrapper"
-              className="flex w-full items-center justify-center snap-center md:mx-auto md:block md:max-w-[calc(100%-1rem)] md:snap-start"
+              className="flex items-center justify-center snap-center md:snap-start"
             >
-              <LibraryCard
-                label="Nuova immagine"
-                aria-label="Aggiungi una nuova card libreria"
-                isActive={false}
-                isDimmed={false}
-                data-library-carousel-item="add"
-                className="w-full max-w-full md:mx-auto"
-                hideLabel
-                visualWrapperClassName="w-full overflow-visible bg-transparent"
-                onClick={() => {
-                  onAddItem?.();
-                }}
-                visual={
-                  <span className="flex h-full w-full items-center justify-center">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_22px_48px_-34px_rgba(15,23,42,0.45)]">
-                      <PlusIcon className="h-5 w-5 text-accent" />
+              <div className="relative aspect-[4/3] w-auto flex-shrink-0">
+                <LibraryCard
+                  label="Nuova immagine"
+                  aria-label="Aggiungi una nuova card libreria"
+                  isActive={false}
+                  isDimmed={false}
+                  data-library-carousel-item="add"
+                  className="h-full w-full"
+                  hideLabel
+                  visualWrapperClassName="w-full overflow-visible bg-transparent"
+                  onClick={() => {
+                    onAddItem?.();
+                  }}
+                  visual={
+                    <span className="flex h-full w-full items-center justify-center">
+                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_22px_48px_-34px_rgba(15,23,42,0.45)]">
+                        <PlusIcon className="h-5 w-5 text-accent" />
+                      </span>
                     </span>
-                  </span>
-                }
-              />
+                  }
+                />
+              </div>
             </div>
           ) : null}
         </div>
