@@ -162,13 +162,13 @@ export function LibrarySection({
             </header>
           ) : null}
 
-          <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,7.1fr)_minmax(0,2.2fr)] lg:grid-rows-[minmax(0,1fr)_auto] lg:items-stretch lg:gap-x-6 lg:gap-y-0">
+          <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,6.2fr)_minmax(0,3.8fr)] lg:grid-rows-[minmax(0,1fr)_auto] lg:items-stretch lg:gap-x-6 lg:gap-y-0">
             <div ref={previewWrapperRef} className="w-full">
               {preview}
             </div>
 
             <div
-              className="box-border flex w-full min-w-0 flex-col items-stretch lg:h-full lg:max-w-[380px]"
+              className="box-border flex w-full min-w-0 flex-col items-stretch lg:h-full lg:max-w-[520px]"
               style={carouselHeight ? { height: `${carouselHeight}px` } : undefined}
             >
               <div className="min-h-0 w-full flex-1">

@@ -49,19 +49,23 @@ export function LibraryCarousel({
   );
   const canReorderItems = typeof onReorderItem === "function";
   const itemFrameStyle = useMemo(() => {
-    const desktopMaxWidth = 380;
+    const desktopMaxWidth = 520;
     const mobileMaxWidth = 220;
-    const baseMaxWidth = isMobile ? mobileMaxWidth : desktopMaxWidth;
 
-    const widthFromHeight =
-      !isMobile && typeof availableHeight === "number"
+    if (isMobile) {
+      return {
+        width: `min(100%, ${mobileMaxWidth}px)`,
+      };
+    }
+
+    const maxWidthFromHeight =
+      typeof availableHeight === "number"
         ? Math.min(availableHeight * (4 / 3), desktopMaxWidth)
-        : undefined;
-
-    const resolvedWidth = widthFromHeight ?? baseMaxWidth;
+        : desktopMaxWidth;
 
     return {
-      width: `min(100%, ${resolvedWidth}px)`,
+      width: "100%",
+      maxWidth: `${maxWidthFromHeight}px`,
     };
   }, [availableHeight, isMobile]);
 
