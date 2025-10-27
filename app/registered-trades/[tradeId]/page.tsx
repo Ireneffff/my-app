@@ -22,6 +22,7 @@ import {
   REGISTERED_TRADES_UPDATED_EVENT,
   type StoredLibraryItem,
   type StoredTrade,
+  type ProfitTarget,
 } from "@/lib/tradesStorage";
 import { calculateDuration } from "@/lib/duration";
 
@@ -768,9 +769,55 @@ export default function RegisteredTradePage() {
   const openTimeDisplay = getDateTimeDisplay(state.trade.openTime);
   const closeTimeDisplay = getDateTimeDisplay(state.trade.closeTime);
   const positionLabel = state.trade.position === "SHORT" ? "Short" : "Long";
-  const riskRewardValue = formatOptionalText(state.trade.riskReward);
+  const profitTargets: ProfitTarget[] = (() => {
+    if (!state.trade) {
+      return [];
+    }
+
+    const normalize = (value: string | null | undefined) =>
+      typeof value === "string" ? value.trim() : "";
+
+    const storedTargets = Array.isArray(state.trade.profitTargets)
+      ? state.trade.profitTargets.map((target) => ({
+          takeProfit: target?.takeProfit ?? null,
+          pnl: target?.pnl ?? null,
+          riskReward: target?.riskReward ?? null,
+          pips: target?.pips ?? null,
+        }))
+      : [];
+
+    const filteredStored = storedTargets.filter(
+      (target) =>
+        normalize(target.takeProfit).length > 0 ||
+        normalize(target.pnl).length > 0 ||
+        normalize(target.riskReward).length > 0 ||
+        normalize(target.pips).length > 0,
+    );
+
+    if (filteredStored.length > 0) {
+      return filteredStored;
+    }
+
+    const fallback: ProfitTarget = {
+      takeProfit: state.trade.takeProfit ?? null,
+      pnl: state.trade.pnl ?? null,
+      riskReward: state.trade.riskReward ?? null,
+      pips: state.trade.pips ?? null,
+    };
+
+    const hasFallbackData =
+      normalize(fallback.takeProfit).length > 0 ||
+      normalize(fallback.pnl).length > 0 ||
+      normalize(fallback.riskReward).length > 0 ||
+      normalize(fallback.pips).length > 0;
+
+    return hasFallbackData ? [fallback] : [];
+  })();
+
+  const primaryProfitTarget = profitTargets[0];
+  const riskRewardValue = formatOptionalText(primaryProfitTarget?.riskReward ?? state.trade.riskReward);
   const riskValue = formatOptionalText(state.trade.risk);
-  const pipsValue = formatOptionalText(state.trade.pips);
+  const pipsValue = formatOptionalText(primaryProfitTarget?.pips ?? state.trade.pips);
   const preTradeMentalStateValue = formatOptionalText(
     state.trade.preTradeMentalState ?? state.trade.mentalState,
   );
@@ -1028,6 +1075,59 @@ export default function RegisteredTradePage() {
                   <span className="text-sm font-medium text-fg">{pipsValue}</span>
                 </div>
               </div>
+
+              {profitTargets.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                    Profit Targets
+                  </span>
+                  <div className="flex flex-col gap-3">
+                    {profitTargets.map((target, index) => (
+                      <div
+                        key={`profit-target-display-${index}`}
+                        className="rounded-2xl border border-border bg-surface px-4 py-3"
+                      >
+                        <div className="mb-3 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                          <span>Target {index + 1}</span>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-fg">
+                              Take Profit
+                            </span>
+                            <span className="text-sm font-medium text-fg">
+                              {formatOptionalText(target.takeProfit)}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-fg">P&amp;L</span>
+                            <span className="text-sm font-medium text-fg">
+                              {formatOptionalText(target.pnl)}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-fg">R/R</span>
+                            <span className="text-sm font-medium text-fg">
+                              {formatOptionalText(target.riskReward)}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-fg">
+                              Nr. Pips
+                            </span>
+                            <span className="text-sm font-medium text-fg">
+                              {formatOptionalText(target.pips)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

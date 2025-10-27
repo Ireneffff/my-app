@@ -25,6 +25,20 @@ export type LibraryItemFailure = {
   cause?: Error;
 };
 
+export type ProfitTarget = {
+  takeProfit: string | null;
+  pnl: string | null;
+  riskReward: string | null;
+  pips: string | null;
+};
+
+export type ProfitTargetPayload = {
+  takeProfit: string;
+  pnl: string;
+  riskReward: string;
+  pips: string;
+};
+
 export type StoredTrade = {
   id: string;
   symbolCode: string;
@@ -55,6 +69,7 @@ export type StoredTrade = {
   date: string;
   createdAt: string | null;
   libraryItems: StoredLibraryItem[];
+  profitTargets: ProfitTarget[];
 };
 
 export type TradePayload = {
@@ -84,6 +99,7 @@ export type TradePayload = {
   wouldRepeatTrade: string | null;
   notes: string | null;
   libraryItems: StoredLibraryItem[];
+  profitTargets: ProfitTargetPayload[];
 };
 
 export type RemovedLibraryItem = {
@@ -137,6 +153,89 @@ function sanitizeString(value: unknown) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function splitProfitField(value: string | null) {
+  if (!value) {
+    return [] as string[];
+  }
+
+  return value.split(/\r?\n/);
+}
+
+function parseProfitTargets(
+  takeProfitRaw: string | null,
+  pnlRaw: string | null,
+  riskRewardRaw: string | null,
+  pipsRaw: string | null,
+): ProfitTarget[] {
+  const takeProfits = splitProfitField(takeProfitRaw);
+  const pnls = splitProfitField(pnlRaw);
+  const riskRewards = splitProfitField(riskRewardRaw);
+  const pipsValues = splitProfitField(pipsRaw);
+
+  const maxLength = Math.max(
+    takeProfits.length,
+    pnls.length,
+    riskRewards.length,
+    pipsValues.length,
+  );
+
+  const fallbackTarget: ProfitTarget = {
+    takeProfit: sanitizeString(takeProfitRaw),
+    pnl: sanitizeString(pnlRaw),
+    riskReward: sanitizeString(riskRewardRaw),
+    pips: sanitizeString(pipsRaw),
+  };
+
+  if (maxLength === 0) {
+    return fallbackTarget.takeProfit ||
+      fallbackTarget.pnl ||
+      fallbackTarget.riskReward ||
+      fallbackTarget.pips
+      ? [fallbackTarget]
+      : [];
+  }
+
+  const targets = Array.from({ length: maxLength }, (_, index) => ({
+    takeProfit: sanitizeString(takeProfits[index] ?? ""),
+    pnl: sanitizeString(pnls[index] ?? ""),
+    riskReward: sanitizeString(riskRewards[index] ?? ""),
+    pips: sanitizeString(pipsValues[index] ?? ""),
+  }));
+
+  const filtered = targets.filter(
+    (target) => target.takeProfit || target.pnl || target.riskReward || target.pips,
+  );
+
+  if (filtered.length > 0) {
+    return filtered;
+  }
+
+  return fallbackTarget.takeProfit ||
+    fallbackTarget.pnl ||
+    fallbackTarget.riskReward ||
+    fallbackTarget.pips
+    ? [fallbackTarget]
+    : [];
+}
+
+function serializeProfitTargetField(
+  targets: ProfitTargetPayload[] | undefined,
+  field: keyof ProfitTargetPayload,
+) {
+  if (!Array.isArray(targets) || targets.length === 0) {
+    return null;
+  }
+
+  const values = targets.map((target) => (target?.[field] ?? "").trim());
+  const hasAnyValue = values.some((value) => value.length > 0);
+
+  if (!hasAnyValue) {
+    return null;
+  }
+
+  return values.join("\n");
+}
+
 function mapTradeRow(row: Record<string, unknown>): StoredTrade {
   const symbolCode = (row?.symbol ?? "").toString();
   const openTime = parseDateValue(row?.open_time);
@@ -144,6 +243,19 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
   const createdAt = parseDateValue(row?.created_at);
 
   const dateSource = openTime ?? createdAt ?? new Date().toISOString();
+
+  const riskReward = sanitizeString(row?.rr_ratio);
+  const risk = sanitizeString(row?.risk_percent);
+  const lotSize = sanitizeString(row?.lot_size);
+  const pips = sanitizeString(row?.pips);
+  const entryPrice = sanitizeString(row?.entry_price);
+  const exitPrice = sanitizeString(row?.exit_price);
+  const stopLoss = sanitizeString(row?.stop_loss);
+  const takeProfit = sanitizeString(row?.take_profit);
+  const pnl = sanitizeString(row?.p_l);
+
+  const profitTargets = parseProfitTargets(takeProfit, pnl, riskReward, pips);
+  const primaryTarget = profitTargets[0];
 
   return {
     id: row?.id?.toString() ?? "",
@@ -153,15 +265,15 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
     openTime,
     closeTime,
     position: row?.position === "SHORT" ? "SHORT" : "LONG",
-    riskReward: sanitizeString(row?.rr_ratio),
-    risk: sanitizeString(row?.risk_percent),
-    lotSize: sanitizeString(row?.lot_size),
-    pips: sanitizeString(row?.pips),
-    entryPrice: sanitizeString(row?.entry_price),
-    exitPrice: sanitizeString(row?.exit_price),
-    stopLoss: sanitizeString(row?.stop_loss),
-    takeProfit: sanitizeString(row?.take_profit),
-    pnl: sanitizeString(row?.p_l),
+    riskReward: primaryTarget?.riskReward ?? riskReward,
+    risk,
+    lotSize,
+    pips: primaryTarget?.pips ?? pips,
+    entryPrice,
+    exitPrice,
+    stopLoss,
+    takeProfit: primaryTarget?.takeProfit ?? takeProfit,
+    pnl: primaryTarget?.pnl ?? pnl,
     preTradeMentalState: sanitizeString(row?.mental_state_before ?? row?.mental_state),
     mentalState: sanitizeString(row?.mental_state_before ?? row?.mental_state),
     emotionsDuringTrade: sanitizeString(row?.emotions_during),
@@ -175,6 +287,7 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
     date: dateSource,
     createdAt,
     libraryItems: [],
+    profitTargets,
   } satisfies StoredTrade;
 }
 
@@ -325,6 +438,10 @@ async function fetchLibraryItems(tradeId: string) {
 function buildTradeRecord(payload: TradePayload) {
   const openTime = payload.openTime ?? payload.date;
   const closeTime = payload.closeTime ?? null;
+  const takeProfitSeries = serializeProfitTargetField(payload.profitTargets, "takeProfit");
+  const pnlSeries = serializeProfitTargetField(payload.profitTargets, "pnl");
+  const riskRewardSeries = serializeProfitTargetField(payload.profitTargets, "riskReward");
+  const pipsSeries = serializeProfitTargetField(payload.profitTargets, "pips");
 
   return {
     symbol: payload.symbolCode,
@@ -332,15 +449,15 @@ function buildTradeRecord(payload: TradePayload) {
     open_time: openTime,
     close_time: closeTime,
     position: payload.position,
-    rr_ratio: sanitizeString(payload.riskReward),
+    rr_ratio: riskRewardSeries ?? sanitizeString(payload.riskReward),
     risk_percent: sanitizeString(payload.risk),
     lot_size: sanitizeString(payload.lotSize),
-    pips: sanitizeString(payload.pips),
+    pips: pipsSeries ?? sanitizeString(payload.pips),
     entry_price: sanitizeString(payload.entryPrice),
     exit_price: sanitizeString(payload.exitPrice),
     stop_loss: sanitizeString(payload.stopLoss),
-    take_profit: sanitizeString(payload.takeProfit),
-    p_l: sanitizeString(payload.pnl),
+    take_profit: takeProfitSeries ?? sanitizeString(payload.takeProfit),
+    p_l: pnlSeries ?? sanitizeString(payload.pnl),
     mental_state_before: sanitizeString(payload.preTradeMentalState),
     emotions_during: sanitizeString(payload.emotionsDuringTrade),
     emotions_after: sanitizeString(payload.emotionsAfterTrade),
