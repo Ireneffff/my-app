@@ -1052,7 +1052,6 @@ export default function RegisteredTradePage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Take Profit</span>
                 <div
                   className="grid gap-3"
                   style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
@@ -1071,7 +1070,6 @@ export default function RegisteredTradePage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">R/R</span>
                 <div
                   className="grid gap-3"
                   style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
@@ -1090,7 +1088,6 @@ export default function RegisteredTradePage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Nr. Pips</span>
                 <div
                   className="grid gap-3"
                   style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
@@ -1123,7 +1120,6 @@ export default function RegisteredTradePage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">P&amp;L</span>
                 <div
                   className="grid gap-3"
                   style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
