@@ -16,7 +16,7 @@ import {
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { Circle, CheckCircle } from "lucide-react";
+import { Circle, CheckCircle, Plus } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
@@ -28,6 +28,8 @@ import {
   type StoredLibraryItem,
   type TradePayload,
   type RemovedLibraryItem,
+  parseMultiValueField,
+  serializeMultiValueField,
 } from "@/lib/tradesStorage";
 import { calculateDuration } from "@/lib/duration";
 
@@ -138,6 +140,16 @@ function getDateTimeDisplayParts(date: Date | null) {
   });
 
   return { dateLabel, timeLabel };
+}
+
+function padMultiValue(values: string[], length: number) {
+  const next = values.slice(0, length);
+
+  while (next.length < length) {
+    next.push("");
+  }
+
+  return next;
 }
 
 function getStartOfWeek(date: Date) {
@@ -269,8 +281,8 @@ function NewTradePageContent() {
   const [entryPrice, setEntryPrice] = useState("");
   const [exitPrice, setExitPrice] = useState("");
   const [stopLoss, setStopLoss] = useState("");
-  const [takeProfit, setTakeProfit] = useState("");
-  const [pnl, setPnl] = useState("");
+  const [takeProfitTargets, setTakeProfitTargets] = useState<string[]>([""]);
+  const [pnlTargets, setPnlTargets] = useState<string[]>([""]);
   const [preTradeMentalState, setPreTradeMentalState] = useState("");
   const [emotionsDuringTrade, setEmotionsDuringTrade] = useState("");
   const [emotionsAfterTrade, setEmotionsAfterTrade] = useState("");
@@ -279,9 +291,9 @@ function NewTradePageContent() {
   const [followedPlan, setFollowedPlan] = useState("");
   const [respectedRiskChoice, setRespectedRiskChoice] = useState("");
   const [wouldRepeatTrade, setWouldRepeatTrade] = useState("");
-  const [riskReward, setRiskReward] = useState("");
+  const [riskRewardTargets, setRiskRewardTargets] = useState<string[]>([""]);
   const [risk, setRisk] = useState("");
-  const [pips, setPips] = useState("");
+  const [pipsTargets, setPipsTargets] = useState<string[]>([""]);
   const [lotSize, setLotSize] = useState("");
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -289,6 +301,125 @@ function NewTradePageContent() {
     getStartOfMonth(initialSelectedDate),
   );
   const [, startNavigation] = useTransition();
+
+  const targetColumnCount = useMemo(
+    () =>
+      Math.max(
+        1,
+        takeProfitTargets.length,
+        riskRewardTargets.length,
+        pipsTargets.length,
+        pnlTargets.length,
+      ),
+    [
+      pnlTargets.length,
+      pipsTargets.length,
+      riskRewardTargets.length,
+      takeProfitTargets.length,
+    ],
+  );
+
+  const handleAddTargetColumn = useCallback(() => {
+    const nextCount = targetColumnCount + 1;
+
+    setTakeProfitTargets((prev) => padMultiValue(prev, nextCount));
+    setRiskRewardTargets((prev) => padMultiValue(prev, nextCount));
+    setPipsTargets((prev) => padMultiValue(prev, nextCount));
+    setPnlTargets((prev) => padMultiValue(prev, nextCount));
+  }, [targetColumnCount]);
+
+  const handleTakeProfitChange = useCallback(
+    (index: number, value: string) => {
+      setTakeProfitTargets((prev) => {
+        const next = padMultiValue(prev, targetColumnCount);
+        next[index] = value;
+        return next;
+      });
+    },
+    [targetColumnCount],
+  );
+
+  const handleRiskRewardChange = useCallback(
+    (index: number, value: string) => {
+      setRiskRewardTargets((prev) => {
+        const next = padMultiValue(prev, targetColumnCount);
+        next[index] = value;
+        return next;
+      });
+    },
+    [targetColumnCount],
+  );
+
+  const handlePipsChange = useCallback(
+    (index: number, value: string) => {
+      setPipsTargets((prev) => {
+        const next = padMultiValue(prev, targetColumnCount);
+        next[index] = value;
+        return next;
+      });
+    },
+    [targetColumnCount],
+  );
+
+  const handlePnlChange = useCallback(
+    (index: number, value: string) => {
+      setPnlTargets((prev) => {
+        const next = padMultiValue(prev, targetColumnCount);
+        next[index] = value;
+        return next;
+      });
+    },
+    [targetColumnCount],
+  );
+
+  const targetFieldConfigs = useMemo(
+    () =>
+      [
+        {
+          label: "Take Profit",
+          idPrefix: "take-profit",
+          placeholder: "Insert price",
+          type: "number" as const,
+          values: takeProfitTargets,
+          onChange: handleTakeProfitChange,
+        },
+        {
+          label: "R/R",
+          idPrefix: "risk-reward",
+          placeholder: "1:4",
+          type: "text" as const,
+          values: riskRewardTargets,
+          onChange: handleRiskRewardChange,
+        },
+        {
+          label: "Nr. Pips",
+          idPrefix: "pips",
+          placeholder: "55",
+          type: "text" as const,
+          values: pipsTargets,
+          onChange: handlePipsChange,
+        },
+        {
+          label: "P&L",
+          idPrefix: "pnl",
+          placeholder: "Insert",
+          type: "number" as const,
+          values: pnlTargets,
+          onChange: handlePnlChange,
+        },
+      ],
+    [
+      handlePipsChange,
+      handlePnlChange,
+      handleRiskRewardChange,
+      handleTakeProfitChange,
+      pipsTargets,
+      pnlTargets,
+      riskRewardTargets,
+      takeProfitTargets,
+    ],
+  );
+  const pnlFieldConfig = targetFieldConfigs[targetFieldConfigs.length - 1];
 
   const lockBodyScroll = useCallback(() => {
     if (typeof document === "undefined") {
@@ -870,8 +1001,21 @@ function NewTradePageContent() {
         setEntryPrice(match.entryPrice ?? "");
         setExitPrice(match.exitPrice ?? "");
         setStopLoss(match.stopLoss ?? "");
-        setTakeProfit(match.takeProfit ?? "");
-        setPnl(match.pnl ?? "");
+        const parsedTakeProfit = parseMultiValueField(match.takeProfit);
+        const parsedRiskReward = parseMultiValueField(match.riskReward);
+        const parsedPips = parseMultiValueField(match.pips);
+        const parsedPnl = parseMultiValueField(match.pnl);
+        const columnCount = Math.max(
+          1,
+          parsedTakeProfit.length,
+          parsedRiskReward.length,
+          parsedPips.length,
+          parsedPnl.length,
+        );
+        setTakeProfitTargets(padMultiValue(parsedTakeProfit, columnCount));
+        setRiskRewardTargets(padMultiValue(parsedRiskReward, columnCount));
+        setPipsTargets(padMultiValue(parsedPips, columnCount));
+        setPnlTargets(padMultiValue(parsedPnl, columnCount));
         setPreTradeMentalState(match.preTradeMentalState ?? "");
         setEmotionsDuringTrade(match.emotionsDuringTrade ?? "");
         setEmotionsAfterTrade(match.emotionsAfterTrade ?? "");
@@ -880,9 +1024,7 @@ function NewTradePageContent() {
         setFollowedPlan(match.followedPlan ?? "");
         setRespectedRiskChoice(match.respectedRisk ?? "");
         setWouldRepeatTrade(match.wouldRepeatTrade ?? "");
-        setRiskReward(match.riskReward ?? "");
         setRisk(match.risk ?? "");
-        setPips(match.pips ?? "");
         setLotSize(match.lotSize ?? "");
 
         if (imageInputRef.current) {
@@ -1818,56 +1960,51 @@ function NewTradePageContent() {
                         />
                       </div>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="take-profit-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Take Profit
-                        </label>
-                        <input
-                          id="take-profit-input"
-                          type="number"
-                          value={takeProfit}
-                          onChange={(event) => setTakeProfit(event.target.value)}
-                          placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
+                      {targetFieldConfigs.slice(0, 3).map((fieldConfig) => {
+                        const normalizedValues = padMultiValue(fieldConfig.values, targetColumnCount);
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="risk-reward-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          R/R
-                        </label>
-                        <input
-                          id="risk-reward-input"
-                          type="text"
-                          value={riskReward}
-                          onChange={(event) => setRiskReward(event.target.value)}
-                          placeholder="1:4"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
+                        return (
+                          <div className="flex flex-col gap-2" key={fieldConfig.idPrefix}>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                                {fieldConfig.label}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={handleAddTargetColumn}
+                                className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[#2563eb] text-white shadow-sm transition hover:bg-[#1d4ed8] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#93c5fd]"
+                                aria-label={`Aggiungi colonna per ${fieldConfig.label}`}
+                              >
+                                <Plus aria-hidden="true" className="h-4 w-4" />
+                              </button>
+                            </div>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="pips-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Nr. Pips
-                        </label>
-                        <input
-                          id="pips-input"
-                          type="text"
-                          value={pips}
-                          onChange={(event) => setPips(event.target.value)}
-                          placeholder="55"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
+                            <div
+                              className="grid gap-3"
+                              style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
+                            >
+                              {normalizedValues.map((value, columnIndex) => (
+                                <div className="flex flex-col gap-2" key={`${fieldConfig.idPrefix}-${columnIndex}`}>
+                                  <label
+                                    htmlFor={`${fieldConfig.idPrefix}-input-${columnIndex}`}
+                                    className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                                  >
+                                    {`${fieldConfig.label} ${columnIndex + 1}`}
+                                  </label>
+                                  <input
+                                    id={`${fieldConfig.idPrefix}-input-${columnIndex}`}
+                                    type={fieldConfig.type}
+                                    value={value}
+                                    onChange={(event) => fieldConfig.onChange(columnIndex, event.target.value)}
+                                    placeholder={fieldConfig.placeholder}
+                                    className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
 
                       <div className="flex flex-col gap-2">
                         <label
@@ -1903,22 +2040,47 @@ function NewTradePageContent() {
                         />
                       </div>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="pnl-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          P&amp;L
-                        </label>
-                        <input
-                          id="pnl-input"
-                          type="number"
-                          value={pnl}
-                          onChange={(event) => setPnl(event.target.value)}
-                          placeholder="Insert"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
+                      {pnlFieldConfig && (
+                        <div className="flex flex-col gap-2" key={pnlFieldConfig.idPrefix}>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                              {pnlFieldConfig.label}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={handleAddTargetColumn}
+                              className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[#2563eb] text-white shadow-sm transition hover:bg-[#1d4ed8] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#93c5fd]"
+                              aria-label={`Aggiungi colonna per ${pnlFieldConfig.label}`}
+                            >
+                              <Plus aria-hidden="true" className="h-4 w-4" />
+                            </button>
+                          </div>
+
+                          <div
+                            className="grid gap-3"
+                            style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
+                          >
+                            {padMultiValue(pnlFieldConfig.values, targetColumnCount).map((value, columnIndex) => (
+                              <div className="flex flex-col gap-2" key={`${pnlFieldConfig.idPrefix}-${columnIndex}`}>
+                                <label
+                                  htmlFor={`${pnlFieldConfig.idPrefix}-input-${columnIndex}`}
+                                  className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                                >
+                                  {`${pnlFieldConfig.label} ${columnIndex + 1}`}
+                                </label>
+                                <input
+                                  id={`${pnlFieldConfig.idPrefix}-input-${columnIndex}`}
+                                  type={pnlFieldConfig.type}
+                                  value={value}
+                                  onChange={(event) => pnlFieldConfig.onChange(columnIndex, event.target.value)}
+                                  placeholder={pnlFieldConfig.placeholder}
+                                  className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="border-t border-gray-200 mt-6" />
@@ -2092,6 +2254,11 @@ function NewTradePageContent() {
         return hasImage || hasNotes;
       });
 
+    const serializedTakeProfit = serializeMultiValueField(takeProfitTargets);
+    const serializedRiskReward = serializeMultiValueField(riskRewardTargets);
+    const serializedPips = serializeMultiValueField(pipsTargets);
+    const serializedPnl = serializeMultiValueField(pnlTargets);
+
     const payload: TradePayload = {
       id: editingTradeId ?? undefined,
       symbolCode: selectedSymbol.code,
@@ -2100,15 +2267,15 @@ function NewTradePageContent() {
       openTime: openTime ? openTime.toISOString() : null,
       closeTime: closeTime ? closeTime.toISOString() : null,
       position,
-      riskReward: riskReward.trim() || null,
+      riskReward: serializedRiskReward,
       risk: risk.trim() || null,
-      pips: pips.trim() || null,
+      pips: serializedPips,
       lotSize: lotSize.trim() || null,
       entryPrice: entryPrice.trim() || null,
       exitPrice: exitPrice.trim() || null,
       stopLoss: stopLoss.trim() || null,
-      takeProfit: takeProfit.trim() || null,
-      pnl: pnl.trim() || null,
+      takeProfit: serializedTakeProfit,
+      pnl: serializedPnl,
       preTradeMentalState: preTradeMentalState.trim() || null,
       emotionsDuringTrade: emotionsDuringTrade.trim() || null,
       emotionsAfterTrade: emotionsAfterTrade.trim() || null,
@@ -2172,21 +2339,21 @@ function NewTradePageContent() {
     isSaving,
     libraryItems,
     openTime,
-    pips,
+    pipsTargets,
     lotSize,
     position,
     preTradeMentalState,
     removedLibraryItems,
     respectedRiskChoice,
     risk,
-    riskReward,
+    riskRewardTargets,
     router,
     selectedDate,
     selectedSymbol.code,
     startNavigation,
     stopLoss,
-    takeProfit,
-    pnl,
+    takeProfitTargets,
+    pnlTargets,
     confidenceLevel,
     emotionalTrigger,
     wouldRepeatTrade,

@@ -137,6 +137,59 @@ function sanitizeString(value: unknown) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function coerceValueToString(value: unknown) {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  return String(value);
+}
+
+export function parseMultiValueField(value: string | null | undefined): string[] {
+  if (typeof value !== "string") {
+    return [];
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed);
+
+    if (Array.isArray(parsed)) {
+      return parsed.map((entry) => coerceValueToString(entry));
+    }
+  } catch (error) {
+    if (/^[\[{]/.test(trimmed)) {
+      console.warn("Failed to parse multi value field, falling back to single value", error);
+    }
+  }
+
+  return [trimmed];
+}
+
+export function serializeMultiValueField(values: string[]): string | null {
+  if (!Array.isArray(values) || values.length === 0) {
+    return null;
+  }
+
+  const normalized = values.map((value) => coerceValueToString(value));
+  const hasContent = normalized.some((value) => value.trim().length > 0);
+
+  if (!hasContent) {
+    return null;
+  }
+
+  return JSON.stringify(normalized);
+}
+
 function mapTradeRow(row: Record<string, unknown>): StoredTrade {
   const symbolCode = (row?.symbol ?? "").toString();
   const openTime = parseDateValue(row?.open_time);

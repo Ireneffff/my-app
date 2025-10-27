@@ -22,6 +22,7 @@ import {
   REGISTERED_TRADES_UPDATED_EVENT,
   type StoredLibraryItem,
   type StoredTrade,
+  parseMultiValueField,
 } from "@/lib/tradesStorage";
 import { calculateDuration } from "@/lib/duration";
 
@@ -91,6 +92,16 @@ function formatOptionalText(value?: string | null) {
 
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : "—";
+}
+
+function padMultiValue(values: string[], length: number) {
+  const next = values.slice(0, length);
+
+  while (next.length < length) {
+    next.push("");
+  }
+
+  return next;
 }
 
 const LIBRARY_NAVIGATION_SWIPE_DISTANCE_PX = 40;
@@ -770,12 +781,23 @@ export default function RegisteredTradePage() {
   const positionLabel = state.trade.position === "SHORT" ? "Short" : "Long";
   const entryPriceValue = formatOptionalText(state.trade.entryPrice);
   const stopLossValue = formatOptionalText(state.trade.stopLoss);
-  const takeProfitValue = formatOptionalText(state.trade.takeProfit);
-  const riskRewardValue = formatOptionalText(state.trade.riskReward);
+  const takeProfitTargets = parseMultiValueField(state.trade.takeProfit);
+  const riskRewardTargets = parseMultiValueField(state.trade.riskReward);
   const riskValue = formatOptionalText(state.trade.risk);
-  const pipsValue = formatOptionalText(state.trade.pips);
+  const pipsTargets = parseMultiValueField(state.trade.pips);
   const lotSizeValue = formatOptionalText(state.trade.lotSize);
-  const pnlValue = formatOptionalText(state.trade.pnl);
+  const pnlTargets = parseMultiValueField(state.trade.pnl);
+  const targetColumnCount = Math.max(
+    1,
+    takeProfitTargets.length,
+    riskRewardTargets.length,
+    pipsTargets.length,
+    pnlTargets.length,
+  );
+  const normalizedTakeProfitTargets = padMultiValue(takeProfitTargets, targetColumnCount);
+  const normalizedRiskRewardTargets = padMultiValue(riskRewardTargets, targetColumnCount);
+  const normalizedPipsTargets = padMultiValue(pipsTargets, targetColumnCount);
+  const normalizedPnlTargets = padMultiValue(pnlTargets, targetColumnCount);
   const preTradeMentalStateValue = formatOptionalText(
     state.trade.preTradeMentalState ?? state.trade.mentalState,
   );
@@ -1031,22 +1053,58 @@ export default function RegisteredTradePage() {
 
               <div className="flex flex-col gap-2">
                 <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Take Profit</span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{takeProfitValue}</span>
+                <div
+                  className="grid gap-3"
+                  style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
+                >
+                  {normalizedTakeProfitTargets.map((value, index) => (
+                    <div className="flex flex-col gap-2" key={`take-profit-${index}`}>
+                      <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                        {`Take Profit ${index + 1}`}
+                      </span>
+                      <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                        <span className="text-sm font-medium text-fg">{formatOptionalText(value)}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <div className="flex flex-col gap-2">
                 <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">R/R</span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{riskRewardValue}</span>
+                <div
+                  className="grid gap-3"
+                  style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
+                >
+                  {normalizedRiskRewardTargets.map((value, index) => (
+                    <div className="flex flex-col gap-2" key={`risk-reward-${index}`}>
+                      <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                        {`R/R ${index + 1}`}
+                      </span>
+                      <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                        <span className="text-sm font-medium text-fg">{formatOptionalText(value)}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <div className="flex flex-col gap-2">
                 <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Nr. Pips</span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{pipsValue}</span>
+                <div
+                  className="grid gap-3"
+                  style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
+                >
+                  {normalizedPipsTargets.map((value, index) => (
+                    <div className="flex flex-col gap-2" key={`pips-${index}`}>
+                      <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                        {`Nr. Pips ${index + 1}`}
+                      </span>
+                      <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                        <span className="text-sm font-medium text-fg">{formatOptionalText(value)}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -1066,8 +1124,20 @@ export default function RegisteredTradePage() {
 
               <div className="flex flex-col gap-2">
                 <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">P&amp;L</span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{pnlValue}</span>
+                <div
+                  className="grid gap-3"
+                  style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
+                >
+                  {normalizedPnlTargets.map((value, index) => (
+                    <div className="flex flex-col gap-2" key={`pnl-${index}`}>
+                      <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                        {`P&L ${index + 1}`}
+                      </span>
+                      <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                        <span className="text-sm font-medium text-fg">{formatOptionalText(value)}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
