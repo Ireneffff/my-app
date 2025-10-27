@@ -15,6 +15,7 @@ interface LibrarySectionProps {
   onSelectAction?: (actionId: string) => void;
   onAddAction?: () => void;
   onRemoveAction?: (actionId: string) => void;
+  onReorderAction?: (draggedActionId: string, targetActionId: string | null) => void;
   footer?: ReactNode;
   errorMessage?: string | null;
   notes?: ReactNode;
@@ -29,12 +30,42 @@ export function LibrarySection({
   onSelectAction,
   onAddAction,
   onRemoveAction,
+  onReorderAction,
   footer,
   errorMessage,
   notes,
 }: LibrarySectionProps) {
   const previewWrapperRef = useRef<HTMLDivElement | null>(null);
   const [previewHeight, setPreviewHeight] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const handleChange = () => {
+      setIsDesktop(mediaQuery.matches);
+    };
+
+    handleChange();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+    } else {
+      // Safari < 14 fallback
+      mediaQuery.addListener(handleChange);
+    }
+
+    return () => {
+      if (typeof mediaQuery.removeEventListener === "function") {
+        mediaQuery.removeEventListener("change", handleChange);
+      } else {
+        mediaQuery.removeListener(handleChange);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -112,13 +143,7 @@ export function LibrarySection({
     };
   }, [actions.length, selectedActionId]);
 
-  const carouselHeightStyle = previewHeight
-    ? {
-        height: `${previewHeight}px`,
-        maxHeight: `${previewHeight}px`,
-        minHeight: `${previewHeight}px`,
-      }
-    : undefined;
+  const carouselHeight = previewHeight && isDesktop ? previewHeight : null;
 
   const titleText = title?.trim() ?? "";
   const subtitleText = subtitle?.trim() ?? "";
@@ -137,27 +162,35 @@ export function LibrarySection({
             </header>
           ) : null}
 
-          <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,7.1fr)_minmax(0,2.2fr)] lg:grid-rows-[minmax(0,1fr)_auto] lg:items-start xl:gap-6">
-            <div ref={previewWrapperRef} className="w-full lg:row-span-2">
+          <div className="grid w-full gap-6 lg:[grid-template-areas:'preview_carousel''notes_carousel'] lg:grid-cols-[minmax(0,6.4fr)_minmax(0,3.6fr)] lg:items-start lg:gap-x-10 lg:gap-y-0">
+            <div
+              ref={previewWrapperRef}
+              className="w-full lg:[grid-area:preview]"
+            >
               {preview}
             </div>
 
             <div
-              className="box-border flex w-full min-w-0 flex-col lg:row-span-2 lg:h-full lg:max-w-[344px]"
-              style={carouselHeightStyle}
+              className="box-border flex w-full min-w-0 flex-col items-center lg:[grid-area:carousel] lg:h-full"
+              style={carouselHeight ? { height: `${carouselHeight}px` } : undefined}
             >
-              <div className="flex-1 min-h-0">
+              <div className="flex h-full w-full items-stretch">
                 <LibraryCarousel
                   items={actions}
                   selectedId={selectedActionId}
                   onSelectItem={onSelectAction}
                   onAddItem={onAddAction}
                   onRemoveItem={onRemoveAction}
+                  onReorderItem={onReorderAction}
+                  availableHeight={carouselHeight ?? undefined}
+                  className={carouselHeight ? "h-full" : undefined}
                 />
               </div>
-
-              {notes ? <div className="mt-4 w-full">{notes}</div> : null}
             </div>
+
+            {notes ? (
+              <div className="w-full lg:[grid-area:notes]">{notes}</div>
+            ) : null}
           </div>
 
           {footer ? <div className="w-full text-left text-xs text-muted-fg">{footer}</div> : null}

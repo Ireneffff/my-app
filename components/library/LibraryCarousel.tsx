@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 
 import { LibraryCard, type LibraryCardProps } from "./LibraryCard";
 
@@ -14,6 +21,9 @@ interface LibraryCarouselProps {
   onSelectItem?: (itemId: string) => void;
   onAddItem?: () => void;
   onRemoveItem?: (itemId: string) => void;
+  onReorderItem?: (draggedItemId: string, targetItemId: string | null) => void;
+  availableHeight?: number | null;
+  className?: string;
 }
 
 export function LibraryCarousel({
@@ -22,113 +32,471 @@ export function LibraryCarousel({
   onSelectItem,
   onAddItem,
   onRemoveItem,
+  onReorderItem,
+  availableHeight,
+  className,
 }: LibraryCarouselProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const hasItems = items.length > 0;
-  const activeItemId = selectedId ?? items[0]?.id;
+  const itemRefs = useRef(new Map<string, HTMLDivElement>());
+  const previousPositionsRef = useRef(new Map<string, DOMRect>());
+  const [isMobile, setIsMobile] = useState(false);
+  const [cardHeight, setCardHeight] = useState<number | null>(null);
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || !activeItemId) {
+  const hasItems = items.length > 0;
+  const activeItemId = useMemo(
+    () => selectedId ?? items[0]?.id,
+    [items, selectedId],
+  );
+  const canReorderItems = typeof onReorderItem === "function";
+  const itemFrameStyle = useMemo(() => {
+    const mobileMaxWidth = 220;
+
+    if (isMobile) {
+      return {
+        width: `min(100%, ${mobileMaxWidth}px)`,
+      };
+    }
+
+    const heightLimitedWidth =
+      typeof availableHeight === "number"
+        ? Math.min(availableHeight * (4 / 3), 420)
+        : 360;
+
+    return {
+      width: "100%",
+      maxWidth: `${heightLimitedWidth}px`,
+    };
+  }, [availableHeight, isMobile]);
+
+  const setItemRef = useCallback((itemId: string, node: HTMLDivElement | null) => {
+    if (!node) {
+      itemRefs.current.delete(itemId);
       return;
     }
 
-    const escapedId = (() => {
-      if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
-        return CSS.escape(activeItemId);
-      }
+    itemRefs.current.set(itemId, node);
+  }, []);
 
-      return activeItemId.replace(/['"\\]/g, "\\$&");
-    })();
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
 
-    const target = container.querySelector<HTMLElement>(
-      `[data-library-carousel-item="${escapedId}"]`,
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+    const updateIsMobile = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+
+    updateIsMobile();
+    mediaQuery.addEventListener("change", updateIsMobile);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateIsMobile);
+    };
+  }, []);
+
+  const measureCardHeight = useCallback(() => {
+    const container = containerRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    const cardElement = container.querySelector<HTMLElement>(
+      "[data-library-carousel-item]",
     );
 
-    if (!target) {
+    if (!cardElement) {
+      setCardHeight(null);
       return;
     }
 
-    target.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [activeItemId, items.length]);
+    const nextHeight = cardElement.offsetHeight;
+
+    setCardHeight((previousHeight) => {
+      if (previousHeight === null) {
+        return nextHeight;
+      }
+
+      return Math.abs(previousHeight - nextHeight) < 1 ? previousHeight : nextHeight;
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    measureCardHeight();
+  }, [measureCardHeight, items, activeItemId, isMobile]);
+
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleResize = () => {
+      measureCardHeight();
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [measureCardHeight]);
+
+  useLayoutEffect(() => {
+    if (!hasItems) {
+      previousPositionsRef.current.clear();
+      return;
+    }
+
+    const entries = Array.from(itemRefs.current.entries());
+    const newPositions = new Map<string, DOMRect>();
+    const frameIds: number[] = [];
+
+    for (const [id, element] of entries) {
+      if (!element) {
+        continue;
+      }
+
+      const rect = element.getBoundingClientRect();
+      newPositions.set(id, rect);
+
+      const previousRect = previousPositionsRef.current.get(id);
+
+      if (!previousRect) {
+        continue;
+      }
+
+      const deltaX = previousRect.left - rect.left;
+      const deltaY = previousRect.top - rect.top;
+
+      if (Math.abs(deltaX) < 0.5 && Math.abs(deltaY) < 0.5) {
+        continue;
+      }
+
+      element.style.transition = "none";
+      element.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0)`;
+      element.getBoundingClientRect();
+
+      const frameId = window.requestAnimationFrame(() => {
+        element.style.transition =
+          "transform 340ms cubic-bezier(0.22, 1, 0.36, 1)";
+        element.style.transform = "";
+      });
+
+      frameIds.push(frameId);
+
+      const handleTransitionEnd = () => {
+        element.style.transition = "";
+        element.removeEventListener("transitionend", handleTransitionEnd);
+      };
+
+      element.addEventListener("transitionend", handleTransitionEnd);
+    }
+
+    previousPositionsRef.current = newPositions;
+
+    return () => {
+      frameIds.forEach((id) => window.cancelAnimationFrame(id));
+    };
+  }, [items, hasItems]);
+
+  const scrollContainerClassName = useMemo(() => {
+    const baseClassName = "flex flex-1 items-center gap-4 scroll-smooth snap-mandatory";
+    const directionClassName = isMobile
+      ? "flex-row overflow-x-auto overflow-y-hidden snap-x"
+      : "flex-col overflow-y-auto overflow-x-hidden snap-y";
+
+    return `${baseClassName} ${directionClassName}`;
+  }, [isMobile]);
+
+  const scrollContainerStyle = useMemo(() => {
+    if (isMobile) {
+      return cardHeight ? { height: `${cardHeight}px` } : undefined;
+    }
+
+    if (typeof availableHeight === "number") {
+      return { height: `${availableHeight}px` };
+    }
+
+    return undefined;
+  }, [availableHeight, cardHeight, isMobile]);
+
+  const rootClassName = useMemo(
+    () =>
+      [
+        "relative flex w-full flex-col overflow-hidden rounded-3xl border border-[#E6E6E6] bg-[#F7F7F7] p-4 shadow-[0_20px_60px_-50px_rgba(15,23,42,0.45)]",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    [className],
+  );
 
   return (
-    <div
-      ref={containerRef}
-      className="flex h-full flex-col"
-    >
-      <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto scroll-smooth snap-y snap-mandatory py-3 scroll-py-6">
-        {hasItems ? (
-          items.map((item) => {
-            const isActive = item.id === activeItemId;
-            const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
-            const combinedClassName = itemClassName
-              ? `${itemClassName} w-full max-w-[calc(100%-1rem)]`
-              : "w-full max-w-[calc(100%-1rem)]";
-            const shouldDim = hasItems && !isActive;
+    <div className={rootClassName}>
+      <div
+        ref={containerRef}
+        className="flex h-full min-h-0 flex-col"
+      >
+        <div
+          className={scrollContainerClassName}
+          style={scrollContainerStyle}
+        >
+          {hasItems ? (
+            items.map((item, index) => {
+              const isActive = item.id === activeItemId;
+              const {
+                className: itemClassName,
+                onClick: itemOnClick,
+                hideLabel: itemHideLabel,
+                visualWrapperClassName: itemVisualWrapperClassName,
+                ["aria-label"]: itemAriaLabel,
+                ...restItem
+              } = item;
+              const baseWidthClasses = "w-full";
+              const combinedClassName = itemClassName
+                ? `${itemClassName} ${baseWidthClasses}`
+                : baseWidthClasses;
+              const shouldDim = hasItems && !isActive;
+              const canMoveUp = canReorderItems && index > 0;
+              const canMoveDown = canReorderItems && index < items.length - 1;
+              const shouldHideLabel = isMobile ? true : Boolean(itemHideLabel);
+              const shouldRenderOverlayLabel = isMobile && !itemHideLabel;
 
-            return (
-              <div key={item.id} className="relative flex snap-start justify-center">
-                {onRemoveItem ? (
-                  <button
-                    type="button"
-                    aria-label={`Rimuovi ${item.label}`}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      onRemoveItem(item.id);
-                    }}
-                    className="absolute right-4 top-4 z-40 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-white/95 text-neutral-500 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] transition-colors hover:text-neutral-900 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+              const resolvedAriaLabel =
+                itemAriaLabel ??
+                (shouldHideLabel && !itemHideLabel ? item.label : undefined);
+
+              const handleMoveUp = (event: ReactMouseEvent<HTMLButtonElement>) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (!canReorderItems || !canMoveUp) {
+                  return;
+                }
+
+                const targetItem = items[index - 1];
+
+                if (!targetItem) {
+                  return;
+                }
+
+                onReorderItem?.(item.id, targetItem.id);
+              };
+
+              const handleMoveDown = (event: ReactMouseEvent<HTMLButtonElement>) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (!canReorderItems || !canMoveDown) {
+                  return;
+                }
+
+                const targetAfterItem = items[index + 2];
+                onReorderItem?.(item.id, targetAfterItem?.id ?? null);
+              };
+
+              return (
+                <div
+                  key={item.id}
+                  className="flex flex-shrink-0 snap-center justify-center"
+                >
+                  <div
+                    ref={(node) => setItemRef(item.id, node)}
+                    data-library-carousel-wrapper={item.id}
+                    className="group/item relative flex-shrink-0"
+                    style={itemFrameStyle}
                   >
-                    <CloseIcon />
-                  </button>
-                ) : null}
+                    <div className="absolute right-2 top-2 z-40 flex flex-col items-end gap-2 md:right-3 md:top-3">
+                      {onRemoveItem ? (
+                        <button
+                          type="button"
+                          aria-label={`Rimuovi ${item.label}`}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onRemoveItem(item.id);
+                          }}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-white/95 text-neutral-500 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] transition-colors hover:text-neutral-900 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                        >
+                          <CloseIcon />
+                        </button>
+                      ) : null}
 
+                      {canReorderItems ? (
+                        <div className="pointer-events-none hidden flex-col items-center gap-1 opacity-0 transition-opacity duration-200 group-hover/item:opacity-100 md:flex">
+                          <ReorderArrowButton
+                            direction="up"
+                            ariaLabel={`Sposta ${item.label} in alto`}
+                            onClick={handleMoveUp}
+                            disabled={!canMoveUp}
+                          />
+                          <ReorderArrowButton
+                            direction="down"
+                            ariaLabel={`Sposta ${item.label} in basso`}
+                            onClick={handleMoveDown}
+                            disabled={!canMoveDown}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="absolute inset-y-2 left-2 z-40 flex items-center md:hidden">
+                      {canReorderItems ? (
+                        <ReorderArrowButton
+                          direction="left"
+                          ariaLabel={`Sposta ${item.label} a sinistra`}
+                          onClick={handleMoveUp}
+                          disabled={!canMoveUp}
+                        />
+                      ) : null}
+                    </div>
+
+                    <div className="absolute inset-y-2 right-2 z-40 flex items-center md:hidden">
+                      {canReorderItems ? (
+                        <ReorderArrowButton
+                          direction="right"
+                          ariaLabel={`Sposta ${item.label} a destra`}
+                          onClick={handleMoveDown}
+                          disabled={!canMoveDown}
+                        />
+                      ) : null}
+                    </div>
+
+                    <LibraryCard
+                      {...restItem}
+                      isActive={isActive}
+                      isDimmed={shouldDim}
+                      data-library-carousel-item={item.id}
+                      className={`${combinedClassName}`}
+                      hideLabel={shouldHideLabel}
+                      aria-label={resolvedAriaLabel}
+                      visualWrapperClassName={itemVisualWrapperClassName}
+                      onClick={(event) => {
+                        onSelectItem?.(item.id);
+                        itemOnClick?.(event);
+                      }}
+                    />
+                    {shouldRenderOverlayLabel ? (
+                      <span className="pointer-events-none absolute bottom-3 left-3 right-3 rounded-full bg-white/90 px-3 py-1 text-center text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg shadow-[0_10px_24px_-20px_rgba(15,23,42,0.45)]">
+                        {item.label}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="flex flex-shrink-0 snap-center justify-center">
+              <div
+                className="relative flex-shrink-0"
+                style={itemFrameStyle}
+              >
                 <LibraryCard
-                  {...restItem}
-                  isActive={isActive}
-                  isDimmed={shouldDim}
-                  data-library-carousel-item={item.id}
-                  className={`${combinedClassName} mx-auto`}
-                  onClick={(event) => {
-                    onSelectItem?.(item.id);
-                    itemOnClick?.(event);
-                  }}
+                  label="Nessuna card"
+                  aria-label="Nessuna card disponibile"
+                  disabled
+                  hideLabel
+                  isActive={false}
+                  isDimmed={false}
+                  className="w-full"
+                  data-library-carousel-item="empty"
+                  visual={
+                    <span className="flex h-full w-full items-center justify-center rounded-xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
+                      Nessuna card
+                    </span>
+                  }
                 />
               </div>
-            );
-          })
-        ) : (
-          <div className="mx-auto flex h-[180px] w-full max-w-[calc(100%-1rem)] snap-start items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
-            Nessuna card
-          </div>
-        )}
+            </div>
+          )}
 
-        {onAddItem ? (
-          <LibraryCard
-            key="library-add-card"
-            label="Nuova immagine"
-            aria-label="Aggiungi una nuova card libreria"
-            isActive={false}
-            isDimmed={false}
-            data-library-carousel-item="add"
-            className="mx-auto w-full max-w-[calc(100%-1rem)] snap-start"
-            hideLabel
-            visualWrapperClassName="h-32 w-full overflow-visible bg-transparent"
-            onClick={() => {
-              onAddItem?.();
-            }}
-            visual={
-              <span className="flex h-full w-full items-center justify-center">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_22px_48px_-34px_rgba(15,23,42,0.45)]">
-                  <PlusIcon className="h-5 w-5 text-accent" />
-                </span>
-              </span>
-            }
-          />
-        ) : null}
+          {onAddItem ? (
+            <div
+              key="library-add-card-wrapper"
+              className="flex flex-shrink-0 snap-center items-center justify-center"
+            >
+              <div
+                className="relative flex-shrink-0"
+                style={itemFrameStyle}
+              >
+                <LibraryCard
+                  label="Nuova immagine"
+                  aria-label="Aggiungi una nuova card libreria"
+                  isActive={false}
+                  isDimmed={false}
+                  data-library-carousel-item="add"
+                  className="w-full"
+                  hideLabel
+                  onClick={() => {
+                    onAddItem?.();
+                  }}
+                  visual={
+                    <div className="flex h-full w-full items-center justify-center">
+                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_22px_48px_-34px_rgba(15,23,42,0.45)]">
+                        <PlusIcon className="h-5 w-5 text-accent" />
+                      </span>
+                    </div>
+                  }
+                />
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
+  );
+}
+
+interface ReorderArrowButtonProps {
+  direction: "up" | "down" | "left" | "right";
+  ariaLabel: string;
+  disabled?: boolean;
+  onClick: (event: ReactMouseEvent<HTMLButtonElement>) => void;
+}
+
+function ReorderArrowButton({
+  direction,
+  ariaLabel,
+  disabled = false,
+  onClick,
+}: ReorderArrowButtonProps) {
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      onClick={onClick}
+      disabled={disabled}
+      className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/60 bg-white/95 text-neutral-500 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.45)] transition-colors hover:text-neutral-900 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:opacity-40 disabled:hover:text-neutral-500 md:h-7 md:w-7"
+    >
+      <ArrowIcon direction={direction} />
+    </button>
+  );
+}
+
+function ArrowIcon({ direction }: { direction: "up" | "down" | "left" | "right" }) {
+  const rotation = {
+    up: "rotate(0deg)",
+    right: "rotate(90deg)",
+    down: "rotate(180deg)",
+    left: "rotate(270deg)",
+  }[direction];
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-3.5 w-3.5"
+      style={{ transform: rotation }}
+      aria-hidden="true"
+    >
+      <path d="m6 15 6-6 6 6" />
+    </svg>
   );
 }
 
