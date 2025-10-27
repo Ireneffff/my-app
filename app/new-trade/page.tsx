@@ -112,6 +112,19 @@ function createLibraryItem(imageData: string | null = null): LibraryItem {
   } satisfies LibraryItem;
 }
 
+function formatDate(date: Date) {
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatWeekday(date: Date) {
+  return date.toLocaleDateString("en-US", { weekday: "short" });
+}
+
 function formatDateTimeLocal(date: Date) {
   const pad = (value: number) => value.toString().padStart(2, "0");
   const year = date.getFullYear();
@@ -235,6 +248,7 @@ function NewTradePageContent() {
     return calculateDuration(openTime, closeTime);
   }, [openTime, closeTime]);
 
+  const tradeDateInputRef = useRef<HTMLInputElement | null>(null);
   const openTimeInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimeInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
@@ -286,6 +300,13 @@ function NewTradePageContent() {
   const [profitTargets, setProfitTargets] = useState<ProfitTargetInput[]>([
     { ...EMPTY_PROFIT_TARGET },
   ]);
+  const profitTargetRows = useMemo(
+    () =>
+      profitTargets.length > 0
+        ? profitTargets
+        : [{ ...EMPTY_PROFIT_TARGET }],
+    [profitTargets],
+  );
   const [preTradeMentalState, setPreTradeMentalState] = useState("");
   const [emotionsDuringTrade, setEmotionsDuringTrade] = useState("");
   const [emotionsAfterTrade, setEmotionsAfterTrade] = useState("");
@@ -1609,7 +1630,19 @@ function NewTradePageContent() {
                             type="date"
                             className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                             value={formatDate(selectedDate)}
-                            onChange={(event) => handleSelectDate(event.target.value)}
+                            onChange={(event) => {
+                              const { value } = event.target;
+                              if (!value) {
+                                return;
+                              }
+
+                              const [year, month, day] = value.split("-").map(Number);
+                              if (!year || !month || !day) {
+                                return;
+                              }
+
+                              handleSelectDate(new Date(year, month - 1, day));
+                            }}
                             aria-label="Select trade date"
                           />
                           <div className="pointer-events-none flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
@@ -1617,7 +1650,7 @@ function NewTradePageContent() {
                               {formatDate(selectedDate)}
                             </span>
                             <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
-                              {format(selectedDate, "EEEE").slice(0, 3)}
+                              {formatWeekday(selectedDate)}
                             </span>
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -2362,9 +2395,6 @@ function NewTradePageContent() {
     emotionalTrigger,
     wouldRepeatTrade,
   ]);
-
-  const profitTargetRows =
-    profitTargets.length > 0 ? profitTargets : [{ ...EMPTY_PROFIT_TARGET }];
 
   return (
     <section
