@@ -36,6 +36,20 @@ type SymbolOption = {
   flag: string;
 };
 
+type ProfitTargetInput = {
+  takeProfit: string;
+  pnl: string;
+  riskReward: string;
+  pips: string;
+};
+
+const EMPTY_PROFIT_TARGET: ProfitTargetInput = {
+  takeProfit: "",
+  pnl: "",
+  riskReward: "",
+  pips: "",
+};
+
 const availableSymbols: SymbolOption[] = [
   { code: "EURUSD", flag: "🇪🇺 🇺🇸" },
   { code: "GBPUSD", flag: "🇬🇧 🇺🇸" },
@@ -96,6 +110,19 @@ function createLibraryItem(imageData: string | null = null): LibraryItem {
     createdAt: null,
     persisted: false,
   } satisfies LibraryItem;
+}
+
+function formatDate(date: Date) {
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatWeekday(date: Date) {
+  return date.toLocaleDateString("en-US", { weekday: "short" });
 }
 
 function formatDateTimeLocal(date: Date) {
@@ -221,6 +248,7 @@ function NewTradePageContent() {
     return calculateDuration(openTime, closeTime);
   }, [openTime, closeTime]);
 
+  const tradeDateInputRef = useRef<HTMLInputElement | null>(null);
   const openTimeInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimeInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
@@ -265,12 +293,20 @@ function NewTradePageContent() {
   const [removedLibraryItems, setRemovedLibraryItems] = useState<RemovedLibraryItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingTrade, setIsLoadingTrade] = useState(isEditing);
-  const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
+  const [position, setPosition] = useState<"LONG" | "SHORT" | "">("");
   const [entryPrice, setEntryPrice] = useState("");
   const [exitPrice, setExitPrice] = useState("");
   const [stopLoss, setStopLoss] = useState("");
-  const [takeProfit, setTakeProfit] = useState("");
-  const [pnl, setPnl] = useState("");
+  const [profitTargets, setProfitTargets] = useState<ProfitTargetInput[]>([
+    { ...EMPTY_PROFIT_TARGET },
+  ]);
+  const profitTargetRows = useMemo(
+    () =>
+      profitTargets.length > 0
+        ? profitTargets
+        : [{ ...EMPTY_PROFIT_TARGET }],
+    [profitTargets],
+  );
   const [preTradeMentalState, setPreTradeMentalState] = useState("");
   const [emotionsDuringTrade, setEmotionsDuringTrade] = useState("");
   const [emotionsAfterTrade, setEmotionsAfterTrade] = useState("");
@@ -279,15 +315,33 @@ function NewTradePageContent() {
   const [followedPlan, setFollowedPlan] = useState("");
   const [respectedRiskChoice, setRespectedRiskChoice] = useState("");
   const [wouldRepeatTrade, setWouldRepeatTrade] = useState("");
-  const [riskReward, setRiskReward] = useState("");
   const [risk, setRisk] = useState("");
-  const [pips, setPips] = useState("");
+  const [lotSize, setLotSize] = useState("");
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() =>
     getStartOfMonth(initialSelectedDate),
   );
   const [, startNavigation] = useTransition();
+
+  const updateProfitTarget = useCallback(
+    (index: number, updates: Partial<ProfitTargetInput>) => {
+      setProfitTargets((previous) => {
+        if (index < 0 || index >= previous.length) {
+          return previous;
+        }
+
+        const next = [...previous];
+        next[index] = { ...next[index], ...updates };
+        return next;
+      });
+    },
+    [],
+  );
+
+  const handleAddProfitTargetRow = useCallback(() => {
+    setProfitTargets((previous) => [...previous, { ...EMPTY_PROFIT_TARGET }]);
+  }, []);
 
   const lockBodyScroll = useCallback(() => {
     if (typeof document === "undefined") {
@@ -869,8 +923,28 @@ function NewTradePageContent() {
         setEntryPrice(match.entryPrice ?? "");
         setExitPrice(match.exitPrice ?? "");
         setStopLoss(match.stopLoss ?? "");
-        setTakeProfit(match.takeProfit ?? "");
-        setPnl(match.pnl ?? "");
+        const hydratedTargets =
+          Array.isArray(match.profitTargets) && match.profitTargets.length > 0
+            ? match.profitTargets.map((target) => ({
+                takeProfit: target.takeProfit ?? "",
+                pnl: target.pnl ?? "",
+                riskReward: target.riskReward ?? "",
+                pips: target.pips ?? "",
+              }))
+            : [
+                {
+                  takeProfit: match.takeProfit ?? "",
+                  pnl: match.pnl ?? "",
+                  riskReward: match.riskReward ?? "",
+                  pips: match.pips ?? "",
+                },
+              ];
+
+        setProfitTargets(
+          hydratedTargets.length > 0
+            ? hydratedTargets.map((target) => ({ ...EMPTY_PROFIT_TARGET, ...target }))
+            : [{ ...EMPTY_PROFIT_TARGET }],
+        );
         setPreTradeMentalState(match.preTradeMentalState ?? "");
         setEmotionsDuringTrade(match.emotionsDuringTrade ?? "");
         setEmotionsAfterTrade(match.emotionsAfterTrade ?? "");
@@ -879,9 +953,15 @@ function NewTradePageContent() {
         setFollowedPlan(match.followedPlan ?? "");
         setRespectedRiskChoice(match.respectedRisk ?? "");
         setWouldRepeatTrade(match.wouldRepeatTrade ?? "");
-        setRiskReward(match.riskReward ?? "");
-        setRisk(match.risk ?? "");
-        setPips(match.pips ?? "");
+        setRisk(
+          match.risk
+            ? match.risk
+                .replace(/%/g, "")
+                .replace(/,/g, ".")
+                .trim()
+            : "",
+        );
+        setLotSize(match.lotSize ?? "");
 
         if (imageInputRef.current) {
           imageInputRef.current.value = "";
@@ -1497,100 +1577,101 @@ function NewTradePageContent() {
                               strokeWidth="1.5"
                               strokeLinecap="round"
                               strokeLinejoin="round"
-                              className={`h-4 w-4 text-gray-500 opacity-100 transition-transform transition-opacity group-hover:opacity-80 ${
-                                isSymbolListOpen ? "rotate-180" : ""
-                              }`}
+                              className="h-4 w-4 text-muted-fg transition group-hover:translate-y-0.5"
                               aria-hidden="true"
                             >
-                              <path d="m6 9 6 6 6-6" />
+                              <polyline points="6 9 12 15 18 9" />
                             </svg>
                           </div>
+                          <span className="text-xs font-medium text-muted-fg">Click to change</span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setIsRealTrade((prev) => !prev)}
-                          className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border text-center shadow-sm transition-all duration-200 ease-in-out focus:outline-none focus:ring-0 hover:shadow-md ${
-                            isRealTrade
-                              ? "border-green-200 bg-green-100 text-green-700"
-                              : "border-gray-200 bg-gray-50 text-gray-600"
-                          }`}
-                          aria-pressed={isRealTrade}
-                        >
-                          {isRealTrade ? (
-                            <CheckCircle
-                              className="h-5 w-5 text-green-500 transition-colors duration-200 ease-in-out"
-                              aria-hidden="true"
-                            />
-                          ) : (
-                            <Circle
-                              className="h-5 w-5 text-gray-400 transition-colors duration-200 ease-in-out"
-                              aria-hidden="true"
-                            />
-                          )}
-                          <span className="text-sm font-medium tracking-[0.08em]">
-                            {isRealTrade ? "Real Trade" : "Paper Trade"}
-                          </span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-                      isSymbolListOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                    }`}
-                  >
-                    <div className="overflow-hidden">
-                      <div
-                        className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-2"
-                        role="listbox"
-                        aria-activedescendant={`symbol-${selectedSymbol.code}`}
-                      >
-                        {availableSymbols.map((symbol) => {
-                          const isActive = symbol.code === selectedSymbol.code;
-
-                          return (
+                        <div className="flex flex-col gap-2">
+                          <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Trade Type</span>
+                          <div className="flex items-center gap-2">
                             <button
-                              key={symbol.code}
-                              id={`symbol-${symbol.code}`}
                               type="button"
-                              className={`flex w-full items-center gap-4 rounded-2xl px-4 py-3 text-sm font-medium transition md:text-base ${
-                                isActive
-                                  ? "text-accent"
-                                  : "text-muted-fg hover:bg-subtle hover:text-fg"
+                              onClick={() => setIsRealTrade(true)}
+                              className={`flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] transition focus:outline-none focus:ring-0 ${
+                                isRealTrade
+                                  ? "border-transparent bg-fg text-background"
+                                  : "border-border bg-surface text-muted-fg hover:border-border/70 hover:text-fg"
                               }`}
-                              style={
-                                isActive
-                                  ? {
-                                      backgroundColor: "rgb(var(--accent) / 0.1)",
-                                    }
-                                  : undefined
-                              }
-                              onClick={() => handleSelectSymbol(symbol)}
-                              aria-selected={isActive}
-                              role="option"
                             >
-                              <span className="text-2xl" aria-hidden="true">
-                                {symbol.flag}
-                              </span>
-                              <span className="tracking-[0.18em]">{symbol.code}</span>
-                              {isActive ? (
-                                <span
-                                  className="ml-auto text-xs font-medium uppercase tracking-[0.24em]"
-                                  style={{ color: "rgb(var(--accent) / 0.8)" }}
-                                >
-                                  Selected
-                                </span>
-                              ) : null}
+                              Real
                             </button>
-                          );
-                        })}
+                            <button
+                              type="button"
+                              onClick={() => setIsRealTrade(false)}
+                              className={`flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] transition focus:outline-none focus:ring-0 ${
+                                !isRealTrade
+                                  ? "border-transparent bg-fg text-background"
+                                  : "border-border bg-surface text-muted-fg hover:border-border/70 hover:text-fg"
+                              }`}
+                            >
+                              Paper
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-col">
-                    <div className="grid gap-4 md:grid-cols-2">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-3">
+                        <label
+                          htmlFor="trade-date-input"
+                          className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg"
+                        >
+                          Trade Date
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="trade-date-input"
+                            ref={tradeDateInputRef}
+                            type="date"
+                            className="absolute inset-0 h-full w-full cursor-pointer rounded-2xl border-0 bg-transparent opacity-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                            value={formatDate(selectedDate)}
+                            onChange={(event) => {
+                              const { value } = event.target;
+                              if (!value) {
+                                return;
+                              }
+
+                              const [year, month, day] = value.split("-").map(Number);
+                              if (!year || !month || !day) {
+                                return;
+                              }
+
+                              handleSelectDate(new Date(year, month - 1, day));
+                            }}
+                            aria-label="Select trade date"
+                          />
+                          <div className="pointer-events-none flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
+                            <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
+                              {formatDate(selectedDate)}
+                            </span>
+                            <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
+                              {formatWeekday(selectedDate)}
+                            </span>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="ml-auto h-6 w-6 text-muted-fg"
+                              aria-hidden="true"
+                            >
+                              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                              <line x1="16" y1="2" x2="16" y2="6" />
+                              <line x1="8" y1="2" x2="8" y2="6" />
+                              <line x1="3" y1="10" x2="21" y2="10" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="flex flex-col gap-3">
                         <label
                           htmlFor="open-time-input"
@@ -1751,311 +1832,409 @@ function NewTradePageContent() {
                         </div>
                       </div>
                     </div>
-
-                    <p className="mt-2 text-center text-sm text-gray-500">
-                      Duration: {durationLabel}
-                    </p>
                   </div>
 
-                  <div className="flex flex-col gap-4">
-                    <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
-                      General Details
-                    </span>
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="position-select"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Position
-                        </label>
-                        <select
-                          id="position-select"
-                          value={position}
-                          onChange={(event) =>
-                            setPosition(event.target.value === "SHORT" ? "SHORT" : "LONG")
-                          }
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-0"
-                        >
-                          <option value="LONG">Long</option>
-                          <option value="SHORT">Short</option>
-                        </select>
+                  <div className="flex flex-col gap-6">
+                    <div className="border-t border-gray-200" />
+
+                    <div className="flex flex-col gap-4 pt-6">
+                      <span className="text-gray-700 text-sm font-semibold">General Details</span>
+
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <div className="flex flex-col gap-2">
+                          <label
+                            htmlFor="entry-price-input"
+                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          >
+                            Entry Price
+                          </label>
+                          <input
+                            id="entry-price-input"
+                            type="number"
+                            value={entryPrice}
+                            onChange={(event) => setEntryPrice(event.target.value)}
+                            placeholder="Insert price"
+                            className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label
+                            htmlFor="exit-price-input"
+                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          >
+                            Exit Price
+                          </label>
+                          <input
+                            id="exit-price-input"
+                            type="number"
+                            value={exitPrice}
+                            onChange={(event) => setExitPrice(event.target.value)}
+                            placeholder="Insert price"
+                            className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label
+                            htmlFor="stop-loss-input"
+                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          >
+                            Stop Loss
+                          </label>
+                          <input
+                            id="stop-loss-input"
+                            type="number"
+                            value={stopLoss}
+                            onChange={(event) => setStopLoss(event.target.value)}
+                            placeholder="Insert price"
+                            className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                          />
+                        </div>
                       </div>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="risk-reward-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          R/R
-                        </label>
-                        <input
-                          id="risk-reward-input"
-                          type="text"
-                          value={riskReward}
-                          onChange={(event) => setRiskReward(event.target.value)}
-                          placeholder="1:4"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <div className="flex flex-col gap-2">
+                          <label
+                            htmlFor="position-select"
+                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          >
+                            Position
+                          </label>
+                          <select
+                            id="position-select"
+                            value={position}
+                            onChange={(event) => {
+                              const nextValue = event.target.value;
+
+                              if (nextValue === "SHORT") {
+                                setPosition("SHORT");
+                                return;
+                              }
+
+                              if (nextValue === "LONG") {
+                                setPosition("LONG");
+                                return;
+                              }
+
+                              setPosition("");
+                            }}
+                            className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium focus:outline-none focus:ring-0 ${
+                              position ? "text-fg" : "text-muted-fg"
+                            }`}
+                          >
+                            <option value="" disabled>
+                              Seleziona posizione
+                            </option>
+                            <option value="LONG">Long</option>
+                            <option value="SHORT">Short</option>
+                          </select>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label
+                            htmlFor="risk-input"
+                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          >
+                            Risk
+                          </label>
+                          <input
+                            id="risk-input"
+                            type="text"
+                            value={risk ? `${risk}%` : ""}
+                            onChange={(event) => {
+                              const rawValue = event.target.value
+                                .replace(/%/g, "")
+                                .replace(/\s+/g, "");
+
+                              if (rawValue.length === 0) {
+                                setRisk("");
+                                return;
+                              }
+
+                              let normalized = rawValue
+                                .replace(/[^0-9.,]/g, "")
+                                .replace(/,/g, ".");
+
+                              if (normalized.startsWith(".")) {
+                                normalized = `0${normalized}`;
+                              }
+
+                              if (/^\d*\.?\d*$/.test(normalized)) {
+                                setRisk(normalized);
+                              }
+                            }}
+                            placeholder="Inserisci (es. 2%)"
+                            className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label
+                            htmlFor="lot-size-input"
+                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          >
+                            Lot Size
+                          </label>
+                          <input
+                            id="lot-size-input"
+                            type="text"
+                            value={lotSize}
+                            onChange={(event) => setLotSize(event.target.value)}
+                            placeholder="Inserisci"
+                            className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                          />
+                        </div>
                       </div>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="risk-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Risk
-                        </label>
-                        <input
-                          id="risk-input"
-                          type="text"
-                          value={risk}
-                          onChange={(event) => setRisk(event.target.value)}
-                          placeholder="2%"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
+                      <div className="flex flex-col gap-4">
+                        {profitTargetRows.map((target, index) => {
+                          const takeProfitId = `take-profit-input-${index}`;
+                          const pnlId = `pnl-input-${index}`;
+                          const riskRewardId = `risk-reward-input-${index}`;
+                          const pipsId = `pips-input-${index}`;
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="pips-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Nr. Pips
-                        </label>
-                        <input
-                          id="pips-input"
-                          type="text"
-                          value={pips}
-                          onChange={(event) => setPips(event.target.value)}
-                          placeholder="55"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
+                          return (
+                            <div
+                              key={`profit-target-${index}`}
+                              className="flex flex-col gap-3 md:flex-row md:items-end"
+                            >
+                              <div className="grid flex-1 gap-4 md:grid-cols-4">
+                                <div className="flex flex-col gap-2">
+                                  <label
+                                    htmlFor={takeProfitId}
+                                    className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                                  >
+                                    Take Profit
+                                  </label>
+                                  <input
+                                    id={takeProfitId}
+                                    type="number"
+                                    value={target.takeProfit}
+                                    onChange={(event) =>
+                                      updateProfitTarget(index, { takeProfit: event.target.value })
+                                    }
+                                    placeholder="Insert price"
+                                    className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                                  />
+                                </div>
+
+                                <div className="flex flex-col gap-2">
+                                  <label
+                                    htmlFor={pnlId}
+                                    className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                                  >
+                                    P&amp;L
+                                  </label>
+                                  <input
+                                    id={pnlId}
+                                    type="number"
+                                    value={target.pnl}
+                                    onChange={(event) => updateProfitTarget(index, { pnl: event.target.value })}
+                                    placeholder="Insert"
+                                    className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                                  />
+                                </div>
+
+                                <div className="flex flex-col gap-2">
+                                  <label
+                                    htmlFor={riskRewardId}
+                                    className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                                  >
+                                    R/R
+                                  </label>
+                                  <input
+                                    id={riskRewardId}
+                                    type="text"
+                                    value={target.riskReward}
+                                    onChange={(event) => {
+                                      const rawValue = event.target.value.replace(/\s+/g, "");
+                                      const sanitizedValue = rawValue.replace(/[^0-9:]/g, "");
+                                      const colonIndex = sanitizedValue.indexOf(":");
+                                      const normalizedValue =
+                                        colonIndex === -1
+                                          ? sanitizedValue
+                                          : `${sanitizedValue.slice(0, colonIndex)}:${sanitizedValue
+                                              .slice(colonIndex + 1)
+                                              .replace(/:/g, "")}`;
+
+                                      if (
+                                        normalizedValue === "" ||
+                                        /^\d+(?::\d*)?$/.test(normalizedValue)
+                                      ) {
+                                        updateProfitTarget(index, { riskReward: normalizedValue });
+                                      }
+                                    }}
+                                    placeholder="Inserisci (es. 1:4)"
+                                    className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                                  />
+                                </div>
+
+                                <div className="flex flex-col gap-2">
+                                  <label
+                                    htmlFor={pipsId}
+                                    className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                                  >
+                                    Nr. Pips
+                                  </label>
+                                  <input
+                                    id={pipsId}
+                                    type="text"
+                                    value={target.pips}
+                                    onChange={(event) => updateProfitTarget(index, { pips: event.target.value })}
+                                    placeholder="Inserisci"
+                                    className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                                  />
+                                </div>
+                              </div>
+                              {index === profitTargetRows.length - 1 && (
+                                <button
+                                  type="button"
+                                  onClick={handleAddProfitTargetRow}
+                                  className="mt-2 inline-flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[#2563eb] text-lg font-semibold text-white transition hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]/70 focus-visible:ring-offset-2 md:ml-4 md:mt-0"
+                                  aria-label="Aggiungi una nuova riga di target"
+                                >
+                                  +
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
-                    <div className="border-t border-gray-200 mt-6" />
-                    <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
-                      Price & Risk Details
-                    </span>
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="entry-price-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                    <div className="border-t border-gray-200" />
+
+                    <div className="flex flex-col gap-4 pt-6">
+                      <span className="text-gray-700 text-sm font-semibold">Psychology & Mindset</span>
+                      <div className="flex flex-col">
+                        <StyledSelect
+                          label="Stato mentale prima del trade"
+                          value={preTradeMentalState}
+                          onChange={(nextValue) => setPreTradeMentalState(nextValue)}
+                          placeholder="Seleziona opzione"
                         >
-                          Entry Price
-                        </label>
-                        <input
-                          id="entry-price-input"
-                          type="number"
-                          value={entryPrice}
-                          onChange={(event) => setEntryPrice(event.target.value)}
-                          placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
+                          {preTradeMentalStateOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </StyledSelect>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="exit-price-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        <StyledSelect
+                          label="Emozioni durante il trade"
+                          value={emotionsDuringTrade}
+                          onChange={(nextValue) => setEmotionsDuringTrade(nextValue)}
+                          placeholder="Seleziona opzione"
                         >
-                          Exit Price
-                        </label>
-                        <input
-                          id="exit-price-input"
-                          type="number"
-                          value={exitPrice}
-                          onChange={(event) => setExitPrice(event.target.value)}
-                          placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
+                          {emotionsDuringTradeOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </StyledSelect>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="stop-loss-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        <StyledSelect
+                          label="Emozioni dopo il trade"
+                          value={emotionsAfterTrade}
+                          onChange={(nextValue) => setEmotionsAfterTrade(nextValue)}
+                          placeholder="Seleziona opzione"
                         >
-                          Stop Loss
-                        </label>
-                        <input
-                          id="stop-loss-input"
-                          type="number"
-                          value={stopLoss}
-                          onChange={(event) => setStopLoss(event.target.value)}
-                          placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
+                          {emotionsAfterTradeOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </StyledSelect>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="take-profit-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        <div className="mb-4">
+                          <label
+                            htmlFor="confidence-level-input"
+                            className="text-gray-600 text-xs font-medium mb-1 block"
+                          >
+                            Livello di fiducia (1–10)
+                          </label>
+                          <input
+                            id="confidence-level-input"
+                            type="number"
+                            min={1}
+                            max={10}
+                            step={1}
+                            value={confidenceLevel}
+                            onChange={(event) => {
+                              const rawValue = event.target.value;
+
+                              if (rawValue === "") {
+                                setConfidenceLevel("");
+                                return;
+                              }
+
+                              const numericValue = Number(rawValue);
+
+                              if (Number.isNaN(numericValue)) {
+                                return;
+                              }
+
+                              const clampedValue = Math.min(10, Math.max(1, numericValue));
+                              setConfidenceLevel(String(clampedValue));
+                            }}
+                            placeholder="Seleziona livello"
+                            className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 text-sm placeholder-gray-400 p-2 focus:outline-none focus:ring-0"
+                          />
+                        </div>
+
+                        <StyledSelect
+                          label="Trigger emotivi"
+                          value={emotionalTrigger}
+                          onChange={(nextValue) => setEmotionalTrigger(nextValue)}
+                          placeholder="Seleziona opzione"
                         >
-                          Take Profit
-                        </label>
-                        <input
-                          id="take-profit-input"
-                          type="number"
-                          value={takeProfit}
-                          onChange={(event) => setTakeProfit(event.target.value)}
-                          placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
+                          {emotionalTriggerOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </StyledSelect>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="pnl-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        <StyledSelect
+                          label="Ho seguito il mio piano?"
+                          value={followedPlan}
+                          onChange={(nextValue) => setFollowedPlan(nextValue)}
+                          placeholder="Seleziona risposta"
                         >
-                          P&amp;L
-                        </label>
-                        <input
-                          id="pnl-input"
-                          type="number"
-                          value={pnl}
-                          onChange={(event) => setPnl(event.target.value)}
-                          placeholder="Insert"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
-                    </div>
+                          {followedPlanOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </StyledSelect>
 
-                    <div className="border-t border-gray-200 mt-6" />
-                    <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
-                      Psychology & Mindset
-                    </span>
-                    <div className="flex flex-col">
-                      <StyledSelect
-                        label="Stato mentale prima del trade"
-                        value={preTradeMentalState}
-                        onChange={(nextValue) => setPreTradeMentalState(nextValue)}
-                        placeholder="Seleziona opzione"
-                      >
-                        {preTradeMentalStateOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </StyledSelect>
-
-                      <StyledSelect
-                        label="Emozioni durante il trade"
-                        value={emotionsDuringTrade}
-                        onChange={(nextValue) => setEmotionsDuringTrade(nextValue)}
-                        placeholder="Seleziona opzione"
-                      >
-                        {emotionsDuringTradeOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </StyledSelect>
-
-                      <StyledSelect
-                        label="Emozioni dopo il trade"
-                        value={emotionsAfterTrade}
-                        onChange={(nextValue) => setEmotionsAfterTrade(nextValue)}
-                        placeholder="Seleziona opzione"
-                      >
-                        {emotionsAfterTradeOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </StyledSelect>
-
-                      <div className="mb-4">
-                        <label
-                          htmlFor="confidence-level-input"
-                          className="text-gray-600 text-xs font-medium mb-1 block"
+                        <StyledSelect
+                          label="Ho rispettato il rischio prefissato?"
+                          value={respectedRiskChoice}
+                          onChange={(nextValue) => setRespectedRiskChoice(nextValue)}
+                          placeholder="Seleziona risposta"
                         >
-                          Livello di fiducia (1–10)
-                        </label>
-                        <input
-                          id="confidence-level-input"
-                          type="number"
-                          min={1}
-                          max={10}
-                          step={1}
-                          value={confidenceLevel}
-                          onChange={(event) => {
-                            const rawValue = event.target.value;
+                          {respectedRiskOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </StyledSelect>
 
-                            if (rawValue === "") {
-                              setConfidenceLevel("");
-                              return;
-                            }
-
-                            const numericValue = Number(rawValue);
-
-                            if (Number.isNaN(numericValue)) {
-                              return;
-                            }
-
-                            const clampedValue = Math.min(10, Math.max(1, numericValue));
-                            setConfidenceLevel(String(clampedValue));
-                          }}
-                          placeholder="Seleziona livello"
-                          className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 text-sm placeholder-gray-400 p-2 focus:outline-none focus:ring-0"
-                        />
+                        <StyledSelect
+                          label="Rifarei questo trade?"
+                          value={wouldRepeatTrade}
+                          onChange={(nextValue) => setWouldRepeatTrade(nextValue)}
+                          placeholder="Seleziona risposta"
+                        >
+                          {repeatTradeOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </StyledSelect>
                       </div>
-
-                      <StyledSelect
-                        label="Trigger emotivi"
-                        value={emotionalTrigger}
-                        onChange={(nextValue) => setEmotionalTrigger(nextValue)}
-                        placeholder="Seleziona opzione"
-                      >
-                        {emotionalTriggerOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </StyledSelect>
-
-                      <StyledSelect
-                        label="Ho seguito il mio piano?"
-                        value={followedPlan}
-                        onChange={(nextValue) => setFollowedPlan(nextValue)}
-                        placeholder="Seleziona risposta"
-                      >
-                        {followedPlanOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </StyledSelect>
-
-                      <StyledSelect
-                        label="Ho rispettato il rischio prefissato?"
-                        value={respectedRiskChoice}
-                        onChange={(nextValue) => setRespectedRiskChoice(nextValue)}
-                        placeholder="Seleziona risposta"
-                      >
-                        {respectedRiskOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </StyledSelect>
-
-                      <StyledSelect
-                        label="Rifarei questo trade?"
-                        value={wouldRepeatTrade}
-                        onChange={(nextValue) => setWouldRepeatTrade(nextValue)}
-                        placeholder="Seleziona risposta"
-                      >
-                        {repeatTradeOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </StyledSelect>
                     </div>
                   </div>
                 </div>
@@ -2074,6 +2253,7 @@ function NewTradePageContent() {
             errorMessage={imageError}
           />
         );
+
 
   const handleSaveTrade = useCallback(async () => {
     if (isSaving || isLoadingTrade) {
@@ -2096,6 +2276,28 @@ function NewTradePageContent() {
         return hasImage || hasNotes;
       });
 
+    const normalizedPosition: "LONG" | "SHORT" =
+      position === "SHORT" ? "SHORT" : "LONG";
+    const normalizedRiskValue = risk.replace(/\.$/, "").trim();
+    const normalizedProfitTargets = profitTargets.map((target) => ({
+      takeProfit: target.takeProfit.trim(),
+      pnl: target.pnl.trim(),
+      riskReward: target.riskReward.trim(),
+      pips: target.pips.trim(),
+    }));
+    const profitTargetsPayload = normalizedProfitTargets.filter((target) => {
+      return (
+        target.takeProfit.length > 0 ||
+        target.pnl.length > 0 ||
+        target.riskReward.length > 0 ||
+        target.pips.length > 0
+      );
+    });
+    const firstTarget =
+      (profitTargetsPayload.length > 0
+        ? profitTargetsPayload[0]
+        : normalizedProfitTargets[0]) ?? { ...EMPTY_PROFIT_TARGET };
+
     const payload: TradePayload = {
       id: editingTradeId ?? undefined,
       symbolCode: selectedSymbol.code,
@@ -2103,15 +2305,16 @@ function NewTradePageContent() {
       date: selectedDate.toISOString(),
       openTime: openTime ? openTime.toISOString() : null,
       closeTime: closeTime ? closeTime.toISOString() : null,
-      position,
-      riskReward: riskReward.trim() || null,
-      risk: risk.trim() || null,
-      pips: pips.trim() || null,
+      position: normalizedPosition,
+      riskReward: firstTarget.riskReward ? firstTarget.riskReward : null,
+      risk: normalizedRiskValue ? `${normalizedRiskValue}%` : null,
+      lotSize: lotSize.trim() || null,
+      pips: firstTarget.pips ? firstTarget.pips : null,
       entryPrice: entryPrice.trim() || null,
       exitPrice: exitPrice.trim() || null,
       stopLoss: stopLoss.trim() || null,
-      takeProfit: takeProfit.trim() || null,
-      pnl: pnl.trim() || null,
+      takeProfit: firstTarget.takeProfit ? firstTarget.takeProfit : null,
+      pnl: firstTarget.pnl ? firstTarget.pnl : null,
       preTradeMentalState: preTradeMentalState.trim() || null,
       emotionsDuringTrade: emotionsDuringTrade.trim() || null,
       emotionsAfterTrade: emotionsAfterTrade.trim() || null,
@@ -2122,6 +2325,7 @@ function NewTradePageContent() {
       wouldRepeatTrade: wouldRepeatTrade.trim() || null,
       notes: null,
       libraryItems: normalizedLibraryItems,
+      profitTargets: profitTargetsPayload,
     };
 
     setIsSaving(true);
@@ -2175,20 +2379,18 @@ function NewTradePageContent() {
     isSaving,
     libraryItems,
     openTime,
-    pips,
     position,
     preTradeMentalState,
+    profitTargets,
     removedLibraryItems,
     respectedRiskChoice,
     risk,
-    riskReward,
+    lotSize,
     router,
     selectedDate,
     selectedSymbol.code,
     startNavigation,
     stopLoss,
-    takeProfit,
-    pnl,
     confidenceLevel,
     emotionalTrigger,
     wouldRepeatTrade,
