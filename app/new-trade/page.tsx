@@ -1978,58 +1978,57 @@ function NewTradePageContent() {
 
                         return (
                           <div className="flex flex-col gap-2" key={fieldConfig.idPrefix}>
-                            <div
-                              className="grid gap-3"
-                              style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
-                            >
-                              {normalizedValues.map((value, columnIndex) => {
-                                const isFirstColumn = columnIndex === 0;
-                                const isRemovableColumn =
-                                  targetColumnCount > 1 && columnIndex === targetColumnCount - 1;
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="grid flex-1 gap-3"
+                                style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
+                              >
+                                {normalizedValues.map((value, columnIndex) => {
+                                  const isRemovableColumn =
+                                    targetColumnCount > 1 && columnIndex === targetColumnCount - 1;
 
-                                return (
-                                  <div className="flex flex-col gap-2" key={`${fieldConfig.idPrefix}-${columnIndex}`}>
-                                    <label
-                                      htmlFor={`${fieldConfig.idPrefix}-input-${columnIndex}`}
-                                      className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                                    >
-                                      {`${fieldConfig.label} ${columnIndex + 1}`}
-                                    </label>
-                                    <div className="relative">
-                                      <input
-                                        id={`${fieldConfig.idPrefix}-input-${columnIndex}`}
-                                        type={fieldConfig.type}
-                                        value={value}
-                                        onChange={(event) => fieldConfig.onChange(columnIndex, event.target.value)}
-                                        placeholder={fieldConfig.placeholder}
-                                        className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0${
-                                          isFirstColumn ? " pr-12" : ""
-                                        }${isRemovableColumn ? " pr-12" : ""}`}
-                                      />
-                                      {isFirstColumn && (
-                                        <button
-                                          type="button"
-                                          onClick={handleAddTargetColumn}
-                                          className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-sm transition hover:bg-[#1d4ed8] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#93c5fd]"
-                                          aria-label={`Aggiungi colonna per ${fieldConfig.label}`}
-                                        >
-                                          <Plus aria-hidden="true" className="h-4 w-4" />
-                                        </button>
-                                      )}
-                                      {isRemovableColumn && (
-                                        <button
-                                          type="button"
-                                          onClick={handleRemoveTargetColumn}
-                                          className="absolute right-3 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-muted-fg shadow-sm ring-1 ring-border transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
-                                          aria-label={`Rimuovi ultima colonna per ${fieldConfig.label}`}
-                                        >
-                                          <X aria-hidden="true" className="h-3.5 w-3.5" />
-                                        </button>
-                                      )}
+                                  return (
+                                    <div className="flex flex-col gap-2" key={`${fieldConfig.idPrefix}-${columnIndex}`}>
+                                      <label
+                                        htmlFor={`${fieldConfig.idPrefix}-input-${columnIndex}`}
+                                        className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                                      >
+                                        {`${fieldConfig.label} ${columnIndex + 1}`}
+                                      </label>
+                                      <div className="relative">
+                                        <input
+                                          id={`${fieldConfig.idPrefix}-input-${columnIndex}`}
+                                          type={fieldConfig.type}
+                                          value={value}
+                                          onChange={(event) => fieldConfig.onChange(columnIndex, event.target.value)}
+                                          placeholder={fieldConfig.placeholder}
+                                          className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0${
+                                            isRemovableColumn ? " pr-12" : ""
+                                          }`}
+                                        />
+                                        {isRemovableColumn && (
+                                          <button
+                                            type="button"
+                                            onClick={handleRemoveTargetColumn}
+                                            className="absolute right-3 top-3 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-muted-fg shadow-sm ring-1 ring-border transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
+                                            aria-label={`Rimuovi ultima colonna per ${fieldConfig.label}`}
+                                          >
+                                            <X aria-hidden="true" className="h-3.5 w-3.5" />
+                                          </button>
+                                        )}
+                                      </div>
                                     </div>
-                                  </div>
-                                );
-                              })}
+                                  );
+                                })}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleAddTargetColumn}
+                                className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-sm transition hover:bg-[#1d4ed8] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#93c5fd]"
+                                aria-label={`Aggiungi colonna per ${fieldConfig.label}`}
+                              >
+                                <Plus aria-hidden="true" className="h-4 w-4" />
+                              </button>
                             </div>
                           </div>
                         );
@@ -2071,58 +2070,57 @@ function NewTradePageContent() {
 
                       {pnlFieldConfig && (
                         <div className="flex flex-col gap-2" key={pnlFieldConfig.idPrefix}>
-                          <div
-                            className="grid gap-3"
-                            style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
-                          >
-                            {padMultiValue(pnlFieldConfig.values, targetColumnCount).map((value, columnIndex) => {
-                              const isFirstColumn = columnIndex === 0;
-                              const isRemovableColumn =
-                                targetColumnCount > 1 && columnIndex === targetColumnCount - 1;
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="grid flex-1 gap-3"
+                              style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
+                            >
+                              {padMultiValue(pnlFieldConfig.values, targetColumnCount).map((value, columnIndex) => {
+                                const isRemovableColumn =
+                                  targetColumnCount > 1 && columnIndex === targetColumnCount - 1;
 
-                              return (
-                                <div className="flex flex-col gap-2" key={`${pnlFieldConfig.idPrefix}-${columnIndex}`}>
-                                  <label
-                                    htmlFor={`${pnlFieldConfig.idPrefix}-input-${columnIndex}`}
-                                    className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                                  >
-                                    {`${pnlFieldConfig.label} ${columnIndex + 1}`}
-                                  </label>
-                                  <div className="relative">
-                                    <input
-                                      id={`${pnlFieldConfig.idPrefix}-input-${columnIndex}`}
-                                      type={pnlFieldConfig.type}
-                                      value={value}
-                                      onChange={(event) => pnlFieldConfig.onChange(columnIndex, event.target.value)}
-                                      placeholder={pnlFieldConfig.placeholder}
-                                      className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0${
-                                        isFirstColumn ? " pr-12" : ""
-                                      }${isRemovableColumn ? " pr-12" : ""}`}
-                                    />
-                                    {isFirstColumn && (
-                                      <button
-                                        type="button"
-                                        onClick={handleAddTargetColumn}
-                                        className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-sm transition hover:bg-[#1d4ed8] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#93c5fd]"
-                                        aria-label={`Aggiungi colonna per ${pnlFieldConfig.label}`}
-                                      >
-                                        <Plus aria-hidden="true" className="h-4 w-4" />
-                                      </button>
-                                    )}
-                                    {isRemovableColumn && (
-                                      <button
-                                        type="button"
-                                        onClick={handleRemoveTargetColumn}
-                                        className="absolute right-3 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-muted-fg shadow-sm ring-1 ring-border transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
-                                        aria-label={`Rimuovi ultima colonna per ${pnlFieldConfig.label}`}
-                                      >
-                                        <X aria-hidden="true" className="h-3.5 w-3.5" />
-                                      </button>
-                                    )}
+                                return (
+                                  <div className="flex flex-col gap-2" key={`${pnlFieldConfig.idPrefix}-${columnIndex}`}>
+                                    <label
+                                      htmlFor={`${pnlFieldConfig.idPrefix}-input-${columnIndex}`}
+                                      className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                                    >
+                                      {`${pnlFieldConfig.label} ${columnIndex + 1}`}
+                                    </label>
+                                    <div className="relative">
+                                      <input
+                                        id={`${pnlFieldConfig.idPrefix}-input-${columnIndex}`}
+                                        type={pnlFieldConfig.type}
+                                        value={value}
+                                        onChange={(event) => pnlFieldConfig.onChange(columnIndex, event.target.value)}
+                                        placeholder={pnlFieldConfig.placeholder}
+                                        className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0${
+                                          isRemovableColumn ? " pr-12" : ""
+                                        }`}
+                                      />
+                                      {isRemovableColumn && (
+                                        <button
+                                          type="button"
+                                          onClick={handleRemoveTargetColumn}
+                                          className="absolute right-3 top-3 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-muted-fg shadow-sm ring-1 ring-border transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
+                                          aria-label={`Rimuovi ultima colonna per ${pnlFieldConfig.label}`}
+                                        >
+                                          <X aria-hidden="true" className="h-3.5 w-3.5" />
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              })}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleAddTargetColumn}
+                              className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-sm transition hover:bg-[#1d4ed8] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#93c5fd]"
+                              aria-label={`Aggiungi colonna per ${pnlFieldConfig.label}`}
+                            >
+                              <Plus aria-hidden="true" className="h-4 w-4" />
+                            </button>
                           </div>
                         </div>
                       )}
