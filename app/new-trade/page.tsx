@@ -265,7 +265,7 @@ function NewTradePageContent() {
   const [removedLibraryItems, setRemovedLibraryItems] = useState<RemovedLibraryItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingTrade, setIsLoadingTrade] = useState(isEditing);
-  const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
+  const [position, setPosition] = useState<"LONG" | "SHORT" | "">("");
   const [entryPrice, setEntryPrice] = useState("");
   const [exitPrice, setExitPrice] = useState("");
   const [stopLoss, setStopLoss] = useState("");
@@ -281,6 +281,7 @@ function NewTradePageContent() {
   const [wouldRepeatTrade, setWouldRepeatTrade] = useState("");
   const [riskReward, setRiskReward] = useState("");
   const [risk, setRisk] = useState("");
+  const [lotSize, setLotSize] = useState("");
   const [pips, setPips] = useState("");
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -880,7 +881,15 @@ function NewTradePageContent() {
         setRespectedRiskChoice(match.respectedRisk ?? "");
         setWouldRepeatTrade(match.wouldRepeatTrade ?? "");
         setRiskReward(match.riskReward ?? "");
-        setRisk(match.risk ?? "");
+        setRisk(
+          match.risk
+            ? match.risk
+                .replace(/%/g, "")
+                .replace(/,/g, ".")
+                .trim()
+            : "",
+        );
+        setLotSize(match.lotSize ?? "");
         setPips(match.pips ?? "");
 
         if (imageInputRef.current) {
@@ -1850,81 +1859,153 @@ function NewTradePageContent() {
 
                     <div className="border-t border-gray-200 mt-6" />
                     <div className="flex flex-col gap-4">
-                    <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
-                      General Details
-                    </span>
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="position-select"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Position
-                        </label>
-                        <select
-                          id="position-select"
-                          value={position}
-                          onChange={(event) =>
-                            setPosition(event.target.value === "SHORT" ? "SHORT" : "LONG")
-                          }
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-0"
-                        >
-                          <option value="LONG">Long</option>
-                          <option value="SHORT">Short</option>
-                        </select>
-                      </div>
+                      <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
+                        General Details
+                      </span>
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-2">
+                          <label
+                            htmlFor="position-select"
+                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          >
+                            Position
+                          </label>
+                          <select
+                            id="position-select"
+                            value={position}
+                            onChange={(event) => {
+                              const nextValue = event.target.value;
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="risk-reward-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          R/R
-                        </label>
-                        <input
-                          id="risk-reward-input"
-                          type="text"
-                          value={riskReward}
-                          onChange={(event) => setRiskReward(event.target.value)}
-                          placeholder="1:4"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
+                              if (nextValue === "SHORT") {
+                                setPosition("SHORT");
+                                return;
+                              }
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="risk-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Risk
-                        </label>
-                        <input
-                          id="risk-input"
-                          type="text"
-                          value={risk}
-                          onChange={(event) => setRisk(event.target.value)}
-                          placeholder="2%"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
+                              if (nextValue === "LONG") {
+                                setPosition("LONG");
+                                return;
+                              }
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="pips-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Nr. Pips
-                        </label>
-                        <input
-                          id="pips-input"
-                          type="text"
-                          value={pips}
-                          onChange={(event) => setPips(event.target.value)}
-                          placeholder="55"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
+                              setPosition("");
+                            }}
+                            className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium focus:outline-none focus:ring-0 ${
+                              position ? "text-fg" : "text-muted-fg"
+                            }`}
+                          >
+                            <option value="" disabled>
+                              Seleziona posizione
+                            </option>
+                            <option value="LONG">Long</option>
+                            <option value="SHORT">Short</option>
+                          </select>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label
+                            htmlFor="risk-reward-input"
+                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          >
+                            R/R
+                          </label>
+                          <input
+                            id="risk-reward-input"
+                            type="text"
+                            value={riskReward}
+                            onChange={(event) => {
+                              const rawValue = event.target.value.replace(/\s+/g, "");
+                              const sanitizedValue = rawValue.replace(/[^0-9:]/g, "");
+                              const colonIndex = sanitizedValue.indexOf(":");
+                              const normalizedValue =
+                                colonIndex === -1
+                                  ? sanitizedValue
+                                  : `${sanitizedValue.slice(0, colonIndex)}:${sanitizedValue
+                                      .slice(colonIndex + 1)
+                                      .replace(/:/g, "")}`;
+
+                              if (
+                                normalizedValue === "" ||
+                                /^\d+(?::\d*)?$/.test(normalizedValue)
+                              ) {
+                                setRiskReward(normalizedValue);
+                              }
+                            }}
+                            placeholder="Inserisci (es. 1:4)"
+                            className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label
+                            htmlFor="risk-input"
+                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          >
+                            Risk
+                          </label>
+                          <input
+                            id="risk-input"
+                            type="text"
+                            value={risk ? `${risk}%` : ""}
+                            onChange={(event) => {
+                              const rawValue = event.target.value
+                                .replace(/%/g, "")
+                                .replace(/\s+/g, "");
+
+                              if (rawValue.length === 0) {
+                                setRisk("");
+                                return;
+                              }
+
+                              let normalized = rawValue
+                                .replace(/[^0-9.,]/g, "")
+                                .replace(/,/g, ".");
+
+                              if (normalized.startsWith(".")) {
+                                normalized = `0${normalized}`;
+                              }
+
+                              if (/^\d*\.?\d*$/.test(normalized)) {
+                                setRisk(normalized);
+                              }
+                            }}
+                            placeholder="Inserisci (es. 2%)"
+                            className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label
+                            htmlFor="lot-size-input"
+                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          >
+                            Lot Size
+                          </label>
+                          <input
+                            id="lot-size-input"
+                            type="text"
+                            value={lotSize}
+                            onChange={(event) => setLotSize(event.target.value)}
+                            placeholder="Inserisci"
+                            className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label
+                            htmlFor="pips-input"
+                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          >
+                            Nr. Pips
+                          </label>
+                          <input
+                            id="pips-input"
+                            type="text"
+                            value={pips}
+                            onChange={(event) => setPips(event.target.value)}
+                            placeholder="Inserisci"
+                            className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                          />
+                        </div>
                       </div>
-                    </div>
 
                     <div className="border-t border-gray-200 mt-6" />
                     <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
@@ -2097,6 +2178,10 @@ function NewTradePageContent() {
         return hasImage || hasNotes;
       });
 
+    const normalizedPosition: "LONG" | "SHORT" =
+      position === "SHORT" ? "SHORT" : "LONG";
+    const normalizedRiskValue = risk.replace(/\.$/, "").trim();
+
     const payload: TradePayload = {
       id: editingTradeId ?? undefined,
       symbolCode: selectedSymbol.code,
@@ -2104,9 +2189,10 @@ function NewTradePageContent() {
       date: selectedDate.toISOString(),
       openTime: openTime ? openTime.toISOString() : null,
       closeTime: closeTime ? closeTime.toISOString() : null,
-      position,
+      position: normalizedPosition,
       riskReward: riskReward.trim() || null,
-      risk: risk.trim() || null,
+      risk: normalizedRiskValue ? `${normalizedRiskValue}%` : null,
+      lotSize: lotSize.trim() || null,
       pips: pips.trim() || null,
       entryPrice: entryPrice.trim() || null,
       exitPrice: exitPrice.trim() || null,
@@ -2183,6 +2269,7 @@ function NewTradePageContent() {
     respectedRiskChoice,
     risk,
     riskReward,
+    lotSize,
     router,
     selectedDate,
     selectedSymbol.code,

@@ -35,6 +35,7 @@ export type StoredTrade = {
   position: "LONG" | "SHORT";
   riskReward: string | null;
   risk: string | null;
+  lotSize: string | null;
   pips: string | null;
   entryPrice: string | null;
   exitPrice: string | null;
@@ -66,6 +67,7 @@ export type TradePayload = {
   position: "LONG" | "SHORT";
   riskReward: string | null;
   risk: string | null;
+  lotSize: string | null;
   pips: string | null;
   entryPrice: string | null;
   exitPrice: string | null;
@@ -153,6 +155,7 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
     position: row?.position === "SHORT" ? "SHORT" : "LONG",
     riskReward: sanitizeString(row?.rr_ratio),
     risk: sanitizeString(row?.risk_percent),
+    lotSize: sanitizeString(row?.lot_size),
     pips: sanitizeString(row?.pips),
     entryPrice: sanitizeString(row?.entry_price),
     exitPrice: sanitizeString(row?.exit_price),
@@ -331,6 +334,7 @@ function buildTradeRecord(payload: TradePayload) {
     position: payload.position,
     rr_ratio: sanitizeString(payload.riskReward),
     risk_percent: sanitizeString(payload.risk),
+    lot_size: sanitizeString(payload.lotSize),
     pips: sanitizeString(payload.pips),
     entry_price: sanitizeString(payload.entryPrice),
     exit_price: sanitizeString(payload.exitPrice),
