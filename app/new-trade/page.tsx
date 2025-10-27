@@ -282,6 +282,7 @@ function NewTradePageContent() {
   const [riskReward, setRiskReward] = useState("");
   const [risk, setRisk] = useState("");
   const [pips, setPips] = useState("");
+  const [lotSize, setLotSize] = useState("");
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() =>
@@ -882,6 +883,7 @@ function NewTradePageContent() {
         setRiskReward(match.riskReward ?? "");
         setRisk(match.risk ?? "");
         setPips(match.pips ?? "");
+        setLotSize(match.lotSize ?? "");
 
         if (imageInputRef.current) {
           imageInputRef.current.value = "";
@@ -1784,63 +1786,6 @@ function NewTradePageContent() {
 
                       <div className="flex flex-col gap-2">
                         <label
-                          htmlFor="risk-reward-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          R/R
-                        </label>
-                        <input
-                          id="risk-reward-input"
-                          type="text"
-                          value={riskReward}
-                          onChange={(event) => setRiskReward(event.target.value)}
-                          placeholder="1:4"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="risk-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Risk
-                        </label>
-                        <input
-                          id="risk-input"
-                          type="text"
-                          value={risk}
-                          onChange={(event) => setRisk(event.target.value)}
-                          placeholder="2%"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="pips-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Nr. Pips
-                        </label>
-                        <input
-                          id="pips-input"
-                          type="text"
-                          value={pips}
-                          onChange={(event) => setPips(event.target.value)}
-                          placeholder="55"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="border-t border-gray-200 mt-6" />
-                    <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
-                      Price & Risk Details
-                    </span>
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-2">
-                        <label
                           htmlFor="entry-price-input"
                           className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                         >
@@ -1851,23 +1796,6 @@ function NewTradePageContent() {
                           type="number"
                           value={entryPrice}
                           onChange={(event) => setEntryPrice(event.target.value)}
-                          placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="exit-price-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Exit Price
-                        </label>
-                        <input
-                          id="exit-price-input"
-                          type="number"
-                          value={exitPrice}
-                          onChange={(event) => setExitPrice(event.target.value)}
                           placeholder="Insert price"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
@@ -1903,6 +1831,74 @@ function NewTradePageContent() {
                           value={takeProfit}
                           onChange={(event) => setTakeProfit(event.target.value)}
                           placeholder="Insert price"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="risk-reward-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          R/R
+                        </label>
+                        <input
+                          id="risk-reward-input"
+                          type="text"
+                          value={riskReward}
+                          onChange={(event) => setRiskReward(event.target.value)}
+                          placeholder="1:4"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="pips-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Nr. Pips
+                        </label>
+                        <input
+                          id="pips-input"
+                          type="text"
+                          value={pips}
+                          onChange={(event) => setPips(event.target.value)}
+                          placeholder="55"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="lot-size-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Lot Size
+                        </label>
+                        <input
+                          id="lot-size-input"
+                          type="text"
+                          value={lotSize}
+                          onChange={(event) => setLotSize(event.target.value)}
+                          placeholder="0.10"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="risk-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Risk
+                        </label>
+                        <input
+                          id="risk-input"
+                          type="text"
+                          value={risk}
+                          onChange={(event) => setRisk(event.target.value)}
+                          placeholder="2%"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
@@ -2107,6 +2103,7 @@ function NewTradePageContent() {
       riskReward: riskReward.trim() || null,
       risk: risk.trim() || null,
       pips: pips.trim() || null,
+      lotSize: lotSize.trim() || null,
       entryPrice: entryPrice.trim() || null,
       exitPrice: exitPrice.trim() || null,
       stopLoss: stopLoss.trim() || null,
@@ -2176,6 +2173,7 @@ function NewTradePageContent() {
     libraryItems,
     openTime,
     pips,
+    lotSize,
     position,
     preTradeMentalState,
     removedLibraryItems,

@@ -36,6 +36,7 @@ export type StoredTrade = {
   riskReward: string | null;
   risk: string | null;
   pips: string | null;
+  lotSize: string | null;
   entryPrice: string | null;
   exitPrice: string | null;
   stopLoss: string | null;
@@ -67,6 +68,7 @@ export type TradePayload = {
   riskReward: string | null;
   risk: string | null;
   pips: string | null;
+  lotSize: string | null;
   entryPrice: string | null;
   exitPrice: string | null;
   stopLoss: string | null;
@@ -154,6 +156,7 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
     riskReward: sanitizeString(row?.rr_ratio),
     risk: sanitizeString(row?.risk_percent),
     pips: sanitizeString(row?.pips),
+    lotSize: sanitizeString(row?.lot_size),
     entryPrice: sanitizeString(row?.entry_price),
     exitPrice: sanitizeString(row?.exit_price),
     stopLoss: sanitizeString(row?.stop_loss),
@@ -332,6 +335,7 @@ function buildTradeRecord(payload: TradePayload) {
     rr_ratio: sanitizeString(payload.riskReward),
     risk_percent: sanitizeString(payload.risk),
     pips: sanitizeString(payload.pips),
+    lot_size: sanitizeString(payload.lotSize),
     entry_price: sanitizeString(payload.entryPrice),
     exit_price: sanitizeString(payload.exitPrice),
     stop_loss: sanitizeString(payload.stopLoss),

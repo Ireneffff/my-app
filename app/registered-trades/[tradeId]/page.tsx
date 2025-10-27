@@ -768,9 +768,14 @@ export default function RegisteredTradePage() {
   const openTimeDisplay = getDateTimeDisplay(state.trade.openTime);
   const closeTimeDisplay = getDateTimeDisplay(state.trade.closeTime);
   const positionLabel = state.trade.position === "SHORT" ? "Short" : "Long";
+  const entryPriceValue = formatOptionalText(state.trade.entryPrice);
+  const stopLossValue = formatOptionalText(state.trade.stopLoss);
+  const takeProfitValue = formatOptionalText(state.trade.takeProfit);
   const riskRewardValue = formatOptionalText(state.trade.riskReward);
   const riskValue = formatOptionalText(state.trade.risk);
   const pipsValue = formatOptionalText(state.trade.pips);
+  const lotSizeValue = formatOptionalText(state.trade.lotSize);
+  const pnlValue = formatOptionalText(state.trade.pnl);
   const preTradeMentalStateValue = formatOptionalText(
     state.trade.preTradeMentalState ?? state.trade.mentalState,
   );
@@ -999,12 +1004,35 @@ export default function RegisteredTradePage() {
           <p className="mt-2 text-center text-sm text-gray-500">Duration: {durationLabel}</p>
 
           <div className="mt-6 flex flex-col gap-3">
-            <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Conditions</span>
+            <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">
+              General Details
+            </span>
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
                 <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Position</span>
                 <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                   <span className="text-sm font-medium text-fg">{positionLabel}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Entry Price</span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{entryPriceValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Stop Loss</span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{stopLossValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Take Profit</span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{takeProfitValue}</span>
                 </div>
               </div>
 
@@ -1016,6 +1044,20 @@ export default function RegisteredTradePage() {
               </div>
 
               <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Nr. Pips</span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{pipsValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Lot Size</span>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{lotSizeValue}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
                 <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Risk</span>
                 <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                   <span className="text-sm font-medium text-fg">{riskValue}</span>
@@ -1023,9 +1065,9 @@ export default function RegisteredTradePage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Nr. Pips</span>
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">P&amp;L</span>
                 <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{pipsValue}</span>
+                  <span className="text-sm font-medium text-fg">{pnlValue}</span>
                 </div>
               </div>
             </div>
