@@ -951,48 +951,48 @@ export default function RegisteredTradePage() {
         </div>
       </div>
 
-      <div
-        className={`flex w-full flex-1 flex-col gap-12 ${
-          activeTab === "library" ? "" : "mx-auto max-w-3xl sm:max-w-4xl"
-        }`}
-      >
-        <header className="space-y-2">
-          <p className="text-sm text-muted-fg">Trading Journal</p>
-          <h1 className="text-4xl font-semibold tracking-tight text-fg md:text-5xl">
-            Trade details
-          </h1>
-          <p className="text-sm text-muted-fg md:text-base">Registered on {formattedDate}</p>
-        </header>
+      <div className="flex w-full flex-1 flex-col gap-12">
+        <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
+          <header className="space-y-2">
+            <p className="text-sm text-muted-fg">Trading Journal</p>
+            <h1 className="text-4xl font-semibold tracking-tight text-fg md:text-5xl">
+              Trade details
+            </h1>
+            <p className="text-sm text-muted-fg md:text-base">Registered on {formattedDate}</p>
+          </header>
+        </div>
 
         <div className="flex w-full flex-col gap-8">
-          <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-1 py-2 text-sm text-muted-fg">
-            {[
-              { label: "Main Data", value: "main" as const },
-              { label: "Library", value: "library" as const },
-            ].map(({ label, value }) => {
-              const isActive = activeTab === value;
+          <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
+            <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-1 py-2 text-sm text-muted-fg">
+              {[
+                { label: "Main Data", value: "main" as const },
+                { label: "Library", value: "library" as const },
+              ].map(({ label, value }) => {
+                const isActive = activeTab === value;
 
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  className={`rounded-full border px-4 py-2 transition ${
-                    isActive
-                      ? "border-border bg-surface text-fg"
-                      : "border-transparent text-muted-fg hover:border-border hover:text-fg"
-                  }`}
-                  aria-pressed={isActive}
-                  onClick={() => setActiveTab(value)}
-                  disabled={isActive}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </nav>
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`rounded-full border px-4 py-2 transition ${
+                      isActive
+                        ? "border-border bg-surface text-fg"
+                        : "border-transparent text-muted-fg hover:border-border hover:text-fg"
+                    }`}
+                    aria-pressed={isActive}
+                    onClick={() => setActiveTab(value)}
+                    disabled={isActive}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
 
           {activeTab === "main" ? (
-            <>
+            <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 sm:max-w-4xl">
           <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6">
             <div className="mx-auto flex w-full max-w-xl items-center gap-3">
               <div className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1">
@@ -1245,7 +1245,7 @@ export default function RegisteredTradePage() {
               </div>
             </div>
           </div>
-            </>
+            </div>
           ) : (
             <LibrarySection
               preview={libraryPreview}
