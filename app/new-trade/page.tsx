@@ -16,7 +16,7 @@ import {
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { Circle, CheckCircle } from "lucide-react";
+import { Circle, CheckCircle, Plus, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
@@ -83,8 +83,6 @@ const emotionalTriggerOptions = [
 ] as const;
 
 const followedPlanOptions = ["Sì", "No", "Parziale"] as const;
-const respectedRiskOptions = ["Sì", "No"] as const;
-const repeatTradeOptions = ["Sì", "No", "Forse"] as const;
 
 type LibraryItem = StoredLibraryItem;
 
@@ -138,6 +136,47 @@ function getDateTimeDisplayParts(date: Date | null) {
   });
 
   return { dateLabel, timeLabel };
+}
+
+function padMultiValue<T>(values: T[], length: number, createFiller: () => T) {
+  const next = values.slice(0, length);
+
+  while (next.length < length) {
+    next.push(createFiller());
+  }
+
+  return next;
+}
+
+type NumericFieldState = {
+  raw: string;
+  value: number | null;
+};
+
+function parseNumericInput(raw: string): number | null {
+  const normalized = raw.trim().replace(/,/g, ".");
+
+  if (!normalized) {
+    return null;
+  }
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function createNumericFieldState(rawValue = ""): NumericFieldState {
+  return {
+    raw: rawValue,
+    value: parseNumericInput(rawValue),
+  };
+}
+
+function createNumericFieldStateFromNumber(value: number | null): NumericFieldState {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return { raw: String(value), value };
+  }
+
+  return createNumericFieldState("");
 }
 
 function getStartOfWeek(date: Date) {
@@ -265,29 +304,170 @@ function NewTradePageContent() {
   const [removedLibraryItems, setRemovedLibraryItems] = useState<RemovedLibraryItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingTrade, setIsLoadingTrade] = useState(isEditing);
-  const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
-  const [entryPrice, setEntryPrice] = useState("");
-  const [exitPrice, setExitPrice] = useState("");
-  const [stopLoss, setStopLoss] = useState("");
-  const [takeProfit, setTakeProfit] = useState("");
-  const [pnl, setPnl] = useState("");
-  const [preTradeMentalState, setPreTradeMentalState] = useState("");
-  const [emotionsDuringTrade, setEmotionsDuringTrade] = useState("");
-  const [emotionsAfterTrade, setEmotionsAfterTrade] = useState("");
-  const [confidenceLevel, setConfidenceLevel] = useState("");
-  const [emotionalTrigger, setEmotionalTrigger] = useState("");
-  const [followedPlan, setFollowedPlan] = useState("");
-  const [respectedRiskChoice, setRespectedRiskChoice] = useState("");
-  const [wouldRepeatTrade, setWouldRepeatTrade] = useState("");
-  const [riskReward, setRiskReward] = useState("");
-  const [risk, setRisk] = useState("");
-  const [pips, setPips] = useState("");
+  const [position, setPosition] = useState<"LONG" | "SHORT" | null>(null);
+  const [entryPrice, setEntryPrice] = useState<NumericFieldState>(createNumericFieldState());
+  const [exitPrice, setExitPrice] = useState<NumericFieldState>(createNumericFieldState());
+  const [stopLoss, setStopLoss] = useState<NumericFieldState>(createNumericFieldState());
+  const [takeProfitTargets, setTakeProfitTargets] = useState<NumericFieldState[]>([
+    createNumericFieldState(),
+  ]);
+  const [pnlTargets, setPnlTargets] = useState<NumericFieldState[]>([createNumericFieldState()]);
+  const [preTradeMentalState, setPreTradeMentalState] = useState<string | null>(null);
+  const [emotionsDuringTrade, setEmotionsDuringTrade] = useState<string | null>(null);
+  const [emotionsAfterTrade, setEmotionsAfterTrade] = useState<string | null>(null);
+  const [confidenceLevel, setConfidenceLevel] = useState<string | null>(null);
+  const [emotionalTrigger, setEmotionalTrigger] = useState<string | null>(null);
+  const [followedPlan, setFollowedPlan] = useState<string | null>(null);
+  const [respectedRiskChoice, setRespectedRiskChoice] = useState<boolean | null>(null);
+  const [respectedRiskSelection, setRespectedRiskSelection] = useState<
+    "" | "Insert" | "true" | "false"
+  >("");
+  const [wouldRepeatTrade, setWouldRepeatTrade] = useState<boolean | null>(null);
+  const [repeatTradeSelection, setRepeatTradeSelection] = useState<
+    "" | "Insert" | "true" | "false" | "maybe"
+  >("");
+  const [riskRewardTargets, setRiskRewardTargets] = useState<string[]>([""]);
+  const [risk, setRisk] = useState<NumericFieldState>(createNumericFieldState());
+  const [pipsTargets, setPipsTargets] = useState<NumericFieldState[]>([createNumericFieldState()]);
+  const [lotSize, setLotSize] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() =>
     getStartOfMonth(initialSelectedDate),
   );
   const [, startNavigation] = useTransition();
+
+  const targetColumnCount = useMemo(
+    () =>
+      Math.max(
+        1,
+        takeProfitTargets.length,
+        riskRewardTargets.length,
+        pipsTargets.length,
+        pnlTargets.length,
+      ),
+    [
+      pnlTargets.length,
+      pipsTargets.length,
+      riskRewardTargets.length,
+      takeProfitTargets.length,
+    ],
+  );
+
+  const handleAddTargetColumn = useCallback(() => {
+    const nextCount = targetColumnCount + 1;
+
+    setTakeProfitTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
+    setRiskRewardTargets((prev) => padMultiValue(prev, nextCount, () => ""));
+    setPipsTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
+    setPnlTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
+  }, [targetColumnCount]);
+
+  const handleRemoveTargetColumn = useCallback(() => {
+    if (targetColumnCount <= 1) {
+      return;
+    }
+
+    const nextCount = targetColumnCount - 1;
+
+    setTakeProfitTargets((prev) => prev.slice(0, nextCount));
+    setRiskRewardTargets((prev) => prev.slice(0, nextCount));
+    setPipsTargets((prev) => prev.slice(0, nextCount));
+    setPnlTargets((prev) => prev.slice(0, nextCount));
+  }, [targetColumnCount]);
+
+  const handleTakeProfitChange = useCallback(
+    (index: number, value: string) => {
+      setTakeProfitTargets((prev) => {
+        const next = padMultiValue(prev, targetColumnCount, () => createNumericFieldState());
+        next[index] = createNumericFieldState(value);
+        return next;
+      });
+    },
+    [targetColumnCount],
+  );
+
+  const handleRiskRewardChange = useCallback(
+    (index: number, value: string) => {
+      setRiskRewardTargets((prev) => {
+        const next = padMultiValue(prev, targetColumnCount, () => "");
+        next[index] = value;
+        return next;
+      });
+    },
+    [targetColumnCount],
+  );
+
+  const handlePipsChange = useCallback(
+    (index: number, value: string) => {
+      setPipsTargets((prev) => {
+        const next = padMultiValue(prev, targetColumnCount, () => createNumericFieldState());
+        next[index] = createNumericFieldState(value);
+        return next;
+      });
+    },
+    [targetColumnCount],
+  );
+
+  const handlePnlChange = useCallback(
+    (index: number, value: string) => {
+      setPnlTargets((prev) => {
+        const next = padMultiValue(prev, targetColumnCount, () => createNumericFieldState());
+        next[index] = createNumericFieldState(value);
+        return next;
+      });
+    },
+    [targetColumnCount],
+  );
+
+  const targetFieldConfigs = useMemo(
+    () =>
+      [
+        {
+          label: "Take Profit",
+          idPrefix: "take-profit",
+          placeholder: "Insert price",
+          type: "number" as const,
+          values: takeProfitTargets.map((target) => target.raw),
+          onChange: handleTakeProfitChange,
+        },
+        {
+          label: "R/R",
+          idPrefix: "risk-reward",
+          placeholder: "Insert",
+          type: "text" as const,
+          values: riskRewardTargets,
+          onChange: handleRiskRewardChange,
+        },
+        {
+          label: "Nr. Pips",
+          idPrefix: "pips",
+          placeholder: "Insert",
+          type: "number" as const,
+          values: pipsTargets.map((target) => target.raw),
+          onChange: handlePipsChange,
+        },
+        {
+          label: "P&L",
+          idPrefix: "pnl",
+          placeholder: "Insert",
+          type: "number" as const,
+          values: pnlTargets.map((target) => target.raw),
+          onChange: handlePnlChange,
+        },
+      ],
+    [
+      handlePipsChange,
+      handlePnlChange,
+      handleRiskRewardChange,
+      handleTakeProfitChange,
+      pipsTargets,
+      pnlTargets,
+      riskRewardTargets,
+      takeProfitTargets,
+    ],
+  );
+  const pnlFieldConfig = targetFieldConfigs[targetFieldConfigs.length - 1];
 
   const lockBodyScroll = useCallback(() => {
     if (typeof document === "undefined") {
@@ -865,23 +1045,53 @@ function NewTradePageContent() {
         setRemovedLibraryItems([]);
         setImageError(null);
 
-        setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
-        setEntryPrice(match.entryPrice ?? "");
-        setExitPrice(match.exitPrice ?? "");
-        setStopLoss(match.stopLoss ?? "");
-        setTakeProfit(match.takeProfit ?? "");
-        setPnl(match.pnl ?? "");
-        setPreTradeMentalState(match.preTradeMentalState ?? "");
-        setEmotionsDuringTrade(match.emotionsDuringTrade ?? "");
-        setEmotionsAfterTrade(match.emotionsAfterTrade ?? "");
-        setConfidenceLevel(match.confidenceLevel ?? "");
-        setEmotionalTrigger(match.emotionalTrigger ?? "");
-        setFollowedPlan(match.followedPlan ?? "");
-        setRespectedRiskChoice(match.respectedRisk ?? "");
-        setWouldRepeatTrade(match.wouldRepeatTrade ?? "");
-        setRiskReward(match.riskReward ?? "");
-        setRisk(match.risk ?? "");
-        setPips(match.pips ?? "");
+        setPosition(match.position === "SHORT" ? "SHORT" : match.position === "LONG" ? "LONG" : null);
+        setEntryPrice(createNumericFieldStateFromNumber(match.entryPrice ?? null));
+        setExitPrice(createNumericFieldStateFromNumber(match.exitPrice ?? null));
+        setStopLoss(createNumericFieldStateFromNumber(match.stopLoss ?? null));
+        const mappedTakeProfit = (match.takeProfit ?? []).map((value) =>
+          createNumericFieldStateFromNumber(value ?? null),
+        );
+        const mappedRiskReward = match.riskReward?.length ? match.riskReward : [""];
+        const mappedPips = (match.pips ?? []).map((value) =>
+          createNumericFieldStateFromNumber(value ?? null),
+        );
+        const mappedPnl = (match.pnl ?? []).map((value) =>
+          createNumericFieldStateFromNumber(value ?? null),
+        );
+        const columnCount = Math.max(
+          1,
+          mappedTakeProfit.length,
+          mappedRiskReward.length,
+          mappedPips.length,
+          mappedPnl.length,
+        );
+        setTakeProfitTargets(
+          padMultiValue(mappedTakeProfit, columnCount, () => createNumericFieldState()),
+        );
+        setRiskRewardTargets(padMultiValue(mappedRiskReward, columnCount, () => ""));
+        setPipsTargets(padMultiValue(mappedPips, columnCount, () => createNumericFieldState()));
+        setPnlTargets(padMultiValue(mappedPnl, columnCount, () => createNumericFieldState()));
+        setPreTradeMentalState(match.preTradeMentalState ?? null);
+        setEmotionsDuringTrade(match.emotionsDuringTrade ?? null);
+        setEmotionsAfterTrade(match.emotionsAfterTrade ?? null);
+        setConfidenceLevel(match.confidenceLevel ?? null);
+        setEmotionalTrigger(match.emotionalTrigger ?? null);
+        setFollowedPlan(match.followedPlan ?? null);
+        setRespectedRiskChoice(match.respectedRisk ?? null);
+        setRespectedRiskSelection(
+          match.respectedRisk === true ? "true" : match.respectedRisk === false ? "false" : "",
+        );
+        setWouldRepeatTrade(match.wouldRepeatTrade ?? null);
+        setRepeatTradeSelection(
+          match.wouldRepeatTrade === true
+            ? "true"
+            : match.wouldRepeatTrade === false
+              ? "false"
+              : "",
+        );
+        setRisk(createNumericFieldStateFromNumber(match.risk ?? null));
+        setLotSize(match.lotSize ?? "");
 
         if (imageInputRef.current) {
           imageInputRef.current.value = "";
@@ -1771,74 +1981,33 @@ function NewTradePageContent() {
                         </label>
                         <select
                           id="position-select"
-                          value={position}
-                          onChange={(event) =>
-                            setPosition(event.target.value === "SHORT" ? "SHORT" : "LONG")
-                          }
+                          value={position ?? ""}
+                          onChange={(event) => {
+                            const nextValue = event.target.value;
+
+                            if (nextValue === "SHORT") {
+                              setPosition("SHORT");
+                              return;
+                            }
+
+                            if (nextValue === "LONG") {
+                              setPosition("LONG");
+                              return;
+                            }
+
+                            setPosition(null);
+                          }}
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-0"
                         >
+                          <option value="" disabled hidden>
+                            Insert position
+                          </option>
                           <option value="LONG">Long</option>
                           <option value="SHORT">Short</option>
+                          <option value="INSERT">Insert</option>
                         </select>
                       </div>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="risk-reward-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          R/R
-                        </label>
-                        <input
-                          id="risk-reward-input"
-                          type="text"
-                          value={riskReward}
-                          onChange={(event) => setRiskReward(event.target.value)}
-                          placeholder="1:4"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="risk-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Risk
-                        </label>
-                        <input
-                          id="risk-input"
-                          type="text"
-                          value={risk}
-                          onChange={(event) => setRisk(event.target.value)}
-                          placeholder="2%"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="pips-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Nr. Pips
-                        </label>
-                        <input
-                          id="pips-input"
-                          type="text"
-                          value={pips}
-                          onChange={(event) => setPips(event.target.value)}
-                          placeholder="55"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="border-t border-gray-200 mt-6" />
-                    <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
-                      Price & Risk Details
-                    </span>
-                    <div className="flex flex-col gap-4">
                       <div className="flex flex-col gap-2">
                         <label
                           htmlFor="entry-price-input"
@@ -1849,25 +2018,8 @@ function NewTradePageContent() {
                         <input
                           id="entry-price-input"
                           type="number"
-                          value={entryPrice}
-                          onChange={(event) => setEntryPrice(event.target.value)}
-                          placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="exit-price-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Exit Price
-                        </label>
-                        <input
-                          id="exit-price-input"
-                          type="number"
-                          value={exitPrice}
-                          onChange={(event) => setExitPrice(event.target.value)}
+                          value={entryPrice.raw}
+                          onChange={(event) => setEntryPrice(createNumericFieldState(event.target.value))}
                           placeholder="Insert price"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
@@ -1883,46 +2035,186 @@ function NewTradePageContent() {
                         <input
                           id="stop-loss-input"
                           type="number"
-                          value={stopLoss}
-                          onChange={(event) => setStopLoss(event.target.value)}
+                          value={stopLoss.raw}
+                          onChange={(event) => setStopLoss(createNumericFieldState(event.target.value))}
                           placeholder="Insert price"
+                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                        />
+                      </div>
+
+                      {targetFieldConfigs.slice(0, 3).map((fieldConfig) => {
+                        const normalizedValues = padMultiValue(
+                          fieldConfig.values,
+                          targetColumnCount,
+                          () => "",
+                        );
+
+                        return (
+                          <div className="flex flex-col gap-2" key={fieldConfig.idPrefix}>
+                            <div
+                              className="grid gap-3 pr-12"
+                              style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
+                            >
+                              {normalizedValues.map((_, columnIndex) => (
+                                <label
+                                  key={`${fieldConfig.idPrefix}-label-${columnIndex}`}
+                                  htmlFor={`${fieldConfig.idPrefix}-input-${columnIndex}`}
+                                  className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                                >
+                                  {`${fieldConfig.label} ${columnIndex + 1}`}
+                                </label>
+                              ))}
+                            </div>
+                            <div className="relative">
+                              <div
+                                className="grid gap-3 pr-12"
+                                style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
+                              >
+                                {normalizedValues.map((value, columnIndex) => {
+                                  const inputId = `${fieldConfig.idPrefix}-input-${columnIndex}`;
+                                  const isRemovableColumn =
+                                    targetColumnCount > 1 && columnIndex === targetColumnCount - 1;
+
+                                  return (
+                                    <div className="relative" key={inputId}>
+                                      <input
+                                        id={inputId}
+                                        type={fieldConfig.type}
+                                        value={value}
+                                        onChange={(event) => fieldConfig.onChange(columnIndex, event.target.value)}
+                                        placeholder={fieldConfig.placeholder}
+                                        className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                                      />
+                                      {isRemovableColumn && (
+                                        <button
+                                          type="button"
+                                          onClick={handleRemoveTargetColumn}
+                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#f3f4f6] text-muted-fg shadow-sm ring-1 ring-border transition hover:bg-[#e5e7eb] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
+                                          aria-label={`Rimuovi ultima colonna per ${fieldConfig.label}`}
+                                        >
+                                          <X aria-hidden="true" className="h-3.5 w-3.5" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleAddTargetColumn}
+                                className="absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-sm transition hover:bg-[#1d4ed8] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#93c5fd]"
+                                aria-label={`Aggiungi colonna per ${fieldConfig.label}`}
+                              >
+                                <Plus aria-hidden="true" className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      <div className="flex flex-col gap-2">
+                        <label
+                          htmlFor="lot-size-input"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                        >
+                          Lot Size
+                        </label>
+                        <input
+                          id="lot-size-input"
+                          type="text"
+                          value={lotSize}
+                          onChange={(event) => setLotSize(event.target.value)}
+                          placeholder="0.10"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
 
                       <div className="flex flex-col gap-2">
                         <label
-                          htmlFor="take-profit-input"
+                          htmlFor="risk-input"
                           className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                         >
-                          Take Profit
+                          Risk
                         </label>
                         <input
-                          id="take-profit-input"
+                          id="risk-input"
                           type="number"
-                          value={takeProfit}
-                          onChange={(event) => setTakeProfit(event.target.value)}
-                          placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="pnl-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          P&amp;L
-                        </label>
-                        <input
-                          id="pnl-input"
-                          type="number"
-                          value={pnl}
-                          onChange={(event) => setPnl(event.target.value)}
+                          value={risk.raw}
+                          onChange={(event) => setRisk(createNumericFieldState(event.target.value))}
                           placeholder="Insert"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
+
+                      {pnlFieldConfig && (() => {
+                        const normalizedValues = padMultiValue(
+                          pnlFieldConfig.values,
+                          targetColumnCount,
+                          () => "",
+                        );
+
+                        return (
+                          <div className="flex flex-col gap-2" key={pnlFieldConfig.idPrefix}>
+                            <div
+                              className="grid gap-3 pr-12"
+                              style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
+                            >
+                              {normalizedValues.map((_, columnIndex) => (
+                                <label
+                                  key={`${pnlFieldConfig.idPrefix}-label-${columnIndex}`}
+                                  htmlFor={`${pnlFieldConfig.idPrefix}-input-${columnIndex}`}
+                                  className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                                >
+                                  {`${pnlFieldConfig.label} ${columnIndex + 1}`}
+                                </label>
+                              ))}
+                            </div>
+                            <div className="relative">
+                              <div
+                                className="grid gap-3 pr-12"
+                                style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
+                              >
+                                {normalizedValues.map((value, columnIndex) => {
+                                  const inputId = `${pnlFieldConfig.idPrefix}-input-${columnIndex}`;
+                                  const isRemovableColumn =
+                                    targetColumnCount > 1 && columnIndex === targetColumnCount - 1;
+
+                                  return (
+                                    <div className="relative" key={inputId}>
+                                      <input
+                                        id={inputId}
+                                        type={pnlFieldConfig.type}
+                                        value={value}
+                                        onChange={(event) => pnlFieldConfig.onChange(columnIndex, event.target.value)}
+                                        placeholder={pnlFieldConfig.placeholder}
+                                        className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                                      />
+                                      {isRemovableColumn && (
+                                        <button
+                                          type="button"
+                                          onClick={handleRemoveTargetColumn}
+                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#f3f4f6] text-muted-fg shadow-sm ring-1 ring-border transition hover:bg-[#e5e7eb] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
+                                          aria-label={`Rimuovi ultima colonna per ${pnlFieldConfig.label}`}
+                                        >
+                                          <X aria-hidden="true" className="h-3.5 w-3.5" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleAddTargetColumn}
+                                className="absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-sm transition hover:bg-[#1d4ed8] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#93c5fd]"
+                                aria-label={`Aggiungi colonna per ${pnlFieldConfig.label}`}
+                              >
+                                <Plus aria-hidden="true" className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <div className="border-t border-gray-200 mt-6" />
@@ -1932,10 +2224,15 @@ function NewTradePageContent() {
                     <div className="flex flex-col">
                       <StyledSelect
                         label="Stato mentale prima del trade"
-                        value={preTradeMentalState}
-                        onChange={(nextValue) => setPreTradeMentalState(nextValue)}
+                        value={preTradeMentalState ?? ""}
+                        onChange={(nextValue) =>
+                          setPreTradeMentalState(
+                            !nextValue || nextValue === "Insert" ? null : nextValue,
+                          )
+                        }
                         placeholder="Seleziona opzione"
                       >
+                        <option value="Insert">Insert</option>
                         {preTradeMentalStateOptions.map((option) => (
                           <option key={option} value={option}>
                             {option}
@@ -1945,10 +2242,15 @@ function NewTradePageContent() {
 
                       <StyledSelect
                         label="Emozioni durante il trade"
-                        value={emotionsDuringTrade}
-                        onChange={(nextValue) => setEmotionsDuringTrade(nextValue)}
+                        value={emotionsDuringTrade ?? ""}
+                        onChange={(nextValue) =>
+                          setEmotionsDuringTrade(
+                            !nextValue || nextValue === "Insert" ? null : nextValue,
+                          )
+                        }
                         placeholder="Seleziona opzione"
                       >
+                        <option value="Insert">Insert</option>
                         {emotionsDuringTradeOptions.map((option) => (
                           <option key={option} value={option}>
                             {option}
@@ -1958,10 +2260,15 @@ function NewTradePageContent() {
 
                       <StyledSelect
                         label="Emozioni dopo il trade"
-                        value={emotionsAfterTrade}
-                        onChange={(nextValue) => setEmotionsAfterTrade(nextValue)}
+                        value={emotionsAfterTrade ?? ""}
+                        onChange={(nextValue) =>
+                          setEmotionsAfterTrade(
+                            !nextValue || nextValue === "Insert" ? null : nextValue,
+                          )
+                        }
                         placeholder="Seleziona opzione"
                       >
+                        <option value="Insert">Insert</option>
                         {emotionsAfterTradeOptions.map((option) => (
                           <option key={option} value={option}>
                             {option}
@@ -1982,12 +2289,12 @@ function NewTradePageContent() {
                           min={1}
                           max={10}
                           step={1}
-                          value={confidenceLevel}
+                          value={confidenceLevel ?? ""}
                           onChange={(event) => {
                             const rawValue = event.target.value;
 
                             if (rawValue === "") {
-                              setConfidenceLevel("");
+                              setConfidenceLevel(null);
                               return;
                             }
 
@@ -2007,10 +2314,15 @@ function NewTradePageContent() {
 
                       <StyledSelect
                         label="Trigger emotivi"
-                        value={emotionalTrigger}
-                        onChange={(nextValue) => setEmotionalTrigger(nextValue)}
+                        value={emotionalTrigger ?? ""}
+                        onChange={(nextValue) =>
+                          setEmotionalTrigger(
+                            !nextValue || nextValue === "Insert" ? null : nextValue,
+                          )
+                        }
                         placeholder="Seleziona opzione"
                       >
+                        <option value="Insert">Insert</option>
                         {emotionalTriggerOptions.map((option) => (
                           <option key={option} value={option}>
                             {option}
@@ -2020,10 +2332,15 @@ function NewTradePageContent() {
 
                       <StyledSelect
                         label="Ho seguito il mio piano?"
-                        value={followedPlan}
-                        onChange={(nextValue) => setFollowedPlan(nextValue)}
+                        value={followedPlan ?? ""}
+                        onChange={(nextValue) =>
+                          setFollowedPlan(
+                            !nextValue || nextValue === "Insert" ? null : nextValue,
+                          )
+                        }
                         placeholder="Seleziona risposta"
                       >
+                        <option value="Insert">Insert</option>
                         {followedPlanOptions.map((option) => (
                           <option key={option} value={option}>
                             {option}
@@ -2033,28 +2350,67 @@ function NewTradePageContent() {
 
                       <StyledSelect
                         label="Ho rispettato il rischio prefissato?"
-                        value={respectedRiskChoice}
-                        onChange={(nextValue) => setRespectedRiskChoice(nextValue)}
+                        value={respectedRiskSelection}
+                        onChange={(nextValue) => {
+                          if (nextValue === "true") {
+                            setRespectedRiskChoice(true);
+                            setRespectedRiskSelection("true");
+                            return;
+                          }
+
+                          if (nextValue === "false") {
+                            setRespectedRiskChoice(false);
+                            setRespectedRiskSelection("false");
+                            return;
+                          }
+
+                          setRespectedRiskChoice(null);
+                          setRespectedRiskSelection(nextValue === "Insert" ? "Insert" : "");
+                        }}
                         placeholder="Seleziona risposta"
                       >
-                        {respectedRiskOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
+                        <option value="Insert">Insert</option>
+                        <option value="true">Sì</option>
+                        <option value="false">No</option>
                       </StyledSelect>
 
                       <StyledSelect
                         label="Rifarei questo trade?"
-                        value={wouldRepeatTrade}
-                        onChange={(nextValue) => setWouldRepeatTrade(nextValue)}
+                        value={repeatTradeSelection}
+                        onChange={(nextValue) => {
+                          if (nextValue === "true") {
+                            setWouldRepeatTrade(true);
+                            setRepeatTradeSelection("true");
+                            return;
+                          }
+
+                          if (nextValue === "false") {
+                            setWouldRepeatTrade(false);
+                            setRepeatTradeSelection("false");
+                            return;
+                          }
+
+                          if (nextValue === "maybe") {
+                            setWouldRepeatTrade(null);
+                            setRepeatTradeSelection("maybe");
+                            return;
+                          }
+
+                          if (nextValue === "Insert") {
+                            setWouldRepeatTrade(null);
+                            setRepeatTradeSelection("Insert");
+                            return;
+                          }
+
+                          setWouldRepeatTrade(null);
+                          setRepeatTradeSelection("");
+                        }}
                         placeholder="Seleziona risposta"
                       >
-                        {repeatTradeOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
+                        <option value="Insert">Insert</option>
+                        <option value="true">Sì</option>
+                        <option value="false">No</option>
+                        <option value="maybe">Forse</option>
                       </StyledSelect>
                     </div>
                   </div>
@@ -2096,6 +2452,14 @@ function NewTradePageContent() {
         return hasImage || hasNotes;
       });
 
+    const normalizedPosition: "LONG" | "SHORT" | null =
+      position === "SHORT" ? "SHORT" : position === "LONG" ? "LONG" : null;
+
+    const takeProfitValues = takeProfitTargets.map((target) => target.value);
+    const riskRewardValues = riskRewardTargets.slice();
+    const pipsValues = pipsTargets.map((target) => target.value);
+    const pnlValues = pnlTargets.map((target) => target.value);
+
     const payload: TradePayload = {
       id: editingTradeId ?? undefined,
       symbolCode: selectedSymbol.code,
@@ -2103,23 +2467,24 @@ function NewTradePageContent() {
       date: selectedDate.toISOString(),
       openTime: openTime ? openTime.toISOString() : null,
       closeTime: closeTime ? closeTime.toISOString() : null,
-      position,
-      riskReward: riskReward.trim() || null,
-      risk: risk.trim() || null,
-      pips: pips.trim() || null,
-      entryPrice: entryPrice.trim() || null,
-      exitPrice: exitPrice.trim() || null,
-      stopLoss: stopLoss.trim() || null,
-      takeProfit: takeProfit.trim() || null,
-      pnl: pnl.trim() || null,
-      preTradeMentalState: preTradeMentalState.trim() || null,
-      emotionsDuringTrade: emotionsDuringTrade.trim() || null,
-      emotionsAfterTrade: emotionsAfterTrade.trim() || null,
-      confidenceLevel: confidenceLevel.trim() || null,
-      emotionalTrigger: emotionalTrigger.trim() || null,
-      followedPlan: followedPlan.trim() || null,
-      respectedRisk: respectedRiskChoice.trim() || null,
-      wouldRepeatTrade: wouldRepeatTrade.trim() || null,
+      position: normalizedPosition,
+      riskReward: riskRewardValues,
+      risk: risk.value,
+      pips: pipsValues,
+      lotSize: lotSize.trim() || null,
+      entryPrice: entryPrice.value,
+      exitPrice: exitPrice.value,
+      stopLoss: stopLoss.value,
+      takeProfit: takeProfitValues,
+      pnl: pnlValues,
+      preTradeMentalState: preTradeMentalState?.trim() || null,
+      emotionsDuringTrade: emotionsDuringTrade?.trim() || null,
+      emotionsAfterTrade: emotionsAfterTrade?.trim() || null,
+      confidenceLevel: confidenceLevel?.trim() || null,
+      emotionalTrigger: emotionalTrigger?.trim() || null,
+      followedPlan: followedPlan?.trim() || null,
+      respectedRisk: respectedRiskChoice,
+      wouldRepeatTrade: wouldRepeatTrade,
       notes: null,
       libraryItems: normalizedLibraryItems,
     };
@@ -2175,20 +2540,21 @@ function NewTradePageContent() {
     isSaving,
     libraryItems,
     openTime,
-    pips,
+    pipsTargets,
+    lotSize,
     position,
     preTradeMentalState,
     removedLibraryItems,
     respectedRiskChoice,
     risk,
-    riskReward,
+    riskRewardTargets,
     router,
     selectedDate,
     selectedSymbol.code,
     startNavigation,
     stopLoss,
-    takeProfit,
-    pnl,
+    takeProfitTargets,
+    pnlTargets,
     confidenceLevel,
     emotionalTrigger,
     wouldRepeatTrade,
