@@ -2570,13 +2570,15 @@ function NewTradePageContent() {
           type="button"
           variant="ghost"
           size="sm"
-          className="h-11 w-11 flex-none rounded-full p-0 text-lg text-muted-fg hover:text-fg"
+          className="h-11 w-11 flex-none rounded-full bg-white p-0 text-lg text-[#555555] hover:bg-white hover:text-[#333333]"
           onClick={() => {
-            router.back();
+            startNavigation(() => {
+              router.push("/");
+            });
           }}
           aria-label="Close"
         >
-          ×
+          <X aria-hidden="true" className="h-5 w-5" />
         </Button>
 
         <Button
