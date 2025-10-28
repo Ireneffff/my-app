@@ -490,6 +490,7 @@ function buildTradeRecord(payload: TradePayload) {
   const openTime = payload.openTime ?? payload.date;
   const closeTime = payload.closeTime ?? null;
   const symbol = normalizeTradeField(payload.symbolCode, "string") ?? "";
+  const firstTakeProfit = payload.takeProfit?.[0] ?? null;
 
   return {
     symbol,
@@ -504,10 +505,7 @@ function buildTradeRecord(payload: TradePayload) {
     entry_price: normalizeTradeField(payload.entryPrice, "number"),
     exit_price: normalizeTradeField(payload.exitPrice, "number"),
     stop_loss: normalizeTradeField(payload.stopLoss, "number"),
-    take_profit:
-      payload.takeProfit && payload.takeProfit.length > 0
-        ? parseFloat(payload.takeProfit[0])
-        : null,
+    take_profit: firstTakeProfit != null ? Number(firstTakeProfit) : null,
     p_l: serializeNumericMultiValueField(payload.pnl ?? []),
     mental_state_before: normalizeTradeField(payload.preTradeMentalState, "string"),
     emotions_during: normalizeTradeField(payload.emotionsDuringTrade, "string"),
