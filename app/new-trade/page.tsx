@@ -319,7 +319,9 @@ function NewTradePageContent() {
   const [emotionalTrigger, setEmotionalTrigger] = useState<string | null>(null);
   const [followedPlan, setFollowedPlan] = useState<string | null>(null);
   const [respectedRiskChoice, setRespectedRiskChoice] = useState<boolean | null>(null);
-  const [respectedRiskSelection, setRespectedRiskSelection] = useState<"" | "true" | "false">("");
+  const [respectedRiskSelection, setRespectedRiskSelection] = useState<
+    "" | "Insert" | "true" | "false"
+  >("");
   const [wouldRepeatTrade, setWouldRepeatTrade] = useState<boolean | null>(null);
   const [repeatTradeSelection, setRepeatTradeSelection] = useState<"" | "true" | "false" | "maybe">("");
   const [riskRewardTargets, setRiskRewardTargets] = useState<string[]>([""]);
