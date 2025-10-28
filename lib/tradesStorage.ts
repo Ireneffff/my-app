@@ -490,7 +490,17 @@ function buildTradeRecord(payload: TradePayload) {
   const openTime = payload.openTime ?? payload.date;
   const closeTime = payload.closeTime ?? null;
   const symbol = normalizeTradeField(payload.symbolCode, "string") ?? "";
-  const firstTakeProfit = payload.takeProfit?.[0] ?? null;
+  const normalizedTakeProfitValues = (payload.takeProfit ?? [])
+    .map((value) => normalizeTradeField(value, "number"))
+    .filter((value): value is number => value !== null);
+  const multipleTakeProfitValues =
+    normalizedTakeProfitValues.length > 1
+      ? JSON.stringify(normalizedTakeProfitValues)
+      : null;
+  const singleTakeProfitValue =
+    normalizedTakeProfitValues.length === 1
+      ? normalizedTakeProfitValues[0]
+      : null;
 
   return {
     symbol,
@@ -505,7 +515,7 @@ function buildTradeRecord(payload: TradePayload) {
     entry_price: normalizeTradeField(payload.entryPrice, "number"),
     exit_price: normalizeTradeField(payload.exitPrice, "number"),
     stop_loss: normalizeTradeField(payload.stopLoss, "number"),
-    take_profit: firstTakeProfit != null ? Number(firstTakeProfit) : null,
+    take_profit: multipleTakeProfitValues ?? singleTakeProfitValue,
     p_l: serializeNumericMultiValueField(payload.pnl ?? []),
     mental_state_before: normalizeTradeField(payload.preTradeMentalState, "string"),
     emotions_during: normalizeTradeField(payload.emotionsDuringTrade, "string"),
