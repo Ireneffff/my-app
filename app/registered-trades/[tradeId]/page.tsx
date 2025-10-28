@@ -13,6 +13,7 @@ import {
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
+import { Plus, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
@@ -85,12 +86,20 @@ function isSameDay(a: Date, b: Date) {
   return a.toDateString() === b.toDateString();
 }
 
-function formatOptionalText(value?: string | null) {
+function formatOptionalText(value?: string | boolean | null) {
+  if (value === true) {
+    return "Yes";
+  }
+
+  if (value === false) {
+    return "No";
+  }
+
   if (!value) {
     return "—";
   }
 
-  const trimmed = value.trim();
+  const trimmed = typeof value === "string" ? value.trim() : String(value).trim();
   return trimmed.length > 0 ? trimmed : "—";
 }
 
@@ -798,6 +807,76 @@ export default function RegisteredTradePage() {
   const normalizedRiskRewardTargets = padMultiValue(riskRewardTargets, targetColumnCount);
   const normalizedPipsTargets = padMultiValue(pipsTargets, targetColumnCount);
   const normalizedPnlTargets = padMultiValue(pnlTargets, targetColumnCount);
+  const targetDisplayConfigs = [
+    { idPrefix: "take-profit", label: "Take Profit", values: normalizedTakeProfitTargets },
+    { idPrefix: "risk-reward", label: "R/R", values: normalizedRiskRewardTargets },
+    { idPrefix: "nr-pips", label: "Nr. Pips", values: normalizedPipsTargets },
+  ];
+  const pnlDisplayConfig = {
+    idPrefix: "pnl",
+    label: "P&L",
+    values: normalizedPnlTargets,
+  };
+  const shouldShowRemovalBadge = targetColumnCount > 1;
+
+  const renderTargetDisplay = ({
+    idPrefix,
+    label,
+    values,
+  }: {
+    idPrefix: string;
+    label: string;
+    values: string[];
+  }) => (
+    <div className="flex flex-col gap-2" key={idPrefix}>
+      <div
+        className="grid gap-3 pr-12"
+        style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
+      >
+        {values.map((_, columnIndex) => (
+          <span
+            key={`${idPrefix}-label-${columnIndex}`}
+            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+          >
+            {`${label} ${columnIndex + 1}`}
+          </span>
+        ))}
+      </div>
+      <div className="relative">
+        <div
+          className="grid gap-3 pr-12"
+          style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
+        >
+          {values.map((value, columnIndex) => {
+            const formattedValue = formatOptionalText(value);
+            const showRemovalBadge = shouldShowRemovalBadge && columnIndex === targetColumnCount - 1;
+
+            return (
+              <div className="relative" key={`${idPrefix}-value-${columnIndex}`}>
+                <div className="w-full rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{formattedValue}</span>
+                </div>
+                {showRemovalBadge ? (
+                  <span
+                    className="pointer-events-none absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#f3f4f6] text-muted-fg ring-1 ring-border"
+                    aria-hidden="true"
+                  >
+                    <X aria-hidden="true" className="h-3.5 w-3.5" />
+                  </span>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+        <span
+          className="pointer-events-none absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2563eb] text-white opacity-60"
+          aria-hidden="true"
+        >
+          <Plus aria-hidden="true" className="h-4 w-4" />
+        </span>
+      </div>
+    </div>
+  );
   const preTradeMentalStateValue = formatOptionalText(
     state.trade.preTradeMentalState ?? state.trade.mentalState,
   );
@@ -951,272 +1030,220 @@ export default function RegisteredTradePage() {
           </div>
 
           <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="flex flex-col gap-3">
-                <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
-                <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-2xl" aria-hidden="true">
-                    {activeSymbol.flag}
-                  </span>
-                  <span className="text-lg font-medium tracking-[0.18em] text-fg md:text-xl">
-                    {activeSymbol.code}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-3">
-              <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Open Time</span>
-              <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
-                <div className="flex flex-col">
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                    {openTimeDisplay.dateLabel}
-                  </span>
-                  <span className="text-lg font-medium tracking-[0.18em] text-fg md:text-xl">
-                    {openTimeDisplay.timeLabel}
-                  </span>
-                </div>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="ml-auto h-6 w-6 text-muted-fg"
-                  aria-hidden="true"
-                >
-                  <circle cx="12" cy="12" r="9" />
-                  <polyline points="12 7 12 12 15 15" />
-                </svg>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Close Time</span>
-              <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
-                <div className="flex flex-col">
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                    {closeTimeDisplay.dateLabel}
-                  </span>
-                  <span className="text-lg font-medium tracking-[0.18em] text-fg md:text-xl">
-                    {closeTimeDisplay.timeLabel}
-                  </span>
-                </div>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="ml-auto h-6 w-6 text-muted-fg"
-                  aria-hidden="true"
-                >
-                  <circle cx="12" cy="12" r="9" />
-                  <polyline points="12 7 12 12 15 15" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <p className="mt-2 text-center text-sm text-gray-500">Duration: {durationLabel}</p>
-
-          <div className="mt-6 flex flex-col gap-3">
-            <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">
-              General Details
-            </span>
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Position</span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{positionLabel}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Entry Price</span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{entryPriceValue}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Stop Loss</span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{stopLossValue}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <div
-                  className="grid gap-3"
-                  style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
-                >
-                  {normalizedTakeProfitTargets.map((value, index) => (
-                    <div className="flex flex-col gap-2" key={`take-profit-${index}`}>
-                      <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                        {`Take Profit ${index + 1}`}
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-wrap items-start gap-4">
+                <div className="flex flex-col gap-3">
+                  <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
+                  <div className="flex flex-wrap justify-center gap-6">
+                    <div className="flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface text-center shadow-sm">
+                      <span className="text-2xl" aria-hidden="true">
+                        {activeSymbol.flag}
                       </span>
-                      <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                        <span className="text-sm font-medium text-fg">{formatOptionalText(value)}</span>
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
+                          {activeSymbol.code}
+                        </span>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <div
-                  className="grid gap-3"
-                  style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
-                >
-                  {normalizedRiskRewardTargets.map((value, index) => (
-                    <div className="flex flex-col gap-2" key={`risk-reward-${index}`}>
-                      <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                        {`R/R ${index + 1}`}
+                      <span className="text-sm font-medium tracking-[0.08em]">
+                        {state.trade.isPaperTrade ? "Paper Trade" : "Real Trade"}
                       </span>
-                      <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                        <span className="text-sm font-medium text-fg">{formatOptionalText(value)}</span>
-                      </div>
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <div
-                  className="grid gap-3"
-                  style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
-                >
-                  {normalizedPipsTargets.map((value, index) => (
-                    <div className="flex flex-col gap-2" key={`pips-${index}`}>
-                      <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                        {`Nr. Pips ${index + 1}`}
-                      </span>
-                      <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                        <span className="text-sm font-medium text-fg">{formatOptionalText(value)}</span>
+              <div className="flex flex-col">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="flex flex-col gap-3">
+                    <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Open Time</span>
+                    <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
+                          {openTimeDisplay.dateLabel}
+                        </span>
+                        <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
+                          {openTimeDisplay.timeLabel}
+                        </span>
                       </div>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="ml-auto h-6 w-6 text-muted-fg"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <polyline points="12 7 12 12 15 15" />
+                      </svg>
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
 
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Lot Size</span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{lotSizeValue}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Risk</span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{riskValue}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <div
-                  className="grid gap-3"
-                  style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
-                >
-                  {normalizedPnlTargets.map((value, index) => (
-                    <div className="flex flex-col gap-2" key={`pnl-${index}`}>
-                      <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                        {`P&L ${index + 1}`}
-                      </span>
-                      <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                        <span className="text-sm font-medium text-fg">{formatOptionalText(value)}</span>
+                  <div className="flex flex-col gap-3">
+                    <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Close Time</span>
+                    <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
+                          {closeTimeDisplay.dateLabel}
+                        </span>
+                        <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
+                          {closeTimeDisplay.timeLabel}
+                        </span>
                       </div>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="ml-auto h-6 w-6 text-muted-fg"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <polyline points="12 7 12 12 15 15" />
+                      </svg>
                     </div>
-                  ))}
+                  </div>
+                </div>
+                <p className="mt-2 text-center text-sm text-muted-fg md:mt-3 md:text-base">
+                  Duration: <span className="font-semibold text-fg">{durationLabel}</span>
+                </p>
+              </div>
+
+              <div className="border-t border-border/60" />
+
+              <div className="flex flex-col gap-4">
+                <span className="text-gray-700 text-sm font-semibold uppercase tracking-[0.24em] md:text-base">
+                  General Details
+                </span>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Position</span>
+                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                      <span className="text-sm font-medium text-fg">{formatOptionalText(positionLabel)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Entry Price</span>
+                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                      <span className="text-sm font-medium text-fg">{entryPriceValue}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Stop Loss</span>
+                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                      <span className="text-sm font-medium text-fg">{stopLossValue}</span>
+                    </div>
+                  </div>
+
+                  {targetDisplayConfigs.map(renderTargetDisplay)}
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Lot Size</span>
+                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                      <span className="text-sm font-medium text-fg">{lotSizeValue}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Risk</span>
+                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                      <span className="text-sm font-medium text-fg">{riskValue}</span>
+                    </div>
+                  </div>
+
+                  {renderTargetDisplay(pnlDisplayConfig)}
+                </div>
+              </div>
+
+              <div className="border-t border-border/60" />
+
+              <div className="flex flex-col gap-4">
+                <span className="text-gray-700 text-sm font-semibold uppercase tracking-[0.24em] md:text-base">
+                  Psychology & Mindset
+                </span>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                      Stato mentale prima del trade
+                    </span>
+                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                      <span className="text-sm font-medium text-fg">{preTradeMentalStateValue}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                      Emozioni durante il trade
+                    </span>
+                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                      <span className="text-sm font-medium text-fg">{emotionsDuringTradeValue}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                      Emozioni dopo il trade
+                    </span>
+                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                      <span className="text-sm font-medium text-fg">{emotionsAfterTradeValue}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                      Livello di fiducia (1–10)
+                    </span>
+                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                      <span className="text-sm font-medium text-fg">{confidenceLevelValue}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                      Trigger emotivi
+                    </span>
+                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                      <span className="text-sm font-medium text-fg">{emotionalTriggerValue}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                      Ho seguito il mio piano?
+                    </span>
+                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                      <span className="text-sm font-medium text-fg">{followedPlanValue}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                      Ho rispettato il rischio prefissato?
+                    </span>
+                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                      <span className="text-sm font-medium text-fg">{respectedRiskValue}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                      Rifarei questo trade?
+                    </span>
+                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                      <span className="text-sm font-medium text-fg">{wouldRepeatTradeValue}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="mt-6 flex flex-col gap-3">
-            <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">
-              Psychology & Mindset
-            </span>
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                  Stato mentale prima del trade
-                </span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{preTradeMentalStateValue}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                  Emozioni durante il trade
-                </span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{emotionsDuringTradeValue}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                  Emozioni dopo il trade
-                </span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{emotionsAfterTradeValue}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                  Livello di fiducia (1–10)
-                </span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{confidenceLevelValue}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                  Trigger emotivi
-                </span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{emotionalTriggerValue}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                  Ho seguito il mio piano?
-                </span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{followedPlanValue}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                  Ho rispettato il rischio prefissato?
-                </span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{respectedRiskValue}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                  Rifarei questo trade?
-                </span>
-                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{wouldRepeatTradeValue}</span>
-                </div>
-              </div>
-            </div>
-          </div>
           </div>
             </>
           ) : (
