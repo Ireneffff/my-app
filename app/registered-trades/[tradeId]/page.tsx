@@ -818,6 +818,7 @@ export default function RegisteredTradePage() {
   const normalizedRiskRewardTargets = padMultiValue(riskRewardTargets, targetColumnCount);
   const normalizedPipsTargets = padMultiValue(pipsTargets, targetColumnCount);
   const normalizedPnlTargets = padMultiValue(pnlTargets, targetColumnCount);
+  const isEditMode = false; // This page shows read-only data; editing happens on the new trade form.
   const targetDisplayConfigs = [
     { idPrefix: "take-profit", label: "Take Profit", values: normalizedTakeProfitTargets },
     { idPrefix: "risk-reward", label: "R/R", values: normalizedRiskRewardTargets },
@@ -828,7 +829,7 @@ export default function RegisteredTradePage() {
     label: "P&L",
     values: normalizedPnlTargets,
   };
-  const shouldShowRemovalBadge = targetColumnCount > 1;
+  const shouldShowRemovalBadge = isEditMode && targetColumnCount > 1;
 
   const renderTargetDisplay = ({
     idPrefix,
@@ -879,12 +880,14 @@ export default function RegisteredTradePage() {
             );
           })}
         </div>
-        <span
-          className="pointer-events-none absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2563eb] text-white opacity-60"
-          aria-hidden="true"
-        >
-          <Plus aria-hidden="true" className="h-4 w-4" />
-        </span>
+        {isEditMode ? (
+          <span
+            className="pointer-events-none absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2563eb] text-white opacity-60"
+            aria-hidden="true"
+          >
+            <Plus aria-hidden="true" className="h-4 w-4" />
+          </span>
+        ) : null}
       </div>
     </div>
   );
