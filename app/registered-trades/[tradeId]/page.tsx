@@ -842,7 +842,7 @@ export default function RegisteredTradePage() {
   }) => (
     <div className="flex flex-col gap-2" key={idPrefix}>
       <div
-        className="grid gap-3 pr-12"
+        className={isEditMode ? "grid gap-3 pr-12" : "grid gap-3"}
         style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
       >
         {values.map((_, columnIndex) => (
@@ -856,7 +856,7 @@ export default function RegisteredTradePage() {
       </div>
       <div className="relative">
         <div
-          className="grid gap-3 pr-12"
+          className={isEditMode ? "grid gap-3 pr-12" : "grid gap-3"}
           style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
         >
           {values.map((value, columnIndex) => {
