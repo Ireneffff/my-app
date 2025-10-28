@@ -323,7 +323,9 @@ function NewTradePageContent() {
     "" | "Insert" | "true" | "false"
   >("");
   const [wouldRepeatTrade, setWouldRepeatTrade] = useState<boolean | null>(null);
-  const [repeatTradeSelection, setRepeatTradeSelection] = useState<"" | "true" | "false" | "maybe">("");
+  const [repeatTradeSelection, setRepeatTradeSelection] = useState<
+    "" | "Insert" | "true" | "false" | "maybe"
+  >("");
   const [riskRewardTargets, setRiskRewardTargets] = useState<string[]>([""]);
   const [risk, setRisk] = useState<NumericFieldState>(createNumericFieldState());
   const [pipsTargets, setPipsTargets] = useState<NumericFieldState[]>([createNumericFieldState()]);
@@ -2388,8 +2390,20 @@ function NewTradePageContent() {
                             return;
                           }
 
+                          if (nextValue === "maybe") {
+                            setWouldRepeatTrade(null);
+                            setRepeatTradeSelection("maybe");
+                            return;
+                          }
+
+                          if (nextValue === "Insert") {
+                            setWouldRepeatTrade(null);
+                            setRepeatTradeSelection("Insert");
+                            return;
+                          }
+
                           setWouldRepeatTrade(null);
-                          setRepeatTradeSelection(nextValue);
+                          setRepeatTradeSelection("");
                         }}
                         placeholder="Seleziona risposta"
                       >
