@@ -33,24 +33,23 @@ export type StoredTrade = {
   openTime: string | null;
   closeTime: string | null;
   position: "LONG" | "SHORT";
-  riskReward: string | null;
-  risk: string | null;
-  pips: string | null;
+  riskReward: string[];
+  risk: number | null;
+  pips: number[];
   lotSize: string | null;
-  entryPrice: string | null;
-  exitPrice: string | null;
-  stopLoss: string | null;
-  takeProfit: string | null;
-  pnl: string | null;
+  entryPrice: number | null;
+  exitPrice: number | null;
+  stopLoss: number | null;
+  takeProfit: number[];
+  pnl: number[];
   preTradeMentalState: string | null;
-  mentalState: string | null;
   emotionsDuringTrade: string | null;
   emotionsAfterTrade: string | null;
   confidenceLevel: string | null;
   emotionalTrigger: string | null;
   followedPlan: string | null;
-  respectedRisk: string | null;
-  wouldRepeatTrade: string | null;
+  respectedRisk: boolean | null;
+  wouldRepeatTrade: boolean | null;
   notes: string | null;
   date: string;
   createdAt: string | null;
@@ -60,29 +59,29 @@ export type StoredTrade = {
 export type TradePayload = {
   id?: string;
   symbolCode: string;
-  isPaperTrade: boolean;
+  isPaperTrade: boolean | null;
   date: string;
   openTime: string | null;
   closeTime: string | null;
-  position: "LONG" | "SHORT";
-  riskReward: string | null;
-  risk: string | null;
-  pips: string | null;
+  position: "LONG" | "SHORT" | null;
+  riskReward: string[];
+  risk: number | null;
+  pips: (number | null)[];
   lotSize: string | null;
-  entryPrice: string | null;
-  exitPrice: string | null;
-  stopLoss: string | null;
-  takeProfit: string | null;
-  pnl: string | null;
+  entryPrice: number | null;
+  exitPrice: number | null;
+  stopLoss: number | null;
+  takeProfit: (number | null)[];
+  pnl: (number | null)[];
   // --- PSYCHOLOGY & MINDSET ---
-  preTradeMentalState: string | boolean | null;
-  emotionsDuringTrade: string | boolean | null;
-  emotionsAfterTrade: string | boolean | null;
+  preTradeMentalState: string | null;
+  emotionsDuringTrade: string | null;
+  emotionsAfterTrade: string | null;
   confidenceLevel: string | null;
-  emotionalTrigger: string | boolean | null;
-  followedPlan: string | boolean | null;
-  respectedRisk: string | boolean | null;
-  wouldRepeatTrade: string | boolean | null;
+  emotionalTrigger: string | null;
+  followedPlan: string | null;
+  respectedRisk: boolean | null;
+  wouldRepeatTrade: boolean | null;
   notes: string | null;
   libraryItems: StoredLibraryItem[];
 };
@@ -129,39 +128,84 @@ function parseDateValue(value: unknown) {
   return null;
 }
 
-function sanitizeString(value: unknown) {
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : null;
-  }
+type NormalizeTarget = "string" | "number" | "boolean";
 
-  if (typeof value === "boolean" || typeof value === "number") {
-    const normalized = String(value).trim();
-    return normalized.length > 0 ? normalized : null;
-  }
+export function normalizeTradeField(value: unknown, target: "string"): string | null;
+export function normalizeTradeField(value: unknown, target: "number"): number | null;
+export function normalizeTradeField(value: unknown, target: "boolean"): boolean | null;
+export function normalizeTradeField(value: unknown, target: NormalizeTarget) {
+  if (target === "string") {
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
 
-  return null;
-}
+    if (typeof value === "number" || typeof value === "boolean") {
+      const normalized = String(value).trim();
+      return normalized.length > 0 ? normalized : null;
+    }
 
-function normalizeMindsetValue(value: unknown): string | boolean | null {
-  if (value === true || value === false) {
-    return value;
-  }
-
-  if (!value || value === "") {
     return null;
   }
 
-  const normalized = String(value).trim();
-  return normalized.length > 0 ? normalized : null;
-}
+  if (target === "number") {
+    if (typeof value === "number") {
+      return Number.isFinite(value) ? value : null;
+    }
 
-function prepareMindsetRecordValue(value: string | boolean | null) {
-  if (typeof value === "boolean") {
-    return value;
+    if (typeof value === "string") {
+      const normalized = value.trim().replace(/,/g, ".");
+
+      if (!normalized) {
+        return null;
+      }
+
+      const parsed = Number(normalized);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    return null;
   }
 
-  return sanitizeString(value);
+  if (target === "boolean") {
+    if (typeof value === "boolean") {
+      return value;
+    }
+
+    if (typeof value === "string") {
+      const normalized = value.trim().toLowerCase();
+
+      if (!normalized) {
+        return null;
+      }
+
+      if (["true", "1", "yes", "y", "on", "si", "s", "sì"].includes(normalized)) {
+        return true;
+      }
+
+      if (["false", "0", "no", "n", "off"].includes(normalized)) {
+        return false;
+      }
+
+      return null;
+    }
+
+    if (typeof value === "number") {
+      if (value === 1) {
+        return true;
+      }
+
+      if (value === 0) {
+        return false;
+      }
+
+      return null;
+    }
+
+    return null;
+  }
+
+  return null;
 }
 
 function coerceValueToString(value: unknown) {
@@ -176,7 +220,15 @@ function coerceValueToString(value: unknown) {
   return String(value);
 }
 
-export function parseMultiValueField(value: string | null | undefined): string[] {
+export function parseMultiValueField(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((entry) => coerceValueToString(entry));
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return [String(value)];
+  }
+
   if (typeof value !== "string") {
     return [];
   }
@@ -199,7 +251,18 @@ export function parseMultiValueField(value: string | null | undefined): string[]
     }
   }
 
+  if (trimmed.includes("|")) {
+    return trimmed.split("|").map((entry) => entry.trim());
+  }
+
   return [trimmed];
+}
+
+export function parseNumericMultiValueField(value: unknown): number[] {
+  const rawValues = parseMultiValueField(value);
+  return rawValues
+    .map((entry) => normalizeTradeField(entry, "number"))
+    .filter((entry): entry is number => entry !== null);
 }
 
 export function serializeMultiValueField(values: string[]): string | null {
@@ -207,10 +270,27 @@ export function serializeMultiValueField(values: string[]): string | null {
     return null;
   }
 
-  const normalized = values.map((value) => coerceValueToString(value));
-  const hasContent = normalized.some((value) => value.trim().length > 0);
+  const normalized = values
+    .map((value) => normalizeTradeField(value, "string"))
+    .filter((value): value is string => value !== null);
 
-  if (!hasContent) {
+  if (normalized.length === 0) {
+    return null;
+  }
+
+  return JSON.stringify(normalized);
+}
+
+export function serializeNumericMultiValueField(values: (number | null)[]): string | null {
+  if (!Array.isArray(values) || values.length === 0) {
+    return null;
+  }
+
+  const normalized = values
+    .map((value) => normalizeTradeField(value, "number"))
+    .filter((value): value is number => value !== null);
+
+  if (normalized.length === 0) {
     return null;
   }
 
@@ -225,6 +305,11 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
 
   const dateSource = openTime ?? createdAt ?? new Date().toISOString();
 
+  const riskReward = parseMultiValueField(row?.rr_ratio);
+  const pips = parseNumericMultiValueField(row?.pips);
+  const takeProfit = parseNumericMultiValueField(row?.take_profit);
+  const pnl = parseNumericMultiValueField(row?.p_l);
+
   return {
     id: row?.id?.toString() ?? "",
     symbolCode,
@@ -233,25 +318,24 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
     openTime,
     closeTime,
     position: row?.position === "SHORT" ? "SHORT" : "LONG",
-    riskReward: sanitizeString(row?.rr_ratio),
-    risk: sanitizeString(row?.risk_percent),
-    pips: sanitizeString(row?.pips),
-    lotSize: sanitizeString(row?.lot_size),
-    entryPrice: sanitizeString(row?.entry_price),
-    exitPrice: sanitizeString(row?.exit_price),
-    stopLoss: sanitizeString(row?.stop_loss),
-    takeProfit: sanitizeString(row?.take_profit),
-    pnl: sanitizeString(row?.p_l),
-    preTradeMentalState: sanitizeString(row?.mental_state_before ?? row?.mental_state),
-    mentalState: sanitizeString(row?.mental_state_before ?? row?.mental_state),
-    emotionsDuringTrade: sanitizeString(row?.emotions_during),
-    emotionsAfterTrade: sanitizeString(row?.emotions_after),
-    confidenceLevel: sanitizeString(row?.confidence_level),
-    emotionalTrigger: sanitizeString(row?.emotional_triggers),
-    followedPlan: sanitizeString(row?.followed_plan),
-    respectedRisk: sanitizeString(row?.respected_risk),
-    wouldRepeatTrade: sanitizeString(row?.repeat_trade),
-    notes: sanitizeString(row?.notes),
+    riskReward,
+    risk: normalizeTradeField(row?.risk_percent, "number"),
+    pips,
+    lotSize: normalizeTradeField(row?.lot_size, "string"),
+    entryPrice: normalizeTradeField(row?.entry_price, "number"),
+    exitPrice: normalizeTradeField(row?.exit_price, "number"),
+    stopLoss: normalizeTradeField(row?.stop_loss, "number"),
+    takeProfit,
+    pnl,
+    preTradeMentalState: normalizeTradeField(row?.mental_state_before ?? row?.mental_state, "string"),
+    emotionsDuringTrade: normalizeTradeField(row?.emotions_during, "string"),
+    emotionsAfterTrade: normalizeTradeField(row?.emotions_after, "string"),
+    confidenceLevel: normalizeTradeField(row?.confidence_level, "string"),
+    emotionalTrigger: normalizeTradeField(row?.emotional_triggers, "string"),
+    followedPlan: normalizeTradeField(row?.followed_plan, "string"),
+    respectedRisk: normalizeTradeField(row?.respected_risk, "boolean"),
+    wouldRepeatTrade: normalizeTradeField(row?.repeat_trade, "boolean"),
+    notes: normalizeTradeField(row?.notes, "string"),
     date: dateSource,
     createdAt,
     libraryItems: [],
@@ -405,38 +489,32 @@ async function fetchLibraryItems(tradeId: string) {
 function buildTradeRecord(payload: TradePayload) {
   const openTime = payload.openTime ?? payload.date;
   const closeTime = payload.closeTime ?? null;
-  const normalizedPreTradeMentalState = normalizeMindsetValue(payload.preTradeMentalState);
-  const normalizedEmotionsDuring = normalizeMindsetValue(payload.emotionsDuringTrade);
-  const normalizedEmotionsAfter = normalizeMindsetValue(payload.emotionsAfterTrade);
-  const normalizedTrigger = normalizeMindsetValue(payload.emotionalTrigger);
-  const normalizedFollowPlan = normalizeMindsetValue(payload.followedPlan);
-  const normalizedRespectRisk = normalizeMindsetValue(payload.respectedRisk);
-  const normalizedRepeatTrade = normalizeMindsetValue(payload.wouldRepeatTrade);
+  const symbol = normalizeTradeField(payload.symbolCode, "string") ?? "";
 
   return {
-    symbol: payload.symbolCode,
-    is_paper_trade: payload.isPaperTrade,
+    symbol,
+    is_paper_trade: normalizeTradeField(payload.isPaperTrade, "boolean"),
     open_time: openTime,
     close_time: closeTime,
-    position: payload.position,
-    rr_ratio: sanitizeString(payload.riskReward),
-    risk_percent: sanitizeString(payload.risk),
-    pips: sanitizeString(payload.pips),
-    lot_size: sanitizeString(payload.lotSize),
-    entry_price: sanitizeString(payload.entryPrice),
-    exit_price: sanitizeString(payload.exitPrice),
-    stop_loss: sanitizeString(payload.stopLoss),
-    take_profit: sanitizeString(payload.takeProfit),
-    p_l: sanitizeString(payload.pnl),
-    mental_state_before: prepareMindsetRecordValue(normalizedPreTradeMentalState),
-    emotions_during: prepareMindsetRecordValue(normalizedEmotionsDuring),
-    emotions_after: prepareMindsetRecordValue(normalizedEmotionsAfter),
-    confidence_level: sanitizeString(payload.confidenceLevel),
-    emotional_triggers: prepareMindsetRecordValue(normalizedTrigger),
-    followed_plan: prepareMindsetRecordValue(normalizedFollowPlan),
-    respected_risk: prepareMindsetRecordValue(normalizedRespectRisk),
-    repeat_trade: prepareMindsetRecordValue(normalizedRepeatTrade),
-    notes: sanitizeString(payload.notes),
+    position: payload.position ?? null,
+    rr_ratio: serializeMultiValueField(payload.riskReward ?? []),
+    risk_percent: normalizeTradeField(payload.risk, "number"),
+    pips: serializeNumericMultiValueField(payload.pips ?? []),
+    lot_size: normalizeTradeField(payload.lotSize, "string"),
+    entry_price: normalizeTradeField(payload.entryPrice, "number"),
+    exit_price: normalizeTradeField(payload.exitPrice, "number"),
+    stop_loss: normalizeTradeField(payload.stopLoss, "number"),
+    take_profit: serializeNumericMultiValueField(payload.takeProfit ?? []),
+    p_l: serializeNumericMultiValueField(payload.pnl ?? []),
+    mental_state_before: normalizeTradeField(payload.preTradeMentalState, "string"),
+    emotions_during: normalizeTradeField(payload.emotionsDuringTrade, "string"),
+    emotions_after: normalizeTradeField(payload.emotionsAfterTrade, "string"),
+    confidence_level: normalizeTradeField(payload.confidenceLevel, "string"),
+    emotional_triggers: normalizeTradeField(payload.emotionalTrigger, "string"),
+    followed_plan: normalizeTradeField(payload.followedPlan, "string"),
+    respected_risk: normalizeTradeField(payload.respectedRisk, "boolean"),
+    repeat_trade: normalizeTradeField(payload.wouldRepeatTrade, "boolean"),
+    notes: normalizeTradeField(payload.notes, "string"),
   };
 }
 

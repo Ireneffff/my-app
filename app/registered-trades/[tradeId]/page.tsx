@@ -23,7 +23,6 @@ import {
   REGISTERED_TRADES_UPDATED_EVENT,
   type StoredLibraryItem,
   type StoredTrade,
-  parseMultiValueField,
 } from "@/lib/tradesStorage";
 import { calculateDuration } from "@/lib/duration";
 
@@ -86,7 +85,7 @@ function isSameDay(a: Date, b: Date) {
   return a.toDateString() === b.toDateString();
 }
 
-function formatOptionalText(value?: string | boolean | null) {
+function formatOptionalText(value?: string | number | boolean | null) {
   if (value === true) {
     return "Yes";
   }
@@ -95,8 +94,12 @@ function formatOptionalText(value?: string | boolean | null) {
     return "No";
   }
 
-  if (!value) {
+  if (value === null || value === undefined || value === "") {
     return "—";
+  }
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value.toString() : "—";
   }
 
   const trimmed = typeof value === "string" ? value.trim() : String(value).trim();
@@ -790,12 +793,20 @@ export default function RegisteredTradePage() {
   const positionLabel = state.trade.position === "SHORT" ? "Short" : "Long";
   const entryPriceValue = formatOptionalText(state.trade.entryPrice);
   const stopLossValue = formatOptionalText(state.trade.stopLoss);
-  const takeProfitTargets = parseMultiValueField(state.trade.takeProfit);
-  const riskRewardTargets = parseMultiValueField(state.trade.riskReward);
+  const takeProfitTargets = (state.trade.takeProfit ?? []).map((value) =>
+    value !== null && value !== undefined ? value.toString() : "",
+  );
+  const riskRewardTargets = (state.trade.riskReward ?? []).map((value) =>
+    value ?? "",
+  );
   const riskValue = formatOptionalText(state.trade.risk);
-  const pipsTargets = parseMultiValueField(state.trade.pips);
+  const pipsTargets = (state.trade.pips ?? []).map((value) =>
+    value !== null && value !== undefined ? value.toString() : "",
+  );
   const lotSizeValue = formatOptionalText(state.trade.lotSize);
-  const pnlTargets = parseMultiValueField(state.trade.pnl);
+  const pnlTargets = (state.trade.pnl ?? []).map((value) =>
+    value !== null && value !== undefined ? value.toString() : "",
+  );
   const targetColumnCount = Math.max(
     1,
     takeProfitTargets.length,
@@ -877,9 +888,7 @@ export default function RegisteredTradePage() {
       </div>
     </div>
   );
-  const preTradeMentalStateValue = formatOptionalText(
-    state.trade.preTradeMentalState ?? state.trade.mentalState,
-  );
+  const preTradeMentalStateValue = formatOptionalText(state.trade.preTradeMentalState);
   const emotionsDuringTradeValue = formatOptionalText(state.trade.emotionsDuringTrade);
   const emotionsAfterTradeValue = formatOptionalText(state.trade.emotionsAfterTrade);
   const confidenceLevelValue = formatOptionalText(state.trade.confidenceLevel);

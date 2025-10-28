@@ -28,8 +28,6 @@ import {
   type StoredLibraryItem,
   type TradePayload,
   type RemovedLibraryItem,
-  parseMultiValueField,
-  serializeMultiValueField,
 } from "@/lib/tradesStorage";
 import { calculateDuration } from "@/lib/duration";
 
@@ -85,8 +83,6 @@ const emotionalTriggerOptions = [
 ] as const;
 
 const followedPlanOptions = ["Sì", "No", "Parziale"] as const;
-const respectedRiskOptions = ["Sì", "No"] as const;
-const repeatTradeOptions = ["Sì", "No", "Forse"] as const;
 
 type LibraryItem = StoredLibraryItem;
 
@@ -142,14 +138,45 @@ function getDateTimeDisplayParts(date: Date | null) {
   return { dateLabel, timeLabel };
 }
 
-function padMultiValue(values: string[], length: number) {
+function padMultiValue<T>(values: T[], length: number, createFiller: () => T) {
   const next = values.slice(0, length);
 
   while (next.length < length) {
-    next.push("");
+    next.push(createFiller());
   }
 
   return next;
+}
+
+type NumericFieldState = {
+  raw: string;
+  value: number | null;
+};
+
+function parseNumericInput(raw: string): number | null {
+  const normalized = raw.trim().replace(/,/g, ".");
+
+  if (!normalized) {
+    return null;
+  }
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function createNumericFieldState(rawValue = ""): NumericFieldState {
+  return {
+    raw: rawValue,
+    value: parseNumericInput(rawValue),
+  };
+}
+
+function createNumericFieldStateFromNumber(value: number | null): NumericFieldState {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return { raw: String(value), value };
+  }
+
+  return createNumericFieldState("");
 }
 
 function getStartOfWeek(date: Date) {
@@ -277,24 +304,28 @@ function NewTradePageContent() {
   const [removedLibraryItems, setRemovedLibraryItems] = useState<RemovedLibraryItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingTrade, setIsLoadingTrade] = useState(isEditing);
-  const [position, setPosition] = useState<"" | "LONG" | "SHORT">("");
-  const [entryPrice, setEntryPrice] = useState("");
-  const [exitPrice, setExitPrice] = useState("");
-  const [stopLoss, setStopLoss] = useState("");
-  const [takeProfitTargets, setTakeProfitTargets] = useState<string[]>([""]);
-  const [pnlTargets, setPnlTargets] = useState<string[]>([""]);
-  const [preTradeMentalState, setPreTradeMentalState] = useState("");
-  const [emotionsDuringTrade, setEmotionsDuringTrade] = useState("");
-  const [emotionsAfterTrade, setEmotionsAfterTrade] = useState("");
-  const [confidenceLevel, setConfidenceLevel] = useState("");
-  const [emotionalTrigger, setEmotionalTrigger] = useState("");
-  const [followedPlan, setFollowedPlan] = useState("");
-  const [respectedRiskChoice, setRespectedRiskChoice] = useState("");
-  const [wouldRepeatTrade, setWouldRepeatTrade] = useState("");
+  const [position, setPosition] = useState<"LONG" | "SHORT" | null>(null);
+  const [entryPrice, setEntryPrice] = useState<NumericFieldState>(createNumericFieldState());
+  const [exitPrice, setExitPrice] = useState<NumericFieldState>(createNumericFieldState());
+  const [stopLoss, setStopLoss] = useState<NumericFieldState>(createNumericFieldState());
+  const [takeProfitTargets, setTakeProfitTargets] = useState<NumericFieldState[]>([
+    createNumericFieldState(),
+  ]);
+  const [pnlTargets, setPnlTargets] = useState<NumericFieldState[]>([createNumericFieldState()]);
+  const [preTradeMentalState, setPreTradeMentalState] = useState<string | null>(null);
+  const [emotionsDuringTrade, setEmotionsDuringTrade] = useState<string | null>(null);
+  const [emotionsAfterTrade, setEmotionsAfterTrade] = useState<string | null>(null);
+  const [confidenceLevel, setConfidenceLevel] = useState<string | null>(null);
+  const [emotionalTrigger, setEmotionalTrigger] = useState<string | null>(null);
+  const [followedPlan, setFollowedPlan] = useState<string | null>(null);
+  const [respectedRiskChoice, setRespectedRiskChoice] = useState<boolean | null>(null);
+  const [respectedRiskSelection, setRespectedRiskSelection] = useState<"" | "true" | "false">("");
+  const [wouldRepeatTrade, setWouldRepeatTrade] = useState<boolean | null>(null);
+  const [repeatTradeSelection, setRepeatTradeSelection] = useState<"" | "true" | "false" | "maybe">("");
   const [riskRewardTargets, setRiskRewardTargets] = useState<string[]>([""]);
-  const [risk, setRisk] = useState("");
-  const [pipsTargets, setPipsTargets] = useState<string[]>([""]);
-  const [lotSize, setLotSize] = useState("");
+  const [risk, setRisk] = useState<NumericFieldState>(createNumericFieldState());
+  const [pipsTargets, setPipsTargets] = useState<NumericFieldState[]>([createNumericFieldState()]);
+  const [lotSize, setLotSize] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() =>
@@ -322,10 +353,10 @@ function NewTradePageContent() {
   const handleAddTargetColumn = useCallback(() => {
     const nextCount = targetColumnCount + 1;
 
-    setTakeProfitTargets((prev) => padMultiValue(prev, nextCount));
-    setRiskRewardTargets((prev) => padMultiValue(prev, nextCount));
-    setPipsTargets((prev) => padMultiValue(prev, nextCount));
-    setPnlTargets((prev) => padMultiValue(prev, nextCount));
+    setTakeProfitTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
+    setRiskRewardTargets((prev) => padMultiValue(prev, nextCount, () => ""));
+    setPipsTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
+    setPnlTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
   }, [targetColumnCount]);
 
   const handleRemoveTargetColumn = useCallback(() => {
@@ -344,8 +375,8 @@ function NewTradePageContent() {
   const handleTakeProfitChange = useCallback(
     (index: number, value: string) => {
       setTakeProfitTargets((prev) => {
-        const next = padMultiValue(prev, targetColumnCount);
-        next[index] = value;
+        const next = padMultiValue(prev, targetColumnCount, () => createNumericFieldState());
+        next[index] = createNumericFieldState(value);
         return next;
       });
     },
@@ -355,7 +386,7 @@ function NewTradePageContent() {
   const handleRiskRewardChange = useCallback(
     (index: number, value: string) => {
       setRiskRewardTargets((prev) => {
-        const next = padMultiValue(prev, targetColumnCount);
+        const next = padMultiValue(prev, targetColumnCount, () => "");
         next[index] = value;
         return next;
       });
@@ -366,8 +397,8 @@ function NewTradePageContent() {
   const handlePipsChange = useCallback(
     (index: number, value: string) => {
       setPipsTargets((prev) => {
-        const next = padMultiValue(prev, targetColumnCount);
-        next[index] = value;
+        const next = padMultiValue(prev, targetColumnCount, () => createNumericFieldState());
+        next[index] = createNumericFieldState(value);
         return next;
       });
     },
@@ -377,8 +408,8 @@ function NewTradePageContent() {
   const handlePnlChange = useCallback(
     (index: number, value: string) => {
       setPnlTargets((prev) => {
-        const next = padMultiValue(prev, targetColumnCount);
-        next[index] = value;
+        const next = padMultiValue(prev, targetColumnCount, () => createNumericFieldState());
+        next[index] = createNumericFieldState(value);
         return next;
       });
     },
@@ -393,7 +424,7 @@ function NewTradePageContent() {
           idPrefix: "take-profit",
           placeholder: "Insert price",
           type: "number" as const,
-          values: takeProfitTargets,
+          values: takeProfitTargets.map((target) => target.raw),
           onChange: handleTakeProfitChange,
         },
         {
@@ -408,8 +439,8 @@ function NewTradePageContent() {
           label: "Nr. Pips",
           idPrefix: "pips",
           placeholder: "Insert",
-          type: "text" as const,
-          values: pipsTargets,
+          type: "number" as const,
+          values: pipsTargets.map((target) => target.raw),
           onChange: handlePipsChange,
         },
         {
@@ -417,7 +448,7 @@ function NewTradePageContent() {
           idPrefix: "pnl",
           placeholder: "Insert",
           type: "number" as const,
-          values: pnlTargets,
+          values: pnlTargets.map((target) => target.raw),
           onChange: handlePnlChange,
         },
       ],
@@ -1010,34 +1041,52 @@ function NewTradePageContent() {
         setRemovedLibraryItems([]);
         setImageError(null);
 
-        setPosition(match.position === "SHORT" ? "SHORT" : "LONG");
-        setEntryPrice(match.entryPrice ?? "");
-        setExitPrice(match.exitPrice ?? "");
-        setStopLoss(match.stopLoss ?? "");
-        const parsedTakeProfit = parseMultiValueField(match.takeProfit);
-        const parsedRiskReward = parseMultiValueField(match.riskReward);
-        const parsedPips = parseMultiValueField(match.pips);
-        const parsedPnl = parseMultiValueField(match.pnl);
+        setPosition(match.position === "SHORT" ? "SHORT" : match.position === "LONG" ? "LONG" : null);
+        setEntryPrice(createNumericFieldStateFromNumber(match.entryPrice ?? null));
+        setExitPrice(createNumericFieldStateFromNumber(match.exitPrice ?? null));
+        setStopLoss(createNumericFieldStateFromNumber(match.stopLoss ?? null));
+        const mappedTakeProfit = (match.takeProfit ?? []).map((value) =>
+          createNumericFieldStateFromNumber(value ?? null),
+        );
+        const mappedRiskReward = match.riskReward?.length ? match.riskReward : [""];
+        const mappedPips = (match.pips ?? []).map((value) =>
+          createNumericFieldStateFromNumber(value ?? null),
+        );
+        const mappedPnl = (match.pnl ?? []).map((value) =>
+          createNumericFieldStateFromNumber(value ?? null),
+        );
         const columnCount = Math.max(
           1,
-          parsedTakeProfit.length,
-          parsedRiskReward.length,
-          parsedPips.length,
-          parsedPnl.length,
+          mappedTakeProfit.length,
+          mappedRiskReward.length,
+          mappedPips.length,
+          mappedPnl.length,
         );
-        setTakeProfitTargets(padMultiValue(parsedTakeProfit, columnCount));
-        setRiskRewardTargets(padMultiValue(parsedRiskReward, columnCount));
-        setPipsTargets(padMultiValue(parsedPips, columnCount));
-        setPnlTargets(padMultiValue(parsedPnl, columnCount));
-        setPreTradeMentalState(match.preTradeMentalState ?? "");
-        setEmotionsDuringTrade(match.emotionsDuringTrade ?? "");
-        setEmotionsAfterTrade(match.emotionsAfterTrade ?? "");
-        setConfidenceLevel(match.confidenceLevel ?? "");
-        setEmotionalTrigger(match.emotionalTrigger ?? "");
-        setFollowedPlan(match.followedPlan ?? "");
-        setRespectedRiskChoice(match.respectedRisk ?? "");
-        setWouldRepeatTrade(match.wouldRepeatTrade ?? "");
-        setRisk(match.risk ?? "");
+        setTakeProfitTargets(
+          padMultiValue(mappedTakeProfit, columnCount, () => createNumericFieldState()),
+        );
+        setRiskRewardTargets(padMultiValue(mappedRiskReward, columnCount, () => ""));
+        setPipsTargets(padMultiValue(mappedPips, columnCount, () => createNumericFieldState()));
+        setPnlTargets(padMultiValue(mappedPnl, columnCount, () => createNumericFieldState()));
+        setPreTradeMentalState(match.preTradeMentalState ?? null);
+        setEmotionsDuringTrade(match.emotionsDuringTrade ?? null);
+        setEmotionsAfterTrade(match.emotionsAfterTrade ?? null);
+        setConfidenceLevel(match.confidenceLevel ?? null);
+        setEmotionalTrigger(match.emotionalTrigger ?? null);
+        setFollowedPlan(match.followedPlan ?? null);
+        setRespectedRiskChoice(match.respectedRisk ?? null);
+        setRespectedRiskSelection(
+          match.respectedRisk === true ? "true" : match.respectedRisk === false ? "false" : "",
+        );
+        setWouldRepeatTrade(match.wouldRepeatTrade ?? null);
+        setRepeatTradeSelection(
+          match.wouldRepeatTrade === true
+            ? "true"
+            : match.wouldRepeatTrade === false
+              ? "false"
+              : "",
+        );
+        setRisk(createNumericFieldStateFromNumber(match.risk ?? null));
         setLotSize(match.lotSize ?? "");
 
         if (imageInputRef.current) {
@@ -1928,7 +1977,7 @@ function NewTradePageContent() {
                         </label>
                         <select
                           id="position-select"
-                          value={position}
+                          value={position ?? ""}
                           onChange={(event) => {
                             const nextValue = event.target.value;
 
@@ -1942,7 +1991,7 @@ function NewTradePageContent() {
                               return;
                             }
 
-                            setPosition("");
+                            setPosition(null);
                           }}
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-0"
                         >
@@ -1965,8 +2014,8 @@ function NewTradePageContent() {
                         <input
                           id="entry-price-input"
                           type="number"
-                          value={entryPrice}
-                          onChange={(event) => setEntryPrice(event.target.value)}
+                          value={entryPrice.raw}
+                          onChange={(event) => setEntryPrice(createNumericFieldState(event.target.value))}
                           placeholder="Insert price"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
@@ -1982,15 +2031,19 @@ function NewTradePageContent() {
                         <input
                           id="stop-loss-input"
                           type="number"
-                          value={stopLoss}
-                          onChange={(event) => setStopLoss(event.target.value)}
+                          value={stopLoss.raw}
+                          onChange={(event) => setStopLoss(createNumericFieldState(event.target.value))}
                           placeholder="Insert price"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
 
                       {targetFieldConfigs.slice(0, 3).map((fieldConfig) => {
-                        const normalizedValues = padMultiValue(fieldConfig.values, targetColumnCount);
+                        const normalizedValues = padMultiValue(
+                          fieldConfig.values,
+                          targetColumnCount,
+                          () => "",
+                        );
 
                         return (
                           <div className="flex flex-col gap-2" key={fieldConfig.idPrefix}>
@@ -2081,9 +2134,9 @@ function NewTradePageContent() {
                         </label>
                         <input
                           id="risk-input"
-                          type="text"
-                          value={risk}
-                          onChange={(event) => setRisk(event.target.value)}
+                          type="number"
+                          value={risk.raw}
+                          onChange={(event) => setRisk(createNumericFieldState(event.target.value))}
                           placeholder="Insert"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
@@ -2093,6 +2146,7 @@ function NewTradePageContent() {
                         const normalizedValues = padMultiValue(
                           pnlFieldConfig.values,
                           targetColumnCount,
+                          () => "",
                         );
 
                         return (
@@ -2166,8 +2220,12 @@ function NewTradePageContent() {
                     <div className="flex flex-col">
                       <StyledSelect
                         label="Stato mentale prima del trade"
-                        value={preTradeMentalState}
-                        onChange={(nextValue) => setPreTradeMentalState(nextValue)}
+                        value={preTradeMentalState ?? ""}
+                        onChange={(nextValue) =>
+                          setPreTradeMentalState(
+                            !nextValue || nextValue === "Insert" ? null : nextValue,
+                          )
+                        }
                         placeholder="Seleziona opzione"
                       >
                         <option value="Insert">Insert</option>
@@ -2180,8 +2238,12 @@ function NewTradePageContent() {
 
                       <StyledSelect
                         label="Emozioni durante il trade"
-                        value={emotionsDuringTrade}
-                        onChange={(nextValue) => setEmotionsDuringTrade(nextValue)}
+                        value={emotionsDuringTrade ?? ""}
+                        onChange={(nextValue) =>
+                          setEmotionsDuringTrade(
+                            !nextValue || nextValue === "Insert" ? null : nextValue,
+                          )
+                        }
                         placeholder="Seleziona opzione"
                       >
                         <option value="Insert">Insert</option>
@@ -2194,8 +2256,12 @@ function NewTradePageContent() {
 
                       <StyledSelect
                         label="Emozioni dopo il trade"
-                        value={emotionsAfterTrade}
-                        onChange={(nextValue) => setEmotionsAfterTrade(nextValue)}
+                        value={emotionsAfterTrade ?? ""}
+                        onChange={(nextValue) =>
+                          setEmotionsAfterTrade(
+                            !nextValue || nextValue === "Insert" ? null : nextValue,
+                          )
+                        }
                         placeholder="Seleziona opzione"
                       >
                         <option value="Insert">Insert</option>
@@ -2219,12 +2285,12 @@ function NewTradePageContent() {
                           min={1}
                           max={10}
                           step={1}
-                          value={confidenceLevel}
+                          value={confidenceLevel ?? ""}
                           onChange={(event) => {
                             const rawValue = event.target.value;
 
                             if (rawValue === "") {
-                              setConfidenceLevel("");
+                              setConfidenceLevel(null);
                               return;
                             }
 
@@ -2244,8 +2310,12 @@ function NewTradePageContent() {
 
                       <StyledSelect
                         label="Trigger emotivi"
-                        value={emotionalTrigger}
-                        onChange={(nextValue) => setEmotionalTrigger(nextValue)}
+                        value={emotionalTrigger ?? ""}
+                        onChange={(nextValue) =>
+                          setEmotionalTrigger(
+                            !nextValue || nextValue === "Insert" ? null : nextValue,
+                          )
+                        }
                         placeholder="Seleziona opzione"
                       >
                         <option value="Insert">Insert</option>
@@ -2258,8 +2328,12 @@ function NewTradePageContent() {
 
                       <StyledSelect
                         label="Ho seguito il mio piano?"
-                        value={followedPlan}
-                        onChange={(nextValue) => setFollowedPlan(nextValue)}
+                        value={followedPlan ?? ""}
+                        onChange={(nextValue) =>
+                          setFollowedPlan(
+                            !nextValue || nextValue === "Insert" ? null : nextValue,
+                          )
+                        }
                         placeholder="Seleziona risposta"
                       >
                         <option value="Insert">Insert</option>
@@ -2272,30 +2346,55 @@ function NewTradePageContent() {
 
                       <StyledSelect
                         label="Ho rispettato il rischio prefissato?"
-                        value={respectedRiskChoice}
-                        onChange={(nextValue) => setRespectedRiskChoice(nextValue)}
+                        value={respectedRiskSelection}
+                        onChange={(nextValue) => {
+                          if (nextValue === "true") {
+                            setRespectedRiskChoice(true);
+                            setRespectedRiskSelection("true");
+                            return;
+                          }
+
+                          if (nextValue === "false") {
+                            setRespectedRiskChoice(false);
+                            setRespectedRiskSelection("false");
+                            return;
+                          }
+
+                          setRespectedRiskChoice(null);
+                          setRespectedRiskSelection(nextValue === "Insert" ? "Insert" : "");
+                        }}
                         placeholder="Seleziona risposta"
                       >
                         <option value="Insert">Insert</option>
-                        {respectedRiskOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
+                        <option value="true">Sì</option>
+                        <option value="false">No</option>
                       </StyledSelect>
 
                       <StyledSelect
                         label="Rifarei questo trade?"
-                        value={wouldRepeatTrade}
-                        onChange={(nextValue) => setWouldRepeatTrade(nextValue)}
+                        value={repeatTradeSelection}
+                        onChange={(nextValue) => {
+                          if (nextValue === "true") {
+                            setWouldRepeatTrade(true);
+                            setRepeatTradeSelection("true");
+                            return;
+                          }
+
+                          if (nextValue === "false") {
+                            setWouldRepeatTrade(false);
+                            setRepeatTradeSelection("false");
+                            return;
+                          }
+
+                          setWouldRepeatTrade(null);
+                          setRepeatTradeSelection(nextValue);
+                        }}
                         placeholder="Seleziona risposta"
                       >
                         <option value="Insert">Insert</option>
-                        {repeatTradeOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
+                        <option value="true">Sì</option>
+                        <option value="false">No</option>
+                        <option value="maybe">Forse</option>
                       </StyledSelect>
                     </div>
                   </div>
@@ -2337,12 +2436,13 @@ function NewTradePageContent() {
         return hasImage || hasNotes;
       });
 
-    const serializedTakeProfit = serializeMultiValueField(takeProfitTargets);
-    const serializedRiskReward = serializeMultiValueField(riskRewardTargets);
-    const serializedPips = serializeMultiValueField(pipsTargets);
-    const serializedPnl = serializeMultiValueField(pnlTargets);
+    const normalizedPosition: "LONG" | "SHORT" | null =
+      position === "SHORT" ? "SHORT" : position === "LONG" ? "LONG" : null;
 
-    const normalizedPosition: "LONG" | "SHORT" = position === "SHORT" ? "SHORT" : "LONG";
+    const takeProfitValues = takeProfitTargets.map((target) => target.value);
+    const riskRewardValues = riskRewardTargets.slice();
+    const pipsValues = pipsTargets.map((target) => target.value);
+    const pnlValues = pnlTargets.map((target) => target.value);
 
     const payload: TradePayload = {
       id: editingTradeId ?? undefined,
@@ -2352,23 +2452,23 @@ function NewTradePageContent() {
       openTime: openTime ? openTime.toISOString() : null,
       closeTime: closeTime ? closeTime.toISOString() : null,
       position: normalizedPosition,
-      riskReward: serializedRiskReward,
-      risk: risk.trim() || null,
-      pips: serializedPips,
+      riskReward: riskRewardValues,
+      risk: risk.value,
+      pips: pipsValues,
       lotSize: lotSize.trim() || null,
-      entryPrice: entryPrice.trim() || null,
-      exitPrice: exitPrice.trim() || null,
-      stopLoss: stopLoss.trim() || null,
-      takeProfit: serializedTakeProfit,
-      pnl: serializedPnl,
-      preTradeMentalState: preTradeMentalState.trim() || null,
-      emotionsDuringTrade: emotionsDuringTrade.trim() || null,
-      emotionsAfterTrade: emotionsAfterTrade.trim() || null,
-      confidenceLevel: confidenceLevel.trim() || null,
-      emotionalTrigger: emotionalTrigger.trim() || null,
-      followedPlan: followedPlan.trim() || null,
-      respectedRisk: respectedRiskChoice.trim() || null,
-      wouldRepeatTrade: wouldRepeatTrade.trim() || null,
+      entryPrice: entryPrice.value,
+      exitPrice: exitPrice.value,
+      stopLoss: stopLoss.value,
+      takeProfit: takeProfitValues,
+      pnl: pnlValues,
+      preTradeMentalState: preTradeMentalState?.trim() || null,
+      emotionsDuringTrade: emotionsDuringTrade?.trim() || null,
+      emotionsAfterTrade: emotionsAfterTrade?.trim() || null,
+      confidenceLevel: confidenceLevel?.trim() || null,
+      emotionalTrigger: emotionalTrigger?.trim() || null,
+      followedPlan: followedPlan?.trim() || null,
+      respectedRisk: respectedRiskChoice,
+      wouldRepeatTrade: wouldRepeatTrade,
       notes: null,
       libraryItems: normalizedLibraryItems,
     };
