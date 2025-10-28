@@ -648,8 +648,8 @@ export async function loadTrades(): Promise<StoredTrade[]> {
   const { data, error } = await supabase
     .from("registered_trades")
     .select("*")
-    .order("open_time", { ascending: false, nullsFirst: false })
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: true, nullsFirst: false })
+    .order("open_time", { ascending: true, nullsFirst: false });
 
   if (error) {
     console.error("Failed to load trades", error);
