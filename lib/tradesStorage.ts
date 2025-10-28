@@ -504,7 +504,10 @@ function buildTradeRecord(payload: TradePayload) {
     entry_price: normalizeTradeField(payload.entryPrice, "number"),
     exit_price: normalizeTradeField(payload.exitPrice, "number"),
     stop_loss: normalizeTradeField(payload.stopLoss, "number"),
-    take_profit: serializeNumericMultiValueField(payload.takeProfit ?? []),
+    take_profit:
+      payload.takeProfit && payload.takeProfit.length > 0
+        ? parseFloat(payload.takeProfit[0])
+        : null,
     p_l: serializeNumericMultiValueField(payload.pnl ?? []),
     mental_state_before: normalizeTradeField(payload.preTradeMentalState, "string"),
     emotions_during: normalizeTradeField(payload.emotionsDuringTrade, "string"),
