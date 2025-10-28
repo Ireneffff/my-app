@@ -864,13 +864,13 @@ export default function RegisteredTradePage() {
             const showRemovalBadge = shouldShowRemovalBadge && columnIndex === targetColumnCount - 1;
 
             return (
-              <div className="relative" key={`${idPrefix}-value-${columnIndex}`}>
+              <div className="group relative" key={`${idPrefix}-value-${columnIndex}`}>
                 <div className="w-full rounded-2xl border border-border bg-surface px-4 py-3">
                   <span className="text-sm font-medium text-fg">{formattedValue}</span>
                 </div>
                 {showRemovalBadge ? (
                   <span
-                    className="pointer-events-none absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#f3f4f6] text-muted-fg ring-1 ring-border"
+                    className="pointer-events-none absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-[#555555] shadow-sm opacity-0 transition-all duration-200 ease-in-out group-hover:opacity-100 group-hover:scale-110"
                     aria-hidden="true"
                   >
                     <X aria-hidden="true" className="h-3.5 w-3.5" />

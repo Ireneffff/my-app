@@ -2076,7 +2076,7 @@ function NewTradePageContent() {
                                     targetColumnCount > 1 && columnIndex === targetColumnCount - 1;
 
                                   return (
-                                    <div className="relative" key={inputId}>
+                                    <div className="group relative" key={inputId}>
                                       <input
                                         id={inputId}
                                         type={fieldConfig.type}
@@ -2089,7 +2089,7 @@ function NewTradePageContent() {
                                         <button
                                           type="button"
                                           onClick={handleRemoveTargetColumn}
-                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#f3f4f6] text-muted-fg shadow-sm ring-1 ring-border transition hover:bg-[#e5e7eb] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
+                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-[#555555] shadow-sm opacity-0 transition-all duration-200 ease-in-out group-hover:opacity-100 group-hover:scale-110 hover:bg-[#f3f4f6] focus:outline-none focus-visible:opacity-100 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
                                           aria-label={`Rimuovi ultima colonna per ${fieldConfig.label}`}
                                         >
                                           <X aria-hidden="true" className="h-3.5 w-3.5" />
@@ -2180,7 +2180,7 @@ function NewTradePageContent() {
                                     targetColumnCount > 1 && columnIndex === targetColumnCount - 1;
 
                                   return (
-                                    <div className="relative" key={inputId}>
+                                    <div className="group relative" key={inputId}>
                                       <input
                                         id={inputId}
                                         type={pnlFieldConfig.type}
@@ -2193,7 +2193,7 @@ function NewTradePageContent() {
                                         <button
                                           type="button"
                                           onClick={handleRemoveTargetColumn}
-                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#f3f4f6] text-muted-fg shadow-sm ring-1 ring-border transition hover:bg-[#e5e7eb] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
+                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-[#555555] shadow-sm opacity-0 transition-all duration-200 ease-in-out group-hover:opacity-100 group-hover:scale-110 hover:bg-[#f3f4f6] focus:outline-none focus-visible:opacity-100 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
                                           aria-label={`Rimuovi ultima colonna per ${pnlFieldConfig.label}`}
                                         >
                                           <X aria-hidden="true" className="h-3.5 w-3.5" />
