@@ -277,7 +277,7 @@ function NewTradePageContent() {
   const [removedLibraryItems, setRemovedLibraryItems] = useState<RemovedLibraryItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingTrade, setIsLoadingTrade] = useState(isEditing);
-  const [position, setPosition] = useState<"LONG" | "SHORT">("LONG");
+  const [position, setPosition] = useState<"" | "LONG" | "SHORT">("");
   const [entryPrice, setEntryPrice] = useState("");
   const [exitPrice, setExitPrice] = useState("");
   const [stopLoss, setStopLoss] = useState("");
@@ -399,7 +399,7 @@ function NewTradePageContent() {
         {
           label: "R/R",
           idPrefix: "risk-reward",
-          placeholder: "1:4",
+          placeholder: "Insert",
           type: "text" as const,
           values: riskRewardTargets,
           onChange: handleRiskRewardChange,
@@ -407,7 +407,7 @@ function NewTradePageContent() {
         {
           label: "Nr. Pips",
           idPrefix: "pips",
-          placeholder: "55",
+          placeholder: "Insert",
           type: "text" as const,
           values: pipsTargets,
           onChange: handlePipsChange,
@@ -1929,13 +1929,29 @@ function NewTradePageContent() {
                         <select
                           id="position-select"
                           value={position}
-                          onChange={(event) =>
-                            setPosition(event.target.value === "SHORT" ? "SHORT" : "LONG")
-                          }
+                          onChange={(event) => {
+                            const nextValue = event.target.value;
+
+                            if (nextValue === "SHORT") {
+                              setPosition("SHORT");
+                              return;
+                            }
+
+                            if (nextValue === "LONG") {
+                              setPosition("LONG");
+                              return;
+                            }
+
+                            setPosition("");
+                          }}
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-0"
                         >
+                          <option value="" disabled hidden>
+                            Insert position
+                          </option>
                           <option value="LONG">Long</option>
                           <option value="SHORT">Short</option>
+                          <option value="INSERT">Insert</option>
                         </select>
                       </div>
 
@@ -2068,7 +2084,7 @@ function NewTradePageContent() {
                           type="text"
                           value={risk}
                           onChange={(event) => setRisk(event.target.value)}
-                          placeholder="2%"
+                          placeholder="Insert"
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
@@ -2154,6 +2170,7 @@ function NewTradePageContent() {
                         onChange={(nextValue) => setPreTradeMentalState(nextValue)}
                         placeholder="Seleziona opzione"
                       >
+                        <option value="Insert">Insert</option>
                         {preTradeMentalStateOptions.map((option) => (
                           <option key={option} value={option}>
                             {option}
@@ -2167,6 +2184,7 @@ function NewTradePageContent() {
                         onChange={(nextValue) => setEmotionsDuringTrade(nextValue)}
                         placeholder="Seleziona opzione"
                       >
+                        <option value="Insert">Insert</option>
                         {emotionsDuringTradeOptions.map((option) => (
                           <option key={option} value={option}>
                             {option}
@@ -2180,6 +2198,7 @@ function NewTradePageContent() {
                         onChange={(nextValue) => setEmotionsAfterTrade(nextValue)}
                         placeholder="Seleziona opzione"
                       >
+                        <option value="Insert">Insert</option>
                         {emotionsAfterTradeOptions.map((option) => (
                           <option key={option} value={option}>
                             {option}
@@ -2229,6 +2248,7 @@ function NewTradePageContent() {
                         onChange={(nextValue) => setEmotionalTrigger(nextValue)}
                         placeholder="Seleziona opzione"
                       >
+                        <option value="Insert">Insert</option>
                         {emotionalTriggerOptions.map((option) => (
                           <option key={option} value={option}>
                             {option}
@@ -2242,6 +2262,7 @@ function NewTradePageContent() {
                         onChange={(nextValue) => setFollowedPlan(nextValue)}
                         placeholder="Seleziona risposta"
                       >
+                        <option value="Insert">Insert</option>
                         {followedPlanOptions.map((option) => (
                           <option key={option} value={option}>
                             {option}
@@ -2255,6 +2276,7 @@ function NewTradePageContent() {
                         onChange={(nextValue) => setRespectedRiskChoice(nextValue)}
                         placeholder="Seleziona risposta"
                       >
+                        <option value="Insert">Insert</option>
                         {respectedRiskOptions.map((option) => (
                           <option key={option} value={option}>
                             {option}
@@ -2268,6 +2290,7 @@ function NewTradePageContent() {
                         onChange={(nextValue) => setWouldRepeatTrade(nextValue)}
                         placeholder="Seleziona risposta"
                       >
+                        <option value="Insert">Insert</option>
                         {repeatTradeOptions.map((option) => (
                           <option key={option} value={option}>
                             {option}
@@ -2319,6 +2342,8 @@ function NewTradePageContent() {
     const serializedPips = serializeMultiValueField(pipsTargets);
     const serializedPnl = serializeMultiValueField(pnlTargets);
 
+    const normalizedPosition: "LONG" | "SHORT" = position === "SHORT" ? "SHORT" : "LONG";
+
     const payload: TradePayload = {
       id: editingTradeId ?? undefined,
       symbolCode: selectedSymbol.code,
@@ -2326,7 +2351,7 @@ function NewTradePageContent() {
       date: selectedDate.toISOString(),
       openTime: openTime ? openTime.toISOString() : null,
       closeTime: closeTime ? closeTime.toISOString() : null,
-      position,
+      position: normalizedPosition,
       riskReward: serializedRiskReward,
       risk: risk.trim() || null,
       pips: serializedPips,
