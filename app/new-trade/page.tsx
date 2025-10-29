@@ -1149,7 +1149,14 @@ function NewTradePageContent() {
   );
 
   const handleSelectSymbol = (symbol: SymbolOption) => {
-    setSelectedSymbol(symbol);
+    setSelectedSymbol((previous) => {
+      if (previous?.code === symbol.code) {
+        return null;
+      }
+
+      return symbol;
+    });
+    setIsSymbolListOpen(false);
   };
 
   const openTimeDisplay = getDateTimeDisplayParts(openTime);
@@ -1726,20 +1733,20 @@ function NewTradePageContent() {
                             {selectedSymbol?.flag ?? ""}
                           </span>
                           <div
-                            className={`flex items-center justify-center gap-2 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                            className={`flex items-center justify-center gap-2 transition-colors transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                               selectedSymbol
-                                ? "text-fg"
-                                : "text-[color:rgb(var(--muted-fg)/0.6)]"
+                                ? "text-fg opacity-100"
+                                : "text-[color:rgb(var(--muted-fg)/0.6)] opacity-90"
                             }`}
                           >
                             <span
-                              className={`text-lg tracking-[0.2em] md:text-xl ${
+                              className={`tracking-[0.2em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                                 selectedSymbol
-                                  ? "font-semibold"
-                                  : "font-medium"
+                                  ? "text-lg md:text-xl font-semibold"
+                                  : "text-sm md:text-base font-medium"
                               }`}
                             >
-                              {selectedSymbol?.code ?? "Select option"}
+                              {selectedSymbol?.code ?? "Select symbol"}
                             </span>
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
