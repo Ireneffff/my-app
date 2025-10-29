@@ -79,20 +79,24 @@ export default function Home() {
   const totalTrades = trades.length;
 
   return (
-    <section className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-6 pb-16 pt-24 sm:px-8 sm:pt-28">
-      <header className="flex min-h-[58vh] flex-1 flex-col items-center justify-center gap-4 text-center sm:min-h-[62vh]">
-        <p className="text-sm text-muted-fg">Calm mind, strong trade</p>
+    <section className="relative mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-6 pb-20 pt-28 sm:px-10">
+      <header className="flex min-h-[58vh] flex-1 flex-col items-center justify-center gap-5 text-center animate-soft-fade-in sm:min-h-[60vh]">
+        <p className="text-sm font-medium uppercase tracking-[0.32em] text-muted-fg">
+          Calm mind, strong trade
+        </p>
         <h1 className="text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
           Trading Journal
         </h1>
         <Link href="/new-trade" className="mt-2">
-          <Button variant="primary" size="md">
-            Add trade
+          <Button variant="primary" size="md" className="group">
+            <span className="transition-opacity duration-300 ease-in-out group-hover:opacity-90">
+              Add trade
+            </span>
           </Button>
         </Link>
       </header>
 
-      <div className="mt-16 flex w-full flex-col items-center gap-12 pb-16">
+      <div className="mt-20 flex w-full flex-col items-center gap-14 pb-16">
         <Card className="w-full max-w-3xl self-center p-8 sm:max-w-4xl">
           <div className="flex items-center justify-between">
             <button
@@ -100,7 +104,7 @@ export default function Home() {
               onClick={() =>
                 setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
               }
-              className="rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted-fg transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-subtle hover:text-fg hover:shadow-[0_12px_28px_rgba(15,23,42,0.12)]"
+              className="rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted-fg transition-all duration-300 ease-in-out hover:-translate-y-1 hover:bg-subtle/90 hover:text-fg hover:shadow-[0_16px_32px_rgba(15,23,42,0.14)]"
               aria-label="Previous month"
             >
               ‹
@@ -111,14 +115,14 @@ export default function Home() {
               onClick={() =>
                 setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
               }
-              className="rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted-fg transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-subtle hover:text-fg hover:shadow-[0_12px_28px_rgba(15,23,42,0.12)]"
+              className="rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted-fg transition-all duration-300 ease-in-out hover:-translate-y-1 hover:bg-subtle/90 hover:text-fg hover:shadow-[0_16px_32px_rgba(15,23,42,0.14)]"
               aria-label="Next month"
             >
               ›
             </button>
           </div>
 
-          <div className="mt-6 grid grid-cols-7 gap-2 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg opacity-80">
+          <div className="mt-6 grid grid-cols-7 gap-2 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg/80">
             {WEEKDAYS.map((day) => (
               <div key={day} className="text-center">
                 {day}
@@ -154,13 +158,13 @@ export default function Home() {
         </Card>
 
         <div className="w-full max-w-3xl self-center text-left sm:max-w-4xl">
-          <h2 className="text-sm font-medium uppercase tracking-[0.28em] text-muted-fg">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.28em] text-muted-fg">
             Registered Trades
           </h2>
 
           {trades.length === 0 ? (
             <p
-              className="mt-4 rounded-2xl border border-dashed bg-surface px-6 py-8 text-center text-sm text-muted-fg"
+              className="mt-4 rounded-3xl border border-dashed border-border/70 bg-surface/80 px-6 py-8 text-center text-sm text-muted-fg shadow-[0_16px_34px_rgba(15,23,42,0.08)]"
               style={{ borderColor: "color-mix(in srgb, rgba(var(--border)) 100%, transparent)" }}
             >
               No trades saved yet. Use the Add new button to register your first trade.
@@ -178,10 +182,10 @@ export default function Home() {
                   <li key={trade.id}>
                     <Link
                       href={`/registered-trades/${trade.id}`}
-                      className="flex items-center gap-4 rounded-2xl border border-border bg-surface px-5 py-4 transition hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(15,23,42,0.12)]"
+                      className="flex items-center gap-4 rounded-3xl border border-border bg-surface/95 px-5 py-4 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:bg-surface hover:shadow-[0_22px_42px_rgba(15,23,42,0.16)] focus-visible:-translate-y-1"
                     >
                       <span
-                        className="flex h-10 w-10 flex-none items-center justify-center rounded-full text-sm font-semibold text-accent"
+                        className="flex h-10 w-10 flex-none items-center justify-center rounded-full text-sm font-semibold text-accent shadow-[inset_0_1px_3px_rgba(255,255,255,0.45)]"
                         style={{ backgroundColor: "rgb(var(--accent) / 0.12)" }}
                       >
                         {totalTrades - index}

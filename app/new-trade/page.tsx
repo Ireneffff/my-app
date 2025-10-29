@@ -1509,18 +1509,18 @@ function NewTradePageContent() {
           },
           className: isRecentlyAdded ? "animate-fade-slide-in" : undefined,
           visual: hasImage ? (
-            <div className="relative h-full w-full">
+            <div className="relative h-full w-full overflow-hidden rounded-3xl">
               <Image
                 src={item.imageData!}
                 alt={`Anteprima libreria ${index + 1}`}
                 fill
                 sizes="(min-width: 768px) 160px, 200px"
-                className="object-cover"
+                className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-[1.02]"
                 unoptimized
               />
             </div>
           ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center rounded-md bg-[#F4F4F4] text-muted-fg">
+            <div className="flex h-full w-full flex-col items-center justify-center rounded-3xl border border-border/70 bg-subtle/70 text-muted-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 48 48"
@@ -1575,7 +1575,7 @@ function NewTradePageContent() {
           >
             <span
               data-library-preview-image
-              className="relative block aspect-[3/2] w-full overflow-hidden rounded-[4px] border-2 border-[#B7B7B7]"
+              className="relative block aspect-[3/2] w-full overflow-hidden rounded-3xl border border-border/70 bg-surface/80 shadow-[0_22px_44px_rgba(15,23,42,0.14)]"
             >
               {selectedImageData ? (
                 <Image
@@ -1587,7 +1587,7 @@ function NewTradePageContent() {
                   unoptimized
                 />
               ) : (
-                <span className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
+                <span className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-surface/90 via-surface/70 to-subtle/90 text-muted-fg">
                   <UploadIcon />
                   <span className="text-xs text-muted-fg/80">
                     Aggiungi uno screenshot o un chart di contesto.
@@ -1620,7 +1620,7 @@ function NewTradePageContent() {
       }}
       placeholder="Scrivi le tue note"
       aria-label="Note"
-      className="min-h-[120px] w-full resize-none rounded-none border border-[#D9D9D9] bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg transition focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+      className="min-h-[120px] w-full resize-none rounded-3xl border border-border/70 bg-surface/80 px-5 py-4 text-sm font-medium text-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] transition focus:outline-none focus-visible:outline-none focus-visible:ring-0"
     />
   );
 
@@ -1629,7 +1629,7 @@ function NewTradePageContent() {
       ? (
           <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
             <div className="flex w-full flex-col gap-8">
-              <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6">
+              <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6 animate-soft-fade-in">
                 <div className="mx-auto flex w-full max-w-xl items-center gap-3">
                   <div
                     className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1"
@@ -1679,7 +1679,7 @@ function NewTradePageContent() {
                 </p>
               </div>
 
-              <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
+              <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8 animate-soft-fade-in">
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-wrap items-start gap-4">
                     <div className="flex flex-col gap-3">
@@ -1688,7 +1688,7 @@ function NewTradePageContent() {
                         <button
                           type="button"
                           onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                          className="group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface text-center shadow-sm transition-all focus:outline-none focus:ring-0 hover:shadow-md"
+                          className="group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-3xl border border-border/70 bg-surface/90 text-center shadow-[0_18px_36px_rgba(15,23,42,0.12)] transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-[0_26px_52px_rgba(15,23,42,0.16)]"
                           aria-haspopup="listbox"
                           aria-expanded={isSymbolListOpen}
                         >
@@ -1707,7 +1707,7 @@ function NewTradePageContent() {
                               strokeWidth="1.5"
                               strokeLinecap="round"
                               strokeLinejoin="round"
-                              className={`h-4 w-4 text-gray-500 opacity-100 transition-transform transition-opacity group-hover:opacity-80 ${
+                              className={`h-4 w-4 text-muted-fg transition-transform transition-opacity duration-300 ease-in-out group-hover:opacity-80 ${
                                 isSymbolListOpen ? "rotate-180" : ""
                               }`}
                               aria-hidden="true"
@@ -1719,21 +1719,21 @@ function NewTradePageContent() {
                         <button
                           type="button"
                           onClick={() => setIsRealTrade((prev) => !prev)}
-                          className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border text-center shadow-sm transition-all duration-200 ease-in-out focus:outline-none focus:ring-0 hover:shadow-md ${
+                          className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-3xl border text-center shadow-[0_18px_36px_rgba(15,23,42,0.12)] transition-all duration-300 ease-in-out focus:outline-none focus-visible:outline-none hover:-translate-y-1 hover:shadow-[0_26px_52px_rgba(15,23,42,0.16)] ${
                             isRealTrade
-                              ? "border-green-200 bg-green-100 text-green-700"
-                              : "border-gray-200 bg-gray-50 text-gray-600"
+                              ? "border-transparent bg-accent text-white"
+                              : "border-border/70 bg-surface/90 text-muted-fg"
                           }`}
                           aria-pressed={isRealTrade}
                         >
                           {isRealTrade ? (
                             <CheckCircle
-                              className="h-5 w-5 text-green-500 transition-colors duration-200 ease-in-out"
+                              className="h-5 w-5 text-white transition-colors duration-300 ease-in-out"
                               aria-hidden="true"
                             />
                           ) : (
                             <Circle
-                              className="h-5 w-5 text-gray-400 transition-colors duration-200 ease-in-out"
+                              className="h-5 w-5 text-muted-fg transition-colors duration-300 ease-in-out"
                               aria-hidden="true"
                             />
                           )}
@@ -1962,13 +1962,13 @@ function NewTradePageContent() {
                       </div>
                     </div>
 
-                    <p className="mt-2 text-center text-sm text-gray-500">
+                    <p className="mt-2 text-center text-sm text-muted-fg">
                       Duration: {durationLabel}
                     </p>
                   </div>
 
                   <div className="flex flex-col gap-4">
-                    <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
+                    <span className="mb-2 mt-6 block text-sm font-semibold text-fg">
                       General Details
                     </span>
                     <div className="flex flex-col gap-4">
@@ -2089,23 +2089,23 @@ function NewTradePageContent() {
                                         <button
                                           type="button"
                                           onClick={handleRemoveTargetColumn}
-                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-[#555555] shadow-sm opacity-0 transition-all duration-200 ease-in-out group-hover:opacity-100 group-hover:scale-110 hover:bg-[#f3f4f6] focus:outline-none focus-visible:opacity-100 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
+                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-border/70 bg-surface/90 text-muted-fg shadow-[0_6px_16px_rgba(15,23,42,0.14)] opacity-0 transition-all duration-300 ease-in-out group-hover:opacity-100 group-hover:scale-110 hover:bg-subtle focus:outline-none focus-visible:opacity-100 focus-visible:scale-110 focus-visible:outline-none"
                                           aria-label={`Rimuovi ultima colonna per ${fieldConfig.label}`}
                                         >
                                           <X aria-hidden="true" className="h-3.5 w-3.5" />
                                         </button>
                                       )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={handleAddTargetColumn}
-                                className="absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-sm transition hover:bg-[#1d4ed8] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#93c5fd]"
-                                aria-label={`Aggiungi colonna per ${fieldConfig.label}`}
-                              >
-                                <Plus aria-hidden="true" className="h-4 w-4" />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleAddTargetColumn}
+                              className="absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-accent text-white shadow-[0_16px_32px_rgba(0,122,255,0.32)] transition-all duration-300 ease-in-out hover:-translate-y-1 hover:bg-accent focus:outline-none focus-visible:outline-none"
+                              aria-label={`Aggiungi colonna per ${fieldConfig.label}`}
+                            >
+                              <Plus aria-hidden="true" className="h-4 w-4" />
                               </button>
                             </div>
                           </div>
@@ -2114,10 +2114,10 @@ function NewTradePageContent() {
 
                     </div>
 
-                    <div className="my-6 border-t border-gray-200" />
+                    <div className="my-6 border-t border-border/70" />
 
                     <div className="flex flex-col gap-4">
-                      <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-gray-500">
+                    <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
                         Risk Details
                       </span>
                       <div className="grid gap-4 md:grid-cols-2">
@@ -2203,7 +2203,7 @@ function NewTradePageContent() {
                                         <button
                                           type="button"
                                           onClick={handleRemoveTargetColumn}
-                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-[#555555] shadow-sm opacity-0 transition-all duration-200 ease-in-out group-hover:opacity-100 group-hover:scale-110 hover:bg-[#f3f4f6] focus:outline-none focus-visible:opacity-100 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
+                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-border/70 bg-surface/90 text-muted-fg shadow-[0_6px_16px_rgba(15,23,42,0.14)] opacity-0 transition-all duration-300 ease-in-out group-hover:opacity-100 group-hover:scale-110 hover:bg-subtle focus:outline-none focus-visible:opacity-100 focus-visible:scale-110 focus-visible:outline-none"
                                           aria-label={`Rimuovi ultima colonna per ${pnlFieldConfig.label}`}
                                         >
                                           <X aria-hidden="true" className="h-3.5 w-3.5" />
@@ -2216,7 +2216,7 @@ function NewTradePageContent() {
                               <button
                                 type="button"
                                 onClick={handleAddTargetColumn}
-                                className="absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-sm transition hover:bg-[#1d4ed8] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#93c5fd]"
+                                className="absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-accent text-white shadow-[0_16px_32px_rgba(0,122,255,0.32)] transition-all duration-300 ease-in-out hover:-translate-y-1 hover:bg-accent focus:outline-none focus-visible:outline-none"
                                 aria-label={`Aggiungi colonna per ${pnlFieldConfig.label}`}
                               >
                                 <Plus aria-hidden="true" className="h-4 w-4" />
@@ -2227,8 +2227,8 @@ function NewTradePageContent() {
                       })()}
                     </div>
 
-                    <div className="border-t border-gray-200 mt-6" />
-                    <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
+                    <div className="mt-6 border-t border-border/70" />
+                    <span className="mb-2 mt-6 block text-sm font-semibold text-fg">
                       Psychology & Mindset
                     </span>
                     <div className="flex flex-col">
@@ -2289,7 +2289,7 @@ function NewTradePageContent() {
                       <div className="mb-4">
                         <label
                           htmlFor="confidence-level-input"
-                          className="text-gray-600 text-xs font-medium mb-1 block"
+                          className="mb-1 block text-xs font-medium uppercase tracking-[0.24em] text-muted-fg"
                         >
                           Livello di fiducia (1–10)
                         </label>
@@ -2318,7 +2318,7 @@ function NewTradePageContent() {
                             setConfidenceLevel(String(clampedValue));
                           }}
                           placeholder="Seleziona livello"
-                          className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 text-sm placeholder-gray-400 p-2 focus:outline-none focus:ring-0"
+                          className="w-full rounded-2xl border border-border/70 bg-surface/90 px-4 py-2 text-sm text-fg placeholder:text-muted-fg/60 shadow-[0_12px_24px_rgba(15,23,42,0.08)] transition focus:outline-none focus-visible:outline-none"
                         />
                       </div>
 
@@ -2572,15 +2572,15 @@ function NewTradePageContent() {
 
   return (
     <section
-      className="relative flex min-h-dvh flex-col gap-12 bg-bg px-4 pb-16 text-fg sm:px-6 md:px-10"
+      className="relative mx-auto flex min-h-dvh w-full max-w-6xl flex-col gap-12 px-5 pb-24 text-fg sm:px-8 md:px-12"
       style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
     >
-      <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 sm:max-w-4xl">
+      <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="h-11 w-11 flex-none rounded-full bg-white p-0 text-lg text-[#555555] hover:bg-white hover:text-[#333333]"
+          className="h-11 w-11 flex-none rounded-full border border-border bg-surface/80 p-0 text-base text-muted-fg transition-all duration-300 ease-in-out hover:-translate-y-1 hover:bg-surface hover:text-fg focus-visible:-translate-y-1"
           onClick={() => {
             startNavigation(() => {
               router.push("/");
@@ -2595,7 +2595,7 @@ function NewTradePageContent() {
           type="button"
           variant="primary"
           size="md"
-          className="ml-auto min-w-[140px]"
+          className="ml-auto min-w-[150px]"
           onClick={handleSaveTrade}
           disabled={isSaving || isLoadingTrade}
         >
@@ -2604,16 +2604,16 @@ function NewTradePageContent() {
       </div>
 
       <div className="flex w-full flex-1 flex-col gap-12">
-        <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
-          <div className="flex w-full flex-col gap-8">
-            <header className="space-y-2">
-              <p className="text-sm text-muted-fg">Trading Journal</p>
+        <div className="mx-auto w-full max-w-4xl">
+          <div className="flex w-full flex-col gap-10">
+            <header className="space-y-3 text-center animate-soft-fade-in">
+              <p className="text-xs font-medium uppercase tracking-[0.34em] text-muted-fg">Trading Journal</p>
               <h1 className="text-4xl font-semibold tracking-tight text-fg md:text-5xl">
                 Register a trade
               </h1>
             </header>
 
-            <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-1 py-2 text-sm text-muted-fg">
+            <nav className="flex w-full flex-wrap items-center justify-center gap-3 px-1 py-2 text-xs font-medium uppercase tracking-[0.3em] text-muted-fg">
               {[
                 { label: "Main Data", value: "main" as const },
                 { label: "Library", value: "library" as const },
@@ -2624,10 +2624,10 @@ function NewTradePageContent() {
                   <button
                     key={value}
                     type="button"
-                    className={`rounded-full border px-4 py-2 transition ${
+                    className={`rounded-full border px-4 py-2 transition-all duration-300 ease-in-out ${
                       isActive
-                        ? "border-border bg-surface text-fg"
-                        : "border-transparent text-muted-fg hover:border-border hover:text-fg"
+                        ? "border-border bg-surface/90 text-fg shadow-[0_14px_32px_rgba(15,23,42,0.12)]"
+                        : "border-transparent text-muted-fg hover:-translate-y-1 hover:border-border hover:bg-surface/70 hover:text-fg"
                     }`}
                     aria-pressed={isActive}
                     onClick={() => setActiveTab(value)}
@@ -2645,12 +2645,12 @@ function NewTradePageContent() {
       </div>
       {isCalendarOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-8 backdrop-blur-sm transition-opacity"
           role="presentation"
           onClick={closeCalendar}
         >
           <div
-            className="w-full max-w-md rounded-3xl border border-border bg-bg p-4 shadow-xl sm:p-6"
+            className="w-full max-w-md rounded-3xl border border-border bg-surface/95 p-4 shadow-[0_38px_70px_rgba(15,23,42,0.28)] sm:p-6 animate-subtle-pop"
             role="dialog"
             aria-modal="true"
             aria-label="Select a date"
