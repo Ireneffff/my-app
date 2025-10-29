@@ -13,6 +13,16 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translateX(12px)" },
           "100%": { opacity: "1", transform: "translateX(0)" },
         },
+        "target-column-enter": {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(16px)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0)",
+          },
+        },
         "page-fade": {
           "0%": {
             opacity: "0",
@@ -35,11 +45,37 @@ const config: Config = {
           "60%": { transform: "scale(1.015)" },
           "100%": { transform: "scale(1)" },
         },
+        "add-button-press": {
+          "0%": { transform: "scale(1)" },
+          "45%": { transform: "scale(1.1)" },
+          "100%": { transform: "scale(1)" },
+        },
+        "add-icon-bounce": {
+          "0%": {
+            opacity: "1",
+            transform: "translateY(0)",
+          },
+          "35%": {
+            opacity: "0.85",
+            transform: "translateY(-18%)",
+          },
+          "65%": {
+            opacity: "1",
+            transform: "translateY(6%)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0)",
+          },
+        },
       },
       animation: {
         "fade-slide-in": "fade-slide-in 240ms ease-out",
+        "target-column-enter": "target-column-enter 260ms ease-in-out both",
         "page-fade": "page-fade 420ms cubic-bezier(0.16,1,0.3,1)",
         "soft-pop": "soft-pop 320ms cubic-bezier(0.16,1,0.3,1)",
+        "add-button-press": "add-button-press 240ms ease-in-out",
+        "add-icon-bounce": "add-icon-bounce 240ms ease-in-out",
       },
     },
   },
