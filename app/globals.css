@@ -4,25 +4,38 @@
 
 /* ---- Theme tokens (light/dark) ---- */
 :root {
-  --bg: 245 246 248;
+  --bg: 244 246 251;
   --surface: 255 255 255;
-  --subtle: 250 250 252;
-  --fg: 29 29 31;
-  --muted-fg: 110 113 120;
-  --border: 0 0 0 / 0.08;
-  --shadow: 15 23 42 / 0.08;
+  --subtle: 245 247 252;
+  --fg: 24 24 26;
+  --muted-fg: 112 116 125;
+  --border: 15 23 42 / 0.08;
+  --border-strong: 15 23 42 / 0.14;
+  --shadow: 15 23 42 / 0.16;
+  --shadow-soft: 15 23 42 / 0.08;
   --accent: 0 122 255;
+  --glass-tint: 255 255 255 / 0.72;
+  --glass-highlight: 255 255 255 / 0.4;
+  --radius-xl: 28px;
+  --radius-lg: 22px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+  --easing-standard: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 :root.dark {
-  --bg: 17 18 20;
-  --surface: 27 29 33;
-  --subtle: 22 23 26;
-  --fg: 232 233 236;
-  --muted-fg: 156 159 166;
-  --border: 255 255 255 / 0.14;
-  --shadow: 0 0 0 / 0.0;
-  --accent: 64 156 255;
+  --bg: 12 13 17;
+  --surface: 21 23 28;
+  --subtle: 30 32 37;
+  --fg: 236 237 240;
+  --muted-fg: 150 153 162;
+  --border: 255 255 255 / 0.12;
+  --border-strong: 255 255 255 / 0.18;
+  --shadow: 0 0 0 / 0.32;
+  --shadow-soft: 0 0 0 / 0.24;
+  --accent: 80 170 255;
+  --glass-tint: 21 23 28 / 0.82;
+  --glass-highlight: 255 255 255 / 0.1;
 }
 
 /* ---- Token utilities (usate nei componenti) ---- */
@@ -44,18 +57,42 @@
 }
 
 .surface-panel {
-  border-radius: 2.5rem;
-  background-color: rgb(var(--surface));
-  border: 1px solid color-mix(in srgb, rgba(var(--border)) 100%, transparent);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(
+      145deg,
+      color-mix(in srgb, rgb(var(--glass-highlight)) 40%, rgba(var(--glass-tint))) 0%,
+      rgba(var(--glass-tint)) 52%,
+      color-mix(in srgb, rgb(var(--glass-highlight)) 60%, rgba(var(--glass-tint))) 100%
+    );
+  border: 1px solid color-mix(in srgb, rgba(var(--border)) 90%, transparent);
   box-shadow: 0 28px 60px rgba(var(--shadow));
-  backdrop-filter: blur(18px);
+  backdrop-filter: saturate(160%) blur(20px);
+  transition: transform 360ms var(--easing-standard),
+    box-shadow 360ms var(--easing-standard),
+    border-color 360ms var(--easing-standard);
 }
 
 .surface-panel--compact {
-  border-radius: 1.5rem;
-  background-color: rgb(var(--surface));
-  border: 1px solid color-mix(in srgb, rgba(var(--border)) 100%, transparent);
-  box-shadow: 0 20px 44px rgba(var(--shadow));
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+      160deg,
+      color-mix(in srgb, rgb(var(--glass-highlight)) 46%, rgba(var(--glass-tint))) 0%,
+      rgba(var(--glass-tint)) 60%,
+      color-mix(in srgb, rgb(var(--glass-highlight)) 20%, rgba(var(--glass-tint))) 100%
+    );
+  border: 1px solid color-mix(in srgb, rgba(var(--border)) 80%, transparent);
+  box-shadow: 0 22px 50px rgba(var(--shadow-soft));
+  backdrop-filter: saturate(160%) blur(18px);
+  transition: transform 320ms var(--easing-standard),
+    box-shadow 320ms var(--easing-standard),
+    border-color 320ms var(--easing-standard);
+}
+
+.surface-panel--compact:hover,
+.surface-panel:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 30px 70px rgba(var(--shadow));
+  border-color: color-mix(in srgb, rgba(var(--border-strong)) 90%, transparent);
 }
 
 /* ---- Layout helpers ---- */
@@ -65,8 +102,71 @@ body {
   background-color: rgb(var(--bg));
   color: rgb(var(--fg));
   font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  line-height: 1.5;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 420ms var(--easing-standard),
+    color 420ms var(--easing-standard);
+  min-height: 100dvh;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(140% 120% at 50% 0%, rgb(var(--surface) / 0.65) 0%, transparent 60%),
+    radial-gradient(120% 140% at 0% 100%, rgb(var(--accent) / 0.08) 0%, transparent 70%),
+    radial-gradient(120% 140% at 100% 100%, rgba(136, 180, 255, 0.08) 0%, transparent 72%);
+  pointer-events: none;
+  transition: opacity 600ms var(--easing-standard);
+}
+
+:root.dark body::before {
+  background:
+    radial-gradient(140% 120% at 50% -10%, rgb(var(--surface) / 0.4) 0%, transparent 58%),
+    radial-gradient(120% 140% at 0% 100%, rgb(var(--accent) / 0.1) 0%, transparent 70%),
+    radial-gradient(120% 140% at 100% 100%, rgba(40, 70, 120, 0.22) 0%, transparent 80%);
+}
+
+main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  isolation: isolate;
+}
+
+.page-shell {
+  width: min(100%, 1080px);
+  margin-inline: auto;
+  padding-inline: clamp(1.5rem, 3vw, 2.75rem);
+}
+
+.page-section {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2.5rem, 5vw, 4rem);
+}
+
+.section-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.section-heading p {
+  color: rgb(var(--muted-fg));
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+.section-heading h1,
+.section-heading h2 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -113,5 +213,39 @@ textarea:focus-visible,
 [role="button"]:focus-visible {
   outline: none;
   box-shadow: none;
+}
+
+.interactive-area {
+  transition: transform 360ms var(--easing-standard),
+    box-shadow 360ms var(--easing-standard),
+    border-color 360ms var(--easing-standard),
+    background-color 360ms var(--easing-standard);
+}
+
+button,
+[role="button"],
+input,
+textarea,
+select,
+a {
+  transition: color 260ms var(--easing-standard),
+    background-color 260ms var(--easing-standard),
+    border-color 260ms var(--easing-standard),
+    box-shadow 260ms var(--easing-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  body::before {
+    display: none;
+  }
 }
 

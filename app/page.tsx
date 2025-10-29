@@ -79,28 +79,32 @@ export default function Home() {
   const totalTrades = trades.length;
 
   return (
-    <section className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-6 pb-16 pt-24 sm:px-8 sm:pt-28">
-      <header className="flex min-h-[58vh] flex-1 flex-col items-center justify-center gap-4 text-center sm:min-h-[62vh]">
-        <p className="text-sm text-muted-fg">Calm mind, strong trade</p>
+    <section className="page-shell flex min-h-dvh flex-col pb-20 pt-28 text-fg sm:pt-32">
+      <header className="section-heading min-h-[54vh] flex-1 items-center justify-center sm:min-h-[60vh]">
+        <p>Calm mind, strong trade</p>
         <h1 className="text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
           Trading Journal
         </h1>
-        <Link href="/new-trade" className="mt-2">
-          <Button variant="primary" size="md">
-            Add trade
-          </Button>
-        </Link>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <Link href="/new-trade" className="group">
+            <Button variant="primary" size="md" className="px-6">
+              <span className="transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0.5">
+                Add trade
+              </span>
+            </Button>
+          </Link>
+        </div>
       </header>
 
       <div className="mt-16 flex w-full flex-col items-center gap-12 pb-16">
-        <Card className="w-full max-w-3xl self-center p-8 sm:max-w-4xl">
+        <Card className="w-full max-w-3xl self-center p-8 sm:max-w-4xl sm:p-10">
           <div className="flex items-center justify-between">
             <button
               type="button"
               onClick={() =>
                 setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
               }
-              className="rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted-fg transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-subtle hover:text-fg hover:shadow-[0_12px_28px_rgba(15,23,42,0.12)]"
+              className="interactive-area grid h-11 w-11 place-items-center rounded-full border border-border bg-[color:rgb(var(--surface)/0.92)] text-lg text-muted-fg shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all hover:-translate-y-0.5 hover:text-fg hover:shadow-[0_18px_36px_rgba(15,23,42,0.14)]"
               aria-label="Previous month"
             >
               ‹
@@ -111,14 +115,14 @@ export default function Home() {
               onClick={() =>
                 setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
               }
-              className="rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted-fg transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-subtle hover:text-fg hover:shadow-[0_12px_28px_rgba(15,23,42,0.12)]"
+              className="interactive-area grid h-11 w-11 place-items-center rounded-full border border-border bg-[color:rgb(var(--surface)/0.92)] text-lg text-muted-fg shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all hover:-translate-y-0.5 hover:text-fg hover:shadow-[0_18px_36px_rgba(15,23,42,0.14)]"
               aria-label="Next month"
             >
               ›
             </button>
           </div>
 
-          <div className="mt-6 grid grid-cols-7 gap-2 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg opacity-80">
+          <div className="mt-6 grid grid-cols-7 gap-2 text-[0.7rem] font-medium uppercase tracking-[0.28em] text-muted-fg opacity-80">
             {WEEKDAYS.map((day) => (
               <div key={day} className="text-center">
                 {day}
@@ -144,7 +148,7 @@ export default function Home() {
               return (
                 <div
                   key={day.toISOString()}
-                  className={[baseClasses, stateClasses, todayClasses].join(" ").trim()}
+                  className={[baseClasses, stateClasses, todayClasses, "transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"].join(" ").trim()}
                 >
                   {day.getDate()}
                 </div>
@@ -154,16 +158,16 @@ export default function Home() {
         </Card>
 
         <div className="w-full max-w-3xl self-center text-left sm:max-w-4xl">
-          <h2 className="text-sm font-medium uppercase tracking-[0.28em] text-muted-fg">
+          <h2 className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">
             Registered Trades
           </h2>
 
           {trades.length === 0 ? (
             <p
-              className="mt-4 rounded-2xl border border-dashed bg-surface px-6 py-8 text-center text-sm text-muted-fg"
-              style={{ borderColor: "color-mix(in srgb, rgba(var(--border)) 100%, transparent)" }}
+              className="mt-4 rounded-2xl border border-dashed bg-[color:rgb(var(--surface)/0.75)] px-6 py-8 text-center text-sm text-muted-fg backdrop-blur"
+              style={{ borderColor: "color-mix(in srgb, rgba(var(--border)) 60%, transparent)" }}
             >
-              No trades saved yet. Use the Add new button to register your first trade.
+              No trades saved yet. Use the Add trade button to register your first trade.
             </p>
           ) : (
             <ol className="mt-4 space-y-3">
@@ -178,11 +182,10 @@ export default function Home() {
                   <li key={trade.id}>
                     <Link
                       href={`/registered-trades/${trade.id}`}
-                      className="flex items-center gap-4 rounded-2xl border border-border bg-surface px-5 py-4 transition hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(15,23,42,0.12)]"
+                      className="group flex items-center gap-4 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-5 py-4 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)]"
                     >
                       <span
-                        className="flex h-10 w-10 flex-none items-center justify-center rounded-full text-sm font-semibold text-accent"
-                        style={{ backgroundColor: "rgb(var(--accent) / 0.12)" }}
+                        className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[color:rgb(var(--accent)/0.12)] text-sm font-semibold text-accent"
                       >
                         {totalTrades - index}
                       </span>
@@ -194,9 +197,12 @@ export default function Home() {
                           {trade.symbolCode}
                         </span>
                       </div>
-                      <time className="text-sm font-medium text-muted-fg" dateTime={trade.date}>
+                      <time className="text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg" dateTime={trade.date}>
                         {formattedDate}
                       </time>
+                      <span className="ml-2 text-lg text-muted-fg transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 group-hover:text-fg" aria-hidden="true">
+                        ↗
+                      </span>
                     </Link>
                   </li>
                 );

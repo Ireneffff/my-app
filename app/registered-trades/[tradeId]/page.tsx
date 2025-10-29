@@ -678,7 +678,7 @@ export default function RegisteredTradePage() {
               />
             </div>
           ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl bg-[#F4F4F4] text-muted-fg">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl bg-[color:rgb(var(--surface)/0.85)] text-muted-fg">
               <EmptyLibraryIcon />
               <span className="text-[11px] font-semibold uppercase tracking-[0.28em]">Vuoto</span>
             </div>
@@ -721,7 +721,7 @@ export default function RegisteredTradePage() {
           />
         </span>
       ) : (
-        <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-4 rounded-[28px] bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
+        <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-4 rounded-[28px] bg-gradient-to-b from-[color:rgb(var(--surface)/0.94)] to-[color:rgb(var(--surface)/0.78)] text-muted-fg">
           <EmptyLibraryIcon />
           <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Nessuna anteprima</span>
           <span className="max-w-[28ch] text-center text-xs text-muted-fg/80">
@@ -747,7 +747,7 @@ export default function RegisteredTradePage() {
         readOnly
         aria-readonly="true"
         placeholder="Note salvate"
-        className="min-h-[120px] w-full resize-none rounded-none border border-[#D9D9D9] bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg opacity-80 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+        className="min-h-[120px] w-full resize-none rounded-none border border-border bg-[color:rgb(var(--accent)/0.06)] px-5 py-4 text-sm font-medium text-fg opacity-80 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
       />
     </div>
   );
@@ -870,7 +870,7 @@ export default function RegisteredTradePage() {
                 </div>
                 {showRemovalBadge ? (
                   <span
-                    className="pointer-events-none absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-[#555555] shadow-sm opacity-0 transition-all duration-200 ease-in-out group-hover:opacity-100 group-hover:scale-110"
+                    className="pointer-events-none absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-border bg-[color:rgb(var(--surface))] text-muted-fg shadow-[0_8px_20px_rgba(15,23,42,0.12)] opacity-0 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-110 group-hover:opacity-100"
                     aria-hidden="true"
                   >
                     <X aria-hidden="true" className="h-3.5 w-3.5" />
@@ -882,7 +882,7 @@ export default function RegisteredTradePage() {
         </div>
         {isEditMode ? (
           <span
-            className="pointer-events-none absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2563eb] text-white opacity-60"
+            className="pointer-events-none absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[color:rgb(var(--accent))] text-white opacity-60"
             aria-hidden="true"
           >
             <Plus aria-hidden="true" className="h-4 w-4" />
@@ -930,15 +930,15 @@ export default function RegisteredTradePage() {
 
   return (
     <section
-      className="relative flex min-h-dvh flex-col gap-12 bg-bg px-4 pb-16 text-fg sm:px-6 md:px-10"
+      className="page-shell relative flex min-h-dvh flex-col gap-12 pb-20 pt-24 text-fg sm:pt-28"
       style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
     >
-      <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 sm:max-w-4xl">
+      <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="h-11 w-11 flex-none rounded-full bg-white p-0 text-lg text-[#555555] hover:bg-white hover:text-[#333333]"
+          className="h-12 w-12 flex-none rounded-full border border-border bg-[color:rgb(var(--surface)/0.92)] p-0 text-lg text-muted-fg backdrop-blur hover:text-fg"
           onClick={() => {
             router.push("/");
           }}
@@ -948,14 +948,14 @@ export default function RegisteredTradePage() {
         </Button>
 
         <div className="ml-auto flex items-center gap-2">
-          <Button type="button" variant="secondary" size="sm" onClick={handleEditTrade}>
+          <Button type="button" variant="secondary" size="sm" className="px-5" onClick={handleEditTrade}>
             Edit trade
           </Button>
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="border border-transparent text-red-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+            className="border border-transparent text-red-500 transition hover:border-[color:rgba(248,113,113,0.3)] hover:bg-[color:rgba(248,113,113,0.08)] hover:text-red-600"
             onClick={handleDeleteTrade}
           >
             Delete
@@ -963,10 +963,10 @@ export default function RegisteredTradePage() {
         </div>
       </div>
 
-      <div className="flex w-full flex-1 flex-col gap-12">
-        <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
-          <header className="space-y-2">
-            <p className="text-sm text-muted-fg">Trading Journal</p>
+      <div className="flex w-full flex-1 flex-col gap-14">
+        <div className="mx-auto w-full max-w-4xl">
+          <header className="section-heading items-start text-left">
+            <p>Trading Journal</p>
             <h1 className="text-4xl font-semibold tracking-tight text-fg md:text-5xl">
               Trade details
             </h1>
@@ -975,8 +975,8 @@ export default function RegisteredTradePage() {
         </div>
 
         <div className="flex w-full flex-col gap-8">
-          <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
-            <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-1 py-2 text-sm text-muted-fg">
+          <div className="mx-auto w-full max-w-4xl">
+            <nav className="flex w-full flex-wrap items-center justify-center gap-2 rounded-full border border-border bg-[color:rgb(var(--surface)/0.72)] px-2 py-2 text-sm text-muted-fg backdrop-blur">
               {[
                 { label: "Main Data", value: "main" as const },
                 { label: "Library", value: "library" as const },
@@ -987,9 +987,9 @@ export default function RegisteredTradePage() {
                   <button
                     key={value}
                     type="button"
-                    className={`rounded-full border px-4 py-2 transition ${
+                    className={`interactive-area rounded-full border px-4 py-2 transition ${
                       isActive
-                        ? "border-border bg-surface text-fg"
+                        ? "border-border bg-[color:rgb(var(--surface))] text-fg shadow-[0_16px_32px_rgba(15,23,42,0.12)]"
                         : "border-transparent text-muted-fg hover:border-border hover:text-fg"
                     }`}
                     aria-pressed={isActive}
@@ -1059,20 +1059,20 @@ export default function RegisteredTradePage() {
                     </div>
 
                     <div
-                      className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border text-center shadow-sm transition-all duration-200 ease-in-out ${
+                      className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                         state.trade.isPaperTrade
-                          ? "border-gray-200 bg-gray-50 text-gray-600"
-                          : "border-green-200 bg-green-100 text-green-700"
+                          ? "border-border bg-[color:rgb(var(--surface)/0.72)] text-muted-fg"
+                          : "border-[color:rgb(var(--accent)/0.45)] bg-[color:rgb(var(--accent)/0.12)] text-[color:rgb(var(--accent))]"
                       }`}
                     >
                       {state.trade.isPaperTrade ? (
                         <Circle
-                          className="h-5 w-5 text-gray-400 transition-colors duration-200 ease-in-out"
+                          className="h-5 w-5 text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
                           aria-hidden="true"
                         />
                       ) : (
                         <CheckCircle
-                          className="h-5 w-5 text-green-500 transition-colors duration-200 ease-in-out"
+                          className="h-5 w-5 text-[color:rgb(var(--accent))] transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
                           aria-hidden="true"
                         />
                       )}
@@ -1147,10 +1147,13 @@ export default function RegisteredTradePage() {
                 </p>
               </div>
 
-              <div className="border-t border-border/60" />
+              <div
+                className="border-t"
+                style={{ borderColor: "color-mix(in srgb, rgba(var(--border)) 70%, transparent)" }}
+              />
 
               <div className="flex flex-col gap-4">
-                <span className="text-gray-700 text-sm font-semibold uppercase tracking-[0.24em] md:text-base">
+                <span className="text-sm font-semibold uppercase tracking-[0.24em] text-fg md:text-base">
                   General Details
                 </span>
                 <div className="flex flex-col gap-4">
@@ -1179,10 +1182,13 @@ export default function RegisteredTradePage() {
                 </div>
               </div>
 
-              <div className="my-6 border-t border-border/60" />
+              <div
+                className="my-6 border-t"
+                style={{ borderColor: "color-mix(in srgb, rgba(var(--border)) 70%, transparent)" }}
+              />
 
               <div className="flex flex-col gap-4">
-                <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-gray-500">
+                <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
                   Risk Details
                 </span>
                 <div className="flex flex-col gap-4">
@@ -1204,10 +1210,13 @@ export default function RegisteredTradePage() {
                 </div>
               </div>
 
-              <div className="border-t border-border/60" />
+              <div
+                className="border-t"
+                style={{ borderColor: "color-mix(in srgb, rgba(var(--border)) 70%, transparent)" }}
+              />
 
               <div className="flex flex-col gap-4">
-                <span className="text-gray-700 text-sm font-semibold uppercase tracking-[0.24em] md:text-base">
+                <span className="text-sm font-semibold uppercase tracking-[0.24em] text-fg md:text-base">
                   Psychology & Mindset
                 </span>
                 <div className="flex flex-col gap-4">
