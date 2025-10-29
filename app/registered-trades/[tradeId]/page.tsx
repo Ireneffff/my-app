@@ -13,7 +13,7 @@ import {
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { Plus, X } from "lucide-react";
+import { CheckCircle, Circle, Plus, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
@@ -1056,6 +1056,26 @@ export default function RegisteredTradePage() {
                           {activeSymbol.code}
                         </span>
                       </div>
+                    </div>
+
+                    <div
+                      className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border text-center shadow-sm transition-all duration-200 ease-in-out ${
+                        state.trade.isPaperTrade
+                          ? "border-gray-200 bg-gray-50 text-gray-600"
+                          : "border-green-200 bg-green-100 text-green-700"
+                      }`}
+                    >
+                      {state.trade.isPaperTrade ? (
+                        <Circle
+                          className="h-5 w-5 text-gray-400 transition-colors duration-200 ease-in-out"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <CheckCircle
+                          className="h-5 w-5 text-green-500 transition-colors duration-200 ease-in-out"
+                          aria-hidden="true"
+                        />
+                      )}
                       <span className="text-sm font-medium tracking-[0.08em]">
                         {state.trade.isPaperTrade ? "Paper Trade" : "Real Trade"}
                       </span>
