@@ -1969,7 +1969,7 @@ function NewTradePageContent() {
                   </div>
 
                   <div className="flex flex-col gap-4">
-                    <span className="mb-2 mt-6 block text-sm font-semibold text-fg">
+                    <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
                       General Details
                     </span>
                     <div className="flex flex-col gap-4">
@@ -2229,10 +2229,10 @@ function NewTradePageContent() {
                     </div>
 
                     <div className="mt-6 border-t border-border" />
-                    <span className="mb-2 mt-6 block text-sm font-semibold text-fg">
+                    <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
                       Psychology & Mindset
                     </span>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col gap-4">
                       <StyledSelect
                         label="Stato mentale prima del trade"
                         value={preTradeMentalState ?? ""}
@@ -2287,10 +2287,10 @@ function NewTradePageContent() {
                         ))}
                       </StyledSelect>
 
-                      <div className="mb-4">
+                      <div className="flex flex-col gap-2">
                         <label
                           htmlFor="confidence-level-input"
-                          className="mb-1 block text-xs font-medium text-muted-fg"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                         >
                           Livello di fiducia (1–10)
                         </label>
@@ -2319,7 +2319,7 @@ function NewTradePageContent() {
                             setConfidenceLevel(String(clampedValue));
                           }}
                           placeholder="Seleziona livello"
-                          className="w-full rounded-lg border border-border bg-[color:rgb(var(--surface))] p-2 text-sm text-fg placeholder:text-muted-fg focus:outline-none focus:ring-0"
+                          className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
 

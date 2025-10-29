@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 
 const base =
-  "w-full rounded-lg border border-gray-200 bg-white text-sm p-2 focus:outline-none focus:ring-0 appearance-none";
+  "w-full appearance-none rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium focus:outline-none focus:ring-0";
 
 type StyledSelectProps = {
   label: string;
@@ -19,10 +19,12 @@ export function StyledSelect({
   children,
 }: StyledSelectProps) {
   return (
-    <div className="mb-4">
-      <label className="text-gray-600 text-xs font-medium mb-1 block">{label}</label>
+    <div className="flex flex-col gap-2">
+      <label className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+        {label}
+      </label>
       <select
-        className={`${base} ${value ? "text-gray-800" : "text-gray-400"}`}
+        className={`${base} ${value ? "text-fg" : "text-muted-fg"}`}
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >
