@@ -76,6 +76,7 @@ export default function Home() {
     month: "long",
     year: "numeric",
   });
+  const totalTrades = trades.length;
 
   return (
     <section className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-6 pb-16 pt-24 sm:px-8 sm:pt-28">
@@ -183,7 +184,7 @@ export default function Home() {
                         className="flex h-10 w-10 flex-none items-center justify-center rounded-full text-sm font-semibold text-accent"
                         style={{ backgroundColor: "rgb(var(--accent) / 0.12)" }}
                       >
-                        {index + 1}
+                        {totalTrades - index}
                       </span>
                       <span className="text-2xl" aria-hidden="true">
                         {trade.symbolFlag}

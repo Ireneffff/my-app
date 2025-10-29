@@ -2076,7 +2076,7 @@ function NewTradePageContent() {
                                     targetColumnCount > 1 && columnIndex === targetColumnCount - 1;
 
                                   return (
-                                    <div className="relative" key={inputId}>
+                                    <div className="group relative" key={inputId}>
                                       <input
                                         id={inputId}
                                         type={fieldConfig.type}
@@ -2089,7 +2089,7 @@ function NewTradePageContent() {
                                         <button
                                           type="button"
                                           onClick={handleRemoveTargetColumn}
-                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#f3f4f6] text-muted-fg shadow-sm ring-1 ring-border transition hover:bg-[#e5e7eb] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
+                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-[#555555] shadow-sm opacity-0 transition-all duration-200 ease-in-out group-hover:opacity-100 group-hover:scale-110 hover:bg-[#f3f4f6] focus:outline-none focus-visible:opacity-100 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
                                           aria-label={`Rimuovi ultima colonna per ${fieldConfig.label}`}
                                         >
                                           <X aria-hidden="true" className="h-3.5 w-3.5" />
@@ -2112,38 +2112,48 @@ function NewTradePageContent() {
                         );
                       })}
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="lot-size-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Lot Size
-                        </label>
-                        <input
-                          id="lot-size-input"
-                          type="text"
-                          value={lotSize}
-                          onChange={(event) => setLotSize(event.target.value)}
-                          placeholder="0.10"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
+                    </div>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="risk-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Risk
-                        </label>
-                        <input
-                          id="risk-input"
-                          type="number"
-                          value={risk.raw}
-                          onChange={(event) => setRisk(createNumericFieldState(event.target.value))}
-                          placeholder="Insert"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
+                    <div className="my-6 border-t border-gray-200" />
+
+                    <div className="flex flex-col gap-4">
+                      <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-gray-500">
+                        Risk Details
+                      </span>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="flex flex-col gap-2">
+                          <label
+                            htmlFor="lot-size-input"
+                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          >
+                            Lot Size
+                          </label>
+                          <input
+                            id="lot-size-input"
+                            type="text"
+                            value={lotSize}
+                            onChange={(event) => setLotSize(event.target.value)}
+                            placeholder="0.10"
+                            className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label
+                            htmlFor="risk-input"
+                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          >
+                            Risk
+                          </label>
+                          <input
+                            id="risk-input"
+                            type="number"
+                            value={risk.raw}
+                            onChange={(event) => setRisk(createNumericFieldState(event.target.value))}
+                            placeholder="Insert"
+                            className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                          />
+                        </div>
                       </div>
 
                       {pnlFieldConfig && (() => {
@@ -2180,7 +2190,7 @@ function NewTradePageContent() {
                                     targetColumnCount > 1 && columnIndex === targetColumnCount - 1;
 
                                   return (
-                                    <div className="relative" key={inputId}>
+                                    <div className="group relative" key={inputId}>
                                       <input
                                         id={inputId}
                                         type={pnlFieldConfig.type}
@@ -2193,7 +2203,7 @@ function NewTradePageContent() {
                                         <button
                                           type="button"
                                           onClick={handleRemoveTargetColumn}
-                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#f3f4f6] text-muted-fg shadow-sm ring-1 ring-border transition hover:bg-[#e5e7eb] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
+                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-[#555555] shadow-sm opacity-0 transition-all duration-200 ease-in-out group-hover:opacity-100 group-hover:scale-110 hover:bg-[#f3f4f6] focus:outline-none focus-visible:opacity-100 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
                                           aria-label={`Rimuovi ultima colonna per ${pnlFieldConfig.label}`}
                                         >
                                           <X aria-hidden="true" className="h-3.5 w-3.5" />
@@ -2570,13 +2580,15 @@ function NewTradePageContent() {
           type="button"
           variant="ghost"
           size="sm"
-          className="h-11 w-11 flex-none rounded-full p-0 text-lg text-muted-fg hover:text-fg"
+          className="h-11 w-11 flex-none rounded-full bg-white p-0 text-lg text-[#555555] hover:bg-white hover:text-[#333333]"
           onClick={() => {
-            router.back();
+            startNavigation(() => {
+              router.push("/");
+            });
           }}
           aria-label="Close"
         >
-          ×
+          <X aria-hidden="true" className="h-5 w-5" />
         </Button>
 
         <Button

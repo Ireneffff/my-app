@@ -13,7 +13,7 @@ import {
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { Plus, X } from "lucide-react";
+import { CheckCircle, Circle, Plus, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
@@ -818,6 +818,7 @@ export default function RegisteredTradePage() {
   const normalizedRiskRewardTargets = padMultiValue(riskRewardTargets, targetColumnCount);
   const normalizedPipsTargets = padMultiValue(pipsTargets, targetColumnCount);
   const normalizedPnlTargets = padMultiValue(pnlTargets, targetColumnCount);
+  const isEditMode = false; // This page shows read-only data; editing happens on the new trade form.
   const targetDisplayConfigs = [
     { idPrefix: "take-profit", label: "Take Profit", values: normalizedTakeProfitTargets },
     { idPrefix: "risk-reward", label: "R/R", values: normalizedRiskRewardTargets },
@@ -828,7 +829,7 @@ export default function RegisteredTradePage() {
     label: "P&L",
     values: normalizedPnlTargets,
   };
-  const shouldShowRemovalBadge = targetColumnCount > 1;
+  const shouldShowRemovalBadge = isEditMode && targetColumnCount > 1;
 
   const renderTargetDisplay = ({
     idPrefix,
@@ -841,7 +842,7 @@ export default function RegisteredTradePage() {
   }) => (
     <div className="flex flex-col gap-2" key={idPrefix}>
       <div
-        className="grid gap-3 pr-12"
+        className={isEditMode ? "grid gap-3 pr-12" : "grid gap-3"}
         style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
       >
         {values.map((_, columnIndex) => (
@@ -855,7 +856,7 @@ export default function RegisteredTradePage() {
       </div>
       <div className="relative">
         <div
-          className="grid gap-3 pr-12"
+          className={isEditMode ? "grid gap-3 pr-12" : "grid gap-3"}
           style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
         >
           {values.map((value, columnIndex) => {
@@ -863,13 +864,13 @@ export default function RegisteredTradePage() {
             const showRemovalBadge = shouldShowRemovalBadge && columnIndex === targetColumnCount - 1;
 
             return (
-              <div className="relative" key={`${idPrefix}-value-${columnIndex}`}>
+              <div className="group relative" key={`${idPrefix}-value-${columnIndex}`}>
                 <div className="w-full rounded-2xl border border-border bg-surface px-4 py-3">
                   <span className="text-sm font-medium text-fg">{formattedValue}</span>
                 </div>
                 {showRemovalBadge ? (
                   <span
-                    className="pointer-events-none absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#f3f4f6] text-muted-fg ring-1 ring-border"
+                    className="pointer-events-none absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-[#555555] shadow-sm opacity-0 transition-all duration-200 ease-in-out group-hover:opacity-100 group-hover:scale-110"
                     aria-hidden="true"
                   >
                     <X aria-hidden="true" className="h-3.5 w-3.5" />
@@ -879,12 +880,14 @@ export default function RegisteredTradePage() {
             );
           })}
         </div>
-        <span
-          className="pointer-events-none absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2563eb] text-white opacity-60"
-          aria-hidden="true"
-        >
-          <Plus aria-hidden="true" className="h-4 w-4" />
-        </span>
+        {isEditMode ? (
+          <span
+            className="pointer-events-none absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2563eb] text-white opacity-60"
+            aria-hidden="true"
+          >
+            <Plus aria-hidden="true" className="h-4 w-4" />
+          </span>
+        ) : null}
       </div>
     </div>
   );
@@ -935,13 +938,13 @@ export default function RegisteredTradePage() {
           type="button"
           variant="ghost"
           size="sm"
-          className="h-11 w-11 flex-none rounded-full p-0 text-lg text-muted-fg hover:text-fg"
+          className="h-11 w-11 flex-none rounded-full bg-white p-0 text-lg text-[#555555] hover:bg-white hover:text-[#333333]"
           onClick={() => {
-            router.back();
+            router.push("/");
           }}
           aria-label="Close"
         >
-          ×
+          <X aria-hidden="true" className="h-5 w-5" />
         </Button>
 
         <div className="ml-auto flex items-center gap-2">
@@ -1053,6 +1056,26 @@ export default function RegisteredTradePage() {
                           {activeSymbol.code}
                         </span>
                       </div>
+                    </div>
+
+                    <div
+                      className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border text-center shadow-sm transition-all duration-200 ease-in-out ${
+                        state.trade.isPaperTrade
+                          ? "border-gray-200 bg-gray-50 text-gray-600"
+                          : "border-green-200 bg-green-100 text-green-700"
+                      }`}
+                    >
+                      {state.trade.isPaperTrade ? (
+                        <Circle
+                          className="h-5 w-5 text-gray-400 transition-colors duration-200 ease-in-out"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <CheckCircle
+                          className="h-5 w-5 text-green-500 transition-colors duration-200 ease-in-out"
+                          aria-hidden="true"
+                        />
+                      )}
                       <span className="text-sm font-medium tracking-[0.08em]">
                         {state.trade.isPaperTrade ? "Paper Trade" : "Real Trade"}
                       </span>
@@ -1153,7 +1176,16 @@ export default function RegisteredTradePage() {
                   </div>
 
                   {targetDisplayConfigs.map(renderTargetDisplay)}
+                </div>
+              </div>
 
+              <div className="my-6 border-t border-border/60" />
+
+              <div className="flex flex-col gap-4">
+                <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-gray-500">
+                  Risk Details
+                </span>
+                <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Lot Size</span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
