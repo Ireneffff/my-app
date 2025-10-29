@@ -2695,7 +2695,7 @@ function NewTradePageContent() {
               </h1>
             </header>
 
-            <nav className="flex w-full items-center justify-center">
+            <nav className="mt-12 flex w-full items-center justify-center">
               <div className="flex items-center gap-4 text-sm font-medium text-muted-fg">
                 {[
                   { label: "Main Data", value: "main" as const },
