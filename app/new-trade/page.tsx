@@ -1713,7 +1713,7 @@ function NewTradePageContent() {
                         <button
                           type="button"
                           onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                          className="group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
+                          className="group flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
                           aria-haspopup="listbox"
                           aria-expanded={isSymbolListOpen}
                         >
@@ -1726,7 +1726,7 @@ function NewTradePageContent() {
                                 {selectedSymbol.flag}
                               </span>
                               <div className="flex items-center justify-center gap-2 text-fg transition-colors transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
-                                <span className="text-lg font-semibold tracking-[0.2em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-xl">
+                                <span className="text-lg font-semibold tracking-[0.2em] leading-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-xl">
                                   {selectedSymbol.code}
                                 </span>
                                 <svg
