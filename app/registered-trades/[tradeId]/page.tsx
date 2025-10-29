@@ -1176,7 +1176,14 @@ export default function RegisteredTradePage() {
                   </div>
 
                   {targetDisplayConfigs.map(renderTargetDisplay)}
+                </div>
+              </div>
 
+              <div className="flex flex-col gap-4">
+                <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-gray-500">
+                  Risk Details
+                </span>
+                <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Lot Size</span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">

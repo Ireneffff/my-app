@@ -2112,38 +2112,46 @@ function NewTradePageContent() {
                         );
                       })}
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="lot-size-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Lot Size
-                        </label>
-                        <input
-                          id="lot-size-input"
-                          type="text"
-                          value={lotSize}
-                          onChange={(event) => setLotSize(event.target.value)}
-                          placeholder="0.10"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
-                      </div>
+                    </div>
 
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor="risk-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                        >
-                          Risk
-                        </label>
-                        <input
-                          id="risk-input"
-                          type="number"
-                          value={risk.raw}
-                          onChange={(event) => setRisk(createNumericFieldState(event.target.value))}
-                          placeholder="Insert"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
+                    <div className="flex flex-col gap-4">
+                      <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-gray-500">
+                        Risk Details
+                      </span>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="flex flex-col gap-2">
+                          <label
+                            htmlFor="lot-size-input"
+                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          >
+                            Lot Size
+                          </label>
+                          <input
+                            id="lot-size-input"
+                            type="text"
+                            value={lotSize}
+                            onChange={(event) => setLotSize(event.target.value)}
+                            placeholder="0.10"
+                            className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label
+                            htmlFor="risk-input"
+                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          >
+                            Risk
+                          </label>
+                          <input
+                            id="risk-input"
+                            type="number"
+                            value={risk.raw}
+                            onChange={(event) => setRisk(createNumericFieldState(event.target.value))}
+                            placeholder="Insert"
+                            className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                          />
+                        </div>
                       </div>
 
                       {pnlFieldConfig && (() => {
