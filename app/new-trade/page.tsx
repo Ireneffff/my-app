@@ -1772,25 +1772,25 @@ function NewTradePageContent() {
                         <button
                           type="button"
                           onClick={() => setIsRealTrade((prev) => !prev)}
-                          className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
+                          className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
                             isRealTrade
-                              ? "border-[color:rgb(var(--accent)/0.45)] bg-[color:rgb(var(--accent)/0.12)] text-[color:rgb(var(--accent))]"
+                              ? "border-[#A6E8B0] bg-[#E8F9EE] text-[#2E7D32]"
                               : "border-border bg-[color:rgb(var(--surface)/0.72)] text-muted-fg hover:text-fg"
                           }`}
                           aria-pressed={isRealTrade}
                         >
                           {isRealTrade ? (
                             <CheckCircle
-                              className="h-5 w-5 text-[color:rgb(var(--accent))] transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                              className="h-5 w-5 text-[#2E7D32] transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
                               aria-hidden="true"
                             />
                           ) : (
                             <Circle
-                              className="h-5 w-5 text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                              className="h-5 w-5 text-muted-fg transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
                               aria-hidden="true"
                             />
                           )}
-                          <span className="text-sm font-medium tracking-[0.08em]">
+                          <span className="text-sm font-medium tracking-[0.08em] transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
                             {isRealTrade ? "Real Trade" : "Paper Trade"}
                           </span>
                         </button>
