@@ -2114,6 +2114,8 @@ function NewTradePageContent() {
 
                     </div>
 
+                    <div className="my-6 border-t border-gray-200" />
+
                     <div className="flex flex-col gap-4">
                       <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-gray-500">
                         Risk Details
