@@ -975,8 +975,8 @@ export default function RegisteredTradePage() {
         </div>
 
         <div className="flex w-full flex-col gap-8">
-          <div className="mx-auto w-full max-w-4xl">
-            <nav className="flex w-full flex-wrap items-center justify-center gap-2 rounded-full border border-border bg-[color:rgb(var(--surface)/0.72)] px-2 py-2 text-sm text-muted-fg backdrop-blur">
+          <nav className="flex w-full items-center justify-center">
+            <div className="flex items-center gap-4 text-sm font-medium text-muted-fg">
               {[
                 { label: "Main Data", value: "main" as const },
                 { label: "Library", value: "library" as const },
@@ -987,21 +987,20 @@ export default function RegisteredTradePage() {
                   <button
                     key={value}
                     type="button"
-                    className={`interactive-area rounded-full border px-4 py-2 transition ${
+                    className={`relative rounded-full px-5 py-2 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] ${
                       isActive
-                        ? "border-border bg-[color:rgb(var(--surface))] text-fg shadow-[0_16px_32px_rgba(15,23,42,0.12)]"
-                        : "border-transparent text-muted-fg hover:border-border hover:text-fg"
+                        ? "bg-[color:rgb(var(--surface))] text-fg shadow-[0_16px_32px_rgba(15,23,42,0.12)]"
+                        : "text-muted-fg hover:text-fg"
                     }`}
                     aria-pressed={isActive}
                     onClick={() => setActiveTab(value)}
-                    disabled={isActive}
                   >
                     {label}
                   </button>
                 );
               })}
-            </nav>
-          </div>
+            </div>
+          </nav>
 
           {activeTab === "main" ? (
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 sm:max-w-4xl">
