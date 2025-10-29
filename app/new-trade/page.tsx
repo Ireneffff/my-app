@@ -1717,55 +1717,57 @@ function NewTradePageContent() {
                           aria-haspopup="listbox"
                           aria-expanded={isSymbolListOpen}
                         >
-                          <span
-                            className={`text-2xl transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                              selectedSymbol
-                                ? "text-fg"
-                                : "text-[color:rgb(var(--muted-fg)/0.6)]"
-                            }`}
-                            aria-hidden="true"
-                            style={
-                              selectedSymbol
-                                ? undefined
-                                : { minHeight: "1.5rem" }
-                            }
-                          >
-                            {selectedSymbol?.flag ?? ""}
-                          </span>
-                          <div
-                            className={`flex items-center justify-center gap-2 transition-colors transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                              selectedSymbol
-                                ? "text-fg opacity-100"
-                                : "text-[color:rgb(var(--muted-fg)/0.6)] opacity-90"
-                            }`}
-                          >
-                            <span
-                              className={`tracking-[0.2em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                                selectedSymbol
-                                  ? "text-lg md:text-xl font-semibold"
-                                  : "text-sm md:text-base font-medium"
-                              }`}
-                            >
-                              {selectedSymbol?.code ?? "Select symbol"}
-                            </span>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className={`h-4 w-4 opacity-100 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-80 ${
-                                selectedSymbol
-                                  ? "text-muted-fg"
-                                  : "text-[color:rgb(var(--muted-fg)/0.6)]"
-                              } ${isSymbolListOpen ? "rotate-180" : ""}`}
-                              aria-hidden="true"
-                            >
-                              <path d="m6 9 6 6 6-6" />
-                            </svg>
-                          </div>
+                          {selectedSymbol ? (
+                            <>
+                              <span
+                                className="text-2xl text-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                                aria-hidden="true"
+                              >
+                                {selectedSymbol.flag}
+                              </span>
+                              <div className="flex items-center justify-center gap-2 text-fg transition-colors transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+                                <span className="text-lg font-semibold tracking-[0.2em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-xl">
+                                  {selectedSymbol.code}
+                                </span>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className={`h-4 w-4 text-muted-fg opacity-100 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-80 ${
+                                    isSymbolListOpen ? "rotate-180" : ""
+                                  }`}
+                                  aria-hidden="true"
+                                >
+                                  <path d="m6 9 6 6 6-6" />
+                                </svg>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center gap-3 text-center text-[color:rgb(var(--muted-fg)/0.6)]">
+                              <div className="flex items-center justify-center gap-2 animate-soft-fade text-xs font-medium tracking-[0.18em] transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-sm">
+                                <span>Select symbol</span>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className={`h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                                    isSymbolListOpen ? "rotate-180" : ""
+                                  }`}
+                                  aria-hidden="true"
+                                >
+                                  <path d="m6 9 6 6 6-6" />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
                         </button>
                         <button
                           type="button"

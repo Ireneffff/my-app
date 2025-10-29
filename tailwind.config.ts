@@ -68,6 +68,10 @@ const config: Config = {
             transform: "translateY(0)",
           },
         },
+        "soft-fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
       },
       animation: {
         "fade-slide-in": "fade-slide-in 240ms ease-out",
@@ -76,6 +80,7 @@ const config: Config = {
         "soft-pop": "soft-pop 320ms cubic-bezier(0.16,1,0.3,1)",
         "add-button-press": "add-button-press 240ms ease-in-out",
         "add-icon-bounce": "add-icon-bounce 240ms ease-in-out",
+        "soft-fade-in": "soft-fade-in 260ms ease-in-out both",
       },
     },
   },
