@@ -667,18 +667,18 @@ export default function RegisteredTradePage() {
           id: item.id,
           label: hasImage ? `Anteprima ${index + 1}` : "Nessuna anteprima",
           visual: hasImage ? (
-            <div className="relative h-full w-full">
+            <div className="relative h-full w-full overflow-hidden rounded-3xl">
               <Image
                 src={item.imageData!}
                 alt={`Snapshot libreria ${index + 1}`}
                 fill
                 sizes="(min-width: 768px) 160px, 200px"
-                className="object-cover"
+                className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-[1.02]"
                 unoptimized
               />
             </div>
           ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl bg-[#F4F4F4] text-muted-fg">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-3xl border border-border/70 bg-subtle/70 text-muted-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
               <EmptyLibraryIcon />
               <span className="text-[11px] font-semibold uppercase tracking-[0.28em]">Vuoto</span>
             </div>
@@ -709,7 +709,7 @@ export default function RegisteredTradePage() {
       onTouchCancel={handlePreviewTouchCancel}
     >
       {selectedImageData ? (
-        <span className="relative block aspect-[16/9] w-full">
+        <span className="relative block aspect-[16/9] w-full overflow-hidden rounded-[28px] border border-border/70 shadow-[0_28px_56px_rgba(15,23,42,0.18)]">
           <Image
             src={selectedImageData}
             alt="Trade context attachment"
@@ -721,7 +721,7 @@ export default function RegisteredTradePage() {
           />
         </span>
       ) : (
-        <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-4 rounded-[28px] bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
+        <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-4 rounded-[28px] border border-border/70 bg-gradient-to-b from-surface/95 via-surface/80 to-subtle/90 text-muted-fg shadow-[0_28px_56px_rgba(15,23,42,0.16)]">
           <EmptyLibraryIcon />
           <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Nessuna anteprima</span>
           <span className="max-w-[28ch] text-center text-xs text-muted-fg/80">
@@ -747,7 +747,7 @@ export default function RegisteredTradePage() {
         readOnly
         aria-readonly="true"
         placeholder="Note salvate"
-        className="min-h-[120px] w-full resize-none rounded-none border border-[#D9D9D9] bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg opacity-80 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+        className="min-h-[120px] w-full resize-none rounded-3xl border border-border/70 bg-surface/80 px-5 py-4 text-sm font-medium text-fg opacity-90 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] focus:outline-none focus-visible:outline-none"
       />
     </div>
   );
@@ -870,7 +870,7 @@ export default function RegisteredTradePage() {
                 </div>
                 {showRemovalBadge ? (
                   <span
-                    className="pointer-events-none absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-[#555555] shadow-sm opacity-0 transition-all duration-200 ease-in-out group-hover:opacity-100 group-hover:scale-110"
+                    className="pointer-events-none absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-border/70 bg-surface/90 text-muted-fg shadow-[0_6px_16px_rgba(15,23,42,0.14)] opacity-0 transition-all duration-300 ease-in-out group-hover:opacity-100 group-hover:scale-110"
                     aria-hidden="true"
                   >
                     <X aria-hidden="true" className="h-3.5 w-3.5" />
@@ -882,7 +882,7 @@ export default function RegisteredTradePage() {
         </div>
         {isEditMode ? (
           <span
-            className="pointer-events-none absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2563eb] text-white opacity-60"
+            className="pointer-events-none absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-accent/70 text-white opacity-60"
             aria-hidden="true"
           >
             <Plus aria-hidden="true" className="h-4 w-4" />
@@ -930,15 +930,15 @@ export default function RegisteredTradePage() {
 
   return (
     <section
-      className="relative flex min-h-dvh flex-col gap-12 bg-bg px-4 pb-16 text-fg sm:px-6 md:px-10"
+      className="relative mx-auto flex min-h-dvh w-full max-w-6xl flex-col gap-12 px-5 pb-24 text-fg sm:px-8 md:px-12"
       style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
     >
-      <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 sm:max-w-4xl">
+      <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="h-11 w-11 flex-none rounded-full bg-white p-0 text-lg text-[#555555] hover:bg-white hover:text-[#333333]"
+          className="h-11 w-11 flex-none rounded-full border border-border bg-surface/80 p-0 text-base text-muted-fg transition-all duration-300 ease-in-out hover:-translate-y-1 hover:bg-surface hover:text-fg"
           onClick={() => {
             router.push("/");
           }}
@@ -955,7 +955,7 @@ export default function RegisteredTradePage() {
             type="button"
             variant="ghost"
             size="sm"
-            className="border border-transparent text-red-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+            className="border border-border/60 text-red-500 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:bg-red-50/70 hover:text-red-600"
             onClick={handleDeleteTrade}
           >
             Delete
@@ -964,9 +964,9 @@ export default function RegisteredTradePage() {
       </div>
 
       <div className="flex w-full flex-1 flex-col gap-12">
-        <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
-          <header className="space-y-2">
-            <p className="text-sm text-muted-fg">Trading Journal</p>
+        <div className="mx-auto w-full max-w-4xl">
+          <header className="space-y-3 text-center animate-soft-fade-in">
+            <p className="text-xs font-medium uppercase tracking-[0.34em] text-muted-fg">Trading Journal</p>
             <h1 className="text-4xl font-semibold tracking-tight text-fg md:text-5xl">
               Trade details
             </h1>
@@ -975,8 +975,8 @@ export default function RegisteredTradePage() {
         </div>
 
         <div className="flex w-full flex-col gap-8">
-          <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
-            <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-1 py-2 text-sm text-muted-fg">
+          <div className="mx-auto w-full max-w-4xl">
+            <nav className="flex w-full flex-wrap items-center justify-center gap-3 px-1 py-2 text-xs font-medium uppercase tracking-[0.3em] text-muted-fg">
               {[
                 { label: "Main Data", value: "main" as const },
                 { label: "Library", value: "library" as const },
@@ -987,10 +987,10 @@ export default function RegisteredTradePage() {
                   <button
                     key={value}
                     type="button"
-                    className={`rounded-full border px-4 py-2 transition ${
+                    className={`rounded-full border px-4 py-2 transition-all duration-300 ease-in-out ${
                       isActive
-                        ? "border-border bg-surface text-fg"
-                        : "border-transparent text-muted-fg hover:border-border hover:text-fg"
+                        ? "border-border bg-surface/90 text-fg shadow-[0_14px_32px_rgba(15,23,42,0.12)]"
+                        : "border-transparent text-muted-fg hover:-translate-y-1 hover:border-border hover:bg-surface/70 hover:text-fg"
                     }`}
                     aria-pressed={isActive}
                     onClick={() => setActiveTab(value)}
@@ -1005,7 +1005,7 @@ export default function RegisteredTradePage() {
 
           {activeTab === "main" ? (
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 sm:max-w-4xl">
-          <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6">
+          <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6 animate-soft-fade-in">
             <div className="mx-auto flex w-full max-w-xl items-center gap-3">
               <div className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1">
                 <div className="flex w-full items-center justify-center gap-2">
@@ -1041,13 +1041,13 @@ export default function RegisteredTradePage() {
             </p>
           </div>
 
-          <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
+          <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8 animate-soft-fade-in">
             <div className="flex flex-col gap-6">
               <div className="flex flex-wrap items-start gap-4">
                 <div className="flex flex-col gap-3">
                   <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
                   <div className="flex flex-wrap justify-center gap-6">
-                    <div className="flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface text-center shadow-sm">
+                    <div className="flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-3xl border border-border/70 bg-surface/90 text-center shadow-[0_18px_36px_rgba(15,23,42,0.12)]">
                       <span className="text-2xl" aria-hidden="true">
                         {activeSymbol.flag}
                       </span>
@@ -1059,20 +1059,20 @@ export default function RegisteredTradePage() {
                     </div>
 
                     <div
-                      className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border text-center shadow-sm transition-all duration-200 ease-in-out ${
+                      className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-3xl border text-center shadow-[0_18px_36px_rgba(15,23,42,0.12)] transition-all duration-300 ease-in-out ${
                         state.trade.isPaperTrade
-                          ? "border-gray-200 bg-gray-50 text-gray-600"
-                          : "border-green-200 bg-green-100 text-green-700"
+                          ? "border-border/70 bg-surface/90 text-muted-fg"
+                          : "border-transparent bg-accent text-white"
                       }`}
                     >
                       {state.trade.isPaperTrade ? (
                         <Circle
-                          className="h-5 w-5 text-gray-400 transition-colors duration-200 ease-in-out"
+                          className="h-5 w-5 text-muted-fg transition-colors duration-300 ease-in-out"
                           aria-hidden="true"
                         />
                       ) : (
                         <CheckCircle
-                          className="h-5 w-5 text-green-500 transition-colors duration-200 ease-in-out"
+                          className="h-5 w-5 text-white transition-colors duration-300 ease-in-out"
                           aria-hidden="true"
                         />
                       )}
@@ -1150,7 +1150,7 @@ export default function RegisteredTradePage() {
               <div className="border-t border-border/60" />
 
               <div className="flex flex-col gap-4">
-                <span className="text-gray-700 text-sm font-semibold uppercase tracking-[0.24em] md:text-base">
+                <span className="text-sm font-semibold uppercase tracking-[0.24em] text-fg md:text-base">
                   General Details
                 </span>
                 <div className="flex flex-col gap-4">
@@ -1182,7 +1182,7 @@ export default function RegisteredTradePage() {
               <div className="my-6 border-t border-border/60" />
 
               <div className="flex flex-col gap-4">
-                <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-gray-500">
+                <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
                   Risk Details
                 </span>
                 <div className="flex flex-col gap-4">
@@ -1207,7 +1207,7 @@ export default function RegisteredTradePage() {
               <div className="border-t border-border/60" />
 
               <div className="flex flex-col gap-4">
-                <span className="text-gray-700 text-sm font-semibold uppercase tracking-[0.24em] md:text-base">
+                <span className="text-sm font-semibold uppercase tracking-[0.24em] text-fg md:text-base">
                   Psychology & Mindset
                 </span>
                 <div className="flex flex-col gap-4">
