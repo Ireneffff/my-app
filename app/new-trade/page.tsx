@@ -1998,7 +1998,9 @@ function NewTradePageContent() {
 
                             setPosition(null);
                           }}
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-0"
+                          className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium focus:outline-none focus:ring-0 ${
+                            position ? "text-fg" : "text-muted-fg/60"
+                          }`}
                         >
                           <option value="" disabled hidden>
                             Insert position
