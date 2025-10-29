@@ -107,16 +107,13 @@ function formatDateTimeLocal(date: Date) {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-function alignTimeWithDate(time: Date | null, baseDate: Date, fallbackHour: number) {
-  const aligned = new Date(baseDate);
-  aligned.setHours(0, 0, 0, 0);
-
-  if (time && !Number.isNaN(time.getTime())) {
-    aligned.setHours(time.getHours(), time.getMinutes(), 0, 0);
-    return aligned;
+function alignTimeWithDate(time: Date | null, baseDate: Date) {
+  if (!time || Number.isNaN(time.getTime())) {
+    return null;
   }
 
-  aligned.setHours(fallbackHour, 0, 0, 0);
+  const aligned = new Date(baseDate);
+  aligned.setHours(time.getHours(), time.getMinutes(), 0, 0);
   return aligned;
 }
 
@@ -238,16 +235,8 @@ function NewTradePageContent() {
     [visibleWeekStart],
   );
 
-  const [openTime, setOpenTime] = useState<Date | null>(() => {
-    const initial = new Date(selectedDate);
-    initial.setHours(9, 0, 0, 0);
-    return initial;
-  });
-  const [closeTime, setCloseTime] = useState<Date | null>(() => {
-    const initial = new Date(selectedDate);
-    initial.setHours(17, 0, 0, 0);
-    return initial;
-  });
+  const [openTime, setOpenTime] = useState<Date | null>(null);
+  const [closeTime, setCloseTime] = useState<Date | null>(null);
   const durationLabel = useMemo(() => {
     if (!openTime || !closeTime) {
       return "0h 00min";
@@ -291,7 +280,7 @@ function NewTradePageContent() {
     scrollUnlockTimeoutsRef.current.clear();
   }, []);
 
-  const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
+  const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption | null>(null);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
   const [isRealTrade, setIsRealTrade] = useState(false);
   const initialLibraryItems = useMemo(() => [createLibraryItem(null)], []);
@@ -748,8 +737,8 @@ function NewTradePageContent() {
         });
       }
 
-      setOpenTime((prev) => alignTimeWithDate(prev, normalized, 9));
-      setCloseTime((prev) => alignTimeWithDate(prev, normalized, 17));
+      setOpenTime((prev) => alignTimeWithDate(prev, normalized));
+      setCloseTime((prev) => alignTimeWithDate(prev, normalized));
     },
     [],
   );
@@ -1045,16 +1034,16 @@ function NewTradePageContent() {
 
         if (match.openTime) {
           const parsedOpen = new Date(match.openTime);
-          setOpenTime(!Number.isNaN(parsedOpen.getTime()) ? parsedOpen : alignTimeWithDate(null, effectiveDate, 9));
+          setOpenTime(!Number.isNaN(parsedOpen.getTime()) ? parsedOpen : alignTimeWithDate(null, effectiveDate));
         } else {
-          setOpenTime((prev) => alignTimeWithDate(prev, effectiveDate, 9));
+          setOpenTime((prev) => alignTimeWithDate(prev, effectiveDate));
         }
 
         if (match.closeTime) {
           const parsedClose = new Date(match.closeTime);
-          setCloseTime(!Number.isNaN(parsedClose.getTime()) ? parsedClose : alignTimeWithDate(null, effectiveDate, 17));
+          setCloseTime(!Number.isNaN(parsedClose.getTime()) ? parsedClose : alignTimeWithDate(null, effectiveDate));
         } else {
-          setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate, 17));
+          setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate));
         }
 
         const hydratedLibraryItems: LibraryItem[] =
@@ -1721,12 +1710,36 @@ function NewTradePageContent() {
                           aria-haspopup="listbox"
                           aria-expanded={isSymbolListOpen}
                         >
-                          <span className="text-2xl" aria-hidden="true">
-                            {selectedSymbol.flag}
+                          <span
+                            className={`text-2xl transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                              selectedSymbol
+                                ? "text-fg"
+                                : "text-[color:rgb(var(--muted-fg)/0.6)]"
+                            }`}
+                            aria-hidden="true"
+                            style={
+                              selectedSymbol
+                                ? undefined
+                                : { minHeight: "1.5rem" }
+                            }
+                          >
+                            {selectedSymbol?.flag ?? ""}
                           </span>
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
-                              {selectedSymbol.code}
+                          <div
+                            className={`flex items-center justify-center gap-2 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                              selectedSymbol
+                                ? "text-fg"
+                                : "text-[color:rgb(var(--muted-fg)/0.6)]"
+                            }`}
+                          >
+                            <span
+                              className={`text-lg tracking-[0.2em] md:text-xl ${
+                                selectedSymbol
+                                  ? "font-semibold"
+                                  : "font-medium"
+                              }`}
+                            >
+                              {selectedSymbol?.code ?? "Select option"}
                             </span>
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -1736,9 +1749,11 @@ function NewTradePageContent() {
                               strokeWidth="1.5"
                               strokeLinecap="round"
                               strokeLinejoin="round"
-                              className={`h-4 w-4 text-muted-fg opacity-100 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-80 ${
-                                isSymbolListOpen ? "rotate-180" : ""
-                              }`}
+                              className={`h-4 w-4 opacity-100 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-80 ${
+                                selectedSymbol
+                                  ? "text-muted-fg"
+                                  : "text-[color:rgb(var(--muted-fg)/0.6)]"
+                              } ${isSymbolListOpen ? "rotate-180" : ""}`}
                               aria-hidden="true"
                             >
                               <path d="m6 9 6 6 6-6" />
@@ -1783,10 +1798,12 @@ function NewTradePageContent() {
                       <div
                         className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-2"
                         role="listbox"
-                        aria-activedescendant={`symbol-${selectedSymbol.code}`}
+                        aria-activedescendant={
+                          selectedSymbol ? `symbol-${selectedSymbol.code}` : undefined
+                        }
                       >
                         {availableSymbols.map((symbol) => {
-                          const isActive = symbol.code === selectedSymbol.code;
+                          const isActive = selectedSymbol?.code === symbol.code;
 
                           return (
                             <button
@@ -2528,7 +2545,7 @@ function NewTradePageContent() {
 
     const payload: TradePayload = {
       id: editingTradeId ?? undefined,
-      symbolCode: selectedSymbol.code,
+      symbolCode: selectedSymbol?.code ?? "",
       isPaperTrade: !isRealTrade,
       date: selectedDate.toISOString(),
       openTime: openTime ? openTime.toISOString() : null,
@@ -2616,7 +2633,7 @@ function NewTradePageContent() {
     riskRewardTargets,
     router,
     selectedDate,
-    selectedSymbol.code,
+    selectedSymbol?.code,
     startNavigation,
     stopLoss,
     takeProfitTargets,
