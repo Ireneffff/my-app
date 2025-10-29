@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 
 const base =
-  "w-full appearance-none rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium focus:outline-none focus:ring-0";
+  "w-full appearance-none rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-0";
 
 type StyledSelectProps = {
   label: string;
@@ -24,9 +24,10 @@ export function StyledSelect({
         {label}
       </label>
       <select
-        className={`${base} ${value ? "text-fg" : "text-muted-fg"}`}
+        className={base}
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        style={value ? undefined : { color: "rgb(var(--muted-fg) / 0.6)" }}
       >
         <option value="" disabled hidden>
           {placeholder}

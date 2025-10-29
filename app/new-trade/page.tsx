@@ -2234,14 +2234,14 @@ function NewTradePageContent() {
                     </span>
                     <div className="flex flex-col gap-4">
                       <StyledSelect
-                        label="Stato mentale prima del trade"
+                        label="Mental state before the trade"
                         value={preTradeMentalState ?? ""}
                         onChange={(nextValue) =>
                           setPreTradeMentalState(
                             !nextValue || nextValue === "Insert" ? null : nextValue,
                           )
                         }
-                        placeholder="Seleziona opzione"
+                        placeholder="Select option"
                       >
                         <option value="Insert">Insert</option>
                         {preTradeMentalStateOptions.map((option) => (
@@ -2252,14 +2252,14 @@ function NewTradePageContent() {
                       </StyledSelect>
 
                       <StyledSelect
-                        label="Emozioni durante il trade"
+                        label="Emotions during the trade"
                         value={emotionsDuringTrade ?? ""}
                         onChange={(nextValue) =>
                           setEmotionsDuringTrade(
                             !nextValue || nextValue === "Insert" ? null : nextValue,
                           )
                         }
-                        placeholder="Seleziona opzione"
+                        placeholder="Select option"
                       >
                         <option value="Insert">Insert</option>
                         {emotionsDuringTradeOptions.map((option) => (
@@ -2270,14 +2270,14 @@ function NewTradePageContent() {
                       </StyledSelect>
 
                       <StyledSelect
-                        label="Emozioni dopo il trade"
+                        label="Emotions after the trade"
                         value={emotionsAfterTrade ?? ""}
                         onChange={(nextValue) =>
                           setEmotionsAfterTrade(
                             !nextValue || nextValue === "Insert" ? null : nextValue,
                           )
                         }
-                        placeholder="Seleziona opzione"
+                        placeholder="Select option"
                       >
                         <option value="Insert">Insert</option>
                         {emotionsAfterTradeOptions.map((option) => (
@@ -2292,7 +2292,7 @@ function NewTradePageContent() {
                           htmlFor="confidence-level-input"
                           className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                         >
-                          Livello di fiducia (1–10)
+                          Confidence level (1–10)
                         </label>
                         <input
                           id="confidence-level-input"
@@ -2318,20 +2318,20 @@ function NewTradePageContent() {
                             const clampedValue = Math.min(10, Math.max(1, numericValue));
                             setConfidenceLevel(String(clampedValue));
                           }}
-                          placeholder="Seleziona livello"
+                          placeholder="Select level"
                           className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
 
                       <StyledSelect
-                        label="Trigger emotivi"
+                        label="Emotional triggers"
                         value={emotionalTrigger ?? ""}
                         onChange={(nextValue) =>
                           setEmotionalTrigger(
                             !nextValue || nextValue === "Insert" ? null : nextValue,
                           )
                         }
-                        placeholder="Seleziona opzione"
+                        placeholder="Select option"
                       >
                         <option value="Insert">Insert</option>
                         {emotionalTriggerOptions.map((option) => (
