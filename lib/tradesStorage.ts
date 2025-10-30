@@ -30,6 +30,7 @@ export type StoredTrade = {
   symbolCode: string;
   symbolFlag: string;
   isPaperTrade: boolean;
+  tradeOutcome: "profit" | "loss" | null;
   openTime: string | null;
   closeTime: string | null;
   position: "LONG" | "SHORT";
@@ -60,6 +61,7 @@ export type TradePayload = {
   id?: string;
   symbolCode: string;
   isPaperTrade: boolean | null;
+  tradeOutcome: "profit" | "loss" | null;
   date: string;
   openTime: string | null;
   closeTime: string | null;
@@ -304,6 +306,14 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
   const createdAt = parseDateValue(row?.created_at);
 
   const dateSource = openTime ?? createdAt ?? new Date().toISOString();
+  const tradeOutcomeRaw = normalizeTradeField(row?.trade_outcome, "string");
+  const tradeOutcome = tradeOutcomeRaw
+    ? tradeOutcomeRaw.toLowerCase() === "profit"
+      ? "profit"
+      : tradeOutcomeRaw.toLowerCase() === "loss"
+        ? "loss"
+        : null
+    : null;
 
   const riskReward = parseMultiValueField(row?.rr_ratio);
   const pips = parseNumericMultiValueField(row?.pips);
@@ -315,6 +325,7 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
     symbolCode,
     symbolFlag: getSymbolFlag(symbolCode),
     isPaperTrade: Boolean(row?.is_paper_trade ?? false),
+    tradeOutcome,
     openTime,
     closeTime,
     position: row?.position === "SHORT" ? "SHORT" : "LONG",
@@ -505,6 +516,7 @@ function buildTradeRecord(payload: TradePayload) {
   return {
     symbol,
     is_paper_trade: normalizeTradeField(payload.isPaperTrade, "boolean"),
+    trade_outcome: payload.tradeOutcome ?? null,
     open_time: openTime,
     close_time: closeTime,
     position: payload.position ?? null,

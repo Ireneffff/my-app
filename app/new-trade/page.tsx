@@ -45,6 +45,13 @@ const availableSymbols: SymbolOption[] = [
   { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
 ];
 
+const tradeOutcomeOptions = [
+  { value: "profit", label: "Profit" },
+  { value: "loss", label: "Loss" },
+] as const;
+
+type TradeOutcome = (typeof tradeOutcomeOptions)[number]["value"];
+
 const preTradeMentalStateOptions = [
   "Calmo e concentrato",
   "Stanco o distratto",
@@ -282,6 +289,8 @@ function NewTradePageContent() {
 
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption | null>(null);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
+  const [tradeOutcome, setTradeOutcome] = useState<TradeOutcome | null>(null);
+  const [isOutcomeListOpen, setIsOutcomeListOpen] = useState(false);
   const [isRealTrade, setIsRealTrade] = useState(false);
   const initialLibraryItems = useMemo(() => [createLibraryItem(null)], []);
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>(initialLibraryItems);
@@ -1023,6 +1032,7 @@ function NewTradePageContent() {
 
         setSelectedSymbol(matchedSymbol);
         setIsRealTrade(!match.isPaperTrade);
+        setTradeOutcome(match.tradeOutcome ?? null);
 
         const parsedDate = new Date(match.date);
         const isDateValid = !Number.isNaN(parsedDate.getTime());
@@ -1156,6 +1166,13 @@ function NewTradePageContent() {
 
       return symbol;
     });
+    setIsSymbolListOpen(false);
+    setIsOutcomeListOpen(false);
+  };
+
+  const handleSelectOutcome = (value: TradeOutcome) => {
+    setTradeOutcome((previous) => (previous === value ? null : value));
+    setIsOutcomeListOpen(false);
     setIsSymbolListOpen(false);
   };
 
@@ -1712,7 +1729,10 @@ function NewTradePageContent() {
                       <div className="flex flex-wrap justify-center gap-6">
                         <button
                           type="button"
-                          onClick={() => setIsSymbolListOpen((prev) => !prev)}
+                          onClick={() => {
+                            setIsSymbolListOpen((prev) => !prev);
+                            setIsOutcomeListOpen(false);
+                          }}
                           className="group flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
                           aria-haspopup="listbox"
                           aria-expanded={isSymbolListOpen}
@@ -1771,26 +1791,97 @@ function NewTradePageContent() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setIsRealTrade((prev) => !prev)}
-                          className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
+                          onClick={() => {
+                            setIsOutcomeListOpen((prev) => !prev);
+                            setIsSymbolListOpen(false);
+                          }}
+                          className={`group flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
+                            tradeOutcome === "profit"
+                              ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
+                              : tradeOutcome === "loss"
+                                ? "border-[#F5B7B7] bg-[#FCE8E8] text-[#C62828] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
+                                : "border-border bg-[color:rgb(var(--surface)/0.9)] text-[color:rgb(var(--muted-fg)/0.7)] hover:-translate-y-0.5 hover:text-fg hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
+                          }`}
+                          aria-haspopup="listbox"
+                          aria-expanded={isOutcomeListOpen}
+                          aria-label="Select outcome"
+                          title="Select outcome"
+                        >
+                          {tradeOutcome ? (
+                            <div className="flex items-center justify-center gap-2">
+                              <span
+                                className={`text-lg font-semibold tracking-[0.14em] capitalize transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-xl ${
+                                  tradeOutcome === "profit" ? "text-[#2E7D32]" : "text-[#C62828]"
+                                }`}
+                              >
+                                {tradeOutcome === "profit" ? "Profit" : "Loss"}
+                              </span>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className={`h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                                  isOutcomeListOpen ? "rotate-180" : ""
+                                } ${tradeOutcome === "profit" ? "text-[#2E7D32]" : "text-[#C62828]"}`}
+                                aria-hidden="true"
+                              >
+                                <path d="m6 9 6 6 6-6" />
+                              </svg>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center gap-3 text-center text-[color:rgb(var(--muted-fg)/0.6)]">
+                              <div className="flex items-center justify-center gap-2 animate-soft-fade text-xs font-medium tracking-[0.18em] transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-sm">
+                                <span>Select outcome</span>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className={`h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                                    isOutcomeListOpen ? "rotate-180" : ""
+                                  }`}
+                                  aria-hidden="true"
+                                >
+                                  <path d="m6 9 6 6 6-6" />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsRealTrade((prev) => !prev);
+                            setIsSymbolListOpen(false);
+                            setIsOutcomeListOpen(false);
+                          }}
+                          className={`group flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
                             isRealTrade
-                              ? "border-[#A6E8B0] bg-[#E8F9EE] text-[#2E7D32]"
-                              : "border-border bg-[color:rgb(var(--surface)/0.72)] text-muted-fg hover:text-fg"
+                              ? "border-[#A6E8B0] bg-[#E8F9EE] text-[#2E7D32] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
+                              : "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
                           }`}
                           aria-pressed={isRealTrade}
+                          title={isRealTrade ? "Real Trade" : "Paper Trade"}
                         >
                           {isRealTrade ? (
                             <CheckCircle
-                              className="h-5 w-5 text-[#2E7D32] transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                              className="h-5 w-5 text-[#2E7D32] transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
                               aria-hidden="true"
                             />
                           ) : (
-                            <Circle
-                              className="h-5 w-5 text-muted-fg transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                            <CheckCircle
+                              className="h-5 w-5 text-[#2F6FED] transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
                               aria-hidden="true"
                             />
                           )}
-                          <span className="text-sm font-medium tracking-[0.08em] transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
+                          <span className="text-sm font-medium tracking-[0.08em] transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
                             {isRealTrade ? "Real Trade" : "Paper Trade"}
                           </span>
                         </button>
@@ -1847,6 +1938,58 @@ function NewTradePageContent() {
                                   Selected
                                 </span>
                               ) : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                      isOutcomeListOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <div
+                        className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-2"
+                        role="listbox"
+                        aria-activedescendant={tradeOutcome ? `outcome-${tradeOutcome}` : undefined}
+                      >
+                        {tradeOutcomeOptions.map(({ value, label }) => {
+                          const isActive = tradeOutcome === value;
+                          const activeTone =
+                            value === "profit"
+                              ? "bg-[#E6F9EC] text-[#2E7D32]"
+                              : "bg-[#FCE8E8] text-[#C62828]";
+                          const borderColor = value === "profit" ? "#A6E8B0" : "#F5B7B7";
+
+                          return (
+                            <button
+                              key={value}
+                              id={`outcome-${value}`}
+                              type="button"
+                              className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium transition md:text-base ${
+                                isActive
+                                  ? `${activeTone} shadow-[0_16px_32px_rgba(15,23,42,0.08)]`
+                                  : "border-border text-muted-fg hover:bg-subtle hover:text-fg"
+                              }`}
+                              style={isActive ? { borderColor } : undefined}
+                              onClick={() => handleSelectOutcome(value)}
+                              role="option"
+                              aria-selected={isActive}
+                            >
+                              <span className="tracking-[0.18em] uppercase">{label}</span>
+                              {isActive ? (
+                                <CheckCircle
+                                  className={`h-4 w-4 ${
+                                    value === "profit" ? "text-[#2E7D32]" : "text-[#C62828]"
+                                  }`}
+                                  aria-hidden="true"
+                                />
+                              ) : (
+                                <Circle className="h-4 w-4 text-muted-fg" aria-hidden="true" />
+                              )}
                             </button>
                           );
                         })}
@@ -2556,6 +2699,7 @@ function NewTradePageContent() {
       id: editingTradeId ?? undefined,
       symbolCode: selectedSymbol?.code ?? "",
       isPaperTrade: !isRealTrade,
+      tradeOutcome,
       date: selectedDate.toISOString(),
       openTime: openTime ? openTime.toISOString() : null,
       closeTime: closeTime ? closeTime.toISOString() : null,
@@ -2643,6 +2787,7 @@ function NewTradePageContent() {
     router,
     selectedDate,
     selectedSymbol?.code,
+    tradeOutcome,
     startNavigation,
     stopLoss,
     takeProfitTargets,

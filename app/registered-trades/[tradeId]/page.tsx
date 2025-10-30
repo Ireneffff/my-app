@@ -13,7 +13,7 @@ import {
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { CheckCircle, Circle, Plus, X } from "lucide-react";
+import { CheckCircle, Plus, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
@@ -782,6 +782,13 @@ export default function RegisteredTradePage() {
       flag: state.trade.symbolFlag,
     };
 
+  const tradeOutcomeLabel =
+    state.trade.tradeOutcome === "profit"
+      ? "Profit"
+      : state.trade.tradeOutcome === "loss"
+        ? "Loss"
+        : null;
+
   const formattedDate = selectedDate.toLocaleDateString(undefined, {
     day: "2-digit",
     month: "2-digit",
@@ -1042,46 +1049,70 @@ export default function RegisteredTradePage() {
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-start gap-4">
-                <div className="flex flex-col gap-3">
-                  <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
-                  <div className="flex flex-wrap justify-center gap-6">
-                    <div className="flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface text-center shadow-sm">
-                      <span className="text-2xl" aria-hidden="true">
-                        {activeSymbol.flag}
-                      </span>
-                      <div className="flex items-center justify-center gap-2">
-                        <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
-                          {activeSymbol.code}
+                <div className="flex flex-wrap items-start gap-4">
+                  <div className="flex flex-col gap-3">
+                    <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
+                    <div className="flex flex-wrap justify-center gap-6">
+                      <div className="flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)]">
+                        <span className="text-2xl" aria-hidden="true">
+                          {activeSymbol.flag}
+                        </span>
+                        <div className="flex items-center justify-center gap-2 text-fg">
+                          <span className="text-lg font-semibold tracking-[0.2em] md:text-xl">
+                            {activeSymbol.code}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] ${
+                          state.trade.tradeOutcome === "profit"
+                            ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32]"
+                            : state.trade.tradeOutcome === "loss"
+                              ? "border-[#F5B7B7] bg-[#FCE8E8] text-[#C62828]"
+                              : "border-border bg-[color:rgb(var(--surface)/0.9)] text-[color:rgb(var(--muted-fg)/0.7)]"
+                        }`}
+                      >
+                        {tradeOutcomeLabel ? (
+                          <span
+                            className={`text-lg font-semibold tracking-[0.14em] capitalize md:text-xl ${
+                              state.trade.tradeOutcome === "profit" ? "text-[#2E7D32]" : "text-[#C62828]"
+                            }`}
+                          >
+                            {tradeOutcomeLabel}
+                          </span>
+                        ) : (
+                          <span className="text-xs font-medium uppercase tracking-[0.18em] text-[color:rgb(var(--muted-fg)/0.7)]">
+                            Select outcome
+                          </span>
+                        )}
+                      </div>
+
+                      <div
+                        className={`flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                          state.trade.isPaperTrade
+                            ? "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED]"
+                            : "border-[#A6E8B0] bg-[#E8F9EE] text-[#2E7D32]"
+                        }`}
+                      >
+                        {state.trade.isPaperTrade ? (
+                          <CheckCircle
+                            className="h-5 w-5 text-[#2F6FED]"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <CheckCircle
+                            className="h-5 w-5 text-[#2E7D32]"
+                            aria-hidden="true"
+                          />
+                        )}
+                        <span className="text-sm font-medium tracking-[0.08em]">
+                          {state.trade.isPaperTrade ? "Paper Trade" : "Real Trade"}
                         </span>
                       </div>
                     </div>
-
-                    <div
-                      className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                        state.trade.isPaperTrade
-                          ? "border-border bg-[color:rgb(var(--surface)/0.72)] text-muted-fg"
-                          : "border-[color:rgb(var(--accent)/0.45)] bg-[color:rgb(var(--accent)/0.12)] text-[color:rgb(var(--accent))]"
-                      }`}
-                    >
-                      {state.trade.isPaperTrade ? (
-                        <Circle
-                          className="h-5 w-5 text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        <CheckCircle
-                          className="h-5 w-5 text-[color:rgb(var(--accent))] transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                          aria-hidden="true"
-                        />
-                      )}
-                      <span className="text-sm font-medium tracking-[0.08em]">
-                        {state.trade.isPaperTrade ? "Paper Trade" : "Real Trade"}
-                      </span>
-                    </div>
                   </div>
                 </div>
-              </div>
 
               <div className="flex flex-col">
                 <div className="grid gap-4 md:grid-cols-2">
