@@ -2571,7 +2571,7 @@ function NewTradePageContent() {
                             !nextValue || nextValue === "Insert" ? null : nextValue,
                           )
                         }
-                        placeholder="Seleziona risposta"
+                        placeholder="Select option"
                       >
                         <option value="Insert">Insert</option>
                         {followedPlanOptions.map((option) => (
@@ -2600,7 +2600,7 @@ function NewTradePageContent() {
                           setRespectedRiskChoice(null);
                           setRespectedRiskSelection(nextValue === "Insert" ? "Insert" : "");
                         }}
-                        placeholder="Seleziona risposta"
+                        placeholder="Select option"
                       >
                         <option value="Insert">Insert</option>
                         <option value="true">Sì</option>
@@ -2638,7 +2638,7 @@ function NewTradePageContent() {
                           setWouldRepeatTrade(null);
                           setRepeatTradeSelection("");
                         }}
-                        placeholder="Seleziona risposta"
+                        placeholder="Select option"
                       >
                         <option value="Insert">Insert</option>
                         <option value="true">Sì</option>
