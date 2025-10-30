@@ -2540,7 +2540,7 @@ function NewTradePageContent() {
                             const clampedValue = Math.min(10, Math.max(1, numericValue));
                             setConfidenceLevel(String(clampedValue));
                           }}
-                          placeholder="Select level"
+                          placeholder="Insert"
                           className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
