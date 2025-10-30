@@ -1142,17 +1142,14 @@ export default function RegisteredTradePage() {
                   </div>
                 </div>
                 <p className="mt-2 text-center text-sm text-muted-fg md:mt-3 md:text-base">
-                  Duration: <span className="font-semibold text-fg">{durationLabel}</span>
+                  Duration: {durationLabel}
                 </p>
               </div>
 
-              <div
-                className="border-t"
-                style={{ borderColor: "color-mix(in srgb, rgba(var(--border)) 70%, transparent)" }}
-              />
+              <div className="mt-6 border-t border-border" />
 
               <div className="flex flex-col gap-4">
-                <span className="text-sm font-semibold uppercase tracking-[0.24em] text-fg md:text-base">
+                <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
                   General Details
                 </span>
                 <div className="flex flex-col gap-4">
@@ -1181,10 +1178,7 @@ export default function RegisteredTradePage() {
                 </div>
               </div>
 
-              <div
-                className="my-6 border-t"
-                style={{ borderColor: "color-mix(in srgb, rgba(var(--border)) 70%, transparent)" }}
-              />
+              <div className="my-6 border-t border-border" />
 
               <div className="flex flex-col gap-4">
                 <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
@@ -1209,19 +1203,16 @@ export default function RegisteredTradePage() {
                 </div>
               </div>
 
-              <div
-                className="border-t"
-                style={{ borderColor: "color-mix(in srgb, rgba(var(--border)) 70%, transparent)" }}
-              />
+              <div className="mt-6 border-t border-border" />
 
               <div className="flex flex-col gap-4">
-                <span className="text-sm font-semibold uppercase tracking-[0.24em] text-fg md:text-base">
+                <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
                   Psychology & Mindset
                 </span>
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Stato mentale prima del trade
+                      Mental state before the trade
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{preTradeMentalStateValue}</span>
@@ -1230,7 +1221,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Emozioni durante il trade
+                      Emotions during the trade
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{emotionsDuringTradeValue}</span>
@@ -1239,7 +1230,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Emozioni dopo il trade
+                      Emotions after the trade
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{emotionsAfterTradeValue}</span>
@@ -1248,7 +1239,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Livello di fiducia (1–10)
+                      Confidence level (1–10)
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{confidenceLevelValue}</span>
@@ -1257,7 +1248,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Trigger emotivi
+                      Emotional triggers
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{emotionalTriggerValue}</span>
@@ -1266,7 +1257,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Ho seguito il mio piano?
+                      Did I follow my plan?
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{followedPlanValue}</span>
@@ -1275,7 +1266,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Ho rispettato il rischio prefissato?
+                      Did I respect my planned risk?
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{respectedRiskValue}</span>
@@ -1284,7 +1275,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Rifarei questo trade?
+                      Would I take this trade again?
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{wouldRepeatTradeValue}</span>
