@@ -1049,7 +1049,7 @@ export default function RegisteredTradePage() {
                 </p>
               </div>
 
-                <div className="flex w-full justify-center">
+                <div className="mt-10 flex w-full justify-center md:mt-12">
                   <div className="flex flex-col items-center gap-3">
                     <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
                     <div className="flex w-full flex-col items-center justify-center gap-6 md:flex-row md:justify-center">
