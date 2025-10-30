@@ -1862,26 +1862,26 @@ function NewTradePageContent() {
                             setIsSymbolListOpen(false);
                             setIsOutcomeListOpen(false);
                           }}
-                          className={`group flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
+                          className={`group flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
                             isRealTrade
-                              ? "border-[#A6E8B0] bg-[#E8F9EE] text-[#2E7D32] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
-                              : "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
+                              ? "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
+                              : "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
                           }`}
                           aria-pressed={isRealTrade}
                           title={isRealTrade ? "Real Trade" : "Paper Trade"}
                         >
                           {isRealTrade ? (
                             <CheckCircle
-                              className="h-5 w-5 text-[#2E7D32] transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                              className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
                               aria-hidden="true"
                             />
                           ) : (
-                            <CheckCircle
-                              className="h-5 w-5 text-[#2F6FED] transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                            <Circle
+                              className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
                               aria-hidden="true"
                             />
                           )}
-                          <span className="text-sm font-medium tracking-[0.08em] transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+                          <span className="text-sm font-medium tracking-[0.08em] transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
                             {isRealTrade ? "Real Trade" : "Paper Trade"}
                           </span>
                         </button>

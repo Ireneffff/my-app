@@ -13,7 +13,7 @@ import {
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { CheckCircle, Plus, X } from "lucide-react";
+import { Circle, CheckCircle, Plus, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
@@ -1089,24 +1089,24 @@ export default function RegisteredTradePage() {
                       </div>
 
                       <div
-                        className={`flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                        className={`flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                           state.trade.isPaperTrade
-                            ? "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED]"
-                            : "border-[#A6E8B0] bg-[#E8F9EE] text-[#2E7D32]"
+                            ? "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280]"
+                            : "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED]"
                         }`}
                       >
                         {state.trade.isPaperTrade ? (
-                          <CheckCircle
-                            className="h-5 w-5 text-[#2F6FED]"
+                          <Circle
+                            className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
                             aria-hidden="true"
                           />
                         ) : (
                           <CheckCircle
-                            className="h-5 w-5 text-[#2E7D32]"
+                            className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
                             aria-hidden="true"
                           />
                         )}
-                        <span className="text-sm font-medium tracking-[0.08em]">
+                        <span className="text-sm font-medium tracking-[0.08em] transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
                           {state.trade.isPaperTrade ? "Paper Trade" : "Real Trade"}
                         </span>
                       </div>
