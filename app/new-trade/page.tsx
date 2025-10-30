@@ -1725,7 +1725,7 @@ function NewTradePageContent() {
 
                   <div className="mt-10 flex w-full justify-center md:mt-12">
                     <div className="flex flex-col items-center gap-3">
-                      <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
+                      <span className="block pb-1 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Trade Setup</span>
                       <div className="flex w-full flex-col items-center justify-center gap-6 md:flex-row md:justify-center">
                         <button
                           type="button"

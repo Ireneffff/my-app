@@ -1050,8 +1050,8 @@ export default function RegisteredTradePage() {
               </div>
 
                 <div className="mt-10 flex w-full justify-center md:mt-12">
-                  <div className="flex flex-col items-center gap-3">
-                    <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
+                <div className="flex flex-col items-center gap-3">
+                  <span className="block pb-1 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Trade Setup</span>
                     <div className="flex w-full flex-col items-center justify-center gap-6 md:flex-row md:justify-center">
                       <div className="flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:w-[18rem] lg:w-[20rem]">
                         <div className="flex w-full items-center justify-center gap-3 text-fg">
