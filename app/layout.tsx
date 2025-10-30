@@ -24,8 +24,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-dvh bg-bg text-fg antialiased">
-        <main id="main">{children}</main>
+      <body className="min-h-dvh bg-bg text-fg antialiased selection:bg-accent/15 selection:text-fg transition-colors duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
+        <main id="main" className="flex flex-1 flex-col">
+          {children}
+        </main>
 
         {/* Banner "Update available" */}
         <SwUpdateBanner />

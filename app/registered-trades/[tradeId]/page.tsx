@@ -13,7 +13,7 @@ import {
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { CheckCircle, Circle, Plus, X } from "lucide-react";
+import { Circle, CheckCircle, Plus, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
@@ -678,7 +678,7 @@ export default function RegisteredTradePage() {
               />
             </div>
           ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl bg-[#F4F4F4] text-muted-fg">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl bg-[color:rgb(var(--surface)/0.85)] text-muted-fg">
               <EmptyLibraryIcon />
               <span className="text-[11px] font-semibold uppercase tracking-[0.28em]">Vuoto</span>
             </div>
@@ -721,7 +721,7 @@ export default function RegisteredTradePage() {
           />
         </span>
       ) : (
-        <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-4 rounded-[28px] bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
+        <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-4 rounded-[28px] bg-gradient-to-b from-[color:rgb(var(--surface)/0.94)] to-[color:rgb(var(--surface)/0.78)] text-muted-fg">
           <EmptyLibraryIcon />
           <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Nessuna anteprima</span>
           <span className="max-w-[28ch] text-center text-xs text-muted-fg/80">
@@ -747,7 +747,7 @@ export default function RegisteredTradePage() {
         readOnly
         aria-readonly="true"
         placeholder="Note salvate"
-        className="min-h-[120px] w-full resize-none rounded-none border border-[#D9D9D9] bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg opacity-80 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+        className="min-h-[120px] w-full resize-none rounded-none border border-border bg-[color:rgb(var(--accent)/0.06)] px-5 py-4 text-sm font-medium text-fg opacity-80 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
       />
     </div>
   );
@@ -781,6 +781,13 @@ export default function RegisteredTradePage() {
       code: state.trade.symbolCode,
       flag: state.trade.symbolFlag,
     };
+
+  const tradeOutcomeLabel =
+    state.trade.tradeOutcome === "profit"
+      ? "Profit"
+      : state.trade.tradeOutcome === "loss"
+        ? "Loss"
+        : null;
 
   const formattedDate = selectedDate.toLocaleDateString(undefined, {
     day: "2-digit",
@@ -870,7 +877,7 @@ export default function RegisteredTradePage() {
                 </div>
                 {showRemovalBadge ? (
                   <span
-                    className="pointer-events-none absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-[#555555] shadow-sm opacity-0 transition-all duration-200 ease-in-out group-hover:opacity-100 group-hover:scale-110"
+                    className="pointer-events-none absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-border bg-[color:rgb(var(--surface))] text-muted-fg shadow-[0_8px_20px_rgba(15,23,42,0.12)] opacity-0 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-110 group-hover:opacity-100"
                     aria-hidden="true"
                   >
                     <X aria-hidden="true" className="h-3.5 w-3.5" />
@@ -882,7 +889,7 @@ export default function RegisteredTradePage() {
         </div>
         {isEditMode ? (
           <span
-            className="pointer-events-none absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2563eb] text-white opacity-60"
+            className="pointer-events-none absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[color:rgb(var(--accent))] text-white opacity-60"
             aria-hidden="true"
           >
             <Plus aria-hidden="true" className="h-4 w-4" />
@@ -930,15 +937,15 @@ export default function RegisteredTradePage() {
 
   return (
     <section
-      className="relative flex min-h-dvh flex-col gap-12 bg-bg px-4 pb-16 text-fg sm:px-6 md:px-10"
+      className="page-shell relative flex min-h-dvh flex-col gap-12 pb-20 pt-24 text-fg sm:pt-28"
       style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
     >
-      <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 sm:max-w-4xl">
+      <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="h-11 w-11 flex-none rounded-full bg-white p-0 text-lg text-[#555555] hover:bg-white hover:text-[#333333]"
+          className="h-12 w-12 flex-none rounded-full border border-border bg-[color:rgb(var(--surface)/0.92)] p-0 text-lg text-muted-fg backdrop-blur hover:text-fg"
           onClick={() => {
             router.push("/");
           }}
@@ -948,14 +955,14 @@ export default function RegisteredTradePage() {
         </Button>
 
         <div className="ml-auto flex items-center gap-2">
-          <Button type="button" variant="secondary" size="sm" onClick={handleEditTrade}>
+          <Button type="button" variant="secondary" size="sm" className="px-5" onClick={handleEditTrade}>
             Edit trade
           </Button>
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="border border-transparent text-red-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+            className="border border-transparent text-red-500 transition hover:border-[color:rgba(248,113,113,0.3)] hover:bg-[color:rgba(248,113,113,0.08)] hover:text-red-600"
             onClick={handleDeleteTrade}
           >
             Delete
@@ -963,10 +970,10 @@ export default function RegisteredTradePage() {
         </div>
       </div>
 
-      <div className="flex w-full flex-1 flex-col gap-12">
-        <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
-          <header className="space-y-2">
-            <p className="text-sm text-muted-fg">Trading Journal</p>
+      <div className="flex w-full flex-1 flex-col gap-14">
+        <div className="mx-auto w-full max-w-4xl">
+          <header className="section-heading items-start text-left">
+            <p>Trading Journal</p>
             <h1 className="text-4xl font-semibold tracking-tight text-fg md:text-5xl">
               Trade details
             </h1>
@@ -975,8 +982,8 @@ export default function RegisteredTradePage() {
         </div>
 
         <div className="flex w-full flex-col gap-8">
-          <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
-            <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-1 py-2 text-sm text-muted-fg">
+          <nav className="flex w-full items-center justify-center">
+            <div className="flex items-center gap-4 text-sm font-medium text-muted-fg">
               {[
                 { label: "Main Data", value: "main" as const },
                 { label: "Library", value: "library" as const },
@@ -987,102 +994,125 @@ export default function RegisteredTradePage() {
                   <button
                     key={value}
                     type="button"
-                    className={`rounded-full border px-4 py-2 transition ${
+                    className={`relative rounded-full px-5 py-2 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] ${
                       isActive
-                        ? "border-border bg-surface text-fg"
-                        : "border-transparent text-muted-fg hover:border-border hover:text-fg"
+                        ? "bg-[color:rgb(var(--surface))] text-fg shadow-[0_16px_32px_rgba(15,23,42,0.12)]"
+                        : "text-muted-fg hover:text-fg"
                     }`}
                     aria-pressed={isActive}
                     onClick={() => setActiveTab(value)}
-                    disabled={isActive}
                   >
                     {label}
                   </button>
                 );
               })}
-            </nav>
-          </div>
+            </div>
+          </nav>
 
           {activeTab === "main" ? (
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 sm:max-w-4xl">
-          <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6">
-            <div className="mx-auto flex w-full max-w-xl items-center gap-3">
-              <div className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1">
-                <div className="flex w-full items-center justify-center gap-2">
-                  {currentWeekDays.map((date) => renderWeekDayPill(date))}
-                </div>
-              </div>
-
-              <div
-                className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition"
-                aria-hidden="true"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-6 w-6"
-                >
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                  <circle cx="12" cy="16" r="1.5" />
-                </svg>
-              </div>
-            </div>
-
-            <p className="mt-4 text-center text-sm text-muted-fg md:mt-5 md:text-base">
-              Day of the week: <span className="font-semibold text-fg">{dayOfWeekLabel}</span>
-            </p>
-          </div>
-
           <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
             <div className="flex flex-col gap-6">
-              <div className="flex flex-wrap items-start gap-4">
-                <div className="flex flex-col gap-3">
-                  <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
-                  <div className="flex flex-wrap justify-center gap-6">
-                    <div className="flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface text-center shadow-sm">
-                      <span className="text-2xl" aria-hidden="true">
-                        {activeSymbol.flag}
-                      </span>
-                      <div className="flex items-center justify-center gap-2">
-                        <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
-                          {activeSymbol.code}
+              <div>
+                <div className="mx-auto flex w-full max-w-xl items-center gap-3">
+                  <div className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1">
+                    <div className="flex w-full items-center justify-center gap-2">
+                      {currentWeekDays.map((date) => renderWeekDayPill(date))}
+                    </div>
+                  </div>
+
+                  <div
+                    className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition"
+                    aria-hidden="true"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-6 w-6"
+                    >
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                      <circle cx="12" cy="16" r="1.5" />
+                    </svg>
+                  </div>
+                </div>
+
+                <p className="mt-4 text-center text-sm text-muted-fg md:mt-5 md:text-base">
+                  Day of the week: <span className="font-semibold text-fg">{dayOfWeekLabel}</span>
+                </p>
+              </div>
+
+                <div className="mt-10 flex w-full justify-center md:mt-12">
+                <div className="flex flex-col items-center gap-3">
+                  <span className="block pb-1 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Trade Setup</span>
+                    <div className="flex w-full flex-col items-center justify-center gap-6 md:flex-row md:justify-center">
+                      <div className="flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:w-[18rem] lg:w-[20rem]">
+                        <div className="flex w-full items-center justify-center gap-3 text-fg">
+                          <span className="text-2xl" aria-hidden="true">
+                            {activeSymbol.flag}
+                          </span>
+                          <span className="text-lg font-semibold tracking-[0.2em] md:text-xl">
+                            {activeSymbol.code}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:w-[12.5rem] lg:w-[13.5rem] ${
+                          state.trade.tradeOutcome === "profit"
+                            ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32]"
+                            : state.trade.tradeOutcome === "loss"
+                              ? "border-[#F5B7B7] bg-[#FCE8E8] text-[#C62828]"
+                              : "border-border bg-[color:rgb(var(--surface)/0.9)] text-[color:rgb(var(--muted-fg)/0.7)]"
+                        }`}
+                      >
+                        {tradeOutcomeLabel ? (
+                          <span
+                            className={`text-lg font-semibold tracking-[0.14em] capitalize md:text-xl ${
+                              state.trade.tradeOutcome === "profit" ? "text-[#2E7D32]" : "text-[#C62828]"
+                            }`}
+                          >
+                            {tradeOutcomeLabel}
+                          </span>
+                        ) : (
+                          <span className="text-xs font-medium uppercase tracking-[0.18em] text-[color:rgb(var(--muted-fg)/0.7)]">
+                            Select outcome
+                          </span>
+                        )}
+                      </div>
+
+                      <div
+                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] md:w-[12.5rem] lg:w-[13.5rem] ${
+                          state.trade.isPaperTrade
+                            ? "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280]"
+                            : "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED]"
+                        }`}
+                      >
+                        {state.trade.isPaperTrade ? (
+                          <Circle
+                            className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <CheckCircle
+                            className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                            aria-hidden="true"
+                          />
+                        )}
+                        <span className="text-sm font-medium tracking-[0.08em] transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
+                          {state.trade.isPaperTrade ? "Paper Trade" : "Real Trade"}
                         </span>
                       </div>
                     </div>
-
-                    <div
-                      className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border text-center shadow-sm transition-all duration-200 ease-in-out ${
-                        state.trade.isPaperTrade
-                          ? "border-gray-200 bg-gray-50 text-gray-600"
-                          : "border-green-200 bg-green-100 text-green-700"
-                      }`}
-                    >
-                      {state.trade.isPaperTrade ? (
-                        <Circle
-                          className="h-5 w-5 text-gray-400 transition-colors duration-200 ease-in-out"
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        <CheckCircle
-                          className="h-5 w-5 text-green-500 transition-colors duration-200 ease-in-out"
-                          aria-hidden="true"
-                        />
-                      )}
-                      <span className="text-sm font-medium tracking-[0.08em]">
-                        {state.trade.isPaperTrade ? "Paper Trade" : "Real Trade"}
-                      </span>
-                    </div>
                   </div>
                 </div>
-              </div>
 
               <div className="flex flex-col">
                 <div className="grid gap-4 md:grid-cols-2">
@@ -1143,14 +1173,14 @@ export default function RegisteredTradePage() {
                   </div>
                 </div>
                 <p className="mt-2 text-center text-sm text-muted-fg md:mt-3 md:text-base">
-                  Duration: <span className="font-semibold text-fg">{durationLabel}</span>
+                  Duration: {durationLabel}
                 </p>
               </div>
 
-              <div className="border-t border-border/60" />
+              <div className="mt-6 border-t border-border" />
 
               <div className="flex flex-col gap-4">
-                <span className="text-gray-700 text-sm font-semibold uppercase tracking-[0.24em] md:text-base">
+                <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
                   General Details
                 </span>
                 <div className="flex flex-col gap-4">
@@ -1179,10 +1209,10 @@ export default function RegisteredTradePage() {
                 </div>
               </div>
 
-              <div className="my-6 border-t border-border/60" />
+              <div className="my-6 border-t border-border" />
 
               <div className="flex flex-col gap-4">
-                <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-gray-500">
+                <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
                   Risk Details
                 </span>
                 <div className="flex flex-col gap-4">
@@ -1204,16 +1234,16 @@ export default function RegisteredTradePage() {
                 </div>
               </div>
 
-              <div className="border-t border-border/60" />
+              <div className="mt-6 border-t border-border" />
 
               <div className="flex flex-col gap-4">
-                <span className="text-gray-700 text-sm font-semibold uppercase tracking-[0.24em] md:text-base">
+                <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
                   Psychology & Mindset
                 </span>
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Stato mentale prima del trade
+                      Mental state before the trade
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{preTradeMentalStateValue}</span>
@@ -1222,7 +1252,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Emozioni durante il trade
+                      Emotions during the trade
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{emotionsDuringTradeValue}</span>
@@ -1231,7 +1261,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Emozioni dopo il trade
+                      Emotions after the trade
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{emotionsAfterTradeValue}</span>
@@ -1240,7 +1270,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Livello di fiducia (1–10)
+                      Confidence level (1–10)
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{confidenceLevelValue}</span>
@@ -1249,7 +1279,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Trigger emotivi
+                      Emotional triggers
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{emotionalTriggerValue}</span>
@@ -1258,7 +1288,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Ho seguito il mio piano?
+                      Did I follow my plan?
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{followedPlanValue}</span>
@@ -1267,7 +1297,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Ho rispettato il rischio prefissato?
+                      Did I respect my planned risk?
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{respectedRiskValue}</span>
@@ -1276,7 +1306,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Rifarei questo trade?
+                      Would I take this trade again?
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{wouldRepeatTradeValue}</span>

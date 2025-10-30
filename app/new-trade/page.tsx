@@ -45,6 +45,13 @@ const availableSymbols: SymbolOption[] = [
   { code: "EURGBP", flag: "🇪🇺 🇬🇧" },
 ];
 
+const tradeOutcomeOptions = [
+  { value: "profit", label: "Profit" },
+  { value: "loss", label: "Loss" },
+] as const;
+
+type TradeOutcome = (typeof tradeOutcomeOptions)[number]["value"];
+
 const preTradeMentalStateOptions = [
   "Calmo e concentrato",
   "Stanco o distratto",
@@ -107,16 +114,13 @@ function formatDateTimeLocal(date: Date) {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-function alignTimeWithDate(time: Date | null, baseDate: Date, fallbackHour: number) {
-  const aligned = new Date(baseDate);
-  aligned.setHours(0, 0, 0, 0);
-
-  if (time && !Number.isNaN(time.getTime())) {
-    aligned.setHours(time.getHours(), time.getMinutes(), 0, 0);
-    return aligned;
+function alignTimeWithDate(time: Date | null, baseDate: Date) {
+  if (!time || Number.isNaN(time.getTime())) {
+    return null;
   }
 
-  aligned.setHours(fallbackHour, 0, 0, 0);
+  const aligned = new Date(baseDate);
+  aligned.setHours(time.getHours(), time.getMinutes(), 0, 0);
   return aligned;
 }
 
@@ -238,16 +242,8 @@ function NewTradePageContent() {
     [visibleWeekStart],
   );
 
-  const [openTime, setOpenTime] = useState<Date | null>(() => {
-    const initial = new Date(selectedDate);
-    initial.setHours(9, 0, 0, 0);
-    return initial;
-  });
-  const [closeTime, setCloseTime] = useState<Date | null>(() => {
-    const initial = new Date(selectedDate);
-    initial.setHours(17, 0, 0, 0);
-    return initial;
-  });
+  const [openTime, setOpenTime] = useState<Date | null>(null);
+  const [closeTime, setCloseTime] = useState<Date | null>(null);
   const durationLabel = useMemo(() => {
     if (!openTime || !closeTime) {
       return "0h 00min";
@@ -291,8 +287,10 @@ function NewTradePageContent() {
     scrollUnlockTimeoutsRef.current.clear();
   }, []);
 
-  const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption>(availableSymbols[2]);
+  const [selectedSymbol, setSelectedSymbol] = useState<SymbolOption | null>(null);
   const [isSymbolListOpen, setIsSymbolListOpen] = useState(false);
+  const [tradeOutcome, setTradeOutcome] = useState<TradeOutcome | null>(null);
+  const [isOutcomeListOpen, setIsOutcomeListOpen] = useState(false);
   const [isRealTrade, setIsRealTrade] = useState(false);
   const initialLibraryItems = useMemo(() => [createLibraryItem(null)], []);
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>(initialLibraryItems);
@@ -329,6 +327,8 @@ function NewTradePageContent() {
   const [riskRewardTargets, setRiskRewardTargets] = useState<string[]>([""]);
   const [risk, setRisk] = useState<NumericFieldState>(createNumericFieldState());
   const [pipsTargets, setPipsTargets] = useState<NumericFieldState[]>([createNumericFieldState()]);
+  const [isAddButtonAnimating, setIsAddButtonAnimating] = useState(false);
+  const [recentlyAddedColumnIndex, setRecentlyAddedColumnIndex] = useState<number | null>(null);
   const [lotSize, setLotSize] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -357,6 +357,8 @@ function NewTradePageContent() {
   const handleAddTargetColumn = useCallback(() => {
     const nextCount = targetColumnCount + 1;
 
+    setIsAddButtonAnimating(true);
+    setRecentlyAddedColumnIndex(nextCount - 1);
     setTakeProfitTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
     setRiskRewardTargets((prev) => padMultiValue(prev, nextCount, () => ""));
     setPipsTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
@@ -375,6 +377,30 @@ function NewTradePageContent() {
     setPipsTargets((prev) => prev.slice(0, nextCount));
     setPnlTargets((prev) => prev.slice(0, nextCount));
   }, [targetColumnCount]);
+
+  useEffect(() => {
+    if (!isAddButtonAnimating) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setIsAddButtonAnimating(false);
+    }, 260);
+
+    return () => window.clearTimeout(timeout);
+  }, [isAddButtonAnimating]);
+
+  useEffect(() => {
+    if (recentlyAddedColumnIndex === null) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setRecentlyAddedColumnIndex(null);
+    }, 320);
+
+    return () => window.clearTimeout(timeout);
+  }, [recentlyAddedColumnIndex]);
 
   const handleTakeProfitChange = useCallback(
     (index: number, value: string) => {
@@ -720,8 +746,8 @@ function NewTradePageContent() {
         });
       }
 
-      setOpenTime((prev) => alignTimeWithDate(prev, normalized, 9));
-      setCloseTime((prev) => alignTimeWithDate(prev, normalized, 17));
+      setOpenTime((prev) => alignTimeWithDate(prev, normalized));
+      setCloseTime((prev) => alignTimeWithDate(prev, normalized));
     },
     [],
   );
@@ -1006,6 +1032,7 @@ function NewTradePageContent() {
 
         setSelectedSymbol(matchedSymbol);
         setIsRealTrade(!match.isPaperTrade);
+        setTradeOutcome(match.tradeOutcome ?? null);
 
         const parsedDate = new Date(match.date);
         const isDateValid = !Number.isNaN(parsedDate.getTime());
@@ -1017,16 +1044,16 @@ function NewTradePageContent() {
 
         if (match.openTime) {
           const parsedOpen = new Date(match.openTime);
-          setOpenTime(!Number.isNaN(parsedOpen.getTime()) ? parsedOpen : alignTimeWithDate(null, effectiveDate, 9));
+          setOpenTime(!Number.isNaN(parsedOpen.getTime()) ? parsedOpen : alignTimeWithDate(null, effectiveDate));
         } else {
-          setOpenTime((prev) => alignTimeWithDate(prev, effectiveDate, 9));
+          setOpenTime((prev) => alignTimeWithDate(prev, effectiveDate));
         }
 
         if (match.closeTime) {
           const parsedClose = new Date(match.closeTime);
-          setCloseTime(!Number.isNaN(parsedClose.getTime()) ? parsedClose : alignTimeWithDate(null, effectiveDate, 17));
+          setCloseTime(!Number.isNaN(parsedClose.getTime()) ? parsedClose : alignTimeWithDate(null, effectiveDate));
         } else {
-          setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate, 17));
+          setCloseTime((prev) => alignTimeWithDate(prev, effectiveDate));
         }
 
         const hydratedLibraryItems: LibraryItem[] =
@@ -1132,7 +1159,21 @@ function NewTradePageContent() {
   );
 
   const handleSelectSymbol = (symbol: SymbolOption) => {
-    setSelectedSymbol(symbol);
+    setSelectedSymbol((previous) => {
+      if (previous?.code === symbol.code) {
+        return null;
+      }
+
+      return symbol;
+    });
+    setIsSymbolListOpen(false);
+    setIsOutcomeListOpen(false);
+  };
+
+  const handleSelectOutcome = (value: TradeOutcome) => {
+    setTradeOutcome((previous) => (previous === value ? null : value));
+    setIsOutcomeListOpen(false);
+    setIsSymbolListOpen(false);
   };
 
   const openTimeDisplay = getDateTimeDisplayParts(openTime);
@@ -1520,7 +1561,7 @@ function NewTradePageContent() {
               />
             </div>
           ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center rounded-md bg-[#F4F4F4] text-muted-fg">
+            <div className="flex h-full w-full flex-col items-center justify-center rounded-md bg-[color:rgb(var(--surface)/0.85)] text-muted-fg">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 48 48"
@@ -1575,7 +1616,8 @@ function NewTradePageContent() {
           >
             <span
               data-library-preview-image
-              className="relative block aspect-[3/2] w-full overflow-hidden rounded-[4px] border-2 border-[#B7B7B7]"
+              className="relative block aspect-[3/2] w-full overflow-hidden rounded-[4px] border-2"
+              style={{ borderColor: "color-mix(in srgb, rgba(var(--border-strong)) 60%, transparent)" }}
             >
               {selectedImageData ? (
                 <Image
@@ -1587,7 +1629,7 @@ function NewTradePageContent() {
                   unoptimized
                 />
               ) : (
-                <span className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-white to-neutral-100 text-muted-fg">
+                <span className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-[color:rgb(var(--surface)/0.94)] to-[color:rgb(var(--surface)/0.78)] text-muted-fg">
                   <UploadIcon />
                   <span className="text-xs text-muted-fg/80">
                     Aggiungi uno screenshot o un chart di contesto.
@@ -1620,7 +1662,7 @@ function NewTradePageContent() {
       }}
       placeholder="Scrivi le tue note"
       aria-label="Note"
-      className="min-h-[120px] w-full resize-none rounded-none border border-[#D9D9D9] bg-[#fffde6] px-5 py-4 text-sm font-medium text-fg transition focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+      className="min-h-[120px] w-full resize-none rounded-none border border-border bg-[color:rgb(var(--accent)/0.06)] px-5 py-4 text-sm font-medium text-fg transition focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
     />
   );
 
@@ -1629,115 +1671,215 @@ function NewTradePageContent() {
       ? (
           <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
             <div className="flex w-full flex-col gap-8">
-              <div className="w-full surface-panel px-4 py-4 md:px-6 md:py-6">
-                <div className="mx-auto flex w-full max-w-xl items-center gap-3">
-                  <div
-                    className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1"
-                    onWheel={handleWeekWheel}
-                    onPointerDown={handleWeekPointerDown}
-                    onPointerUp={handleWeekPointerUp}
-                    onPointerCancel={handleWeekPointerCancel}
-                    onPointerLeave={handleWeekPointerCancel}
-                  >
-                    <div className="flex w-full items-center justify-center gap-2">
-                      {visibleWeekDays.map((date) => renderWeekDayPill(date))}
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    className={`flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg ${
-                      isCalendarOpen ? "bg-subtle text-fg" : ""
-                    }`}
-                    onClick={openCalendar}
-                    aria-haspopup="dialog"
-                    aria-expanded={isCalendarOpen}
-                    aria-label="Open calendar"
-                    title="Open calendar"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-6 w-6"
-                    >
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                      <circle cx="12" cy="16" r="1.5" />
-                    </svg>
-                  </button>
-                </div>
-
-                <p className="mt-4 text-center text-sm text-muted-fg md:mt-5 md:text-base">
-                  Day of the week: <span className="font-semibold text-fg">{dayOfWeekLabel}</span>
-                </p>
-              </div>
-
               <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
                 <div className="flex flex-col gap-6">
-                  <div className="flex flex-wrap items-start gap-4">
-                    <div className="flex flex-col gap-3">
-                      <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
-                      <div className="flex flex-wrap justify-center gap-6">
+                  <div>
+                    <div className="mx-auto flex w-full max-w-xl items-center gap-3">
+                      <div
+                        className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1"
+                        onWheel={handleWeekWheel}
+                        onPointerDown={handleWeekPointerDown}
+                        onPointerUp={handleWeekPointerUp}
+                        onPointerCancel={handleWeekPointerCancel}
+                        onPointerLeave={handleWeekPointerCancel}
+                      >
+                        <div className="flex w-full items-center justify-center gap-2">
+                          {visibleWeekDays.map((date) => renderWeekDayPill(date))}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className={`flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg ${
+                          isCalendarOpen ? "bg-subtle text-fg" : ""
+                        }`}
+                        onClick={openCalendar}
+                        aria-haspopup="dialog"
+                        aria-expanded={isCalendarOpen}
+                        aria-label="Open calendar"
+                        title="Open calendar"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-6 w-6"
+                        >
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                          <circle cx="12" cy="16" r="1.5" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <p className="mt-4 text-center text-sm text-muted-fg md:mt-5 md:text-base">
+                      Day of the week: <span className="font-semibold text-fg">{dayOfWeekLabel}</span>
+                    </p>
+                  </div>
+
+                  <div className="mt-10 flex w-full justify-center md:mt-12">
+                    <div className="flex flex-col items-center gap-3">
+                      <span className="block pb-1 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Trade Setup</span>
+                      <div className="flex w-full flex-col items-center justify-center gap-6 md:flex-row md:justify-center">
                         <button
                           type="button"
-                          onClick={() => setIsSymbolListOpen((prev) => !prev)}
-                          className="group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface text-center shadow-sm transition-all focus:outline-none focus:ring-0 hover:shadow-md"
+                          onClick={() => {
+                            setIsSymbolListOpen((prev) => !prev);
+                            setIsOutcomeListOpen(false);
+                          }}
+                          className="group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)] md:w-[18rem] lg:w-[20rem]"
                           aria-haspopup="listbox"
                           aria-expanded={isSymbolListOpen}
                         >
-                          <span className="text-2xl" aria-hidden="true">
-                            {selectedSymbol.flag}
-                          </span>
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="text-lg font-semibold tracking-[0.2em] text-fg md:text-xl">
-                              {selectedSymbol.code}
-                            </span>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className={`h-4 w-4 text-gray-500 opacity-100 transition-transform transition-opacity group-hover:opacity-80 ${
-                                isSymbolListOpen ? "rotate-180" : ""
-                              }`}
-                              aria-hidden="true"
-                            >
-                              <path d="m6 9 6 6 6-6" />
-                            </svg>
-                          </div>
+                          {selectedSymbol ? (
+                            <div className="flex w-full items-center justify-center gap-3 text-fg transition-colors transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+                              <span
+                                className="text-2xl transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                                aria-hidden="true"
+                              >
+                                {selectedSymbol.flag}
+                              </span>
+                              <span className="text-lg font-semibold tracking-[0.2em] leading-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-xl">
+                                {selectedSymbol.code}
+                              </span>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className={`h-4 w-4 text-muted-fg opacity-100 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-80 ${
+                                  isSymbolListOpen ? "rotate-180" : ""
+                                }`}
+                                aria-hidden="true"
+                              >
+                                <path d="m6 9 6 6 6-6" />
+                              </svg>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center gap-3 text-center text-[color:rgb(var(--muted-fg)/0.6)]">
+                              <div className="flex items-center justify-center gap-2 animate-soft-fade text-xs font-medium tracking-[0.18em] transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-sm">
+                                <span>Select symbol</span>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className={`h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                                    isSymbolListOpen ? "rotate-180" : ""
+                                  }`}
+                                  aria-hidden="true"
+                                >
+                                  <path d="m6 9 6 6 6-6" />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
                         </button>
                         <button
                           type="button"
-                          onClick={() => setIsRealTrade((prev) => !prev)}
-                          className={`group flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border text-center shadow-sm transition-all duration-200 ease-in-out focus:outline-none focus:ring-0 hover:shadow-md ${
+                          onClick={() => {
+                            setIsOutcomeListOpen((prev) => !prev);
+                            setIsSymbolListOpen(false);
+                          }}
+                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:w-[12.5rem] lg:w-[13.5rem] ${
+                            tradeOutcome === "profit"
+                              ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
+                              : tradeOutcome === "loss"
+                                ? "border-[#F5B7B7] bg-[#FCE8E8] text-[#C62828] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
+                                : "border-border bg-[color:rgb(var(--surface)/0.9)] text-[color:rgb(var(--muted-fg)/0.7)] hover:-translate-y-0.5 hover:text-fg hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
+                          }`}
+                          aria-haspopup="listbox"
+                          aria-expanded={isOutcomeListOpen}
+                          aria-label="Select outcome"
+                          title="Select outcome"
+                        >
+                          {tradeOutcome ? (
+                            <div className="flex items-center justify-center gap-2">
+                              <span
+                                className={`text-lg font-semibold tracking-[0.14em] capitalize transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-xl ${
+                                  tradeOutcome === "profit" ? "text-[#2E7D32]" : "text-[#C62828]"
+                                }`}
+                              >
+                                {tradeOutcome === "profit" ? "Profit" : "Loss"}
+                              </span>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className={`h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                                  isOutcomeListOpen ? "rotate-180" : ""
+                                } ${tradeOutcome === "profit" ? "text-[#2E7D32]" : "text-[#C62828]"}`}
+                                aria-hidden="true"
+                              >
+                                <path d="m6 9 6 6 6-6" />
+                              </svg>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center gap-3 text-center text-[color:rgb(var(--muted-fg)/0.6)]">
+                              <div className="flex items-center justify-center gap-2 animate-soft-fade text-xs font-medium tracking-[0.18em] transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-sm">
+                                <span>Select outcome</span>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className={`h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                                    isOutcomeListOpen ? "rotate-180" : ""
+                                  }`}
+                                  aria-hidden="true"
+                                >
+                                  <path d="m6 9 6 6 6-6" />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsRealTrade((prev) => !prev);
+                            setIsSymbolListOpen(false);
+                            setIsOutcomeListOpen(false);
+                          }}
+                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:w-[12.5rem] lg:w-[13.5rem] ${
                             isRealTrade
-                              ? "border-green-200 bg-green-100 text-green-700"
-                              : "border-gray-200 bg-gray-50 text-gray-600"
+                              ? "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
+                              : "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
                           }`}
                           aria-pressed={isRealTrade}
+                          title={isRealTrade ? "Real Trade" : "Paper Trade"}
                         >
                           {isRealTrade ? (
                             <CheckCircle
-                              className="h-5 w-5 text-green-500 transition-colors duration-200 ease-in-out"
+                              className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
                               aria-hidden="true"
                             />
                           ) : (
                             <Circle
-                              className="h-5 w-5 text-gray-400 transition-colors duration-200 ease-in-out"
+                              className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
                               aria-hidden="true"
                             />
                           )}
-                          <span className="text-sm font-medium tracking-[0.08em]">
+                          <span className="text-sm font-medium tracking-[0.08em] transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
                             {isRealTrade ? "Real Trade" : "Paper Trade"}
                           </span>
                         </button>
@@ -1754,10 +1896,12 @@ function NewTradePageContent() {
                       <div
                         className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-2"
                         role="listbox"
-                        aria-activedescendant={`symbol-${selectedSymbol.code}`}
+                        aria-activedescendant={
+                          selectedSymbol ? `symbol-${selectedSymbol.code}` : undefined
+                        }
                       >
                         {availableSymbols.map((symbol) => {
-                          const isActive = symbol.code === selectedSymbol.code;
+                          const isActive = selectedSymbol?.code === symbol.code;
 
                           return (
                             <button
@@ -1792,6 +1936,58 @@ function NewTradePageContent() {
                                   Selected
                                 </span>
                               ) : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                      isOutcomeListOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <div
+                        className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-2"
+                        role="listbox"
+                        aria-activedescendant={tradeOutcome ? `outcome-${tradeOutcome}` : undefined}
+                      >
+                        {tradeOutcomeOptions.map(({ value, label }) => {
+                          const isActive = tradeOutcome === value;
+                          const activeTone =
+                            value === "profit"
+                              ? "bg-[#E6F9EC] text-[#2E7D32]"
+                              : "bg-[#FCE8E8] text-[#C62828]";
+                          const borderColor = value === "profit" ? "#A6E8B0" : "#F5B7B7";
+
+                          return (
+                            <button
+                              key={value}
+                              id={`outcome-${value}`}
+                              type="button"
+                              className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium transition md:text-base ${
+                                isActive
+                                  ? `${activeTone} shadow-[0_16px_32px_rgba(15,23,42,0.08)]`
+                                  : "border-border text-muted-fg hover:bg-subtle hover:text-fg"
+                              }`}
+                              style={isActive ? { borderColor } : undefined}
+                              onClick={() => handleSelectOutcome(value)}
+                              role="option"
+                              aria-selected={isActive}
+                            >
+                              <span className="tracking-[0.18em] uppercase">{label}</span>
+                              {isActive ? (
+                                <CheckCircle
+                                  className={`h-4 w-4 ${
+                                    value === "profit" ? "text-[#2E7D32]" : "text-[#C62828]"
+                                  }`}
+                                  aria-hidden="true"
+                                />
+                              ) : (
+                                <Circle className="h-4 w-4 text-muted-fg" aria-hidden="true" />
+                              )}
                             </button>
                           );
                         })}
@@ -1962,13 +2158,13 @@ function NewTradePageContent() {
                       </div>
                     </div>
 
-                    <p className="mt-2 text-center text-sm text-gray-500">
+                    <p className="mt-2 text-center text-sm text-muted-fg">
                       Duration: {durationLabel}
                     </p>
                   </div>
 
                   <div className="flex flex-col gap-4">
-                    <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
+                    <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
                       General Details
                     </span>
                     <div className="flex flex-col gap-4">
@@ -1998,6 +2194,7 @@ function NewTradePageContent() {
                             setPosition(null);
                           }}
                           className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg focus:outline-none focus:ring-0"
+                          style={position ? undefined : { color: "rgb(var(--muted-fg) / 0.6)" }}
                         >
                           <option value="" disabled hidden>
                             Insert position
@@ -2074,9 +2271,15 @@ function NewTradePageContent() {
                                   const inputId = `${fieldConfig.idPrefix}-input-${columnIndex}`;
                                   const isRemovableColumn =
                                     targetColumnCount > 1 && columnIndex === targetColumnCount - 1;
+                                  const isNewColumn = recentlyAddedColumnIndex === columnIndex;
 
                                   return (
-                                    <div className="group relative" key={inputId}>
+                                    <div
+                                      className={`group relative${
+                                        isNewColumn ? " animate-target-column-enter" : ""
+                                      }`}
+                                      key={inputId}
+                                    >
                                       <input
                                         id={inputId}
                                         type={fieldConfig.type}
@@ -2089,7 +2292,7 @@ function NewTradePageContent() {
                                         <button
                                           type="button"
                                           onClick={handleRemoveTargetColumn}
-                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-[#555555] shadow-sm opacity-0 transition-all duration-200 ease-in-out group-hover:opacity-100 group-hover:scale-110 hover:bg-[#f3f4f6] focus:outline-none focus-visible:opacity-100 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
+                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-border bg-[color:rgb(var(--surface))] text-muted-fg shadow-[0_8px_20px_rgba(15,23,42,0.12)] opacity-0 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-110 group-hover:opacity-100 hover:text-fg focus:outline-none focus-visible:scale-110 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--surface))]"
                                           aria-label={`Rimuovi ultima colonna per ${fieldConfig.label}`}
                                         >
                                           <X aria-hidden="true" className="h-3.5 w-3.5" />
@@ -2102,10 +2305,17 @@ function NewTradePageContent() {
                               <button
                                 type="button"
                                 onClick={handleAddTargetColumn}
-                                className="absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-sm transition hover:bg-[#1d4ed8] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#93c5fd]"
+                                className={`absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[color:rgb(var(--accent))] text-white shadow-[0_12px_28px_rgba(0,122,255,0.35)] transition duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:brightness-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
+                                  isAddButtonAnimating ? "animate-add-button-press" : ""
+                                }`}
                                 aria-label={`Aggiungi colonna per ${fieldConfig.label}`}
                               >
-                                <Plus aria-hidden="true" className="h-4 w-4" />
+                                <Plus
+                                  aria-hidden="true"
+                                  className={`h-4 w-4 ${
+                                    isAddButtonAnimating ? "animate-add-icon-bounce" : ""
+                                  }`}
+                                />
                               </button>
                             </div>
                           </div>
@@ -2114,10 +2324,10 @@ function NewTradePageContent() {
 
                     </div>
 
-                    <div className="my-6 border-t border-gray-200" />
+                    <div className="my-6 border-t border-border" />
 
                     <div className="flex flex-col gap-4">
-                      <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-gray-500">
+                      <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
                         Risk Details
                       </span>
                       <div className="grid gap-4 md:grid-cols-2">
@@ -2188,9 +2398,15 @@ function NewTradePageContent() {
                                   const inputId = `${pnlFieldConfig.idPrefix}-input-${columnIndex}`;
                                   const isRemovableColumn =
                                     targetColumnCount > 1 && columnIndex === targetColumnCount - 1;
+                                  const isNewColumn = recentlyAddedColumnIndex === columnIndex;
 
                                   return (
-                                    <div className="group relative" key={inputId}>
+                                    <div
+                                      className={`group relative${
+                                        isNewColumn ? " animate-target-column-enter" : ""
+                                      }`}
+                                      key={inputId}
+                                    >
                                       <input
                                         id={inputId}
                                         type={pnlFieldConfig.type}
@@ -2203,7 +2419,7 @@ function NewTradePageContent() {
                                         <button
                                           type="button"
                                           onClick={handleRemoveTargetColumn}
-                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-[#555555] shadow-sm opacity-0 transition-all duration-200 ease-in-out group-hover:opacity-100 group-hover:scale-110 hover:bg-[#f3f4f6] focus:outline-none focus-visible:opacity-100 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#93c5fd]"
+                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-border bg-[color:rgb(var(--surface))] text-muted-fg shadow-[0_8px_20px_rgba(15,23,42,0.12)] opacity-0 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-110 group-hover:opacity-100 hover:text-fg focus:outline-none focus-visible:scale-110 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--surface))]"
                                           aria-label={`Rimuovi ultima colonna per ${pnlFieldConfig.label}`}
                                         >
                                           <X aria-hidden="true" className="h-3.5 w-3.5" />
@@ -2216,10 +2432,17 @@ function NewTradePageContent() {
                               <button
                                 type="button"
                                 onClick={handleAddTargetColumn}
-                                className="absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-sm transition hover:bg-[#1d4ed8] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#93c5fd]"
+                                className={`absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[color:rgb(var(--accent))] text-white shadow-[0_12px_28px_rgba(0,122,255,0.35)] transition duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:brightness-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
+                                  isAddButtonAnimating ? "animate-add-button-press" : ""
+                                }`}
                                 aria-label={`Aggiungi colonna per ${pnlFieldConfig.label}`}
                               >
-                                <Plus aria-hidden="true" className="h-4 w-4" />
+                                <Plus
+                                  aria-hidden="true"
+                                  className={`h-4 w-4 ${
+                                    isAddButtonAnimating ? "animate-add-icon-bounce" : ""
+                                  }`}
+                                />
                               </button>
                             </div>
                           </div>
@@ -2227,20 +2450,20 @@ function NewTradePageContent() {
                       })()}
                     </div>
 
-                    <div className="border-t border-gray-200 mt-6" />
-                    <span className="text-gray-700 text-sm font-semibold mb-2 mt-6 block">
+                    <div className="mt-6 border-t border-border" />
+                    <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
                       Psychology & Mindset
                     </span>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col gap-4">
                       <StyledSelect
-                        label="Stato mentale prima del trade"
+                        label="Mental state before the trade"
                         value={preTradeMentalState ?? ""}
                         onChange={(nextValue) =>
                           setPreTradeMentalState(
                             !nextValue || nextValue === "Insert" ? null : nextValue,
                           )
                         }
-                        placeholder="Seleziona opzione"
+                        placeholder="Select option"
                       >
                         <option value="Insert">Insert</option>
                         {preTradeMentalStateOptions.map((option) => (
@@ -2251,14 +2474,14 @@ function NewTradePageContent() {
                       </StyledSelect>
 
                       <StyledSelect
-                        label="Emozioni durante il trade"
+                        label="Emotions during the trade"
                         value={emotionsDuringTrade ?? ""}
                         onChange={(nextValue) =>
                           setEmotionsDuringTrade(
                             !nextValue || nextValue === "Insert" ? null : nextValue,
                           )
                         }
-                        placeholder="Seleziona opzione"
+                        placeholder="Select option"
                       >
                         <option value="Insert">Insert</option>
                         {emotionsDuringTradeOptions.map((option) => (
@@ -2269,14 +2492,14 @@ function NewTradePageContent() {
                       </StyledSelect>
 
                       <StyledSelect
-                        label="Emozioni dopo il trade"
+                        label="Emotions after the trade"
                         value={emotionsAfterTrade ?? ""}
                         onChange={(nextValue) =>
                           setEmotionsAfterTrade(
                             !nextValue || nextValue === "Insert" ? null : nextValue,
                           )
                         }
-                        placeholder="Seleziona opzione"
+                        placeholder="Select option"
                       >
                         <option value="Insert">Insert</option>
                         {emotionsAfterTradeOptions.map((option) => (
@@ -2286,12 +2509,12 @@ function NewTradePageContent() {
                         ))}
                       </StyledSelect>
 
-                      <div className="mb-4">
+                      <div className="flex flex-col gap-2">
                         <label
                           htmlFor="confidence-level-input"
-                          className="text-gray-600 text-xs font-medium mb-1 block"
+                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                         >
-                          Livello di fiducia (1–10)
+                          Confidence level (1–10)
                         </label>
                         <input
                           id="confidence-level-input"
@@ -2317,20 +2540,20 @@ function NewTradePageContent() {
                             const clampedValue = Math.min(10, Math.max(1, numericValue));
                             setConfidenceLevel(String(clampedValue));
                           }}
-                          placeholder="Seleziona livello"
-                          className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 text-sm placeholder-gray-400 p-2 focus:outline-none focus:ring-0"
+                          placeholder="Insert"
+                          className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                         />
                       </div>
 
                       <StyledSelect
-                        label="Trigger emotivi"
+                        label="Emotional triggers"
                         value={emotionalTrigger ?? ""}
                         onChange={(nextValue) =>
                           setEmotionalTrigger(
                             !nextValue || nextValue === "Insert" ? null : nextValue,
                           )
                         }
-                        placeholder="Seleziona opzione"
+                        placeholder="Select option"
                       >
                         <option value="Insert">Insert</option>
                         {emotionalTriggerOptions.map((option) => (
@@ -2348,7 +2571,7 @@ function NewTradePageContent() {
                             !nextValue || nextValue === "Insert" ? null : nextValue,
                           )
                         }
-                        placeholder="Seleziona risposta"
+                        placeholder="Select option"
                       >
                         <option value="Insert">Insert</option>
                         {followedPlanOptions.map((option) => (
@@ -2377,7 +2600,7 @@ function NewTradePageContent() {
                           setRespectedRiskChoice(null);
                           setRespectedRiskSelection(nextValue === "Insert" ? "Insert" : "");
                         }}
-                        placeholder="Seleziona risposta"
+                        placeholder="Select option"
                       >
                         <option value="Insert">Insert</option>
                         <option value="true">Sì</option>
@@ -2415,7 +2638,7 @@ function NewTradePageContent() {
                           setWouldRepeatTrade(null);
                           setRepeatTradeSelection("");
                         }}
-                        placeholder="Seleziona risposta"
+                        placeholder="Select option"
                       >
                         <option value="Insert">Insert</option>
                         <option value="true">Sì</option>
@@ -2472,8 +2695,9 @@ function NewTradePageContent() {
 
     const payload: TradePayload = {
       id: editingTradeId ?? undefined,
-      symbolCode: selectedSymbol.code,
+      symbolCode: selectedSymbol?.code ?? "",
       isPaperTrade: !isRealTrade,
+      tradeOutcome,
       date: selectedDate.toISOString(),
       openTime: openTime ? openTime.toISOString() : null,
       closeTime: closeTime ? closeTime.toISOString() : null,
@@ -2560,7 +2784,8 @@ function NewTradePageContent() {
     riskRewardTargets,
     router,
     selectedDate,
-    selectedSymbol.code,
+    selectedSymbol?.code,
+    tradeOutcome,
     startNavigation,
     stopLoss,
     takeProfitTargets,
@@ -2572,15 +2797,15 @@ function NewTradePageContent() {
 
   return (
     <section
-      className="relative flex min-h-dvh flex-col gap-12 bg-bg px-4 pb-16 text-fg sm:px-6 md:px-10"
+      className="page-shell relative flex min-h-dvh flex-col gap-12 pb-20 pt-24 text-fg sm:pt-28"
       style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
     >
-      <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 sm:max-w-4xl">
+      <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="h-11 w-11 flex-none rounded-full bg-white p-0 text-lg text-[#555555] hover:bg-white hover:text-[#333333]"
+          className="h-12 w-12 flex-none rounded-full border border-border bg-[color:rgb(var(--surface)/0.92)] p-0 text-lg text-muted-fg backdrop-blur hover:text-fg"
           onClick={() => {
             startNavigation(() => {
               router.push("/");
@@ -2595,7 +2820,7 @@ function NewTradePageContent() {
           type="button"
           variant="primary"
           size="md"
-          className="ml-auto min-w-[140px]"
+          className="ml-auto min-w-[148px]"
           onClick={handleSaveTrade}
           disabled={isSaving || isLoadingTrade}
         >
@@ -2603,40 +2828,41 @@ function NewTradePageContent() {
         </Button>
       </div>
 
-      <div className="flex w-full flex-1 flex-col gap-12">
-        <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
+      <div className="flex w-full flex-1 flex-col gap-14">
+        <div className="mx-auto w-full max-w-4xl">
           <div className="flex w-full flex-col gap-8">
-            <header className="space-y-2">
-              <p className="text-sm text-muted-fg">Trading Journal</p>
+            <header className="section-heading items-start text-left">
+              <p>Trading Journal</p>
               <h1 className="text-4xl font-semibold tracking-tight text-fg md:text-5xl">
                 Register a trade
               </h1>
             </header>
 
-            <nav className="flex w-full flex-wrap items-center justify-center gap-2 px-1 py-2 text-sm text-muted-fg">
-              {[
-                { label: "Main Data", value: "main" as const },
-                { label: "Library", value: "library" as const },
-              ].map(({ label, value }) => {
-                const isActive = activeTab === value;
+            <nav className="mt-12 flex w-full items-center justify-center">
+              <div className="flex items-center gap-4 text-sm font-medium text-muted-fg">
+                {[
+                  { label: "Main Data", value: "main" as const },
+                  { label: "Library", value: "library" as const },
+                ].map(({ label, value }) => {
+                  const isActive = activeTab === value;
 
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    className={`rounded-full border px-4 py-2 transition ${
-                      isActive
-                        ? "border-border bg-surface text-fg"
-                        : "border-transparent text-muted-fg hover:border-border hover:text-fg"
-                    }`}
-                    aria-pressed={isActive}
-                    onClick={() => setActiveTab(value)}
-                    disabled={isActive}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      className={`relative rounded-full px-5 py-2 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] ${
+                        isActive
+                          ? "bg-[color:rgb(var(--surface))] text-fg shadow-[0_16px_32px_rgba(15,23,42,0.12)]"
+                          : "text-muted-fg hover:text-fg"
+                      }`}
+                      aria-pressed={isActive}
+                      onClick={() => setActiveTab(value)}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </nav>
           </div>
         </div>
