@@ -1723,49 +1723,47 @@ function NewTradePageContent() {
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap items-start gap-4">
-                    <div className="flex flex-col gap-3">
+                  <div className="flex w-full justify-center">
+                    <div className="flex flex-col items-center gap-3">
                       <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
-                      <div className="flex flex-wrap justify-center gap-6">
+                      <div className="flex w-full flex-wrap justify-center gap-6">
                         <button
                           type="button"
                           onClick={() => {
                             setIsSymbolListOpen((prev) => !prev);
                             setIsOutcomeListOpen(false);
                           }}
-                          className="group flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
+                          className="group flex h-32 w-full max-w-[20rem] flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
                           aria-haspopup="listbox"
                           aria-expanded={isSymbolListOpen}
                         >
                           {selectedSymbol ? (
-                            <>
+                            <div className="flex w-full items-center justify-center gap-3 text-fg transition-colors transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
                               <span
-                                className="text-2xl text-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                                className="text-2xl transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
                                 aria-hidden="true"
                               >
                                 {selectedSymbol.flag}
                               </span>
-                              <div className="flex items-center justify-center gap-2 text-fg transition-colors transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
-                                <span className="text-lg font-semibold tracking-[0.2em] leading-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-xl">
-                                  {selectedSymbol.code}
-                                </span>
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="1.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  className={`h-4 w-4 text-muted-fg opacity-100 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-80 ${
-                                    isSymbolListOpen ? "rotate-180" : ""
-                                  }`}
-                                  aria-hidden="true"
-                                >
-                                  <path d="m6 9 6 6 6-6" />
-                                </svg>
-                              </div>
-                            </>
+                              <span className="text-lg font-semibold tracking-[0.2em] leading-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-xl">
+                                {selectedSymbol.code}
+                              </span>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className={`h-4 w-4 text-muted-fg opacity-100 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-80 ${
+                                  isSymbolListOpen ? "rotate-180" : ""
+                                }`}
+                                aria-hidden="true"
+                              >
+                                <path d="m6 9 6 6 6-6" />
+                              </svg>
+                            </div>
                           ) : (
                             <div className="flex flex-col items-center justify-center gap-3 text-center text-[color:rgb(var(--muted-fg)/0.6)]">
                               <div className="flex items-center justify-center gap-2 animate-soft-fade text-xs font-medium tracking-[0.18em] transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-sm">
@@ -1795,7 +1793,7 @@ function NewTradePageContent() {
                             setIsOutcomeListOpen((prev) => !prev);
                             setIsSymbolListOpen(false);
                           }}
-                          className={`group flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
+                          className={`group flex h-32 w-full max-w-[20rem] flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
                             tradeOutcome === "profit"
                               ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
                               : tradeOutcome === "loss"
@@ -1862,7 +1860,7 @@ function NewTradePageContent() {
                             setIsSymbolListOpen(false);
                             setIsOutcomeListOpen(false);
                           }}
-                          className={`group flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
+                          className={`group flex h-32 w-full max-w-[20rem] flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
                             isRealTrade
                               ? "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
                               : "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"

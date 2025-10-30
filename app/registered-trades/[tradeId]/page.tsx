@@ -1049,15 +1049,15 @@ export default function RegisteredTradePage() {
                 </p>
               </div>
 
-                <div className="flex flex-wrap items-start gap-4">
-                  <div className="flex flex-col gap-3">
+                <div className="flex w-full justify-center">
+                  <div className="flex flex-col items-center gap-3">
                     <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Symbol</span>
-                    <div className="flex flex-wrap justify-center gap-6">
-                      <div className="flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)]">
-                        <span className="text-2xl" aria-hidden="true">
-                          {activeSymbol.flag}
-                        </span>
-                        <div className="flex items-center justify-center gap-2 text-fg">
+                    <div className="flex w-full flex-wrap justify-center gap-6">
+                      <div className="flex h-32 w-full max-w-[20rem] flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)]">
+                        <div className="flex w-full items-center justify-center gap-3 text-fg">
+                          <span className="text-2xl" aria-hidden="true">
+                            {activeSymbol.flag}
+                          </span>
                           <span className="text-lg font-semibold tracking-[0.2em] md:text-xl">
                             {activeSymbol.code}
                           </span>
@@ -1065,7 +1065,7 @@ export default function RegisteredTradePage() {
                       </div>
 
                       <div
-                        className={`flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] ${
+                        className={`flex h-32 w-full max-w-[20rem] flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] ${
                           state.trade.tradeOutcome === "profit"
                             ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32]"
                             : state.trade.tradeOutcome === "loss"
@@ -1089,7 +1089,7 @@ export default function RegisteredTradePage() {
                       </div>
 
                       <div
-                        className={`flex h-32 w-[12.5rem] flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                        className={`flex h-32 w-full max-w-[20rem] flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                           state.trade.isPaperTrade
                             ? "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280]"
                             : "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED]"
