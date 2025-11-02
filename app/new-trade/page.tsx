@@ -2652,16 +2652,20 @@ function NewTradePageContent() {
             </div>
           </div>
         ) : (
-          <LibrarySection
-            preview={libraryPreview}
-            notes={libraryNotesField}
-            actions={libraryCards}
-            selectedActionId={selectedLibraryItemId}
-            onSelectAction={setSelectedLibraryItemId}
-            onAddAction={handleAddLibraryItem}
-            onRemoveAction={handleRemoveLibraryItem}
-            errorMessage={imageError}
-          />
+          <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
+            <div className="flex w-full flex-col gap-8">
+              <LibrarySection
+                preview={libraryPreview}
+                notes={libraryNotesField}
+                actions={libraryCards}
+                selectedActionId={selectedLibraryItemId}
+                onSelectAction={setSelectedLibraryItemId}
+                onAddAction={handleAddLibraryItem}
+                onRemoveAction={handleRemoveLibraryItem}
+                errorMessage={imageError}
+              />
+            </div>
+          </div>
         );
 
   const handleSaveTrade = useCallback(async () => {

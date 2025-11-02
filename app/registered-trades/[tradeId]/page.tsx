@@ -1318,14 +1318,18 @@ export default function RegisteredTradePage() {
           </div>
             </div>
           ) : (
-            <LibrarySection
-              preview={libraryPreview}
-              notes={libraryNotesField}
-              actions={libraryCards}
-              selectedActionId={selectedLibraryItemId}
-              onSelectAction={setSelectedLibraryItemId}
-              footer={libraryFooter}
-            />
+            <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
+              <div className="flex w-full flex-col gap-8">
+                <LibrarySection
+                  preview={libraryPreview}
+                  notes={libraryNotesField}
+                  actions={libraryCards}
+                  selectedActionId={selectedLibraryItemId}
+                  onSelectAction={setSelectedLibraryItemId}
+                  footer={libraryFooter}
+                />
+              </div>
+            </div>
           )}
         </div>
       </div>
