@@ -126,8 +126,8 @@ export function LibrarySection({
 
   return (
     <div className="flex w-full flex-col gap-12">
-      <div className="w-full rounded-[40px] border border-[#E6E6E6] bg-white px-6 py-12 text-center shadow-[0_32px_80px_-60px_rgba(15,23,42,0.25)]">
-        <div className="mx-auto flex w-full max-w-[1180px] flex-col items-center gap-10 lg:items-stretch">
+      <div className="w-full rounded-[40px] border border-[#E6E6E6] bg-white px-4 py-12 text-center shadow-[0_32px_80px_-60px_rgba(15,23,42,0.25)] sm:px-6 lg:px-10">
+        <div className="flex w-full flex-col items-center gap-10 lg:items-stretch">
           {shouldRenderHeader ? (
             <header className="space-y-1">
               {titleText ? (
@@ -143,7 +143,7 @@ export function LibrarySection({
             </div>
 
             <div
-              className="box-border flex w-full min-w-0 flex-col lg:row-span-2 lg:h-full lg:max-w-[344px]"
+              className="box-border flex w-full min-w-0 flex-col lg:row-span-2 lg:h-full"
               style={carouselHeightStyle}
             >
               <div className="flex-1 min-h-0">
@@ -165,8 +165,8 @@ export function LibrarySection({
       </div>
 
       {errorMessage ? (
-        <div className="w-full px-6">
-          <p className="mx-auto w-full max-w-[1180px] rounded-2xl bg-red-50 px-4 py-3 text-xs font-medium text-red-600">
+        <div className="w-full px-4 sm:px-6 lg:px-10">
+          <p className="w-full rounded-2xl bg-red-50 px-4 py-3 text-xs font-medium text-red-600">
             {errorMessage}
           </p>
         </div>
