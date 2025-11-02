@@ -125,48 +125,50 @@ export function LibrarySection({
   const shouldRenderHeader = titleText.length > 0 || subtitleText.length > 0;
 
   return (
-    <div className="flex flex-col gap-12">
-      <div className="w-full rounded-[40px] border border-[#E6E6E6] bg-white px-6 py-12 text-center shadow-[0_32px_80px_-60px_rgba(15,23,42,0.25)]">
-        <div className="flex w-full flex-col items-center gap-10 lg:items-stretch">
-          {shouldRenderHeader ? (
-            <header className="space-y-1">
-              {titleText ? (
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-fg">{titleText}</p>
-              ) : null}
-              {subtitleText ? <p className="text-sm text-muted-fg">{subtitleText}</p> : null}
-            </header>
-          ) : null}
+    <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
+      <div className="flex w-full flex-col gap-8">
+        <div className="w-full surface-panel px-5 py-6 text-center md:px-6 md:py-8">
+          <div className="flex w-full flex-col items-center gap-10 lg:items-stretch">
+            {shouldRenderHeader ? (
+              <header className="space-y-1">
+                {titleText ? (
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-fg">{titleText}</p>
+                ) : null}
+                {subtitleText ? <p className="text-sm text-muted-fg">{subtitleText}</p> : null}
+              </header>
+            ) : null}
 
-          <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,7.1fr)_minmax(0,2.2fr)] lg:grid-rows-[minmax(0,1fr)_auto] lg:items-start xl:gap-6">
-            <div ref={previewWrapperRef} className="w-full lg:row-span-2">
-              {preview}
-            </div>
-
-            <div
-              className="box-border flex w-full min-w-0 flex-col lg:row-span-2 lg:h-full lg:max-w-[344px]"
-              style={carouselHeightStyle}
-            >
-              <div className="flex-1 min-h-0">
-                <LibraryCarousel
-                  items={actions}
-                  selectedId={selectedActionId}
-                  onSelectItem={onSelectAction}
-                  onAddItem={onAddAction}
-                  onRemoveItem={onRemoveAction}
-                />
+            <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,7.1fr)_minmax(0,2.2fr)] lg:grid-rows-[minmax(0,1fr)_auto] lg:items-start xl:gap-6">
+              <div ref={previewWrapperRef} className="w-full lg:row-span-2">
+                {preview}
               </div>
 
-              {notes ? <div className="mt-4 w-full">{notes}</div> : null}
+              <div
+                className="box-border flex w-full min-w-0 flex-col lg:row-span-2 lg:h-full lg:max-w-[344px]"
+                style={carouselHeightStyle}
+              >
+                <div className="flex-1 min-h-0">
+                  <LibraryCarousel
+                    items={actions}
+                    selectedId={selectedActionId}
+                    onSelectItem={onSelectAction}
+                    onAddItem={onAddAction}
+                    onRemoveItem={onRemoveAction}
+                  />
+                </div>
+
+                {notes ? <div className="mt-4 w-full">{notes}</div> : null}
+              </div>
             </div>
+
+            {footer ? <div className="w-full text-left text-xs text-muted-fg">{footer}</div> : null}
           </div>
-
-          {footer ? <div className="w-full text-left text-xs text-muted-fg">{footer}</div> : null}
         </div>
-      </div>
 
-      {errorMessage ? (
-        <p className="rounded-2xl bg-red-50 px-4 py-3 text-xs font-medium text-red-600">{errorMessage}</p>
-      ) : null}
+        {errorMessage ? (
+          <p className="rounded-2xl bg-red-50 px-4 py-3 text-xs font-medium text-red-600">{errorMessage}</p>
+        ) : null}
+      </div>
     </div>
   );
 }
