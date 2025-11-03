@@ -125,7 +125,7 @@ export function LibrarySection({
   const shouldRenderHeader = titleText.length > 0 || subtitleText.length > 0;
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6 sm:max-w-5xl sm:space-y-8 lg:max-w-[1240px] xl:max-w-[1500px]">
+    <div className="mx-auto w-full max-w-5xl space-y-6 sm:max-w-6xl sm:space-y-8 lg:max-w-[1440px] xl:max-w-[1760px] 2xl:max-w-[1920px]">
       <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
         <div className="flex w-full flex-col gap-8">
           {shouldRenderHeader ? (
@@ -165,7 +165,7 @@ export function LibrarySection({
       </div>
 
       {errorMessage ? (
-        <p className="mx-auto w-full max-w-3xl rounded-2xl bg-red-50 px-4 py-3 text-xs font-medium text-red-600 sm:max-w-4xl">
+        <p className="mx-auto w-full max-w-5xl rounded-2xl bg-red-50 px-4 py-3 text-xs font-medium text-red-600 sm:max-w-6xl lg:max-w-[1440px] xl:max-w-[1760px] 2xl:max-w-[1920px]">
           {errorMessage}
         </p>
       ) : null}
