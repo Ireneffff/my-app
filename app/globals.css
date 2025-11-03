@@ -143,6 +143,10 @@ main {
   padding-inline: clamp(1.5rem, 3vw, 2.75rem);
 }
 
+.page-shell--wide {
+  width: min(100%, 1760px);
+}
+
 .page-section {
   display: flex;
   flex-direction: column;
