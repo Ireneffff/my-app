@@ -1669,7 +1669,7 @@ function NewTradePageContent() {
   const tabContent =
     activeTab === "main"
       ? (
-          <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
+          <div className="mx-auto w-full max-w-3xl sm:max-w-[90rem]">
             <div className="flex w-full flex-col gap-8">
               <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
                 <div className="flex flex-col gap-6">
@@ -2800,7 +2800,7 @@ function NewTradePageContent() {
       className="page-shell relative flex min-h-dvh flex-col gap-12 pb-20 pt-24 text-fg sm:pt-28"
       style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
     >
-      <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
+      <div className="mx-auto flex w-full max-w-[90rem] items-center justify-between gap-4">
         <Button
           type="button"
           variant="ghost"
@@ -2829,7 +2829,7 @@ function NewTradePageContent() {
       </div>
 
       <div className="flex w-full flex-1 flex-col gap-14">
-        <div className="mx-auto w-full max-w-4xl">
+        <div className="mx-auto w-full max-w-[90rem]">
           <div className="flex w-full flex-col gap-8">
             <header className="section-heading items-start text-left">
               <p>Trading Journal</p>
