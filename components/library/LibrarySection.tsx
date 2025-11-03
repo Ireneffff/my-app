@@ -125,7 +125,7 @@ export function LibrarySection({
   const shouldRenderHeader = titleText.length > 0 || subtitleText.length > 0;
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6 sm:max-w-4xl sm:space-y-8 lg:max-w-5xl xl:max-w-6xl">
+    <div className="mx-auto w-full max-w-4xl space-y-6 sm:max-w-5xl sm:space-y-8 lg:max-w-[1240px] xl:max-w-[1500px]">
       <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
         <div className="flex w-full flex-col gap-8">
           {shouldRenderHeader ? (
@@ -138,12 +138,12 @@ export function LibrarySection({
           ) : null}
 
           <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,8fr)_minmax(0,2.8fr)] lg:grid-rows-[minmax(0,1fr)_auto] lg:items-start xl:grid-cols-[minmax(0,8.6fr)_minmax(0,3.4fr)]">
-            <div ref={previewWrapperRef} className="w-full lg:row-span-2 lg:max-w-[1080px]">
+            <div ref={previewWrapperRef} className="w-full lg:row-span-2">
               {preview}
             </div>
 
             <div
-              className="box-border flex w-full min-w-0 flex-col lg:row-span-2 lg:h-full lg:max-w-[392px] xl:max-w-[448px]"
+              className="box-border flex w-full min-w-0 flex-col lg:row-span-2 lg:h-full"
               style={carouselHeightStyle}
             >
               <div className="flex-1 min-h-0">
