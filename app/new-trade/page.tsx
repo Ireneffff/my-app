@@ -1593,7 +1593,7 @@ function NewTradePageContent() {
       >
         <div
           ref={previewContainerRef}
-          className="w-full lg:max-w-[960px]"
+          className="w-full"
           onWheel={handlePreviewWheel}
           onTouchStart={handlePreviewTouchStart}
           onTouchMove={handlePreviewTouchMove}
