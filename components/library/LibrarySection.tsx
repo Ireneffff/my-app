@@ -126,7 +126,7 @@ export function LibrarySection({
 
   return (
     <div className="flex w-full flex-col gap-12">
-      <div className="w-full max-w-[90%] mx-auto rounded-[40px] border border-[#E6E6E6] bg-white px-8 py-12 text-center shadow-[0_32px_80px_-60px_rgba(15,23,42,0.25)] md:px-12 lg:px-16">
+      <div className="w-full max-w-[96%] mx-auto rounded-[40px] border border-[#E6E6E6] bg-white px-6 py-12 text-center shadow-[0_32px_80px_-60px_rgba(15,23,42,0.25)] md:px-8 lg:px-10">
         <div className="flex w-full flex-col items-center gap-10 lg:items-stretch">
           {shouldRenderHeader ? (
             <header className="space-y-1">
