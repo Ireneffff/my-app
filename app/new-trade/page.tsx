@@ -2829,7 +2829,7 @@ function NewTradePageContent() {
       </div>
 
       <div className="flex w-full flex-1 flex-col gap-14">
-        <div className="mx-auto w-full max-w-[90rem]">
+        <div className="mx-auto w-full px-8 md:px-10">
           <div className="flex w-full flex-col gap-8">
             <header className="section-heading items-start text-left">
               <p>Trading Journal</p>
