@@ -18,6 +18,7 @@ import {
 } from "react";
 import { Circle, CheckCircle, Plus, X } from "lucide-react";
 import Button from "@/components/ui/Button";
+import { cn } from "@/lib/utils";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
 import { StyledSelect } from "@/components/StyledSelect";
