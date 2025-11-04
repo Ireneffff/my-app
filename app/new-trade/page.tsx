@@ -1515,6 +1515,29 @@ function NewTradePageContent() {
     setRecentlyAddedLibraryItemId((prev) => (prev === itemId ? null : prev));
   }, []);
 
+  const handleMoveLibraryItem = useCallback((itemId: string, direction: "up" | "down") => {
+    setLibraryItems((prev) => {
+      if (prev.length <= 1) {
+        return prev;
+      }
+
+      const currentIndex = prev.findIndex((item) => item.id === itemId);
+      if (currentIndex === -1) {
+        return prev;
+      }
+
+      const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+      if (targetIndex < 0 || targetIndex >= prev.length) {
+        return prev;
+      }
+
+      const nextItems = prev.slice();
+      const [movedItem] = nextItems.splice(currentIndex, 1);
+      nextItems.splice(targetIndex, 0, movedItem);
+      return nextItems;
+    });
+  }, []);
+
   const handleUpdateLibraryNote = useCallback((itemId: string, nextNote: string) => {
     setLibraryItems((prev) =>
       prev.map((item) => (item.id === itemId ? { ...item, notes: nextNote } : item)),
@@ -2660,6 +2683,7 @@ function NewTradePageContent() {
             onSelectAction={setSelectedLibraryItemId}
             onAddAction={handleAddLibraryItem}
             onRemoveAction={handleRemoveLibraryItem}
+            onMoveAction={handleMoveLibraryItem}
             errorMessage={imageError}
           />
         );

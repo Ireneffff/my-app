@@ -8,12 +8,15 @@ export interface LibraryCarouselItem extends LibraryCardProps {
   id: string;
 }
 
+type MoveDirection = "up" | "down";
+
 interface LibraryCarouselProps {
   items: LibraryCarouselItem[];
   selectedId?: string;
   onSelectItem?: (itemId: string) => void;
   onAddItem?: () => void;
   onRemoveItem?: (itemId: string) => void;
+  onMoveItem?: (itemId: string, direction: MoveDirection) => void;
 }
 
 export function LibraryCarousel({
@@ -22,6 +25,7 @@ export function LibraryCarousel({
   onSelectItem,
   onAddItem,
   onRemoveItem,
+  onMoveItem,
 }: LibraryCarouselProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const hasItems = items.length > 0;
@@ -59,16 +63,58 @@ export function LibraryCarousel({
     >
       <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto scroll-smooth snap-y snap-mandatory py-3 scroll-py-6">
         {hasItems ? (
-          items.map((item) => {
+          items.map((item, index) => {
             const isActive = item.id === activeItemId;
             const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
             const combinedClassName = itemClassName
               ? `${itemClassName} w-full max-w-[calc(100%-1rem)]`
               : "w-full max-w-[calc(100%-1rem)]";
             const shouldDim = hasItems && !isActive;
+            const showReorderControls = Boolean(onMoveItem) && items.length > 1;
+            const canMoveUp = index > 0;
+            const canMoveDown = index < items.length - 1;
 
             return (
-              <div key={item.id} className="relative flex snap-start justify-center">
+              <div key={item.id} className="group relative flex snap-start justify-center">
+                {showReorderControls ? (
+                  <div
+                    className="absolute left-4 top-4 z-40 flex flex-col gap-2 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 pointer-events-auto sm:pointer-events-none sm:group-hover:pointer-events-auto sm:group-focus-within:pointer-events-auto"
+                  >
+                    <button
+                      type="button"
+                      aria-label={`Sposta in alto ${item.label}`}
+                      disabled={!canMoveUp}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        if (!canMoveUp) {
+                          return;
+                        }
+                        onMoveItem?.(item.id, "up");
+                      }}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-white/95 text-neutral-500 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] transition-colors hover:text-neutral-900 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ArrowUpIcon />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Sposta in basso ${item.label}`}
+                      disabled={!canMoveDown}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        if (!canMoveDown) {
+                          return;
+                        }
+                        onMoveItem?.(item.id, "down");
+                      }}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-white/95 text-neutral-500 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] transition-colors hover:text-neutral-900 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ArrowDownIcon />
+                    </button>
+                  </div>
+                ) : null}
+
                 {onRemoveItem ? (
                   <button
                     type="button"
@@ -166,6 +212,44 @@ function CloseIcon() {
     >
       <path d="m16.5 7.5-9 9" />
       <path d="m7.5 7.5 9 9" />
+    </svg>
+  );
+}
+
+function ArrowUpIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M12 19V5" />
+      <path d="m6 11 6-6 6 6" />
+    </svg>
+  );
+}
+
+function ArrowDownIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M12 5v14" />
+      <path d="m18 13-6 6-6-6" />
     </svg>
   );
 }

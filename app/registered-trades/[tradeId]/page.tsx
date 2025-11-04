@@ -120,6 +120,16 @@ const LIBRARY_NAVIGATION_SWIPE_DISTANCE_PX = 40;
 const LIBRARY_NAVIGATION_SWIPE_DURATION_MS = 600;
 const LIBRARY_NAVIGATION_SCROLL_LOCK_DURATION_MS = 400;
 
+function createFallbackLibraryItem(): StoredLibraryItem {
+  return {
+    id: "snapshot",
+    imageData: null,
+    notes: "",
+    createdAt: null,
+    persisted: false,
+  } satisfies StoredLibraryItem;
+}
+
 export default function RegisteredTradePage() {
   const params = useParams<{ tradeId: string }>();
   const router = useRouter();
@@ -132,6 +142,9 @@ export default function RegisteredTradePage() {
 
   const [state, setState] = useState<TradeState>({ status: "loading", trade: null });
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
+  const [libraryItems, setLibraryItems] = useState<StoredLibraryItem[]>(() => [
+    createFallbackLibraryItem(),
+  ]);
   const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>("snapshot");
   const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const previewSwipeStateRef = useRef<{
@@ -403,16 +416,10 @@ export default function RegisteredTradePage() {
     return calculateDuration(openTimeValue, closeTimeValue);
   }, [openTimeValue, closeTimeValue]);
 
-  const libraryItems = useMemo<StoredLibraryItem[]>(() => {
+  useEffect(() => {
     if (!state.trade) {
-      return [
-        {
-          id: "snapshot",
-          imageData: null,
-          notes: "",
-          createdAt: null,
-        },
-      ];
+      setLibraryItems([createFallbackLibraryItem()]);
+      return;
     }
 
     const hydrated = Array.isArray(state.trade.libraryItems)
@@ -428,17 +435,11 @@ export default function RegisteredTradePage() {
       : [];
 
     if (hydrated.length > 0) {
-      return hydrated;
+      setLibraryItems(hydrated);
+      return;
     }
 
-    return [
-      {
-        id: "snapshot",
-        imageData: null,
-        notes: "",
-        createdAt: null,
-      },
-    ];
+    setLibraryItems([createFallbackLibraryItem()]);
   }, [state.trade]);
 
   useEffect(() => {
@@ -454,6 +455,29 @@ export default function RegisteredTradePage() {
       return libraryItems[0].id;
     });
   }, [libraryItems]);
+
+  const handleMoveLibraryItem = useCallback((itemId: string, direction: "up" | "down") => {
+    setLibraryItems((prev) => {
+      if (prev.length <= 1) {
+        return prev;
+      }
+
+      const currentIndex = prev.findIndex((item) => item.id === itemId);
+      if (currentIndex === -1) {
+        return prev;
+      }
+
+      const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+      if (targetIndex < 0 || targetIndex >= prev.length) {
+        return prev;
+      }
+
+      const nextItems = prev.slice();
+      const [movedItem] = nextItems.splice(currentIndex, 1);
+      nextItems.splice(targetIndex, 0, movedItem);
+      return nextItems;
+    });
+  }, []);
 
   const selectedLibraryItem = useMemo(
     () =>
@@ -1334,6 +1358,7 @@ export default function RegisteredTradePage() {
               actions={libraryCards}
               selectedActionId={selectedLibraryItemId}
               onSelectAction={setSelectedLibraryItemId}
+              onMoveAction={handleMoveLibraryItem}
               footer={libraryFooter}
             />
           )}
