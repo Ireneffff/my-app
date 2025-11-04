@@ -700,35 +700,45 @@ export default function RegisteredTradePage() {
 
   const primaryPreviewContent = (
     <div
-      ref={previewContainerRef}
-      className="w-full"
-      onWheel={handlePreviewWheel}
-      onTouchStart={handlePreviewTouchStart}
-      onTouchMove={handlePreviewTouchMove}
-      onTouchEnd={handlePreviewTouchEnd}
-      onTouchCancel={handlePreviewTouchCancel}
+      data-library-preview-stack
+      className="flex w-full flex-col"
+      style={{ gap: "0.5cm" }}
     >
-      {selectedImageData ? (
-        <span className="relative block aspect-[16/9] w-full">
-          <Image
-            src={selectedImageData}
-            alt="Trade context attachment"
-            fill
-            className="h-full w-full object-contain"
-            sizes="100vw"
-            unoptimized
-            priority
-          />
+      <div
+        ref={previewContainerRef}
+        className="w-full lg:max-w-[960px]"
+        onWheel={handlePreviewWheel}
+        onTouchStart={handlePreviewTouchStart}
+        onTouchMove={handlePreviewTouchMove}
+        onTouchEnd={handlePreviewTouchEnd}
+        onTouchCancel={handlePreviewTouchCancel}
+      >
+        <span
+          data-library-preview-image
+          className="relative block aspect-[3/2] w-full overflow-hidden rounded-[4px] border-2"
+          style={{ borderColor: "color-mix(in srgb, rgba(var(--border-strong)) 60%, transparent)" }}
+        >
+          {selectedImageData ? (
+            <Image
+              src={selectedImageData}
+              alt="Trade context attachment"
+              fill
+              className="h-full w-full object-contain"
+              sizes="100vw"
+              unoptimized
+              priority
+            />
+          ) : (
+            <span className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-[color:rgb(var(--surface)/0.94)] to-[color:rgb(var(--surface)/0.78)] text-muted-fg">
+              <EmptyLibraryIcon />
+              <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Nessuna anteprima</span>
+              <span className="max-w-[28ch] text-center text-xs text-muted-fg/80">
+                Aggiungi immagini alle prossime operazioni per costruire un archivio visivo coerente.
+              </span>
+            </span>
+          )}
         </span>
-      ) : (
-        <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-4 rounded-[28px] bg-gradient-to-b from-[color:rgb(var(--surface)/0.94)] to-[color:rgb(var(--surface)/0.78)] text-muted-fg">
-          <EmptyLibraryIcon />
-          <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Nessuna anteprima</span>
-          <span className="max-w-[28ch] text-center text-xs text-muted-fg/80">
-            Aggiungi immagini alle prossime operazioni per costruire un archivio visivo coerente.
-          </span>
-        </div>
-      )}
+      </div>
     </div>
   );
   const libraryPreview = primaryPreviewContent;
