@@ -76,7 +76,30 @@ export default function Home() {
     month: "long",
     year: "numeric",
   });
-  const totalTrades = trades.length;
+  const orderedTrades = useMemo(() => {
+    const getTimestamp = (trade: StoredTrade) => {
+      const candidates = [trade.date, trade.openTime, trade.closeTime, trade.createdAt];
+
+      for (const candidate of candidates) {
+        if (!candidate) {
+          continue;
+        }
+
+        const parsed = new Date(candidate);
+        const timestamp = parsed.getTime();
+
+        if (!Number.isNaN(timestamp)) {
+          return timestamp;
+        }
+      }
+
+      return 0;
+    };
+
+    return [...trades].sort((a, b) => getTimestamp(b) - getTimestamp(a));
+  }, [trades]);
+
+  const totalTrades = orderedTrades.length;
 
   const outcomeByDay = useMemo(() => {
     const map = new Map<string, "profit" | "loss">();
@@ -217,7 +240,7 @@ export default function Home() {
             Registered Trades
           </h2>
 
-          {trades.length === 0 ? (
+          {orderedTrades.length === 0 ? (
             <p
               className="mt-4 rounded-2xl border border-dashed bg-[color:rgb(var(--surface)/0.75)] px-6 py-8 text-center text-sm text-muted-fg backdrop-blur"
               style={{ borderColor: "color-mix(in srgb, rgba(var(--border)) 60%, transparent)" }}
@@ -226,7 +249,7 @@ export default function Home() {
             </p>
           ) : (
             <ol className="mt-4 space-y-3">
-              {trades.map((trade, index) => {
+              {orderedTrades.map((trade, index) => {
                 const formattedDate = new Date(trade.date).toLocaleDateString(undefined, {
                   day: "2-digit",
                   month: "2-digit",
