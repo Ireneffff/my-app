@@ -39,6 +39,25 @@ function getCalendarDays(activeDate: Date) {
   return days;
 }
 
+function getTradeTimestamp(trade: StoredTrade) {
+  const candidates = [trade.date, trade.openTime, trade.closeTime, trade.createdAt];
+
+  for (const candidate of candidates) {
+    if (!candidate) {
+      continue;
+    }
+
+    const parsed = new Date(candidate);
+    const timestamp = parsed.getTime();
+
+    if (!Number.isNaN(timestamp)) {
+      return timestamp;
+    }
+  }
+
+  return 0;
+}
+
 export default function Home() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [trades, setTrades] = useState<StoredTrade[]>([]);
@@ -76,33 +95,15 @@ export default function Home() {
     month: "long",
     year: "numeric",
   });
-  const orderedTrades = useMemo(() => {
-    const getTimestamp = (trade: StoredTrade) => {
-      const candidates = [trade.date, trade.openTime, trade.closeTime, trade.createdAt];
-
-      for (const candidate of candidates) {
-        if (!candidate) {
-          continue;
-        }
-
-        const parsed = new Date(candidate);
-        const timestamp = parsed.getTime();
-
-        if (!Number.isNaN(timestamp)) {
-          return timestamp;
-        }
-      }
-
-      return 0;
-    };
-
-    return [...trades].sort((a, b) => getTimestamp(b) - getTimestamp(a));
-  }, [trades]);
+  const orderedTrades = useMemo(
+    () => [...trades].sort((a, b) => getTradeTimestamp(b) - getTradeTimestamp(a)),
+    [trades],
+  );
 
   const totalTrades = orderedTrades.length;
 
-  const outcomeByDay = useMemo(() => {
-    const map = new Map<string, "profit" | "loss">();
+  const outcomesByDay = useMemo(() => {
+    const map = new Map<string, { outcome: "profit" | "loss"; timestamp: number }[]>();
 
     for (const trade of trades) {
       if (!trade.tradeOutcome) {
@@ -123,22 +124,26 @@ export default function Home() {
 
       const key = parsed.toDateString();
       const existing = map.get(key);
+      const entry = { outcome: trade.tradeOutcome, timestamp: getTradeTimestamp(trade) };
 
-      if (existing === "loss") {
-        continue;
-      }
-
-      if (trade.tradeOutcome === "loss") {
-        map.set(key, "loss");
-        continue;
-      }
-
-      if (!existing) {
-        map.set(key, "profit");
+      if (existing) {
+        existing.push(entry);
+      } else {
+        map.set(key, [entry]);
       }
     }
 
-    return map;
+    const sorted = new Map<string, ("profit" | "loss")[]>();
+
+    for (const [key, entries] of map.entries()) {
+      entries.sort((a, b) => a.timestamp - b.timestamp);
+      sorted.set(
+        key,
+        entries.map((entry) => entry.outcome),
+      );
+    }
+
+    return sorted;
   }, [trades]);
 
   return (
@@ -198,13 +203,11 @@ export default function Home() {
               const isCurrentMonth =
                 day.getMonth() === activeMonth && day.getFullYear() === activeYear;
               const isToday = day.toDateString() === todayKey;
-              const dayOutcome = outcomeByDay.get(day.toDateString());
-              const outcomeIndicatorClasses =
-                dayOutcome === "profit"
+              const dayOutcomes = outcomesByDay.get(day.toDateString());
+              const getIndicatorClasses = (outcome: "profit" | "loss") =>
+                outcome === "profit"
                   ? "bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.12)]"
-                  : dayOutcome === "loss"
-                    ? "bg-rose-500 shadow-[0_0_0_3px_rgba(244,63,94,0.12)]"
-                    : "";
+                  : "bg-rose-500 shadow-[0_0_0_3px_rgba(244,63,94,0.12)]";
 
               const baseClasses =
                 "flex h-10 flex-col items-center justify-center rounded-full transition";
@@ -221,13 +224,18 @@ export default function Home() {
                   className={[baseClasses, stateClasses, todayClasses, "transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"].join(" ").trim()}
                 >
                   <span>{day.getDate()}</span>
-                  {dayOutcome ? (
-                    <span
-                      className={["mt-0.5 h-2 w-2 rounded-full", outcomeIndicatorClasses]
-                        .join(" ")
-                        .trim()}
-                      aria-hidden="true"
-                    />
+                  {dayOutcomes ? (
+                    <span className="mt-0.5 flex flex-wrap justify-center gap-0.5">
+                      {dayOutcomes.map((outcome, index) => (
+                        <span
+                          key={`${day.toISOString()}-${index}`}
+                          className={["h-2 w-2 rounded-full", getIndicatorClasses(outcome)]
+                            .join(" ")
+                            .trim()}
+                          aria-hidden="true"
+                        />
+                      ))}
+                    </span>
                   ) : null}
                 </div>
               );
