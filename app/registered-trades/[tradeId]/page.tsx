@@ -947,7 +947,7 @@ export default function RegisteredTradePage() {
 
   return (
     <section
-      className="page-shell relative flex min-h-dvh flex-col gap-12 pb-20 pt-24 text-fg sm:pt-28"
+      className="page-shell page-shell--wide relative flex min-h-dvh flex-col gap-12 pb-20 pt-24 text-fg sm:pt-28"
       style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
     >
       <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
