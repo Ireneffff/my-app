@@ -69,6 +69,39 @@ export default function Home() {
   }, [refreshTrades]);
 
   const monthDays = useMemo(() => getCalendarDays(currentDate), [currentDate]);
+  const tradeMarkers = useMemo(() => {
+    const markers = new Map<string, "profit" | "loss">();
+
+    trades.forEach((trade) => {
+      if (!trade.openTime || !trade.tradeOutcome) {
+        return;
+      }
+
+      const openDate = new Date(trade.openTime);
+
+      if (Number.isNaN(openDate.getTime())) {
+        return;
+      }
+
+      const dayKey = openDate.toDateString();
+      const current = markers.get(dayKey);
+
+      if (current === "loss") {
+        return;
+      }
+
+      if (trade.tradeOutcome === "loss") {
+        markers.set(dayKey, "loss");
+        return;
+      }
+
+      if (!current && trade.tradeOutcome === "profit") {
+        markers.set(dayKey, "profit");
+      }
+    });
+
+    return markers;
+  }, [trades]);
   const todayKey = new Date().toDateString();
   const activeMonth = currentDate.getMonth();
   const activeYear = currentDate.getFullYear();
@@ -137,7 +170,7 @@ export default function Home() {
               const isToday = day.toDateString() === todayKey;
 
               const baseClasses =
-                "flex h-10 items-center justify-center rounded-full transition";
+                "relative flex h-10 items-center justify-center rounded-full transition";
               const stateClasses = isCurrentMonth
                 ? "text-fg hover:bg-subtle"
                 : "text-muted-fg opacity-60";
@@ -150,7 +183,27 @@ export default function Home() {
                   key={day.toISOString()}
                   className={[baseClasses, stateClasses, todayClasses, "transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"].join(" ").trim()}
                 >
-                  {day.getDate()}
+                  <span>{day.getDate()}</span>
+                  {(() => {
+                    const marker = tradeMarkers.get(day.toDateString());
+
+                    if (!marker) {
+                      return null;
+                    }
+
+                    const colorClass =
+                      marker === "profit" ? "bg-emerald-500" : "bg-rose-500";
+
+                    return (
+                      <span
+                        className={[
+                          "pointer-events-none absolute bottom-1.5 h-1.5 w-1.5 rounded-full",
+                          colorClass,
+                        ].join(" ")}
+                        aria-hidden="true"
+                      />
+                    );
+                  })()}
                 </div>
               );
             })}
