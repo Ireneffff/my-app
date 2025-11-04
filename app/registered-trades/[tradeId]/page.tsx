@@ -87,7 +87,7 @@ function isSameDay(a: Date, b: Date) {
 
 function formatOptionalText(value?: string | number | boolean | null) {
   if (value === true) {
-    return "Yes";
+    return "Sì";
   }
 
   if (value === false) {
@@ -1288,7 +1288,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Did I follow my plan?
+                      Ho seguito il mio piano?
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{followedPlanValue}</span>
@@ -1297,7 +1297,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Did I respect my planned risk?
+                      Ho rispettato il rischio prefissato?
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{respectedRiskValue}</span>
@@ -1306,7 +1306,7 @@ export default function RegisteredTradePage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Would I take this trade again?
+                      Rifarei questo trade?
                     </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{wouldRepeatTradeValue}</span>
