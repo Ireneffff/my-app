@@ -78,6 +78,46 @@ export default function Home() {
   });
   const totalTrades = trades.length;
 
+  const outcomeByDay = useMemo(() => {
+    const map = new Map<string, "profit" | "loss">();
+
+    for (const trade of trades) {
+      if (!trade.tradeOutcome) {
+        continue;
+      }
+
+      const referenceDate = trade.openTime ?? trade.date;
+
+      if (!referenceDate) {
+        continue;
+      }
+
+      const parsed = new Date(referenceDate);
+
+      if (Number.isNaN(parsed.getTime())) {
+        continue;
+      }
+
+      const key = parsed.toDateString();
+      const existing = map.get(key);
+
+      if (existing === "loss") {
+        continue;
+      }
+
+      if (trade.tradeOutcome === "loss") {
+        map.set(key, "loss");
+        continue;
+      }
+
+      if (!existing) {
+        map.set(key, "profit");
+      }
+    }
+
+    return map;
+  }, [trades]);
+
   return (
     <section className="page-shell flex min-h-dvh flex-col pb-20 pt-28 text-fg sm:pt-32">
       <header className="section-heading min-h-[54vh] flex-1 items-center justify-center sm:min-h-[60vh]">
@@ -135,9 +175,16 @@ export default function Home() {
               const isCurrentMonth =
                 day.getMonth() === activeMonth && day.getFullYear() === activeYear;
               const isToday = day.toDateString() === todayKey;
+              const dayOutcome = outcomeByDay.get(day.toDateString());
+              const outcomeIndicatorClasses =
+                dayOutcome === "profit"
+                  ? "bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.12)]"
+                  : dayOutcome === "loss"
+                    ? "bg-rose-500 shadow-[0_0_0_3px_rgba(244,63,94,0.12)]"
+                    : "";
 
               const baseClasses =
-                "flex h-10 items-center justify-center rounded-full transition";
+                "flex h-10 flex-col items-center justify-center rounded-full transition";
               const stateClasses = isCurrentMonth
                 ? "text-fg hover:bg-subtle"
                 : "text-muted-fg opacity-60";
@@ -150,7 +197,15 @@ export default function Home() {
                   key={day.toISOString()}
                   className={[baseClasses, stateClasses, todayClasses, "transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"].join(" ").trim()}
                 >
-                  {day.getDate()}
+                  <span>{day.getDate()}</span>
+                  {dayOutcome ? (
+                    <span
+                      className={["mt-0.5 h-1.5 w-1.5 rounded-full", outcomeIndicatorClasses]
+                        .join(" ")
+                        .trim()}
+                      aria-hidden="true"
+                    />
+                  ) : null}
                 </div>
               );
             })}
