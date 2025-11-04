@@ -177,6 +177,12 @@ export default function Home() {
                   month: "2-digit",
                   year: "numeric",
                 });
+                const outcomeLabel =
+                  trade.tradeOutcome === "profit"
+                    ? "Profit"
+                    : trade.tradeOutcome === "loss"
+                      ? "Loss"
+                      : null;
 
                 return (
                   <li key={trade.id}>
@@ -197,6 +203,17 @@ export default function Home() {
                           {trade.symbolCode}
                         </span>
                       </div>
+                      {outcomeLabel ? (
+                        <span
+                          className={`flex h-8 items-center rounded-full border px-3 text-[0.65rem] font-semibold uppercase tracking-[0.24em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                            trade.tradeOutcome === "profit"
+                              ? "border-[#A6E8B0]/80 bg-[#E6F9EC]/90 text-[#2E7D32] group-hover:border-[#A6E8B0] group-hover:bg-[#E6F9EC]"
+                              : "border-[#F5B7B7]/80 bg-[#FCE8E8]/90 text-[#C62828] group-hover:border-[#F5B7B7] group-hover:bg-[#FCE8E8]"
+                          }`}
+                        >
+                          {outcomeLabel}
+                        </span>
+                      ) : null}
                       <time className="text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg" dateTime={trade.date}>
                         {formattedDate}
                       </time>
