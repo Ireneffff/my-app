@@ -71,63 +71,68 @@ export function LibraryCarousel({
               : "w-full max-w-[calc(100%-1rem)]";
             const shouldDim = hasItems && !isActive;
             const showReorderControls = Boolean(onMoveItem) && items.length > 1;
+            const showRemoveControl = Boolean(onRemoveItem);
+            const showControls = showReorderControls || showRemoveControl;
             const canMoveUp = index > 0;
             const canMoveDown = index < items.length - 1;
 
             return (
               <div key={item.id} className="group relative flex snap-start justify-center">
-                {showReorderControls ? (
+                {showControls ? (
                   <div
                     className="pointer-events-auto absolute right-4 top-1/2 z-40 flex -translate-y-1/2 flex-col items-center gap-2 opacity-100 transition-opacity sm:pointer-events-none sm:opacity-0 sm:group-hover:pointer-events-auto sm:group-hover:opacity-100 sm:group-focus-within:pointer-events-auto sm:group-focus-within:opacity-100"
                   >
-                    <button
-                      type="button"
-                      aria-label={`Sposta in alto ${item.label}`}
-                      disabled={!canMoveUp}
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        if (!canMoveUp) {
-                          return;
-                        }
-                        onMoveItem?.(item.id, "up");
-                      }}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-[color:rgb(var(--accent)/0.08)] text-accent shadow-[0_22px_48px_-24px_rgba(15,23,42,0.55)] transition-all hover:bg-[color:rgb(var(--accent)/0.12)] focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgb(var(--accent)/0.32)] disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <ArrowUpIcon />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Sposta in basso ${item.label}`}
-                      disabled={!canMoveDown}
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        if (!canMoveDown) {
-                          return;
-                        }
-                        onMoveItem?.(item.id, "down");
-                      }}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-[color:rgb(var(--accent)/0.08)] text-accent shadow-[0_22px_48px_-24px_rgba(15,23,42,0.55)] transition-all hover:bg-[color:rgb(var(--accent)/0.12)] focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgb(var(--accent)/0.32)] disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <ArrowDownIcon />
-                    </button>
+                    {showRemoveControl ? (
+                      <button
+                        type="button"
+                        aria-label={`Rimuovi ${item.label}`}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          onRemoveItem?.(item.id);
+                        }}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/95 text-neutral-500 shadow-[0_22px_48px_-24px_rgba(15,23,42,0.55)] transition-all hover:bg-neutral-100 hover:text-neutral-900 focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgb(var(--accent)/0.24)]"
+                      >
+                        <CloseIcon className="h-4 w-4" />
+                      </button>
+                    ) : null}
+                    {showReorderControls ? (
+                      <>
+                        <button
+                          type="button"
+                          aria-label={`Sposta in alto ${item.label}`}
+                          disabled={!canMoveUp}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            if (!canMoveUp) {
+                              return;
+                            }
+                            onMoveItem?.(item.id, "up");
+                          }}
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-[color:rgb(var(--accent)/0.08)] text-accent shadow-[0_22px_48px_-24px_rgba(15,23,42,0.55)] transition-all hover:bg-[color:rgb(var(--accent)/0.12)] focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgb(var(--accent)/0.32)] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ArrowUpIcon />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Sposta in basso ${item.label}`}
+                          disabled={!canMoveDown}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            if (!canMoveDown) {
+                              return;
+                            }
+                            onMoveItem?.(item.id, "down");
+                          }}
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-[color:rgb(var(--accent)/0.08)] text-accent shadow-[0_22px_48px_-24px_rgba(15,23,42,0.55)] transition-all hover:bg-[color:rgb(var(--accent)/0.12)] focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgb(var(--accent)/0.32)] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ArrowDownIcon />
+                        </button>
+                      </>
+                    ) : null}
                   </div>
-                ) : null}
-
-                {onRemoveItem ? (
-                  <button
-                    type="button"
-                    aria-label={`Rimuovi ${item.label}`}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      onRemoveItem(item.id);
-                    }}
-                    className="absolute right-4 top-4 z-40 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-white/95 text-neutral-500 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] transition-colors hover:text-neutral-900 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
-                  >
-                    <CloseIcon />
-                  </button>
                 ) : null}
 
                 <LibraryCard
@@ -197,7 +202,7 @@ function PlusIcon({ className = "h-6 w-6" }: { className?: string }) {
   );
 }
 
-function CloseIcon() {
+function CloseIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -207,7 +212,7 @@ function CloseIcon() {
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-3.5 w-3.5"
+      className={className}
       aria-hidden="true"
     >
       <path d="m16.5 7.5-9 9" />
