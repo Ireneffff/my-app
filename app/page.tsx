@@ -200,7 +200,7 @@ export default function Home() {
                   <span>{day.getDate()}</span>
                   {dayOutcome ? (
                     <span
-                      className={["mt-0.5 h-1.5 w-1.5 rounded-full", outcomeIndicatorClasses]
+                      className={["mt-0.5 h-2 w-2 rounded-full", outcomeIndicatorClasses]
                         .join(" ")
                         .trim()}
                       aria-hidden="true"
