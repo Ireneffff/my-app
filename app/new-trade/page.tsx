@@ -183,6 +183,46 @@ function createNumericFieldStateFromNumber(value: number | null): NumericFieldSt
   return createNumericFieldState("");
 }
 
+function numericFieldStatesAreEqual(
+  a: readonly NumericFieldState[],
+  b: readonly NumericFieldState[],
+) {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  for (let index = 0; index < a.length; index += 1) {
+    const prev = a[index];
+    const next = b[index];
+
+    if (prev.raw !== next.raw || prev.value !== next.value) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function calculatePipDifference(
+  entryPrice: NumericFieldState,
+  takeProfit: NumericFieldState,
+) {
+  if (entryPrice.value === null || takeProfit.value === null) {
+    return null;
+  }
+
+  const difference = takeProfit.value - entryPrice.value;
+  const pips = Math.abs(difference) * 10000;
+
+  if (!Number.isFinite(pips)) {
+    return null;
+  }
+
+  const roundedPips = Math.round(pips * 10) / 10;
+
+  return roundedPips;
+}
+
 function getStartOfWeek(date: Date) {
   const start = new Date(date);
   start.setHours(0, 0, 0, 0);
@@ -197,6 +237,16 @@ function getStartOfMonth(date: Date) {
   start.setHours(0, 0, 0, 0);
   return start;
 }
+
+type TargetFieldConfig = {
+  label: string;
+  idPrefix: string;
+  placeholder: string;
+  type: "number" | "text";
+  values: string[];
+  onChange?: (index: number, value: string) => void;
+  readOnly?: boolean;
+};
 
 function getWeekDays(weekStart: Date) {
   return Array.from({ length: 5 }, (_, index) => {
@@ -402,6 +452,26 @@ function NewTradePageContent() {
     return () => window.clearTimeout(timeout);
   }, [recentlyAddedColumnIndex]);
 
+  useEffect(() => {
+    setPipsTargets((previous) => {
+      const normalizedTakeProfitTargets = padMultiValue(
+        takeProfitTargets,
+        targetColumnCount,
+        () => createNumericFieldState(),
+      );
+
+      const computedPips = normalizedTakeProfitTargets.map((target) => {
+        const pipsValue = calculatePipDifference(entryPrice, target);
+
+        return pipsValue === null
+          ? createNumericFieldState()
+          : createNumericFieldStateFromNumber(pipsValue);
+      });
+
+      return numericFieldStatesAreEqual(previous, computedPips) ? previous : computedPips;
+    });
+  }, [entryPrice, takeProfitTargets, targetColumnCount]);
+
   const handleTakeProfitChange = useCallback(
     (index: number, value: string) => {
       setTakeProfitTargets((prev) => {
@@ -418,17 +488,6 @@ function NewTradePageContent() {
       setRiskRewardTargets((prev) => {
         const next = padMultiValue(prev, targetColumnCount, () => "");
         next[index] = value;
-        return next;
-      });
-    },
-    [targetColumnCount],
-  );
-
-  const handlePipsChange = useCallback(
-    (index: number, value: string) => {
-      setPipsTargets((prev) => {
-        const next = padMultiValue(prev, targetColumnCount, () => createNumericFieldState());
-        next[index] = createNumericFieldState(value);
         return next;
       });
     },
@@ -471,7 +530,7 @@ function NewTradePageContent() {
           placeholder: "Insert",
           type: "number" as const,
           values: pipsTargets.map((target) => target.raw),
-          onChange: handlePipsChange,
+          readOnly: true,
         },
         {
           label: "P&L",
@@ -481,9 +540,8 @@ function NewTradePageContent() {
           values: pnlTargets.map((target) => target.raw),
           onChange: handlePnlChange,
         },
-      ],
+      ] satisfies TargetFieldConfig[],
     [
-      handlePipsChange,
       handlePnlChange,
       handleRiskRewardChange,
       handleTakeProfitChange,
@@ -2307,8 +2365,15 @@ function NewTradePageContent() {
                                         id={inputId}
                                         type={fieldConfig.type}
                                         value={value}
-                                        onChange={(event) => fieldConfig.onChange(columnIndex, event.target.value)}
+                                        onChange={(event) =>
+                                          fieldConfig.onChange?.(
+                                            columnIndex,
+                                            event.target.value,
+                                          )
+                                        }
                                         placeholder={fieldConfig.placeholder}
+                                        readOnly={fieldConfig.readOnly ?? false}
+                                        aria-readonly={fieldConfig.readOnly ?? undefined}
                                         className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                                       />
                                       {isRemovableColumn && (
@@ -2434,8 +2499,15 @@ function NewTradePageContent() {
                                         id={inputId}
                                         type={pnlFieldConfig.type}
                                         value={value}
-                                        onChange={(event) => pnlFieldConfig.onChange(columnIndex, event.target.value)}
+                                        onChange={(event) =>
+                                          pnlFieldConfig.onChange?.(
+                                            columnIndex,
+                                            event.target.value,
+                                          )
+                                        }
                                         placeholder={pnlFieldConfig.placeholder}
+                                        readOnly={pnlFieldConfig.readOnly ?? false}
+                                        aria-readonly={pnlFieldConfig.readOnly ?? undefined}
                                         className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
                                       />
                                       {isRemovableColumn && (
