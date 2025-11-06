@@ -56,6 +56,50 @@ type TakeProfitOutcome = TradeOutcome | "";
 
 const createTakeProfitOutcome = (): TakeProfitOutcome => "";
 
+type TakeProfitOutcomeStyle = {
+  label: string;
+  border: string;
+  text: string;
+  background: string;
+  placeholder: string;
+};
+
+const TAKE_PROFIT_OUTCOME_STYLES: Record<"neutral" | "profit" | "loss", TakeProfitOutcomeStyle> = {
+  neutral: {
+    label: "text-muted-fg",
+    border: "border-border",
+    text: "text-fg",
+    background: "bg-surface",
+    placeholder: "placeholder:text-muted-fg",
+  },
+  profit: {
+    label: "text-green-700",
+    border: "border-green-300",
+    text: "text-green-700",
+    background: "bg-green-50",
+    placeholder: "placeholder:text-green-600",
+  },
+  loss: {
+    label: "text-red-700",
+    border: "border-red-300",
+    text: "text-red-700",
+    background: "bg-red-50",
+    placeholder: "placeholder:text-red-600",
+  },
+};
+
+const getOutcomeStyle = (outcome: TakeProfitOutcome): TakeProfitOutcomeStyle => {
+  if (outcome === "profit") {
+    return TAKE_PROFIT_OUTCOME_STYLES.profit;
+  }
+
+  if (outcome === "loss") {
+    return TAKE_PROFIT_OUTCOME_STYLES.loss;
+  }
+
+  return TAKE_PROFIT_OUTCOME_STYLES.neutral;
+};
+
 const preTradeMentalStateOptions = [
   "Calmo e concentrato",
   "Stanco o distratto",
@@ -2378,11 +2422,12 @@ function NewTradePageContent() {
                               {normalizedValues.map((_, columnIndex) => {
                                 const inputId = `${fieldConfig.idPrefix}-input-${columnIndex}`;
                                 const labelId = `${fieldConfig.idPrefix}-label-${columnIndex}`;
+                                const outcomeValue =
+                                  normalizedTakeProfitOutcomeValues[columnIndex] ?? "";
+                                const outcomeStyle = getOutcomeStyle(outcomeValue);
 
                                 if (fieldConfig.idPrefix === "take-profit") {
                                   const outcomeSelectId = `${fieldConfig.idPrefix}-outcome-${columnIndex}`;
-                                  const outcomeValue =
-                                    normalizedTakeProfitOutcomeValues[columnIndex] ?? "";
 
                                   return (
                                     <div
@@ -2392,7 +2437,7 @@ function NewTradePageContent() {
                                       <label
                                         id={labelId}
                                         htmlFor={outcomeSelectId}
-                                        className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                                        className={`text-[11px] font-medium uppercase tracking-[0.24em] transition-colors duration-200 ease-in-out ${outcomeStyle.label}`}
                                       >
                                         {`${fieldConfig.label} ${columnIndex + 1}`}
                                       </label>
@@ -2416,7 +2461,7 @@ function NewTradePageContent() {
                                     key={labelId}
                                     id={labelId}
                                     htmlFor={inputId}
-                                    className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                                    className={`text-[11px] font-medium uppercase tracking-[0.24em] transition-colors duration-200 ease-in-out ${outcomeStyle.label}`}
                                   >
                                     {`${fieldConfig.label} ${columnIndex + 1}`}
                                   </label>
@@ -2433,6 +2478,9 @@ function NewTradePageContent() {
                                   const isRemovableColumn =
                                     targetColumnCount > 1 && columnIndex === targetColumnCount - 1;
                                   const isNewColumn = recentlyAddedColumnIndex === columnIndex;
+                                  const outcomeValue =
+                                    normalizedTakeProfitOutcomeValues[columnIndex] ?? "";
+                                  const outcomeStyle = getOutcomeStyle(outcomeValue);
 
                                   return (
                                     <div
@@ -2454,7 +2502,7 @@ function NewTradePageContent() {
                                         placeholder={fieldConfig.placeholder}
                                         readOnly={fieldConfig.readOnly ?? false}
                                         aria-readonly={fieldConfig.readOnly ?? undefined}
-                                        className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                                        className={`w-full rounded-2xl border px-4 py-3 text-sm font-medium placeholder:opacity-60 focus:outline-none focus:ring-0 transition-colors duration-200 ease-in-out ${outcomeStyle.border} ${outcomeStyle.background} ${outcomeStyle.text} ${outcomeStyle.placeholder}`}
                                       />
                                       {isRemovableColumn && (
                                         <button
