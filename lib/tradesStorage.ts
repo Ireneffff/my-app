@@ -42,6 +42,7 @@ export type StoredTrade = {
   exitPrice: number | null;
   stopLoss: number | null;
   takeProfit: number[];
+  takeProfitOutcomes: ("profit" | "loss" | null)[];
   pnl: number[];
   preTradeMentalState: string | null;
   emotionsDuringTrade: string | null;
@@ -74,6 +75,7 @@ export type TradePayload = {
   exitPrice: number | null;
   stopLoss: number | null;
   takeProfit: (number | null)[];
+  takeProfitOutcomes: ("profit" | "loss" | null)[];
   pnl: (number | null)[];
   // --- PSYCHOLOGY & MINDSET ---
   preTradeMentalState: string | null;
@@ -299,6 +301,72 @@ export function serializeNumericMultiValueField(values: (number | null)[]): stri
   return JSON.stringify(normalized);
 }
 
+function normalizeOutcomeValue(value: unknown): "profit" | "loss" | null {
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+
+    if (normalized === "profit" || normalized === "loss") {
+      return normalized;
+    }
+  }
+
+  return null;
+}
+
+export function parseOutcomeMultiValueField(value: unknown): ("profit" | "loss" | null)[] {
+  if (Array.isArray(value)) {
+    return value.map((entry) => normalizeOutcomeValue(entry));
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return [normalizeOutcomeValue(value)];
+  }
+
+  if (typeof value !== "string") {
+    return [];
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed);
+
+    if (Array.isArray(parsed)) {
+      return parsed.map((entry) => normalizeOutcomeValue(entry));
+    }
+  } catch (error) {
+    if (/^[\[{]/.test(trimmed)) {
+      console.warn("Failed to parse outcome multi value field, falling back to string parsing", error);
+    }
+  }
+
+  if (trimmed.includes("|")) {
+    return trimmed.split("|").map((entry) => normalizeOutcomeValue(entry));
+  }
+
+  return [normalizeOutcomeValue(trimmed)];
+}
+
+export function serializeOutcomeMultiValueField(
+  values: ("profit" | "loss" | null)[],
+): string | null {
+  if (!Array.isArray(values) || values.length === 0) {
+    return null;
+  }
+
+  const normalized = values.map((value) => (value === "profit" || value === "loss" ? value : null));
+
+  if (normalized.every((value) => value === null)) {
+    return null;
+  }
+
+  return JSON.stringify(normalized);
+}
+
 function mapTradeRow(row: Record<string, unknown>): StoredTrade {
   const symbolCode = (row?.symbol ?? "").toString();
   const openTime = parseDateValue(row?.open_time);
@@ -318,6 +386,7 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
   const riskReward = parseMultiValueField(row?.rr_ratio);
   const pips = parseNumericMultiValueField(row?.pips);
   const takeProfit = parseNumericMultiValueField(row?.take_profit);
+  const takeProfitOutcomes = parseOutcomeMultiValueField(row?.take_profit_outcomes);
   const pnl = parseNumericMultiValueField(row?.p_l);
 
   return {
@@ -337,6 +406,7 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
     exitPrice: normalizeTradeField(row?.exit_price, "number"),
     stopLoss: normalizeTradeField(row?.stop_loss, "number"),
     takeProfit,
+    takeProfitOutcomes,
     pnl,
     preTradeMentalState: normalizeTradeField(row?.mental_state_before ?? row?.mental_state, "string"),
     emotionsDuringTrade: normalizeTradeField(row?.emotions_during, "string"),
@@ -528,6 +598,7 @@ function buildTradeRecord(payload: TradePayload) {
     exit_price: normalizeTradeField(payload.exitPrice, "number"),
     stop_loss: normalizeTradeField(payload.stopLoss, "number"),
     take_profit: multipleTakeProfitValues ?? singleTakeProfitValue,
+    take_profit_outcomes: serializeOutcomeMultiValueField(payload.takeProfitOutcomes),
     p_l: serializeNumericMultiValueField(payload.pnl ?? []),
     mental_state_before: normalizeTradeField(payload.preTradeMentalState, "string"),
     emotions_during: normalizeTradeField(payload.emotionsDuringTrade, "string"),

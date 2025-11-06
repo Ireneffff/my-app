@@ -837,6 +837,9 @@ export default function RegisteredTradePage() {
   const takeProfitTargets = (state.trade.takeProfit ?? []).map((value) =>
     value !== null && value !== undefined ? value.toString() : "",
   );
+  const takeProfitOutcomeLabels = (state.trade.takeProfitOutcomes ?? []).map((value) =>
+    value === "profit" ? "Profit" : value === "loss" ? "Loss" : "",
+  );
   const riskRewardTargets = (state.trade.riskReward ?? []).map((value) =>
     value ?? "",
   );
@@ -851,11 +854,16 @@ export default function RegisteredTradePage() {
   const targetColumnCount = Math.max(
     1,
     takeProfitTargets.length,
+    takeProfitOutcomeLabels.length,
     riskRewardTargets.length,
     pipsTargets.length,
     pnlTargets.length,
   );
   const normalizedTakeProfitTargets = padMultiValue(takeProfitTargets, targetColumnCount);
+  const normalizedTakeProfitOutcomeLabels = padMultiValue(
+    takeProfitOutcomeLabels,
+    targetColumnCount,
+  );
   const normalizedRiskRewardTargets = padMultiValue(riskRewardTargets, targetColumnCount);
   const normalizedPipsTargets = padMultiValue(pipsTargets, targetColumnCount);
   const normalizedPnlTargets = padMultiValue(pnlTargets, targetColumnCount);
@@ -886,14 +894,22 @@ export default function RegisteredTradePage() {
         className={isEditMode ? "grid gap-3 pr-12" : "grid gap-3"}
         style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
       >
-        {values.map((_, columnIndex) => (
-          <span
-            key={`${idPrefix}-label-${columnIndex}`}
-            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-          >
-            {`${label} ${columnIndex + 1}`}
-          </span>
-        ))}
+        {values.map((_, columnIndex) => {
+          const outcomeLabel =
+            idPrefix === "take-profit"
+              ? normalizedTakeProfitOutcomeLabels[columnIndex]
+              : "";
+
+          return (
+            <span
+              key={`${idPrefix}-label-${columnIndex}`}
+              className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+            >
+              {`${label} ${columnIndex + 1}`}
+              {outcomeLabel ? ` • ${outcomeLabel}` : ""}
+            </span>
+          );
+        })}
       </div>
       <div className="relative">
         <div

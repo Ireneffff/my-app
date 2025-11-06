@@ -359,6 +359,7 @@ function NewTradePageContent() {
   const [takeProfitTargets, setTakeProfitTargets] = useState<NumericFieldState[]>([
     createNumericFieldState(),
   ]);
+  const [takeProfitOutcomes, setTakeProfitOutcomes] = useState<(TradeOutcome | "")[]>([""]);
   const [pnlTargets, setPnlTargets] = useState<NumericFieldState[]>([createNumericFieldState()]);
   const [preTradeMentalState, setPreTradeMentalState] = useState<string | null>(null);
   const [emotionsDuringTrade, setEmotionsDuringTrade] = useState<string | null>(null);
@@ -410,6 +411,7 @@ function NewTradePageContent() {
     setIsAddButtonAnimating(true);
     setRecentlyAddedColumnIndex(nextCount - 1);
     setTakeProfitTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
+    setTakeProfitOutcomes((prev) => padMultiValue(prev, nextCount, () => ""));
     setRiskRewardTargets((prev) => padMultiValue(prev, nextCount, () => ""));
     setPipsTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
     setPnlTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
@@ -423,6 +425,7 @@ function NewTradePageContent() {
     const nextCount = targetColumnCount - 1;
 
     setTakeProfitTargets((prev) => prev.slice(0, nextCount));
+    setTakeProfitOutcomes((prev) => prev.slice(0, nextCount));
     setRiskRewardTargets((prev) => prev.slice(0, nextCount));
     setPipsTargets((prev) => prev.slice(0, nextCount));
     setPnlTargets((prev) => prev.slice(0, nextCount));
@@ -477,6 +480,17 @@ function NewTradePageContent() {
       setTakeProfitTargets((prev) => {
         const next = padMultiValue(prev, targetColumnCount, () => createNumericFieldState());
         next[index] = createNumericFieldState(value);
+        return next;
+      });
+    },
+    [targetColumnCount],
+  );
+
+  const handleTakeProfitOutcomeChange = useCallback(
+    (index: number, value: string) => {
+      setTakeProfitOutcomes((prev) => {
+        const next = padMultiValue(prev, targetColumnCount, () => "");
+        next[index] = value === "profit" || value === "loss" ? value : "";
         return next;
       });
     },
@@ -550,6 +564,10 @@ function NewTradePageContent() {
       riskRewardTargets,
       takeProfitTargets,
     ],
+  );
+  const normalizedTakeProfitOutcomeValues = useMemo(
+    () => padMultiValue(takeProfitOutcomes, targetColumnCount, () => ""),
+    [takeProfitOutcomes, targetColumnCount],
   );
   const pnlFieldConfig = targetFieldConfigs[targetFieldConfigs.length - 1];
 
@@ -1137,6 +1155,9 @@ function NewTradePageContent() {
         const mappedTakeProfit = (match.takeProfit ?? []).map((value) =>
           createNumericFieldStateFromNumber(value ?? null),
         );
+        const mappedTakeProfitOutcomes = (match.takeProfitOutcomes ?? []).map((value) =>
+          value === "profit" || value === "loss" ? value : "",
+        );
         const mappedRiskReward = match.riskReward?.length ? match.riskReward : [""];
         const mappedPips = (match.pips ?? []).map((value) =>
           createNumericFieldStateFromNumber(value ?? null),
@@ -1147,12 +1168,16 @@ function NewTradePageContent() {
         const columnCount = Math.max(
           1,
           mappedTakeProfit.length,
+          mappedTakeProfitOutcomes.length,
           mappedRiskReward.length,
           mappedPips.length,
           mappedPnl.length,
         );
         setTakeProfitTargets(
           padMultiValue(mappedTakeProfit, columnCount, () => createNumericFieldState()),
+        );
+        setTakeProfitOutcomes(
+          padMultiValue(mappedTakeProfitOutcomes, columnCount, () => ""),
         );
         setRiskRewardTargets(padMultiValue(mappedRiskReward, columnCount, () => ""));
         setPipsTargets(padMultiValue(mappedPips, columnCount, () => createNumericFieldState()));
@@ -2333,15 +2358,56 @@ function NewTradePageContent() {
                               className="grid gap-3 pr-12"
                               style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
                             >
-                              {normalizedValues.map((_, columnIndex) => (
-                                <label
-                                  key={`${fieldConfig.idPrefix}-label-${columnIndex}`}
-                                  htmlFor={`${fieldConfig.idPrefix}-input-${columnIndex}`}
-                                  className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                                >
-                                  {`${fieldConfig.label} ${columnIndex + 1}`}
-                                </label>
-                              ))}
+                              {normalizedValues.map((_, columnIndex) => {
+                                const inputId = `${fieldConfig.idPrefix}-input-${columnIndex}`;
+                                const labelKey = `${fieldConfig.idPrefix}-label-${columnIndex}`;
+
+                                if (fieldConfig.idPrefix === "take-profit") {
+                                  const outcomeSelectId = `${fieldConfig.idPrefix}-outcome-${columnIndex}`;
+                                  const outcomeValue =
+                                    normalizedTakeProfitOutcomeValues[columnIndex] ?? "";
+
+                                  return (
+                                    <div
+                                      key={labelKey}
+                                      className="flex items-center justify-between gap-3"
+                                    >
+                                      <label
+                                        htmlFor={inputId}
+                                        className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                                      >
+                                        {`${fieldConfig.label} ${columnIndex + 1}`}
+                                      </label>
+                                      <select
+                                        id={outcomeSelectId}
+                                        value={outcomeValue}
+                                        onChange={(event) =>
+                                          handleTakeProfitOutcomeChange(
+                                            columnIndex,
+                                            event.target.value,
+                                          )
+                                        }
+                                        aria-label={`Esito ${fieldConfig.label} ${columnIndex + 1}`}
+                                        className="h-8 min-w-[110px] rounded-xl border border-border bg-surface px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-fg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))]"
+                                      >
+                                        <option value="">Outcome</option>
+                                        <option value="profit">Profit</option>
+                                        <option value="loss">Loss</option>
+                                      </select>
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <label
+                                    key={labelKey}
+                                    htmlFor={inputId}
+                                    className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                                  >
+                                    {`${fieldConfig.label} ${columnIndex + 1}`}
+                                  </label>
+                                );
+                              })}
                             </div>
                             <div className="relative">
                               <div
@@ -2785,6 +2851,11 @@ function NewTradePageContent() {
       position === "SHORT" ? "SHORT" : position === "LONG" ? "LONG" : null;
 
     const takeProfitValues = takeProfitTargets.map((target) => target.value);
+    const normalizedTakeProfitOutcomes = padMultiValue(
+      takeProfitOutcomes,
+      targetColumnCount,
+      () => "",
+    ).map((value) => (value === "profit" || value === "loss" ? value : null));
     const riskRewardValues = riskRewardTargets.slice();
     const pipsValues = pipsTargets.map((target) => target.value);
     const pnlValues = pnlTargets.map((target) => target.value);
@@ -2806,6 +2877,7 @@ function NewTradePageContent() {
       exitPrice: exitPrice.value,
       stopLoss: stopLoss.value,
       takeProfit: takeProfitValues,
+      takeProfitOutcomes: normalizedTakeProfitOutcomes,
       pnl: pnlValues,
       preTradeMentalState: preTradeMentalState?.trim() || null,
       emotionsDuringTrade: emotionsDuringTrade?.trim() || null,
@@ -2889,6 +2961,8 @@ function NewTradePageContent() {
     confidenceLevel,
     emotionalTrigger,
     wouldRepeatTrade,
+    takeProfitOutcomes,
+    targetColumnCount,
   ]);
 
   return (
