@@ -25,6 +25,10 @@ import {
   type StoredTrade,
 } from "@/lib/tradesStorage";
 import { calculateDuration } from "@/lib/duration";
+import {
+  getTakeProfitOutcomeStyle,
+  type TakeProfitOutcome,
+} from "@/lib/takeProfitOutcomeStyles";
 
 type TradeState = {
   status: "loading" | "ready" | "missing";
@@ -106,14 +110,18 @@ function formatOptionalText(value?: string | number | boolean | null) {
   return trimmed.length > 0 ? trimmed : "—";
 }
 
-function padMultiValue(values: string[], length: number) {
+function padMultiValue<T>(values: T[], length: number, createFiller: () => T) {
   const next = values.slice(0, length);
 
   while (next.length < length) {
-    next.push("");
+    next.push(createFiller());
   }
 
   return next;
+}
+
+function normalizeTakeProfitOutcome(value: unknown): TakeProfitOutcome {
+  return value === "profit" || value === "loss" ? value : "";
 }
 
 const LIBRARY_NAVIGATION_SWIPE_DISTANCE_PX = 40;
@@ -837,8 +845,8 @@ export default function RegisteredTradePage() {
   const takeProfitTargets = (state.trade.takeProfit ?? []).map((value) =>
     value !== null && value !== undefined ? value.toString() : "",
   );
-  const takeProfitOutcomeLabels = (state.trade.takeProfitOutcomes ?? []).map((value) =>
-    value === "profit" ? "Profit" : value === "loss" ? "Loss" : "",
+  const takeProfitOutcomeValues = (state.trade.takeProfitOutcomes ?? []).map((value) =>
+    normalizeTakeProfitOutcome(value),
   );
   const riskRewardTargets = (state.trade.riskReward ?? []).map((value) =>
     value ?? "",
@@ -854,19 +862,23 @@ export default function RegisteredTradePage() {
   const targetColumnCount = Math.max(
     1,
     takeProfitTargets.length,
-    takeProfitOutcomeLabels.length,
+    takeProfitOutcomeValues.length,
     riskRewardTargets.length,
     pipsTargets.length,
     pnlTargets.length,
   );
-  const normalizedTakeProfitTargets = padMultiValue(takeProfitTargets, targetColumnCount);
-  const normalizedTakeProfitOutcomeLabels = padMultiValue(
-    takeProfitOutcomeLabels,
+  const normalizedTakeProfitTargets = padMultiValue(takeProfitTargets, targetColumnCount, () => "");
+  const normalizedTakeProfitOutcomeValues = padMultiValue<TakeProfitOutcome>(
+    takeProfitOutcomeValues,
     targetColumnCount,
+    () => "",
   );
-  const normalizedRiskRewardTargets = padMultiValue(riskRewardTargets, targetColumnCount);
-  const normalizedPipsTargets = padMultiValue(pipsTargets, targetColumnCount);
-  const normalizedPnlTargets = padMultiValue(pnlTargets, targetColumnCount);
+  const normalizedTakeProfitOutcomeLabels = normalizedTakeProfitOutcomeValues.map((value) =>
+    value === "profit" ? "Profit" : value === "loss" ? "Loss" : "",
+  );
+  const normalizedRiskRewardTargets = padMultiValue(riskRewardTargets, targetColumnCount, () => "");
+  const normalizedPipsTargets = padMultiValue(pipsTargets, targetColumnCount, () => "");
+  const normalizedPnlTargets = padMultiValue(pnlTargets, targetColumnCount, () => "");
   const isEditMode = false; // This page shows read-only data; editing happens on the new trade form.
   const targetDisplayConfigs = [
     { idPrefix: "take-profit", label: "Take Profit", values: normalizedTakeProfitTargets },
@@ -895,6 +907,8 @@ export default function RegisteredTradePage() {
         style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
       >
         {values.map((_, columnIndex) => {
+          const outcomeValue = normalizedTakeProfitOutcomeValues[columnIndex] ?? "";
+          const outcomeStyle = getTakeProfitOutcomeStyle(outcomeValue);
           const outcomeLabel =
             idPrefix === "take-profit"
               ? normalizedTakeProfitOutcomeLabels[columnIndex]
@@ -903,7 +917,7 @@ export default function RegisteredTradePage() {
           return (
             <span
               key={`${idPrefix}-label-${columnIndex}`}
-              className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+              className={`text-[11px] font-medium uppercase tracking-[0.24em] transition-colors duration-200 ease-in-out ${outcomeStyle.label}`}
             >
               {`${label} ${columnIndex + 1}`}
               {outcomeLabel ? ` • ${outcomeLabel}` : ""}
@@ -918,12 +932,20 @@ export default function RegisteredTradePage() {
         >
           {values.map((value, columnIndex) => {
             const formattedValue = formatOptionalText(value);
+            const outcomeValue = normalizedTakeProfitOutcomeValues[columnIndex] ?? "";
+            const outcomeStyle = getTakeProfitOutcomeStyle(outcomeValue);
             const showRemovalBadge = shouldShowRemovalBadge && columnIndex === targetColumnCount - 1;
 
             return (
               <div className="group relative" key={`${idPrefix}-value-${columnIndex}`}>
-                <div className="w-full rounded-2xl border border-border bg-surface px-4 py-3">
-                  <span className="text-sm font-medium text-fg">{formattedValue}</span>
+                <div
+                  className={`w-full rounded-2xl border px-4 py-3 transition-colors duration-200 ease-in-out ${outcomeStyle.border} ${outcomeStyle.background}`}
+                >
+                  <span
+                    className={`text-sm font-medium transition-colors duration-200 ease-in-out ${outcomeStyle.text}`}
+                  >
+                    {formattedValue}
+                  </span>
                 </div>
                 {showRemovalBadge ? (
                   <span

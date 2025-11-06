@@ -9,8 +9,9 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
+import type { TakeProfitOutcome } from "@/lib/takeProfitOutcomeStyles";
 
-export type TakeProfitOutcomeValue = "" | "profit" | "loss";
+export type TakeProfitOutcomeValue = TakeProfitOutcome;
 
 type Option = {
   value: TakeProfitOutcomeValue;
