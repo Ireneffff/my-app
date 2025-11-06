@@ -51,6 +51,9 @@ const tradeOutcomeOptions = [
 ] as const;
 
 type TradeOutcome = (typeof tradeOutcomeOptions)[number]["value"];
+type TakeProfitOutcome = TradeOutcome | "";
+
+const createTakeProfitOutcome = (): TakeProfitOutcome => "";
 
 const preTradeMentalStateOptions = [
   "Calmo e concentrato",
@@ -359,7 +362,9 @@ function NewTradePageContent() {
   const [takeProfitTargets, setTakeProfitTargets] = useState<NumericFieldState[]>([
     createNumericFieldState(),
   ]);
-  const [takeProfitOutcomes, setTakeProfitOutcomes] = useState<(TradeOutcome | "")[]>([""]);
+  const [takeProfitOutcomes, setTakeProfitOutcomes] = useState<TakeProfitOutcome[]>([
+    createTakeProfitOutcome(),
+  ]);
   const [pnlTargets, setPnlTargets] = useState<NumericFieldState[]>([createNumericFieldState()]);
   const [preTradeMentalState, setPreTradeMentalState] = useState<string | null>(null);
   const [emotionsDuringTrade, setEmotionsDuringTrade] = useState<string | null>(null);
@@ -411,7 +416,9 @@ function NewTradePageContent() {
     setIsAddButtonAnimating(true);
     setRecentlyAddedColumnIndex(nextCount - 1);
     setTakeProfitTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
-    setTakeProfitOutcomes((prev) => padMultiValue(prev, nextCount, () => ""));
+    setTakeProfitOutcomes((prev) =>
+      padMultiValue<TakeProfitOutcome>(prev, nextCount, createTakeProfitOutcome),
+    );
     setRiskRewardTargets((prev) => padMultiValue(prev, nextCount, () => ""));
     setPipsTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
     setPnlTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
@@ -489,7 +496,11 @@ function NewTradePageContent() {
   const handleTakeProfitOutcomeChange = useCallback(
     (index: number, value: string) => {
       setTakeProfitOutcomes((prev) => {
-        const next = padMultiValue(prev, targetColumnCount, () => "");
+        const next = padMultiValue<TakeProfitOutcome>(
+          prev,
+          targetColumnCount,
+          createTakeProfitOutcome,
+        );
         next[index] = value === "profit" || value === "loss" ? value : "";
         return next;
       });
@@ -566,7 +577,12 @@ function NewTradePageContent() {
     ],
   );
   const normalizedTakeProfitOutcomeValues = useMemo(
-    () => padMultiValue(takeProfitOutcomes, targetColumnCount, () => ""),
+    () =>
+      padMultiValue<TakeProfitOutcome>(
+        takeProfitOutcomes,
+        targetColumnCount,
+        createTakeProfitOutcome,
+      ),
     [takeProfitOutcomes, targetColumnCount],
   );
   const pnlFieldConfig = targetFieldConfigs[targetFieldConfigs.length - 1];
