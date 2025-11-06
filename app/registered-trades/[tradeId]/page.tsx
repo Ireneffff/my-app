@@ -837,6 +837,9 @@ export default function RegisteredTradePage() {
   const takeProfitTargets = (state.trade.takeProfit ?? []).map((value) =>
     value !== null && value !== undefined ? value.toString() : "",
   );
+  const takeProfitOutcomeTargets = (state.trade.takeProfitOutcome ?? []).map((value) =>
+    value === "profit" ? "Profit" : value === "loss" ? "Loss" : "",
+  );
   const riskRewardTargets = (state.trade.riskReward ?? []).map((value) =>
     value ?? "",
   );
@@ -851,17 +854,27 @@ export default function RegisteredTradePage() {
   const targetColumnCount = Math.max(
     1,
     takeProfitTargets.length,
+    takeProfitOutcomeTargets.length,
     riskRewardTargets.length,
     pipsTargets.length,
     pnlTargets.length,
   );
   const normalizedTakeProfitTargets = padMultiValue(takeProfitTargets, targetColumnCount);
+  const normalizedTakeProfitOutcomeTargets = padMultiValue(
+    takeProfitOutcomeTargets,
+    targetColumnCount,
+  );
   const normalizedRiskRewardTargets = padMultiValue(riskRewardTargets, targetColumnCount);
   const normalizedPipsTargets = padMultiValue(pipsTargets, targetColumnCount);
   const normalizedPnlTargets = padMultiValue(pnlTargets, targetColumnCount);
   const isEditMode = false; // This page shows read-only data; editing happens on the new trade form.
   const targetDisplayConfigs = [
-    { idPrefix: "take-profit", label: "Take Profit", values: normalizedTakeProfitTargets },
+    {
+      idPrefix: "take-profit",
+      label: "Take Profit",
+      values: normalizedTakeProfitTargets,
+      outcomes: normalizedTakeProfitOutcomeTargets,
+    },
     { idPrefix: "risk-reward", label: "R/R", values: normalizedRiskRewardTargets },
     { idPrefix: "nr-pips", label: "Nr. Pips", values: normalizedPipsTargets },
   ];
@@ -876,24 +889,46 @@ export default function RegisteredTradePage() {
     idPrefix,
     label,
     values,
+    outcomes,
   }: {
     idPrefix: string;
     label: string;
     values: string[];
+    outcomes?: string[];
   }) => (
     <div className="flex flex-col gap-2" key={idPrefix}>
       <div
         className={isEditMode ? "grid gap-3 pr-12" : "grid gap-3"}
         style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
       >
-        {values.map((_, columnIndex) => (
-          <span
-            key={`${idPrefix}-label-${columnIndex}`}
-            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-          >
-            {`${label} ${columnIndex + 1}`}
-          </span>
-        ))}
+        {values.map((_, columnIndex) => {
+          const outcomeValue = outcomes?.[columnIndex] ?? "";
+
+          return (
+            <span
+              key={`${idPrefix}-label-${columnIndex}`}
+              className={
+                outcomes
+                  ? "flex items-center justify-between gap-3 text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                  : "text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+              }
+            >
+              <span>{`${label} ${columnIndex + 1}`}</span>
+              {outcomes ? (
+                <span
+                  className="text-right text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-fg"
+                  style={
+                    outcomeValue
+                      ? undefined
+                      : { color: "rgb(var(--muted-fg) / 0.6)", fontWeight: 500 }
+                  }
+                >
+                  {outcomeValue}
+                </span>
+              ) : null}
+            </span>
+          );
+        })}
       </div>
       <div className="relative">
         <div

@@ -42,6 +42,7 @@ export type StoredTrade = {
   exitPrice: number | null;
   stopLoss: number | null;
   takeProfit: number[];
+  takeProfitOutcome: ("profit" | "loss" | null)[];
   pnl: number[];
   preTradeMentalState: string | null;
   emotionsDuringTrade: string | null;
@@ -74,6 +75,7 @@ export type TradePayload = {
   exitPrice: number | null;
   stopLoss: number | null;
   takeProfit: (number | null)[];
+  takeProfitOutcome: ("profit" | "loss" | null)[];
   pnl: (number | null)[];
   // --- PSYCHOLOGY & MINDSET ---
   preTradeMentalState: string | null;
@@ -318,6 +320,20 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
   const riskReward = parseMultiValueField(row?.rr_ratio);
   const pips = parseNumericMultiValueField(row?.pips);
   const takeProfit = parseNumericMultiValueField(row?.take_profit);
+  const takeProfitOutcomeRaw = parseMultiValueField(row?.take_profit_outcome);
+  const takeProfitOutcome = takeProfitOutcomeRaw.map((entry) => {
+    const normalized = entry.trim().toLowerCase();
+
+    if (normalized === "profit") {
+      return "profit" as const;
+    }
+
+    if (normalized === "loss") {
+      return "loss" as const;
+    }
+
+    return null;
+  });
   const pnl = parseNumericMultiValueField(row?.p_l);
 
   return {
@@ -337,6 +353,7 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
     exitPrice: normalizeTradeField(row?.exit_price, "number"),
     stopLoss: normalizeTradeField(row?.stop_loss, "number"),
     takeProfit,
+    takeProfitOutcome,
     pnl,
     preTradeMentalState: normalizeTradeField(row?.mental_state_before ?? row?.mental_state, "string"),
     emotionsDuringTrade: normalizeTradeField(row?.emotions_during, "string"),
@@ -512,6 +529,9 @@ function buildTradeRecord(payload: TradePayload) {
     normalizedTakeProfitValues.length === 1
       ? normalizedTakeProfitValues[0]
       : null;
+  const normalizedTakeProfitOutcomeValues = (payload.takeProfitOutcome ?? [])
+    .map((value) => (value === "profit" || value === "loss" ? value : null))
+    .filter((value): value is "profit" | "loss" => value !== null);
 
   return {
     symbol,
@@ -528,6 +548,7 @@ function buildTradeRecord(payload: TradePayload) {
     exit_price: normalizeTradeField(payload.exitPrice, "number"),
     stop_loss: normalizeTradeField(payload.stopLoss, "number"),
     take_profit: multipleTakeProfitValues ?? singleTakeProfitValue,
+    take_profit_outcome: serializeMultiValueField(normalizedTakeProfitOutcomeValues),
     p_l: serializeNumericMultiValueField(payload.pnl ?? []),
     mental_state_before: normalizeTradeField(payload.preTradeMentalState, "string"),
     emotions_during: normalizeTradeField(payload.emotionsDuringTrade, "string"),
