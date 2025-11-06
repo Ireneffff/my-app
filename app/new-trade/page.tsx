@@ -2595,15 +2595,20 @@ function NewTradePageContent() {
                               className="grid gap-3 pr-12"
                               style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
                             >
-                              {normalizedValues.map((_, columnIndex) => (
-                                <label
-                                  key={`${pnlFieldConfig.idPrefix}-label-${columnIndex}`}
-                                  htmlFor={`${pnlFieldConfig.idPrefix}-input-${columnIndex}`}
-                                  className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                                >
-                                  {`${pnlFieldConfig.label} ${columnIndex + 1}`}
-                                </label>
-                              ))}
+                              {normalizedValues.map((_, columnIndex) => {
+                                const outcomeValue = normalizedTakeProfitOutcomeValues[columnIndex] ?? "";
+                                const outcomeStyle = getOutcomeStyle(outcomeValue);
+
+                                return (
+                                  <label
+                                    key={`${pnlFieldConfig.idPrefix}-label-${columnIndex}`}
+                                    htmlFor={`${pnlFieldConfig.idPrefix}-input-${columnIndex}`}
+                                    className={`text-[11px] font-medium uppercase tracking-[0.24em] transition-colors duration-200 ease-in-out ${outcomeStyle.label}`}
+                                  >
+                                    {`${pnlFieldConfig.label} ${columnIndex + 1}`}
+                                  </label>
+                                );
+                              })}
                             </div>
                             <div className="relative">
                               <div
@@ -2615,6 +2620,8 @@ function NewTradePageContent() {
                                   const isRemovableColumn =
                                     targetColumnCount > 1 && columnIndex === targetColumnCount - 1;
                                   const isNewColumn = recentlyAddedColumnIndex === columnIndex;
+                                  const outcomeValue = normalizedTakeProfitOutcomeValues[columnIndex] ?? "";
+                                  const outcomeStyle = getOutcomeStyle(outcomeValue);
 
                                   return (
                                     <div
@@ -2636,7 +2643,7 @@ function NewTradePageContent() {
                                         placeholder={pnlFieldConfig.placeholder}
                                         readOnly={pnlFieldConfig.readOnly ?? false}
                                         aria-readonly={pnlFieldConfig.readOnly ?? undefined}
-                                        className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                                        className={`w-full rounded-2xl border px-4 py-3 text-sm font-medium placeholder:opacity-60 focus:outline-none focus:ring-0 transition-colors duration-200 ease-in-out ${outcomeStyle.border} ${outcomeStyle.background} ${outcomeStyle.text} ${outcomeStyle.placeholder}`}
                                       />
                                       {isRemovableColumn && (
                                         <button
