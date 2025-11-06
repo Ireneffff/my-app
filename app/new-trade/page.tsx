@@ -21,6 +21,7 @@ import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
 import { StyledSelect } from "@/components/StyledSelect";
+import { TakeProfitOutcomeSelect } from "@/components/TakeProfitOutcomeSelect";
 import {
   loadTradeById,
   saveTrade,
@@ -2376,7 +2377,7 @@ function NewTradePageContent() {
                             >
                               {normalizedValues.map((_, columnIndex) => {
                                 const inputId = `${fieldConfig.idPrefix}-input-${columnIndex}`;
-                                const labelKey = `${fieldConfig.idPrefix}-label-${columnIndex}`;
+                                const labelId = `${fieldConfig.idPrefix}-label-${columnIndex}`;
 
                                 if (fieldConfig.idPrefix === "take-profit") {
                                   const outcomeSelectId = `${fieldConfig.idPrefix}-outcome-${columnIndex}`;
@@ -2385,38 +2386,35 @@ function NewTradePageContent() {
 
                                   return (
                                     <div
-                                      key={labelKey}
+                                      key={labelId}
                                       className="flex items-center justify-between gap-3"
                                     >
                                       <label
-                                        htmlFor={inputId}
+                                        id={labelId}
+                                        htmlFor={outcomeSelectId}
                                         className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                                       >
                                         {`${fieldConfig.label} ${columnIndex + 1}`}
                                       </label>
-                                      <select
+                                      <TakeProfitOutcomeSelect
                                         id={outcomeSelectId}
                                         value={outcomeValue}
-                                        onChange={(event) =>
+                                        onChange={(nextValue) =>
                                           handleTakeProfitOutcomeChange(
                                             columnIndex,
-                                            event.target.value,
+                                            nextValue,
                                           )
                                         }
-                                        aria-label={`Esito ${fieldConfig.label} ${columnIndex + 1}`}
-                                        className="h-8 min-w-[110px] rounded-xl border border-border bg-surface px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-fg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))]"
-                                      >
-                                        <option value="">Outcome</option>
-                                        <option value="profit">Profit</option>
-                                        <option value="loss">Loss</option>
-                                      </select>
+                                        ariaLabelledBy={labelId}
+                                      />
                                     </div>
                                   );
                                 }
 
                                 return (
                                   <label
-                                    key={labelKey}
+                                    key={labelId}
+                                    id={labelId}
                                     htmlFor={inputId}
                                     className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                                   >
