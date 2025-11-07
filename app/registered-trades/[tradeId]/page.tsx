@@ -857,8 +857,6 @@ export default function RegisteredTradePage() {
     stopLossPrice: trade.stopLoss,
     position: trade.position,
   });
-  const stopLossPipLabel =
-    stopLossDistancePips === null ? null : `(${formatPips(-stopLossDistancePips)} pips)`;
   const stopLossPipLabelClassName =
     stopLossDistancePips === null ? "text-muted-fg" : "text-red-700";
   const stopLossPipDisplayValue =
@@ -1404,13 +1402,6 @@ export default function RegisteredTradePage() {
                   <div className="flex flex-col gap-2">
                     <span className="flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
                       <span>Stop Loss</span>
-                      {stopLossPipLabel ? (
-                        <span
-                          className={`ml-3 text-[10px] font-semibold normal-case tracking-[0.08em] text-right md:text-xs ${stopLossPipLabelClassName}`}
-                        >
-                          {stopLossPipLabel}
-                        </span>
-                      ) : null}
                     </span>
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,9.5rem)] md:items-end">
                       <div className="rounded-2xl border border-border bg-surface px-4 py-3">

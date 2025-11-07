@@ -607,15 +607,6 @@ function NewTradePageContent() {
       }),
     [entryPriceNumber, position, stopLossNumber],
   );
-  const stopLossPipLabel = useMemo(
-    () =>
-      stopLossDistancePips === null
-        ? null
-        : `(${formatPips(-stopLossDistancePips)} pips)`,
-    [stopLossDistancePips],
-  );
-  const stopLossPipLabelClassName =
-    stopLossDistancePips === null ? "text-muted-fg" : "text-red-700";
   const stopLossPipInputValue = useMemo(
     () => (stopLossDistancePips === null ? "" : stopLossDistancePips.toFixed(1)),
     [stopLossDistancePips],
@@ -2461,13 +2452,6 @@ function NewTradePageContent() {
                           className="flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                         >
                           <span>Stop Loss</span>
-                          {stopLossPipLabel ? (
-                            <span
-                              className={`ml-3 text-[10px] font-semibold normal-case tracking-[0.08em] text-right md:text-xs ${stopLossPipLabelClassName}`}
-                            >
-                              {stopLossPipLabel}
-                            </span>
-                          ) : null}
                         </label>
                         <div
                           className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,9.5rem)] md:items-end"
