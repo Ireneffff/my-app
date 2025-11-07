@@ -803,7 +803,9 @@ export default function RegisteredTradePage() {
     );
   }
 
-  if (state.status === "missing" || !state.trade || !selectedDate) {
+  const trade = state.trade;
+
+  if (state.status === "missing" || !trade || !selectedDate) {
     return (
       <section className="relative flex min-h-dvh flex-col items-center justify-center bg-bg px-6 py-12 text-fg">
         <div className="flex flex-col items-center gap-6 text-center">
@@ -820,15 +822,15 @@ export default function RegisteredTradePage() {
   }
 
   const activeSymbol =
-    availableSymbols.find((symbol) => symbol.code === state.trade?.symbolCode) ?? {
-      code: state.trade.symbolCode,
-      flag: state.trade.symbolFlag,
+    availableSymbols.find((symbol) => symbol.code === trade.symbolCode) ?? {
+      code: trade.symbolCode,
+      flag: trade.symbolFlag,
     };
 
   const tradeOutcomeLabel =
-    state.trade.tradeOutcome === "profit"
+    trade.tradeOutcome === "profit"
       ? "Profit"
-      : state.trade.tradeOutcome === "loss"
+      : trade.tradeOutcome === "loss"
         ? "Loss"
         : null;
 
@@ -838,25 +840,25 @@ export default function RegisteredTradePage() {
     year: "numeric",
   });
 
-  const openTimeDisplay = getDateTimeDisplay(state.trade.openTime);
-  const closeTimeDisplay = getDateTimeDisplay(state.trade.closeTime);
-  const positionLabel = state.trade.position === "SHORT" ? "Short" : "Long";
-  const entryPriceValue = formatOptionalText(state.trade.entryPrice);
-  const stopLossValue = formatOptionalText(state.trade.stopLoss);
-  const takeProfitValuesRaw = state.trade.takeProfit ?? [];
+  const openTimeDisplay = getDateTimeDisplay(trade.openTime);
+  const closeTimeDisplay = getDateTimeDisplay(trade.closeTime);
+  const positionLabel = trade.position === "SHORT" ? "Short" : "Long";
+  const entryPriceValue = formatOptionalText(trade.entryPrice);
+  const stopLossValue = formatOptionalText(trade.stopLoss);
+  const takeProfitValuesRaw = trade.takeProfit ?? [];
   const takeProfitTargets = takeProfitValuesRaw.map((value) =>
     value !== null && value !== undefined ? value.toString() : "",
   );
-  const takeProfitOutcomeValues = (state.trade.takeProfitOutcomes ?? []).map((value) =>
+  const takeProfitOutcomeValues = (trade.takeProfitOutcomes ?? []).map((value) =>
     normalizeTakeProfitOutcome(value),
   );
-  const riskRewardTargets = (state.trade.riskReward ?? []).map((value) =>
+  const riskRewardTargets = (trade.riskReward ?? []).map((value) =>
     value ?? "",
   );
-  const riskValue = formatOptionalText(state.trade.risk);
-  const pipsValuesRaw = state.trade.pips ?? [];
-  const lotSizeValue = formatOptionalText(state.trade.lotSize);
-  const pnlValuesRaw = state.trade.pnl ?? [];
+  const riskValue = formatOptionalText(trade.risk);
+  const pipsValuesRaw = trade.pips ?? [];
+  const lotSizeValue = formatOptionalText(trade.lotSize);
+  const pnlValuesRaw = trade.pnl ?? [];
   const pnlTargets = pnlValuesRaw.map((value) =>
     value !== null && value !== undefined ? value.toString() : "",
   );
@@ -879,12 +881,12 @@ export default function RegisteredTradePage() {
   );
   const normalizedRiskRewardTargets = padMultiValue(riskRewardTargets, targetColumnCount, () => "");
   const entryPriceNumber =
-    typeof state.trade.entryPrice === "number" && Number.isFinite(state.trade.entryPrice)
-      ? state.trade.entryPrice
+    typeof trade.entryPrice === "number" && Number.isFinite(trade.entryPrice)
+      ? trade.entryPrice
       : null;
   const stopLossNumber =
-    typeof state.trade.stopLoss === "number" && Number.isFinite(state.trade.stopLoss)
-      ? state.trade.stopLoss
+    typeof trade.stopLoss === "number" && Number.isFinite(trade.stopLoss)
+      ? trade.stopLoss
       : null;
   const normalizedTakeProfitNumbers = padMultiValue(
     takeProfitValuesRaw.map((value) =>
@@ -913,8 +915,8 @@ export default function RegisteredTradePage() {
       entryPrice: entryPriceNumber,
       exitPrice,
       position:
-        state.trade.position === "LONG" || state.trade.position === "SHORT"
-          ? state.trade.position
+        trade.position === "LONG" || trade.position === "SHORT"
+          ? trade.position
           : null,
     });
   });
@@ -1032,35 +1034,27 @@ export default function RegisteredTradePage() {
       </div>
     </div>
   );
-  const preTradeMentalStateValue = formatOptionalText(state.trade.preTradeMentalState);
-  const emotionsDuringTradeValue = formatOptionalText(state.trade.emotionsDuringTrade);
-  const emotionsAfterTradeValue = formatOptionalText(state.trade.emotionsAfterTrade);
-  const confidenceLevelValue = formatOptionalText(state.trade.confidenceLevel);
-  const emotionalTriggerValue = formatOptionalText(state.trade.emotionalTrigger);
-  const followedPlanValue = formatOptionalText(state.trade.followedPlan);
-  const respectedRiskValue = formatOptionalText(state.trade.respectedRisk);
-  const wouldRepeatTradeValue = formatOptionalText(state.trade.wouldRepeatTrade);
+  const preTradeMentalStateValue = formatOptionalText(trade.preTradeMentalState);
+  const emotionsDuringTradeValue = formatOptionalText(trade.emotionsDuringTrade);
+  const emotionsAfterTradeValue = formatOptionalText(trade.emotionsAfterTrade);
+  const confidenceLevelValue = formatOptionalText(trade.confidenceLevel);
+  const emotionalTriggerValue = formatOptionalText(trade.emotionalTrigger);
+  const followedPlanValue = formatOptionalText(trade.followedPlan);
+  const respectedRiskValue = formatOptionalText(trade.respectedRisk);
+  const wouldRepeatTradeValue = formatOptionalText(trade.wouldRepeatTrade);
 
   const handleEditTrade = () => {
-    if (!state.trade) {
-      return;
-    }
-
-    router.push(`/new-trade?tradeId=${state.trade.id}`);
+    router.push(`/new-trade?tradeId=${trade.id}`);
   };
 
   const handleDeleteTrade = async () => {
-    if (!state.trade) {
-      return;
-    }
-
     const shouldDelete = window.confirm("Sei sicuro di voler eliminare questa operazione?");
     if (!shouldDelete) {
       return;
     }
 
     try {
-      await deleteTrade(state.trade.id);
+      await deleteTrade(trade.id);
       setState({ status: "missing", trade: null });
       router.push("/");
     } catch (error) {
@@ -1200,9 +1194,9 @@ export default function RegisteredTradePage() {
 
                       <div
                         className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:w-[12.5rem] lg:w-[13.5rem] ${
-                          state.trade.tradeOutcome === "profit"
+                          trade.tradeOutcome === "profit"
                             ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32]"
-                            : state.trade.tradeOutcome === "loss"
+                            : trade.tradeOutcome === "loss"
                               ? "border-[#F5B7B7] bg-[#FCE8E8] text-[#C62828]"
                               : "border-border bg-[color:rgb(var(--surface)/0.9)] text-[color:rgb(var(--muted-fg)/0.7)]"
                         }`}
@@ -1210,7 +1204,7 @@ export default function RegisteredTradePage() {
                         {tradeOutcomeLabel ? (
                           <span
                             className={`text-lg font-semibold tracking-[0.14em] capitalize md:text-xl ${
-                              state.trade.tradeOutcome === "profit" ? "text-[#2E7D32]" : "text-[#C62828]"
+                              trade.tradeOutcome === "profit" ? "text-[#2E7D32]" : "text-[#C62828]"
                             }`}
                           >
                             {tradeOutcomeLabel}
@@ -1224,12 +1218,12 @@ export default function RegisteredTradePage() {
 
                       <div
                         className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] md:w-[12.5rem] lg:w-[13.5rem] ${
-                          state.trade.isPaperTrade
+                          trade.isPaperTrade
                             ? "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280]"
                             : "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED]"
                         }`}
                       >
-                        {state.trade.isPaperTrade ? (
+                        {trade.isPaperTrade ? (
                           <Circle
                             className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
                             aria-hidden="true"
@@ -1241,7 +1235,7 @@ export default function RegisteredTradePage() {
                           />
                         )}
                         <span className="text-sm font-medium tracking-[0.08em] transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
-                          {state.trade.isPaperTrade ? "Paper Trade" : "Real Trade"}
+                          {trade.isPaperTrade ? "Paper Trade" : "Real Trade"}
                         </span>
                       </div>
                     </div>
