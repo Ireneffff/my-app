@@ -35,6 +35,7 @@ import {
   getTakeProfitOutcomeStyle as getOutcomeStyle,
   type TakeProfitOutcome,
 } from "@/lib/takeProfitOutcomeStyles";
+import { calculateOverallPips, calculatePips, formatPips } from "@/lib/pips";
 
 type SymbolOption = {
   code: string;
@@ -208,26 +209,6 @@ function numericFieldStatesAreEqual(
   }
 
   return true;
-}
-
-function calculatePipDifference(
-  entryPrice: NumericFieldState,
-  takeProfit: NumericFieldState,
-) {
-  if (entryPrice.value === null || takeProfit.value === null) {
-    return null;
-  }
-
-  const difference = takeProfit.value - entryPrice.value;
-  const pips = Math.abs(difference) * 10000;
-
-  if (!Number.isFinite(pips)) {
-    return null;
-  }
-
-  const roundedPips = Math.round(pips * 10) / 10;
-
-  return roundedPips;
 }
 
 function getStartOfWeek(date: Date) {
@@ -473,9 +454,21 @@ function NewTradePageContent() {
         targetColumnCount,
         () => createNumericFieldState(),
       );
+      const normalizedTakeProfitOutcomeValues = padMultiValue(
+        takeProfitOutcomes,
+        targetColumnCount,
+        createTakeProfitOutcome,
+      );
 
-      const computedPips = normalizedTakeProfitTargets.map((target) => {
-        const pipsValue = calculatePipDifference(entryPrice, target);
+      const computedPips = normalizedTakeProfitTargets.map((target, index) => {
+        const outcome = normalizedTakeProfitOutcomeValues[index];
+        const exitPrice = outcome === "loss" ? stopLoss.value : target.value;
+
+        const pipsValue = calculatePips({
+          entryPrice: entryPrice.value,
+          exitPrice,
+          position,
+        });
 
         return pipsValue === null
           ? createNumericFieldState()
@@ -484,7 +477,14 @@ function NewTradePageContent() {
 
       return numericFieldStatesAreEqual(previous, computedPips) ? previous : computedPips;
     });
-  }, [entryPrice, takeProfitTargets, targetColumnCount]);
+  }, [
+    entryPrice,
+    position,
+    stopLoss,
+    takeProfitOutcomes,
+    takeProfitTargets,
+    targetColumnCount,
+  ]);
 
   const handleTakeProfitChange = useCallback(
     (index: number, value: string) => {
@@ -590,6 +590,42 @@ function NewTradePageContent() {
     [takeProfitOutcomes, targetColumnCount],
   );
   const pnlFieldConfig = targetFieldConfigs[targetFieldConfigs.length - 1];
+
+  const overallPips = useMemo(
+    () => calculateOverallPips(pipsTargets.map((target) => target.value)),
+    [pipsTargets],
+  );
+  const formattedOverallPips = overallPips === null ? null : formatPips(overallPips);
+  const overallPipsDisplayValue = formattedOverallPips ?? "—";
+  const overallPipsTextClass =
+    overallPips === null
+      ? "text-muted-fg"
+      : overallPips > 0
+        ? "text-[#2E7D32]"
+        : overallPips < 0
+          ? "text-[#C62828]"
+          : "text-muted-fg";
+  const overallPipsSummary = useMemo(() => {
+    if (overallPips === null) {
+      return null;
+    }
+
+    if (overallPips > 0 && formattedOverallPips) {
+      return {
+        label: `Overall Profit (${formattedOverallPips} pips)`,
+        className: "text-[#2E7D32]",
+      } as const;
+    }
+
+    if (overallPips < 0 && formattedOverallPips) {
+      return {
+        label: `Overall Loss (${formattedOverallPips} pips)`,
+        className: "text-[#C62828]",
+      } as const;
+    }
+
+    return { label: "Break-even (0 pips)", className: "text-muted-fg" } as const;
+  }, [formattedOverallPips, overallPips]);
 
   const lockBodyScroll = useCallback(() => {
     if (typeof document === "undefined") {
@@ -2497,6 +2533,17 @@ function NewTradePageContent() {
                         );
                       })}
 
+                      <div className="flex flex-col gap-2">
+                        <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                          Overall Pips
+                        </span>
+                        <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                          <span className={`text-sm font-semibold ${overallPipsTextClass}`}>
+                            {overallPipsDisplayValue}
+                          </span>
+                        </div>
+                      </div>
+
                     </div>
 
                     <div className="my-6 border-t border-border" />
@@ -2638,6 +2685,14 @@ function NewTradePageContent() {
                         );
                       })()}
                     </div>
+
+                    {overallPipsSummary && (
+                      <div className="mt-6 rounded-2xl border border-border bg-surface px-4 py-4 text-center">
+                        <span className={`text-sm font-semibold ${overallPipsSummary.className}`}>
+                          {overallPipsSummary.label}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="mt-6 border-t border-border" />
                     <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">

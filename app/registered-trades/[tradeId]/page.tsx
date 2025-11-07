@@ -29,6 +29,7 @@ import {
   getTakeProfitOutcomeStyle,
   type TakeProfitOutcome,
 } from "@/lib/takeProfitOutcomeStyles";
+import { calculateOverallPips, calculatePips, formatPips } from "@/lib/pips";
 
 type TradeState = {
   status: "loading" | "ready" | "missing";
@@ -842,7 +843,8 @@ export default function RegisteredTradePage() {
   const positionLabel = state.trade.position === "SHORT" ? "Short" : "Long";
   const entryPriceValue = formatOptionalText(state.trade.entryPrice);
   const stopLossValue = formatOptionalText(state.trade.stopLoss);
-  const takeProfitTargets = (state.trade.takeProfit ?? []).map((value) =>
+  const takeProfitValuesRaw = state.trade.takeProfit ?? [];
+  const takeProfitTargets = takeProfitValuesRaw.map((value) =>
     value !== null && value !== undefined ? value.toString() : "",
   );
   const takeProfitOutcomeValues = (state.trade.takeProfitOutcomes ?? []).map((value) =>
@@ -852,11 +854,10 @@ export default function RegisteredTradePage() {
     value ?? "",
   );
   const riskValue = formatOptionalText(state.trade.risk);
-  const pipsTargets = (state.trade.pips ?? []).map((value) =>
-    value !== null && value !== undefined ? value.toString() : "",
-  );
+  const pipsValuesRaw = state.trade.pips ?? [];
   const lotSizeValue = formatOptionalText(state.trade.lotSize);
-  const pnlTargets = (state.trade.pnl ?? []).map((value) =>
+  const pnlValuesRaw = state.trade.pnl ?? [];
+  const pnlTargets = pnlValuesRaw.map((value) =>
     value !== null && value !== undefined ? value.toString() : "",
   );
   const targetColumnCount = Math.max(
@@ -864,8 +865,8 @@ export default function RegisteredTradePage() {
     takeProfitTargets.length,
     takeProfitOutcomeValues.length,
     riskRewardTargets.length,
-    pipsTargets.length,
-    pnlTargets.length,
+    pipsValuesRaw.length,
+    pnlValuesRaw.length,
   );
   const normalizedTakeProfitTargets = padMultiValue(takeProfitTargets, targetColumnCount, () => "");
   const normalizedTakeProfitOutcomeValues = padMultiValue<TakeProfitOutcome>(
@@ -877,8 +878,69 @@ export default function RegisteredTradePage() {
     value === "profit" ? "Profit" : value === "loss" ? "Loss" : "",
   );
   const normalizedRiskRewardTargets = padMultiValue(riskRewardTargets, targetColumnCount, () => "");
-  const normalizedPipsTargets = padMultiValue(pipsTargets, targetColumnCount, () => "");
+  const entryPriceNumber =
+    typeof state.trade.entryPrice === "number" && Number.isFinite(state.trade.entryPrice)
+      ? state.trade.entryPrice
+      : null;
+  const stopLossNumber =
+    typeof state.trade.stopLoss === "number" && Number.isFinite(state.trade.stopLoss)
+      ? state.trade.stopLoss
+      : null;
+  const normalizedTakeProfitNumbers = padMultiValue(
+    takeProfitValuesRaw.map((value) =>
+      typeof value === "number" && Number.isFinite(value) ? value : null,
+    ),
+    targetColumnCount,
+    () => null,
+  );
+  const normalizedStoredPipNumbers = padMultiValue(
+    pipsValuesRaw.map((value) =>
+      typeof value === "number" && Number.isFinite(value) ? value : null,
+    ),
+    targetColumnCount,
+    () => null,
+  );
+  const normalizedComputedPipNumbers = normalizedStoredPipNumbers.map((storedValue, index) => {
+    if (storedValue !== null) {
+      return storedValue;
+    }
+
+    const outcome = normalizedTakeProfitOutcomeValues[index];
+    const exitPrice =
+      outcome === "loss" ? stopLossNumber : normalizedTakeProfitNumbers[index];
+
+    return calculatePips({
+      entryPrice: entryPriceNumber,
+      exitPrice,
+      position:
+        state.trade.position === "LONG" || state.trade.position === "SHORT"
+          ? state.trade.position
+          : null,
+    });
+  });
+  const normalizedPipsTargets = normalizedComputedPipNumbers.map((value) =>
+    value !== null ? formatPips(value) : "",
+  );
   const normalizedPnlTargets = padMultiValue(pnlTargets, targetColumnCount, () => "");
+  const overallPips = calculateOverallPips(normalizedComputedPipNumbers);
+  const formattedOverallPips = overallPips === null ? null : formatPips(overallPips);
+  const overallPipsDisplayValue = formattedOverallPips ?? "—";
+  const overallPipsTextClass =
+    overallPips === null
+      ? "text-muted-fg"
+      : overallPips > 0
+        ? "text-[#2E7D32]"
+        : overallPips < 0
+          ? "text-[#C62828]"
+          : "text-muted-fg";
+  const overallPipsSummary =
+    overallPips === null
+      ? null
+      : overallPips > 0 && formattedOverallPips
+        ? { label: `Overall Profit (${formattedOverallPips} pips)`, className: "text-[#2E7D32]" }
+        : overallPips < 0 && formattedOverallPips
+          ? { label: `Overall Loss (${formattedOverallPips} pips)`, className: "text-[#C62828]" }
+          : { label: "Break-even (0 pips)", className: "text-muted-fg" };
   const isEditMode = false; // This page shows read-only data; editing happens on the new trade form.
   const targetDisplayConfigs = [
     { idPrefix: "take-profit", label: "Take Profit", values: normalizedTakeProfitTargets },
@@ -1278,6 +1340,17 @@ export default function RegisteredTradePage() {
                   </div>
 
                   {targetDisplayConfigs.map(renderTargetDisplay)}
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                      Overall Pips
+                    </span>
+                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                      <span className={`text-sm font-semibold ${overallPipsTextClass}`}>
+                        {overallPipsDisplayValue}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1305,6 +1378,14 @@ export default function RegisteredTradePage() {
                   {renderTargetDisplay(pnlDisplayConfig)}
                 </div>
               </div>
+
+              {overallPipsSummary && (
+                <div className="mt-6 rounded-2xl border border-border bg-surface px-4 py-4 text-center">
+                  <span className={`text-sm font-semibold ${overallPipsSummary.className}`}>
+                    {overallPipsSummary.label}
+                  </span>
+                </div>
+              )}
 
               <div className="mt-6 border-t border-border" />
 
