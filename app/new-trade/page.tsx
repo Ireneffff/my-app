@@ -616,6 +616,12 @@ function NewTradePageContent() {
   );
   const stopLossPipLabelClassName =
     stopLossDistancePips === null ? "text-muted-fg" : "text-red-700";
+  const stopLossPipInputValue = useMemo(
+    () => (stopLossDistancePips === null ? "" : stopLossDistancePips.toFixed(1)),
+    [stopLossDistancePips],
+  );
+  const stopLossPipInputTextClassName =
+    stopLossDistancePips === null ? "text-muted-fg" : "text-red-700";
   const takeProfitDistancePipValues = useMemo(
     () =>
       padMultiValue<number | null>(
@@ -2463,14 +2469,36 @@ function NewTradePageContent() {
                             </span>
                           ) : null}
                         </label>
-                        <input
-                          id="stop-loss-input"
-                          type="number"
-                          value={stopLoss.raw}
-                          onChange={(event) => setStopLoss(createNumericFieldState(event.target.value))}
-                          placeholder="Insert price"
-                          className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                        />
+                        <div
+                          className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,9.5rem)] md:items-end"
+                        >
+                          <input
+                            id="stop-loss-input"
+                            type="number"
+                            value={stopLoss.raw}
+                            onChange={(event) => setStopLoss(createNumericFieldState(event.target.value))}
+                            placeholder="Insert price"
+                            className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
+                          />
+                          <div className="flex flex-col gap-2 md:justify-self-end md:text-right">
+                            <label
+                              htmlFor="stop-loss-pips-input"
+                              className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                            >
+                              Nr. Pips (SL)
+                            </label>
+                            <input
+                              id="stop-loss-pips-input"
+                              type="text"
+                              inputMode="decimal"
+                              value={stopLossPipInputValue}
+                              readOnly
+                              placeholder="—"
+                              className={`rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0 ${stopLossPipInputTextClassName}`}
+                              aria-readonly="true"
+                            />
+                          </div>
+                        </div>
                       </div>
 
                       {targetFieldConfigs.slice(0, 3).map((fieldConfig) => {

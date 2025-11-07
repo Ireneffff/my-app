@@ -861,6 +861,8 @@ export default function RegisteredTradePage() {
     stopLossDistancePips === null ? null : `(${formatPips(-stopLossDistancePips)} pips)`;
   const stopLossPipLabelClassName =
     stopLossDistancePips === null ? "text-muted-fg" : "text-red-700";
+  const stopLossPipDisplayValue =
+    stopLossDistancePips === null ? "—" : stopLossDistancePips.toFixed(1);
   const takeProfitValuesRaw = trade.takeProfit ?? [];
   const takeProfitTargets = takeProfitValuesRaw.map((value) =>
     value !== null && value !== undefined ? value.toString() : "",
@@ -1410,8 +1412,20 @@ export default function RegisteredTradePage() {
                         </span>
                       ) : null}
                     </span>
-                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                      <span className="text-sm font-medium text-fg">{stopLossValue}</span>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,9.5rem)] md:items-end">
+                      <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                        <span className="text-sm font-medium text-fg">{stopLossValue}</span>
+                      </div>
+                      <div className="flex flex-col gap-2 md:justify-self-end md:text-right">
+                        <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                          Nr. Pips (SL)
+                        </span>
+                        <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                          <span className={`text-sm font-medium ${stopLossPipLabelClassName}`}>
+                            {stopLossPipDisplayValue}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
