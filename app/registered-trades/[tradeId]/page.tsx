@@ -858,7 +858,7 @@ export default function RegisteredTradePage() {
     position: trade.position,
   });
   const stopLossPipLabelClassName =
-    stopLossDistancePips === null ? "text-muted-fg" : "text-red-700";
+    stopLossDistancePips === null ? "text-muted-fg" : "text-fg";
   const stopLossPipDisplayValue =
     stopLossDistancePips === null ? "—" : stopLossDistancePips.toFixed(1);
   const takeProfitValuesRaw = trade.takeProfit ?? [];
@@ -1400,22 +1400,22 @@ export default function RegisteredTradePage() {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <span className="flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      <span>Stop Loss</span>
-                    </span>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,9.5rem)]">
+                      <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                        Stop Loss
+                      </span>
+                      <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg md:justify-self-end md:text-right">
+                        Nr. Pips (SL)
+                      </span>
+                    </div>
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,9.5rem)] md:items-end">
                       <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                         <span className="text-sm font-medium text-fg">{stopLossValue}</span>
                       </div>
-                      <div className="flex flex-col gap-2 md:justify-self-end md:text-right">
-                        <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                          Nr. Pips (SL)
+                      <div className="rounded-2xl border border-border bg-surface px-4 py-3 md:justify-self-end">
+                        <span className={`text-sm font-medium ${stopLossPipLabelClassName}`}>
+                          {stopLossPipDisplayValue}
                         </span>
-                        <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                          <span className={`text-sm font-medium ${stopLossPipLabelClassName}`}>
-                            {stopLossPipDisplayValue}
-                          </span>
-                        </div>
                       </div>
                     </div>
                   </div>
