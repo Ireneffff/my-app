@@ -2447,7 +2447,7 @@ function NewTradePageContent() {
                       </div>
 
                       <div className="flex flex-col gap-2">
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,9.5rem)]">
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)] md:gap-2">
                           <label
                             htmlFor="stop-loss-input"
                             className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
@@ -2461,7 +2461,7 @@ function NewTradePageContent() {
                             Nr. Pips (SL)
                           </label>
                         </div>
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,9.5rem)] md:items-end">
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)] md:gap-2 md:items-end">
                           <input
                             id="stop-loss-input"
                             type="number"
