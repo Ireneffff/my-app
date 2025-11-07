@@ -29,7 +29,7 @@ import {
   getTakeProfitOutcomeStyle,
   type TakeProfitOutcome,
 } from "@/lib/takeProfitOutcomeStyles";
-import { calculateOverallPips, calculatePips, formatPips } from "@/lib/pips";
+import { applyOutcomeToPips, calculateOverallPips, calculatePips, formatPips } from "@/lib/pips";
 
 type TradeState = {
   status: "loading" | "ready" | "missing";
@@ -902,24 +902,29 @@ export default function RegisteredTradePage() {
     targetColumnCount,
     () => null,
   );
-  const normalizedComputedPipNumbers = normalizedStoredPipNumbers.map((storedValue, index) => {
-    if (storedValue !== null) {
-      return storedValue;
-    }
+  const normalizedComputedPipNumbers = normalizedTakeProfitOutcomeValues.map(
+    (outcome, index) => {
+      const takeProfitPrice = normalizedTakeProfitNumbers[index];
+      const storedValue = normalizedStoredPipNumbers[index];
 
-    const outcome = normalizedTakeProfitOutcomeValues[index];
-    const exitPrice =
-      outcome === "loss" ? stopLossNumber : normalizedTakeProfitNumbers[index];
+      const computedValue = calculatePips({
+        entryPrice: entryPriceNumber,
+        takeProfitPrice,
+        stopLossPrice: stopLossNumber,
+        position:
+          trade.position === "LONG" || trade.position === "SHORT"
+            ? trade.position
+            : null,
+        outcome,
+      });
 
-    return calculatePips({
-      entryPrice: entryPriceNumber,
-      exitPrice,
-      position:
-        trade.position === "LONG" || trade.position === "SHORT"
-          ? trade.position
-          : null,
-    });
-  });
+      if (computedValue !== null) {
+        return computedValue;
+      }
+
+      return applyOutcomeToPips({ value: storedValue, outcome });
+    },
+  );
   const normalizedPipsTargets = normalizedComputedPipNumbers.map((value) =>
     value !== null ? formatPips(value) : "",
   );

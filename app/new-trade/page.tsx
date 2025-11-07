@@ -462,12 +462,13 @@ function NewTradePageContent() {
 
       const computedPips = normalizedTakeProfitTargets.map((target, index) => {
         const outcome = normalizedTakeProfitOutcomeValues[index];
-        const exitPrice = outcome === "loss" ? stopLoss.value : target.value;
 
         const pipsValue = calculatePips({
           entryPrice: entryPrice.value,
-          exitPrice,
+          takeProfitPrice: target.value,
+          stopLossPrice: stopLoss.value,
           position,
+          outcome,
         });
 
         return pipsValue === null

@@ -1,3 +1,5 @@
+import type { TakeProfitOutcome } from "./takeProfitOutcomeStyles";
+
 export type TradePosition = "LONG" | "SHORT";
 
 function roundToTenth(value: number) {
@@ -10,14 +12,18 @@ function isFiniteNumber(value: unknown): value is number {
 
 export function calculatePips({
   entryPrice,
-  exitPrice,
+  takeProfitPrice,
+  stopLossPrice,
   position,
+  outcome,
 }: {
   entryPrice: number | null | undefined;
-  exitPrice: number | null | undefined;
+  takeProfitPrice: number | null | undefined;
+  stopLossPrice: number | null | undefined;
   position: TradePosition | null | undefined;
+  outcome: TakeProfitOutcome | null | undefined;
 }): number | null {
-  if (!isFiniteNumber(entryPrice) || !isFiniteNumber(exitPrice)) {
+  if (!isFiniteNumber(entryPrice)) {
     return null;
   }
 
@@ -25,48 +31,72 @@ export function calculatePips({
     return null;
   }
 
-  const difference =
-    position === "LONG" ? exitPrice - entryPrice : entryPrice - exitPrice;
-  const pips = difference * 10000;
-
-  if (!Number.isFinite(pips)) {
+  if (outcome !== "profit" && outcome !== "loss") {
     return null;
   }
 
-  return roundToTenth(pips);
+  const exitPrice =
+    outcome === "profit"
+      ? takeProfitPrice
+      : outcome === "loss"
+        ? stopLossPrice
+        : null;
+
+  if (!isFiniteNumber(exitPrice)) {
+    return null;
+  }
+
+  const distance = Math.abs((exitPrice as number) - entryPrice) * 10000;
+
+  if (!Number.isFinite(distance)) {
+    return null;
+  }
+
+  const signedDistance = outcome === "loss" ? -distance : distance;
+
+  return roundToTenth(signedDistance);
 }
 
-export function calculateOverallPips(
-  values: Array<number | null | undefined>,
-  weights?: Array<number | null | undefined>,
-): number | null {
-  let weightedSum = 0;
-  let totalWeight = 0;
+export function applyOutcomeToPips({
+  value,
+  outcome,
+}: {
+  value: number | null | undefined;
+  outcome: TakeProfitOutcome | null | undefined;
+}): number | null {
+  if (!isFiniteNumber(value)) {
+    return null;
+  }
 
-  for (let index = 0; index < values.length; index += 1) {
-    const value = values[index];
+  if (outcome === "profit") {
+    return roundToTenth(Math.abs(value));
+  }
 
+  if (outcome === "loss") {
+    return roundToTenth(-Math.abs(value));
+  }
+
+  return roundToTenth(value);
+}
+
+export function calculateOverallPips(values: Array<number | null | undefined>): number | null {
+  let hasValue = false;
+  let total = 0;
+
+  for (const value of values) {
     if (!isFiniteNumber(value)) {
       continue;
     }
 
-    const weight = weights && isFiniteNumber(weights[index])
-      ? (weights[index] as number)
-      : 1;
-
-    if (weight === 0) {
-      continue;
-    }
-
-    weightedSum += value * weight;
-    totalWeight += weight;
+    total += value;
+    hasValue = true;
   }
 
-  if (totalWeight === 0) {
+  if (!hasValue) {
     return null;
   }
 
-  return roundToTenth(weightedSum / totalWeight);
+  return roundToTenth(total);
 }
 
 export function formatPips(value: number): string {
