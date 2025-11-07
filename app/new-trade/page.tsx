@@ -35,7 +35,13 @@ import {
   getTakeProfitOutcomeStyle as getOutcomeStyle,
   type TakeProfitOutcome,
 } from "@/lib/takeProfitOutcomeStyles";
-import { calculateOverallPips, calculatePips, formatPips } from "@/lib/pips";
+import {
+  calculateOverallPips,
+  calculatePips,
+  calculateStopLossDistance,
+  calculateTakeProfitDistance,
+  formatPips,
+} from "@/lib/pips";
 
 type SymbolOption = {
   code: string;
@@ -589,6 +595,64 @@ function NewTradePageContent() {
         createTakeProfitOutcome,
       ),
     [takeProfitOutcomes, targetColumnCount],
+  );
+  const entryPriceNumber = entryPrice.value;
+  const stopLossNumber = stopLoss.value;
+  const stopLossDistancePips = useMemo(
+    () =>
+      calculateStopLossDistance({
+        entryPrice: entryPriceNumber,
+        stopLossPrice: stopLossNumber,
+        position,
+      }),
+    [entryPriceNumber, position, stopLossNumber],
+  );
+  const stopLossPipLabel = useMemo(
+    () =>
+      stopLossDistancePips === null
+        ? null
+        : `(${formatPips(-stopLossDistancePips)} pips)`,
+    [stopLossDistancePips],
+  );
+  const stopLossPipLabelClassName =
+    stopLossDistancePips === null ? "text-muted-fg" : "text-red-700";
+  const takeProfitDistancePipValues = useMemo(
+    () =>
+      padMultiValue<number | null>(
+        takeProfitTargets.map((target) =>
+          calculateTakeProfitDistance({
+            entryPrice: entryPriceNumber,
+            takeProfitPrice: target.value,
+            position,
+          }),
+        ),
+        targetColumnCount,
+        () => null,
+      ),
+    [entryPriceNumber, position, takeProfitTargets, targetColumnCount],
+  );
+  const takeProfitPipDisplays = useMemo(
+    () =>
+      takeProfitDistancePipValues.map((distance, index) => {
+        if (distance === null) {
+          return null;
+        }
+
+        const outcome = normalizedTakeProfitOutcomeValues[index] ?? "";
+        const signedDistance = outcome === "loss" ? -distance : distance;
+        const className =
+          outcome === "profit"
+            ? "text-green-700"
+            : outcome === "loss"
+              ? "text-red-700"
+              : "text-muted-fg";
+
+        return {
+          className,
+          text: `(${formatPips(signedDistance)} pips)`,
+        };
+      }),
+    [normalizedTakeProfitOutcomeValues, takeProfitDistancePipValues],
   );
   const pnlFieldConfig = targetFieldConfigs[targetFieldConfigs.length - 1];
 
@@ -2388,9 +2452,16 @@ function NewTradePageContent() {
                       <div className="flex flex-col gap-2">
                         <label
                           htmlFor="stop-loss-input"
-                          className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
+                          className="flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
                         >
-                          Stop Loss
+                          <span>Stop Loss</span>
+                          {stopLossPipLabel ? (
+                            <span
+                              className={`ml-3 text-[10px] font-semibold normal-case tracking-[0.08em] text-right md:text-xs ${stopLossPipLabelClassName}`}
+                            >
+                              {stopLossPipLabel}
+                            </span>
+                          ) : null}
                         </label>
                         <input
                           id="stop-loss-input"
@@ -2424,6 +2495,7 @@ function NewTradePageContent() {
 
                                 if (fieldConfig.idPrefix === "take-profit") {
                                   const outcomeSelectId = `${fieldConfig.idPrefix}-outcome-${columnIndex}`;
+                                  const pipDisplay = takeProfitPipDisplays[columnIndex];
 
                                   return (
                                     <div
@@ -2433,9 +2505,16 @@ function NewTradePageContent() {
                                       <label
                                         id={labelId}
                                         htmlFor={outcomeSelectId}
-                                        className={`text-[11px] font-medium uppercase tracking-[0.24em] transition-colors duration-200 ease-in-out ${outcomeStyle.label}`}
+                                        className={`flex w-full items-center justify-between text-[11px] font-medium uppercase tracking-[0.24em] transition-colors duration-200 ease-in-out ${outcomeStyle.label}`}
                                       >
-                                        {`${fieldConfig.label} ${columnIndex + 1}`}
+                                        <span>{`${fieldConfig.label} ${columnIndex + 1}`}</span>
+                                        {pipDisplay ? (
+                                          <span
+                                            className={`ml-3 text-[10px] font-semibold normal-case tracking-[0.08em] text-right md:text-xs ${pipDisplay.className}`}
+                                          >
+                                            {pipDisplay.text}
+                                          </span>
+                                        ) : null}
                                       </label>
                                       <TakeProfitOutcomeSelect
                                         id={outcomeSelectId}

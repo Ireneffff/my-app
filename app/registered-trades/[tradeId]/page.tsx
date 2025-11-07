@@ -29,7 +29,14 @@ import {
   getTakeProfitOutcomeStyle,
   type TakeProfitOutcome,
 } from "@/lib/takeProfitOutcomeStyles";
-import { applyOutcomeToPips, calculateOverallPips, calculatePips, formatPips } from "@/lib/pips";
+import {
+  applyOutcomeToPips,
+  calculateOverallPips,
+  calculatePips,
+  calculateStopLossDistance,
+  calculateTakeProfitDistance,
+  formatPips,
+} from "@/lib/pips";
 
 type TradeState = {
   status: "loading" | "ready" | "missing";
@@ -845,6 +852,15 @@ export default function RegisteredTradePage() {
   const positionLabel = trade.position === "SHORT" ? "Short" : "Long";
   const entryPriceValue = formatOptionalText(trade.entryPrice);
   const stopLossValue = formatOptionalText(trade.stopLoss);
+  const stopLossDistancePips = calculateStopLossDistance({
+    entryPrice: trade.entryPrice,
+    stopLossPrice: trade.stopLoss,
+    position: trade.position,
+  });
+  const stopLossPipLabel =
+    stopLossDistancePips === null ? null : `(${formatPips(-stopLossDistancePips)} pips)`;
+  const stopLossPipLabelClassName =
+    stopLossDistancePips === null ? "text-muted-fg" : "text-red-700";
   const takeProfitValuesRaw = trade.takeProfit ?? [];
   const takeProfitTargets = takeProfitValuesRaw.map((value) =>
     value !== null && value !== undefined ? value.toString() : "",
@@ -875,6 +891,17 @@ export default function RegisteredTradePage() {
     takeProfitOutcomeValues,
     targetColumnCount,
     () => "",
+  );
+  const takeProfitDistancePipValues = padMultiValue<number | null>(
+    takeProfitValuesRaw.map((value) =>
+      calculateTakeProfitDistance({
+        entryPrice: trade.entryPrice,
+        takeProfitPrice: value,
+        position: trade.position,
+      }),
+    ),
+    targetColumnCount,
+    () => null,
   );
   const normalizedTakeProfitOutcomeLabels = normalizedTakeProfitOutcomeValues.map((value) =>
     value === "profit" ? "Profit" : value === "loss" ? "Loss" : "",
@@ -949,11 +976,40 @@ export default function RegisteredTradePage() {
           ? { label: `Overall Loss (${formattedOverallPips} pips)`, className: "text-[#C62828]" }
           : { label: "Break-even (0 pips)", className: "text-muted-fg" };
   const isEditMode = false; // This page shows read-only data; editing happens on the new trade form.
+  const takeProfitPipDisplays = takeProfitDistancePipValues.map((distance, index) => {
+    if (distance === null) {
+      return null;
+    }
+
+    const outcome = normalizedTakeProfitOutcomeValues[index] ?? "";
+    const signedDistance = outcome === "loss" ? -distance : distance;
+    const className =
+      outcome === "profit"
+        ? "text-green-700"
+        : outcome === "loss"
+          ? "text-red-700"
+          : "text-muted-fg";
+
+    return {
+      className,
+      text: `(${formatPips(signedDistance)} pips)`,
+    };
+  });
   const targetDisplayConfigs = [
-    { idPrefix: "take-profit", label: "Take Profit", values: normalizedTakeProfitTargets },
+    {
+      idPrefix: "take-profit",
+      label: "Take Profit",
+      values: normalizedTakeProfitTargets,
+      pipLabels: takeProfitPipDisplays,
+    },
     { idPrefix: "risk-reward", label: "R/R", values: normalizedRiskRewardTargets },
     { idPrefix: "nr-pips", label: "Nr. Pips", values: normalizedPipsTargets },
-  ];
+  ] satisfies Array<{
+    idPrefix: string;
+    label: string;
+    values: string[];
+    pipLabels?: Array<{ className: string; text: string } | null>;
+  }>;
   const pnlDisplayConfig = {
     idPrefix: "pnl",
     label: "P&L",
@@ -965,10 +1021,12 @@ export default function RegisteredTradePage() {
     idPrefix,
     label,
     values,
+    pipLabels,
   }: {
     idPrefix: string;
     label: string;
     values: string[];
+    pipLabels?: Array<{ className: string; text: string } | null>;
   }) => (
     <div className="flex flex-col gap-2" key={idPrefix}>
       <div
@@ -982,14 +1040,24 @@ export default function RegisteredTradePage() {
             idPrefix === "take-profit"
               ? normalizedTakeProfitOutcomeLabels[columnIndex]
               : "";
+          const pipLabel = pipLabels?.[columnIndex] ?? null;
 
           return (
             <span
               key={`${idPrefix}-label-${columnIndex}`}
-              className={`text-[11px] font-medium uppercase tracking-[0.24em] transition-colors duration-200 ease-in-out ${outcomeStyle.label}`}
+              className={`flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.24em] transition-colors duration-200 ease-in-out ${outcomeStyle.label}`}
             >
-              {`${label} ${columnIndex + 1}`}
-              {outcomeLabel ? ` • ${outcomeLabel}` : ""}
+              <span>
+                {`${label} ${columnIndex + 1}`}
+                {outcomeLabel ? ` • ${outcomeLabel}` : ""}
+              </span>
+              {pipLabel ? (
+                <span
+                  className={`ml-3 text-[10px] font-semibold normal-case tracking-[0.08em] text-right md:text-xs ${pipLabel.className}`}
+                >
+                  {pipLabel.text}
+                </span>
+              ) : null}
             </span>
           );
         })}
@@ -1332,7 +1400,16 @@ export default function RegisteredTradePage() {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Stop Loss</span>
+                    <span className="flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                      <span>Stop Loss</span>
+                      {stopLossPipLabel ? (
+                        <span
+                          className={`ml-3 text-[10px] font-semibold normal-case tracking-[0.08em] text-right md:text-xs ${stopLossPipLabelClassName}`}
+                        >
+                          {stopLossPipLabel}
+                        </span>
+                      ) : null}
+                    </span>
                     <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                       <span className="text-sm font-medium text-fg">{stopLossValue}</span>
                     </div>

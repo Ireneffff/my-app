@@ -57,6 +57,68 @@ export function calculatePips({
   return roundToTenth(signedDistance);
 }
 
+export function calculateStopLossDistance({
+  entryPrice,
+  stopLossPrice,
+  position,
+}: {
+  entryPrice: number | null | undefined;
+  stopLossPrice: number | null | undefined;
+  position: TradePosition | null | undefined;
+}): number | null {
+  if (!isFiniteNumber(entryPrice) || !isFiniteNumber(stopLossPrice)) {
+    return null;
+  }
+
+  if (position !== "LONG" && position !== "SHORT") {
+    return null;
+  }
+
+  const rawDistance =
+    position === "LONG"
+      ? (entryPrice as number) - (stopLossPrice as number)
+      : (stopLossPrice as number) - (entryPrice as number);
+
+  const distance = Math.abs(rawDistance) * 10000;
+
+  if (!Number.isFinite(distance)) {
+    return null;
+  }
+
+  return roundToTenth(distance);
+}
+
+export function calculateTakeProfitDistance({
+  entryPrice,
+  takeProfitPrice,
+  position,
+}: {
+  entryPrice: number | null | undefined;
+  takeProfitPrice: number | null | undefined;
+  position: TradePosition | null | undefined;
+}): number | null {
+  if (!isFiniteNumber(entryPrice) || !isFiniteNumber(takeProfitPrice)) {
+    return null;
+  }
+
+  if (position !== "LONG" && position !== "SHORT") {
+    return null;
+  }
+
+  const rawDistance =
+    position === "LONG"
+      ? (takeProfitPrice as number) - (entryPrice as number)
+      : (entryPrice as number) - (takeProfitPrice as number);
+
+  const distance = Math.abs(rawDistance) * 10000;
+
+  if (!Number.isFinite(distance)) {
+    return null;
+  }
+
+  return roundToTenth(distance);
+}
+
 export function applyOutcomeToPips({
   value,
   outcome,
