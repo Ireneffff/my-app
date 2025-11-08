@@ -1118,7 +1118,7 @@ function NewTradePageContent() {
     });
 
     const buttonClasses = [
-      "flex min-w-[62px] flex-col items-center gap-1 rounded-full border border-transparent px-2 py-2 text-xs font-medium transition md:min-w-[88px] md:text-sm",
+        "flex w-16 flex-col items-center gap-1 rounded-full border border-transparent px-2 py-2 text-xs font-medium transition md:w-20 md:text-sm",
     ];
 
     if (isSelected) {
@@ -1861,7 +1861,7 @@ function NewTradePageContent() {
       >
         <div
           ref={previewContainerRef}
-          className="w-full lg:max-w-[960px]"
+          className="w-full lg:max-w-4xl"
           onWheel={handlePreviewWheel}
           onTouchStart={handlePreviewTouchStart}
           onTouchMove={handlePreviewTouchMove}
@@ -2001,7 +2001,7 @@ function NewTradePageContent() {
                             setIsSymbolListOpen((prev) => !prev);
                             setIsOutcomeListOpen(false);
                           }}
-                          className="group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)] md:w-[18rem] lg:w-[20rem]"
+                          className="group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)] md:w-72 lg:w-80"
                           aria-haspopup="listbox"
                           aria-expanded={isSymbolListOpen}
                         >
@@ -2061,7 +2061,7 @@ function NewTradePageContent() {
                             setIsOutcomeListOpen((prev) => !prev);
                             setIsSymbolListOpen(false);
                           }}
-                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:w-[12.5rem] lg:w-[13.5rem] ${
+                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:w-52 lg:w-56 ${
                             tradeOutcome === "profit"
                               ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
                               : tradeOutcome === "loss"
@@ -2128,7 +2128,7 @@ function NewTradePageContent() {
                             setIsSymbolListOpen(false);
                             setIsOutcomeListOpen(false);
                           }}
-                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:w-[12.5rem] lg:w-[13.5rem] ${
+                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:w-52 lg:w-56 ${
                             isRealTrade
                               ? "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
                               : "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
@@ -3236,7 +3236,7 @@ function NewTradePageContent() {
       className="page-shell page-shell--wide relative flex min-h-dvh flex-col gap-12 pb-20 pt-24 text-fg sm:pt-28"
       style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
     >
-      <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
+      <div className="mx-auto flex w-full max-w-4xl flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <Button
           type="button"
           variant="ghost"
@@ -3256,7 +3256,7 @@ function NewTradePageContent() {
           type="button"
           variant="primary"
           size="md"
-          className="ml-auto min-w-[148px]"
+          className="w-full sm:ml-auto sm:w-auto"
           onClick={handleSaveTrade}
           disabled={isSaving || isLoadingTrade}
         >
@@ -3275,7 +3275,7 @@ function NewTradePageContent() {
             </header>
 
             <nav className="mt-12 flex w-full items-center justify-center">
-              <div className="flex items-center gap-4 text-sm font-medium text-muted-fg">
+              <div className="flex flex-wrap items-center justify-center gap-3 text-sm font-medium text-muted-fg sm:gap-4">
                 {[
                   { label: "Main Data", value: "main" as const },
                   { label: "Library", value: "library" as const },

@@ -350,7 +350,7 @@ export default function RegisteredTradePage() {
         .toUpperCase();
 
       const pillClasses = [
-        "flex min-w-[62px] flex-col items-center gap-1 rounded-full border border-transparent px-2 py-2 text-xs font-medium transition md:min-w-[88px] md:text-sm",
+        "flex w-16 flex-col items-center gap-1 rounded-full border border-transparent px-2 py-2 text-xs font-medium transition md:w-20 md:text-sm",
       ];
 
       if (isSelected) {
@@ -752,7 +752,7 @@ export default function RegisteredTradePage() {
     >
       <div
         ref={previewContainerRef}
-        className="w-full lg:max-w-[960px]"
+        className="w-full lg:max-w-4xl"
         onWheel={handlePreviewWheel}
         onTouchStart={handlePreviewTouchStart}
         onTouchMove={handlePreviewTouchMove}
@@ -1116,7 +1116,7 @@ export default function RegisteredTradePage() {
       className="page-shell page-shell--wide relative flex min-h-dvh flex-col gap-12 pb-20 pt-24 text-fg sm:pt-28"
       style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
     >
-      <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
+      <div className="mx-auto flex w-full max-w-4xl flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <Button
           type="button"
           variant="ghost"
@@ -1130,15 +1130,15 @@ export default function RegisteredTradePage() {
           <X aria-hidden="true" className="h-5 w-5" />
         </Button>
 
-        <div className="ml-auto flex items-center gap-2">
-          <Button type="button" variant="secondary" size="sm" className="px-5" onClick={handleEditTrade}>
+        <div className="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+          <Button type="button" variant="secondary" size="sm" className="w-full px-5 sm:w-auto" onClick={handleEditTrade}>
             Edit trade
           </Button>
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="border border-transparent text-red-500 transition hover:border-[color:rgba(248,113,113,0.3)] hover:bg-[color:rgba(248,113,113,0.08)] hover:text-red-600"
+            className="w-full border border-transparent text-red-500 transition hover:border-[color:rgba(248,113,113,0.3)] hover:bg-[color:rgba(248,113,113,0.08)] hover:text-red-600 sm:w-auto"
             onClick={handleDeleteTrade}
           >
             Delete
@@ -1159,7 +1159,7 @@ export default function RegisteredTradePage() {
 
         <div className="flex w-full flex-col gap-8">
           <nav className="flex w-full items-center justify-center">
-            <div className="flex items-center gap-4 text-sm font-medium text-muted-fg">
+            <div className="flex flex-wrap items-center justify-center gap-3 text-sm font-medium text-muted-fg sm:gap-4">
               {[
                 { label: "Main Data", value: "main" as const },
                 { label: "Library", value: "library" as const },
@@ -1229,7 +1229,7 @@ export default function RegisteredTradePage() {
                 <div className="flex flex-col items-center gap-3">
                   <span className="block pb-1 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Trade Setup</span>
                     <div className="flex w-full flex-col items-center justify-center gap-6 md:flex-row md:justify-center">
-                      <div className="flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:w-[18rem] lg:w-[20rem]">
+                      <div className="flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:w-72 lg:w-80">
                         <div className="flex w-full items-center justify-center gap-3 text-fg">
                           <span className="text-2xl" aria-hidden="true">
                             {activeSymbol.flag}
@@ -1241,7 +1241,7 @@ export default function RegisteredTradePage() {
                       </div>
 
                       <div
-                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:w-[12.5rem] lg:w-[13.5rem] ${
+                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:w-52 lg:w-56 ${
                           trade.tradeOutcome === "profit"
                             ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32]"
                             : trade.tradeOutcome === "loss"
@@ -1265,7 +1265,7 @@ export default function RegisteredTradePage() {
                       </div>
 
                       <div
-                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] md:w-[12.5rem] lg:w-[13.5rem] ${
+                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] md:w-52 lg:w-56 ${
                           trade.isPaperTrade
                             ? "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280]"
                             : "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED]"
