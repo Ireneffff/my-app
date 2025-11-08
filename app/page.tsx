@@ -288,26 +288,28 @@ export default function Home() {
                       href={`/registered-trades/${trade.id}`}
                       className="group flex flex-col gap-4 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-5 py-4 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)]"
                     >
-                      <div className="flex flex-wrap items-start gap-3 sm:flex-nowrap">
-                        <span
-                          className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[color:rgb(var(--accent)/0.12)] text-sm font-semibold text-accent"
-                        >
-                          {totalTrades - index}
-                        </span>
-                        <span className="text-2xl" aria-hidden="true">
-                          {trade.symbolFlag}
-                        </span>
-                        <div className="flex min-w-0 flex-1 flex-col">
-                          <span className="truncate text-sm font-semibold tracking-[0.18em] text-fg">
-                            {trade.symbolCode}
-                          </span>
-                        </div>
+                      <div className="flex flex-col gap-2">
                         <time
-                          className="ml-auto text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg"
+                          className="self-end text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg"
                           dateTime={trade.date}
                         >
                           {formattedDate}
                         </time>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span
+                            className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[color:rgb(var(--accent)/0.12)] text-sm font-semibold text-accent"
+                          >
+                            {totalTrades - index}
+                          </span>
+                          <span className="text-2xl" aria-hidden="true">
+                            {trade.symbolFlag}
+                          </span>
+                          <div className="flex min-w-0 flex-1 flex-col">
+                            <span className="truncate text-sm font-semibold tracking-[0.18em] text-fg">
+                              {trade.symbolCode}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                       {shouldRenderOutcomes ? (
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
