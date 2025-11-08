@@ -636,17 +636,18 @@ function NewTradePageContent() {
         }
 
         const outcome = normalizedTakeProfitOutcomeValues[index] ?? "";
-        const signedDistance = outcome === "loss" ? -distance : distance;
         const className =
           outcome === "profit"
             ? "text-green-700"
             : outcome === "loss"
               ? "text-red-700"
               : "text-muted-fg";
+        const formattedDistance = formatPips(distance);
+        const pipText = formattedDistance === "0" ? "0.0" : formattedDistance;
 
         return {
           className,
-          text: `(${formatPips(signedDistance)} pips)`,
+          text: `(${pipText} pips)`
         };
       }),
     [normalizedTakeProfitOutcomeValues, takeProfitDistancePipValues],

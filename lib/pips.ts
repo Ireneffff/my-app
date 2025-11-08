@@ -110,7 +110,7 @@ export function calculateTakeProfitDistance({
       ? (takeProfitPrice as number) - (entryPrice as number)
       : (entryPrice as number) - (takeProfitPrice as number);
 
-  const distance = Math.abs(rawDistance) * 10000;
+  const distance = rawDistance * 10000;
 
   if (!Number.isFinite(distance)) {
     return null;
