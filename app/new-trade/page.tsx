@@ -614,7 +614,7 @@ function NewTradePageContent() {
       ),
     [entryPriceNumber, position, takeProfitTargets, targetColumnCount],
   );
-  const targetFieldConfigs = useMemo(
+  const targetFieldConfigs = useMemo<TargetFieldConfig[]>(
     () =>
       [
         {
@@ -656,7 +656,7 @@ function NewTradePageContent() {
           values: pnlTargets.map((target) => target.raw),
           onChange: handlePnlChange,
         },
-      ] satisfies TargetFieldConfig[],
+      ],
     [
       handlePnlChange,
       handleRiskRewardChange,
@@ -669,7 +669,7 @@ function NewTradePageContent() {
   );
   const pnlFieldConfig = targetFieldConfigs[targetFieldConfigs.length - 1];
 
-  const riskDetailFieldConfigs = useMemo(
+  const riskDetailFieldConfigs = useMemo<TargetFieldConfig[]>(
     () =>
       [
         {
@@ -688,7 +688,7 @@ function NewTradePageContent() {
           values: riskTargets.map((target) => target.raw),
           onChange: handleRiskChange,
         },
-      ] satisfies TargetFieldConfig[],
+      ],
     [handleLotSizeChange, handleRiskChange, lotSizeTargets, riskTargets],
   );
 
