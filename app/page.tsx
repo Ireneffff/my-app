@@ -269,6 +269,22 @@ export default function Home() {
                     : trade.tradeOutcome === "loss"
                       ? "Loss"
                       : null;
+                const takeProfitOutcomeSummaries = (trade.takeProfitOutcomes ?? [])
+                  .map((outcome, positionIndex) => {
+                    if (!outcome) {
+                      return null;
+                    }
+
+                    return {
+                      label: outcome === "profit" ? "Profit" : "Loss",
+                      position: positionIndex + 1,
+                    };
+                  })
+                  .filter(
+                    (
+                      summary,
+                    ): summary is { label: string; position: number } => summary !== null,
+                  );
 
                 return (
                   <li key={trade.id}>
@@ -288,6 +304,15 @@ export default function Home() {
                         <span className="text-sm font-semibold tracking-[0.18em] text-fg">
                           {trade.symbolCode}
                         </span>
+                        {takeProfitOutcomeSummaries.length > 0 ? (
+                          <div className="mt-1 flex flex-col gap-0.5 text-xs font-medium text-muted-fg">
+                            {takeProfitOutcomeSummaries.map((summary) => (
+                              <span key={`${trade.id}-position-${summary.position}`}>
+                                Position {summary.position} • {summary.label}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
                       </div>
                       {outcomeLabel ? (
                         <span
