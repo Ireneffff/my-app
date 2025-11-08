@@ -1397,15 +1397,10 @@ export default function RegisteredTradePage() {
 
                   {targetDisplayConfigs.map(renderTargetDisplay)}
 
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Overall Pips
+                  <div className="flex w-full items-center justify-center rounded-2xl border border-border bg-surface px-6 py-4 text-center">
+                    <span className={`text-sm font-semibold ${overallPipsDetailDisplay.className}`}>
+                      {overallPipsDetailDisplay.label}
                     </span>
-                    <div className="flex w-full items-center justify-center rounded-2xl border border-border bg-surface px-6 py-4 text-center">
-                      <span className={`text-sm font-semibold ${overallPipsDetailDisplay.className}`}>
-                        {overallPipsDetailDisplay.label}
-                      </span>
-                    </div>
                   </div>
                 </div>
               </div>
