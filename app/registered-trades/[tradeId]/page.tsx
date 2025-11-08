@@ -1401,7 +1401,7 @@ export default function RegisteredTradePage() {
                     <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
                       Overall Pips
                     </span>
-                    <div className="flex w-full items-center justify-center rounded-full border border-border bg-surface px-6 py-4 text-center">
+                    <div className="flex w-full items-center justify-center rounded-2xl border border-border bg-surface px-6 py-4 text-center">
                       <span className={`text-sm font-semibold ${overallPipsDetailDisplay.className}`}>
                         {overallPipsDetailDisplay.label}
                       </span>
@@ -1420,14 +1420,6 @@ export default function RegisteredTradePage() {
                   {riskDetailDisplayConfigs.map(renderTargetDisplay)}
                 </div>
               </div>
-
-              {overallPipsSummary && (
-                <div className="mt-6 rounded-2xl border border-border bg-surface px-4 py-4 text-center">
-                  <span className={`text-sm font-semibold ${overallPipsSummary.className}`}>
-                    {overallPipsSummary.label}
-                  </span>
-                </div>
-              )}
 
               <div className="mt-6 border-t border-border" />
 
