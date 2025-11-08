@@ -269,6 +269,18 @@ export default function Home() {
                     : trade.tradeOutcome === "loss"
                       ? "Loss"
                       : null;
+                const takeProfitDescriptions =
+                  trade.takeProfitOutcomes
+                    ?.map((outcome, tpIndex) => {
+                      if (!outcome) {
+                        return null;
+                      }
+
+                      const label = outcome === "profit" ? "Profit" : "Loss";
+                      return `Position ${tpIndex + 1} • ${label}`;
+                    })
+                    .filter((description): description is string => Boolean(description)) ?? [];
+                const shouldRenderOutcomes = Boolean(outcomeLabel) || takeProfitDescriptions.length > 0;
 
                 return (
                   <li key={trade.id}>
@@ -289,16 +301,27 @@ export default function Home() {
                           {trade.symbolCode}
                         </span>
                       </div>
-                      {outcomeLabel ? (
-                        <span
-                          className={`flex h-8 items-center rounded-full border px-3 text-[0.65rem] font-semibold uppercase tracking-[0.24em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                            trade.tradeOutcome === "profit"
-                              ? "border-[#A6E8B0]/80 bg-[#E6F9EC]/90 text-[#2E7D32] group-hover:border-[#A6E8B0] group-hover:bg-[#E6F9EC]"
-                              : "border-[#F5B7B7]/80 bg-[#FCE8E8]/90 text-[#C62828] group-hover:border-[#F5B7B7] group-hover:bg-[#FCE8E8]"
-                          }`}
-                        >
-                          {outcomeLabel}
-                        </span>
+                      {shouldRenderOutcomes ? (
+                        <div className="flex items-center gap-3">
+                          {outcomeLabel ? (
+                            <span
+                              className={`flex h-8 items-center rounded-full border px-3 text-[0.65rem] font-semibold uppercase tracking-[0.24em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                                trade.tradeOutcome === "profit"
+                                  ? "border-[#A6E8B0]/80 bg-[#E6F9EC]/90 text-[#2E7D32] group-hover:border-[#A6E8B0] group-hover:bg-[#E6F9EC]"
+                                  : "border-[#F5B7B7]/80 bg-[#FCE8E8]/90 text-[#C62828] group-hover:border-[#F5B7B7] group-hover:bg-[#FCE8E8]"
+                              }`}
+                            >
+                              {outcomeLabel}
+                            </span>
+                          ) : null}
+                          {takeProfitDescriptions.length > 0 ? (
+                            <div className="flex flex-col text-xs font-medium text-muted-fg">
+                              {takeProfitDescriptions.map((description) => (
+                                <span key={description}>{description}</span>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
                       ) : null}
                       <time className="text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg" dateTime={trade.date}>
                         {formattedDate}
