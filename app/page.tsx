@@ -294,7 +294,7 @@ export default function Home() {
                       >
                         {formattedDate}
                       </time>
-                      <div className="order-2 grid w-full grid-cols-[auto_1fr_auto] items-center gap-2.5 text-center md:order-1 md:flex md:flex-1 md:items-center md:gap-5 md:text-left">
+                      <div className="order-2 grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2.5 gap-y-2 text-center md:order-1 md:flex md:flex-1 md:items-center md:gap-5 md:text-left">
                         <div className="flex items-center justify-start md:order-1 md:justify-start">
                           <span
                             className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[color:rgb(var(--accent)/0.12)] text-[0.75rem] font-semibold uppercase tracking-[0.22em] text-accent md:h-10 md:w-10 md:text-sm md:tracking-[0.24em]"
@@ -313,11 +313,9 @@ export default function Home() {
                               </span>
                             </div>
                           </div>
-                        </div>
-                        <div className="order-3 flex items-center justify-end md:order-3 md:hidden md:justify-start">
                           {outcomeLabel ? (
                             <span
-                              className={`flex h-9 items-center justify-center rounded-full border px-3 text-[0.64rem] font-semibold uppercase tracking-[0.24em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                              className={`mt-1 flex h-9 items-center justify-center rounded-full border px-3 text-[0.64rem] font-semibold uppercase tracking-[0.24em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:hidden ${
                                 trade.tradeOutcome === "profit"
                                   ? "border-[#A6E8B0]/80 bg-[#E6F9EC]/90 text-[#2E7D32] group-hover:border-[#A6E8B0] group-hover:bg-[#E6F9EC]"
                                   : "border-[#F5B7B7]/80 bg-[#FCE8E8]/90 text-[#C62828] group-hover:border-[#F5B7B7] group-hover:bg-[#FCE8E8]"
