@@ -952,9 +952,14 @@ export default function RegisteredTradePage() {
       return applyOutcomeToPips({ value: storedValue, outcome });
     },
   );
-  const normalizedPipsTargets = normalizedComputedPipNumbers.map((value) =>
-    value !== null ? formatPips(value) : "",
-  );
+  const normalizedPipsTargets = takeProfitDistancePipValues.map((distance) => {
+    if (distance === null) {
+      return "";
+    }
+
+    const formatted = formatPips(distance);
+    return formatted === "0" ? "0.0" : formatted;
+  });
   const normalizedPnlTargets = padMultiValue(pnlTargets, targetColumnCount, () => "");
   const overallPips = calculateOverallPips(normalizedComputedPipNumbers);
   const formattedOverallPips = overallPips === null ? null : formatPips(overallPips);
@@ -976,32 +981,11 @@ export default function RegisteredTradePage() {
           ? { label: `Overall Loss (${formattedOverallPips} pips)`, className: "text-[#C62828]" }
           : { label: "Break-even (0 pips)", className: "text-muted-fg" };
   const isEditMode = false; // This page shows read-only data; editing happens on the new trade form.
-  const takeProfitPipDisplays = takeProfitDistancePipValues.map((distance, index) => {
-    if (distance === null) {
-      return null;
-    }
-
-    const outcome = normalizedTakeProfitOutcomeValues[index] ?? "";
-    const className =
-      outcome === "profit"
-        ? "text-green-700"
-        : outcome === "loss"
-          ? "text-red-700"
-          : "text-muted-fg";
-    const formattedDistance = formatPips(distance);
-    const pipText = formattedDistance === "0" ? "0.0" : formattedDistance;
-
-    return {
-      className,
-      text: `(${pipText} pips)`,
-    };
-  });
   const targetDisplayConfigs = [
     {
       idPrefix: "take-profit",
       label: "Take Profit",
       values: normalizedTakeProfitTargets,
-      pipLabels: takeProfitPipDisplays,
     },
     { idPrefix: "risk-reward", label: "R/R", values: normalizedRiskRewardTargets },
     { idPrefix: "nr-pips", label: "Nr. Pips", values: normalizedPipsTargets },
@@ -1009,7 +993,6 @@ export default function RegisteredTradePage() {
     idPrefix: string;
     label: string;
     values: string[];
-    pipLabels?: Array<{ className: string; text: string } | null>;
   }>;
   const pnlDisplayConfig = {
     idPrefix: "pnl",
@@ -1022,12 +1005,10 @@ export default function RegisteredTradePage() {
     idPrefix,
     label,
     values,
-    pipLabels,
   }: {
     idPrefix: string;
     label: string;
     values: string[];
-    pipLabels?: Array<{ className: string; text: string } | null>;
   }) => (
     <div className="flex flex-col gap-2" key={idPrefix}>
       <div
@@ -1041,8 +1022,6 @@ export default function RegisteredTradePage() {
             idPrefix === "take-profit"
               ? normalizedTakeProfitOutcomeLabels[columnIndex]
               : "";
-          const pipLabel = pipLabels?.[columnIndex] ?? null;
-
           return (
             <span
               key={`${idPrefix}-label-${columnIndex}`}
@@ -1052,13 +1031,6 @@ export default function RegisteredTradePage() {
                 {`${label} ${columnIndex + 1}`}
                 {outcomeLabel ? ` • ${outcomeLabel}` : ""}
               </span>
-              {pipLabel ? (
-                <span
-                  className={`ml-3 text-[10px] font-semibold normal-case tracking-[0.08em] text-right md:text-xs ${pipLabel.className}`}
-                >
-                  {pipLabel.text}
-                </span>
-              ) : null}
             </span>
           );
         })}

@@ -541,52 +541,6 @@ function NewTradePageContent() {
     [targetColumnCount],
   );
 
-  const targetFieldConfigs = useMemo(
-    () =>
-      [
-        {
-          label: "Take Profit",
-          idPrefix: "take-profit",
-          placeholder: "Insert price",
-          type: "number" as const,
-          values: takeProfitTargets.map((target) => target.raw),
-          onChange: handleTakeProfitChange,
-        },
-        {
-          label: "R/R",
-          idPrefix: "risk-reward",
-          placeholder: "Insert",
-          type: "text" as const,
-          values: riskRewardTargets,
-          onChange: handleRiskRewardChange,
-        },
-        {
-          label: "Nr. Pips",
-          idPrefix: "pips",
-          placeholder: "Insert",
-          type: "number" as const,
-          values: pipsTargets.map((target) => target.raw),
-          readOnly: true,
-        },
-        {
-          label: "P&L",
-          idPrefix: "pnl",
-          placeholder: "Insert",
-          type: "number" as const,
-          values: pnlTargets.map((target) => target.raw),
-          onChange: handlePnlChange,
-        },
-      ] satisfies TargetFieldConfig[],
-    [
-      handlePnlChange,
-      handleRiskRewardChange,
-      handleTakeProfitChange,
-      pipsTargets,
-      pnlTargets,
-      riskRewardTargets,
-      takeProfitTargets,
-    ],
-  );
   const normalizedTakeProfitOutcomeValues = useMemo(
     () =>
       padMultiValue<TakeProfitOutcome>(
@@ -628,29 +582,58 @@ function NewTradePageContent() {
       ),
     [entryPriceNumber, position, takeProfitTargets, targetColumnCount],
   );
-  const takeProfitPipDisplays = useMemo(
+  const targetFieldConfigs = useMemo(
     () =>
-      takeProfitDistancePipValues.map((distance, index) => {
-        if (distance === null) {
-          return null;
-        }
+      [
+        {
+          label: "Take Profit",
+          idPrefix: "take-profit",
+          placeholder: "Insert price",
+          type: "number" as const,
+          values: takeProfitTargets.map((target) => target.raw),
+          onChange: handleTakeProfitChange,
+        },
+        {
+          label: "R/R",
+          idPrefix: "risk-reward",
+          placeholder: "Insert",
+          type: "text" as const,
+          values: riskRewardTargets,
+          onChange: handleRiskRewardChange,
+        },
+        {
+          label: "Nr. Pips",
+          idPrefix: "pips",
+          placeholder: "Insert",
+          type: "text" as const,
+          values: takeProfitDistancePipValues.map((distance) => {
+            if (distance === null) {
+              return "";
+            }
 
-        const outcome = normalizedTakeProfitOutcomeValues[index] ?? "";
-        const className =
-          outcome === "profit"
-            ? "text-green-700"
-            : outcome === "loss"
-              ? "text-red-700"
-              : "text-muted-fg";
-        const formattedDistance = formatPips(distance);
-        const pipText = formattedDistance === "0" ? "0.0" : formattedDistance;
-
-        return {
-          className,
-          text: `(${pipText} pips)`
-        };
-      }),
-    [normalizedTakeProfitOutcomeValues, takeProfitDistancePipValues],
+            const formatted = formatPips(distance);
+            return formatted === "0" ? "0.0" : formatted;
+          }),
+          readOnly: true,
+        },
+        {
+          label: "P&L",
+          idPrefix: "pnl",
+          placeholder: "Insert",
+          type: "number" as const,
+          values: pnlTargets.map((target) => target.raw),
+          onChange: handlePnlChange,
+        },
+      ] satisfies TargetFieldConfig[],
+    [
+      handlePnlChange,
+      handleRiskRewardChange,
+      handleTakeProfitChange,
+      pnlTargets,
+      riskRewardTargets,
+      takeProfitDistancePipValues,
+      takeProfitTargets,
+    ],
   );
   const pnlFieldConfig = targetFieldConfigs[targetFieldConfigs.length - 1];
 
@@ -2506,8 +2489,6 @@ function NewTradePageContent() {
 
                                 if (fieldConfig.idPrefix === "take-profit") {
                                   const outcomeSelectId = `${fieldConfig.idPrefix}-outcome-${columnIndex}`;
-                                  const pipDisplay = takeProfitPipDisplays[columnIndex];
-
                                   return (
                                     <div
                                       key={labelId}
@@ -2519,13 +2500,6 @@ function NewTradePageContent() {
                                         className={`flex w-full items-center justify-between text-[11px] font-medium uppercase tracking-[0.24em] transition-colors duration-200 ease-in-out ${outcomeStyle.label}`}
                                       >
                                         <span>{`${fieldConfig.label} ${columnIndex + 1}`}</span>
-                                        {pipDisplay ? (
-                                          <span
-                                            className={`ml-3 text-[10px] font-semibold normal-case tracking-[0.08em] text-right md:text-xs ${pipDisplay.className}`}
-                                          >
-                                            {pipDisplay.text}
-                                          </span>
-                                        ) : null}
                                       </label>
                                       <TakeProfitOutcomeSelect
                                         id={outcomeSelectId}
