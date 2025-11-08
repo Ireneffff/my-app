@@ -1373,7 +1373,7 @@ export default function RegisteredTradePage() {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)] md:gap-2">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,16rem)] md:gap-2">
                       <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
                         Stop Loss
                       </span>
@@ -1381,7 +1381,7 @@ export default function RegisteredTradePage() {
                         Nr. Pips (SL)
                       </span>
                     </div>
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)] md:gap-2 md:items-end">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,16rem)] md:gap-2 md:items-end">
                       <div className="rounded-2xl border border-border bg-surface px-4 py-3">
                         <span className="text-sm font-medium text-fg">{stopLossValue}</span>
                       </div>
