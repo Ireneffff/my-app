@@ -294,8 +294,15 @@ export default function Home() {
                       >
                         {formattedDate}
                       </time>
-                      <div className="order-2 flex w-full flex-col items-center gap-2.5 text-center md:order-1 md:flex-1 md:flex-row md:items-center md:gap-5 md:text-left">
-                        <div className="order-1 flex flex-col items-center gap-1 md:order-2 md:flex-row md:items-center md:gap-3">
+                      <div className="order-2 grid w-full grid-cols-[auto_1fr_auto] items-center gap-2.5 text-center md:order-1 md:flex md:flex-1 md:items-center md:gap-5 md:text-left">
+                        <div className="flex items-center justify-start md:order-1 md:justify-start">
+                          <span
+                            className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[color:rgb(var(--accent)/0.12)] text-[0.75rem] font-semibold uppercase tracking-[0.22em] text-accent md:h-10 md:w-10 md:text-sm md:tracking-[0.24em]"
+                          >
+                            {totalTrades - index}
+                          </span>
+                        </div>
+                        <div className="order-2 flex flex-col items-center gap-1 justify-self-center md:order-2 md:flex-row md:items-center md:gap-3 md:justify-self-start">
                           <div className="flex items-center gap-2 md:gap-3">
                             <span className="text-[1.7rem] leading-none md:text-2xl" aria-hidden="true">
                               {trade.symbolFlag}
@@ -307,15 +314,10 @@ export default function Home() {
                             </div>
                           </div>
                         </div>
-                        <div className="order-2 flex items-center justify-center gap-2 text-[0.58rem] font-semibold uppercase tracking-[0.22em] text-muted-fg md:order-1 md:justify-start">
-                          <span
-                            className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[color:rgb(var(--accent)/0.12)] text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-accent md:h-10 md:w-10 md:text-sm md:tracking-[0.24em]"
-                          >
-                            {totalTrades - index}
-                          </span>
+                        <div className="order-3 flex items-center justify-end md:order-3 md:hidden md:justify-start">
                           {outcomeLabel ? (
                             <span
-                              className={`flex h-7 items-center justify-center rounded-full border px-2 text-[0.58rem] font-semibold uppercase tracking-[0.22em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:hidden ${
+                              className={`flex h-9 items-center justify-center rounded-full border px-3 text-[0.64rem] font-semibold uppercase tracking-[0.24em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                                 trade.tradeOutcome === "profit"
                                   ? "border-[#A6E8B0]/80 bg-[#E6F9EC]/90 text-[#2E7D32] group-hover:border-[#A6E8B0] group-hover:bg-[#E6F9EC]"
                                   : "border-[#F5B7B7]/80 bg-[#FCE8E8]/90 text-[#C62828] group-hover:border-[#F5B7B7] group-hover:bg-[#FCE8E8]"
