@@ -286,7 +286,7 @@ export default function Home() {
                   <li key={trade.id}>
                     <Link
                       href={`/registered-trades/${trade.id}`}
-                      className="group flex items-center gap-4 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-5 py-4 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)]"
+                      className="group flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-5 py-4 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)] sm:flex-nowrap sm:gap-4"
                     >
                       <span
                         className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[color:rgb(var(--accent)/0.12)] text-sm font-semibold text-accent"
@@ -296,16 +296,16 @@ export default function Home() {
                       <span className="text-2xl" aria-hidden="true">
                         {trade.symbolFlag}
                       </span>
-                      <div className="flex flex-1 flex-col">
-                        <span className="text-sm font-semibold tracking-[0.18em] text-fg">
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <span className="truncate text-sm font-semibold tracking-[0.18em] text-fg">
                           {trade.symbolCode}
                         </span>
                       </div>
                       {shouldRenderOutcomes ? (
-                        <div className="flex items-center gap-3">
+                        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
                           {outcomeLabel ? (
                             <span
-                              className={`flex h-8 items-center rounded-full border px-3 text-[0.65rem] font-semibold uppercase tracking-[0.24em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                              className={`flex h-8 items-center justify-center rounded-full border px-3 text-[0.65rem] font-semibold uppercase tracking-[0.24em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                                 trade.tradeOutcome === "profit"
                                   ? "border-[#A6E8B0]/80 bg-[#E6F9EC]/90 text-[#2E7D32] group-hover:border-[#A6E8B0] group-hover:bg-[#E6F9EC]"
                                   : "border-[#F5B7B7]/80 bg-[#FCE8E8]/90 text-[#C62828] group-hover:border-[#F5B7B7] group-hover:bg-[#FCE8E8]"
@@ -323,10 +323,13 @@ export default function Home() {
                           ) : null}
                         </div>
                       ) : null}
-                      <time className="text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg" dateTime={trade.date}>
+                      <time
+                        className="w-full text-left text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg sm:w-auto sm:text-right"
+                        dateTime={trade.date}
+                      >
                         {formattedDate}
                       </time>
-                      <span className="ml-2 text-lg text-muted-fg transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 group-hover:text-fg" aria-hidden="true">
+                      <span className="text-lg text-muted-fg transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 group-hover:text-fg sm:ml-2" aria-hidden="true">
                         ↗
                       </span>
                     </Link>
