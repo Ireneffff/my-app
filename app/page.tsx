@@ -286,23 +286,31 @@ export default function Home() {
                   <li key={trade.id}>
                     <Link
                       href={`/registered-trades/${trade.id}`}
-                      className="group flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-5 py-4 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)] sm:flex-nowrap sm:gap-4"
+                      className="group flex flex-col gap-4 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-5 py-4 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)]"
                     >
-                      <span
-                        className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[color:rgb(var(--accent)/0.12)] text-sm font-semibold text-accent"
-                      >
-                        {totalTrades - index}
-                      </span>
-                      <span className="text-2xl" aria-hidden="true">
-                        {trade.symbolFlag}
-                      </span>
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate text-sm font-semibold tracking-[0.18em] text-fg">
-                          {trade.symbolCode}
+                      <div className="flex flex-wrap items-start gap-3 sm:flex-nowrap">
+                        <span
+                          className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[color:rgb(var(--accent)/0.12)] text-sm font-semibold text-accent"
+                        >
+                          {totalTrades - index}
                         </span>
+                        <span className="text-2xl" aria-hidden="true">
+                          {trade.symbolFlag}
+                        </span>
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate text-sm font-semibold tracking-[0.18em] text-fg">
+                            {trade.symbolCode}
+                          </span>
+                        </div>
+                        <time
+                          className="ml-auto text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg"
+                          dateTime={trade.date}
+                        >
+                          {formattedDate}
+                        </time>
                       </div>
                       {shouldRenderOutcomes ? (
-                        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           {outcomeLabel ? (
                             <span
                               className={`flex h-8 items-center justify-center rounded-full border px-3 text-[0.65rem] font-semibold uppercase tracking-[0.24em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
@@ -315,7 +323,7 @@ export default function Home() {
                             </span>
                           ) : null}
                           {takeProfitDescriptions.length > 0 ? (
-                            <div className="flex flex-col text-xs font-medium text-muted-fg">
+                            <div className="flex flex-col items-center text-center text-xs font-medium text-muted-fg sm:items-end sm:text-right">
                               {takeProfitDescriptions.map((description) => (
                                 <span key={description}>{description}</span>
                               ))}
@@ -323,13 +331,7 @@ export default function Home() {
                           ) : null}
                         </div>
                       ) : null}
-                      <time
-                        className="w-full text-left text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg sm:w-auto sm:text-right"
-                        dateTime={trade.date}
-                      >
-                        {formattedDate}
-                      </time>
-                      <span className="text-lg text-muted-fg transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 group-hover:text-fg sm:ml-2" aria-hidden="true">
+                      <span className="ml-auto text-lg text-muted-fg transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 group-hover:text-fg" aria-hidden="true">
                         ↗
                       </span>
                     </Link>
