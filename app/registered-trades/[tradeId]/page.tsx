@@ -37,6 +37,12 @@ import {
   calculateTakeProfitDistance,
   formatPips,
 } from "@/lib/pips";
+import {
+  calculateOverallPnl,
+  calculatePnl,
+  formatPnl,
+  roundToTwoDecimals,
+} from "@/lib/pnl";
 
 type TradeState = {
   status: "loading" | "ready" | "missing";
@@ -116,6 +122,31 @@ function formatOptionalText(value?: string | number | boolean | null) {
 
   const trimmed = typeof value === "string" ? value.trim() : String(value).trim();
   return trimmed.length > 0 ? trimmed : "—";
+}
+
+function parseNumericString(value: string | null | undefined): number | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const sanitized = trimmed
+    .replace(/[$€£¥]/g, "")
+    .replace(/%/g, "")
+    .replace(/,/g, ".")
+    .replace(/['\s]/g, "");
+
+  if (!sanitized) {
+    return null;
+  }
+
+  const parsed = Number(sanitized);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 type TargetDisplayConfig = {
@@ -885,9 +916,6 @@ export default function RegisteredTradePage() {
     typeof value === "string" ? value.trim() : value ?? "",
   );
   const pnlValuesRaw = trade.pnl ?? [];
-  const pnlTargets = pnlValuesRaw.map((value) =>
-    value !== null && value !== undefined ? value.toString() : "",
-  );
   const targetColumnCount = Math.max(
     1,
     takeProfitTargets.length,
@@ -974,7 +1002,32 @@ export default function RegisteredTradePage() {
     const formatted = formatPips(distance);
     return formatted === "0" ? "0.0" : formatted;
   });
-  const normalizedPnlTargets = padMultiValue(pnlTargets, targetColumnCount, () => "");
+  const normalizedStoredPnlValues = padMultiValue(
+    pnlValuesRaw.map((value) =>
+      typeof value === "number" && Number.isFinite(value) ? value : null,
+    ),
+    targetColumnCount,
+    () => null,
+  );
+  const parsedLotSizeNumbers = normalizedLotSizeTargets.map((value) =>
+    parseNumericString(value),
+  );
+  const computedPnlNumbers = normalizedStoredPnlValues.map((storedValue, index) => {
+    if (typeof storedValue === "number" && Number.isFinite(storedValue)) {
+      return roundToTwoDecimals(storedValue);
+    }
+
+    return calculatePnl({
+      pips: normalizedComputedPipNumbers[index],
+      lotSize: parsedLotSizeNumbers[index],
+      risk: normalizedRiskTargets[index],
+      outcome: normalizedTakeProfitOutcomeValues[index],
+      riskIsPercentage: true,
+    });
+  });
+  const normalizedPnlTargets = computedPnlNumbers.map((value) =>
+    value === null || Number.isNaN(value) ? "" : formatPnl(value),
+  );
   const overallPips = calculateOverallPips(normalizedComputedPipNumbers);
   const formattedOverallPips = overallPips === null ? null : formatPips(overallPips);
   const overallPipsSummary =
@@ -986,6 +1039,20 @@ export default function RegisteredTradePage() {
           ? { label: `Overall Loss (${formattedOverallPips} pips)`, className: "text-[#C62828]" }
           : { label: "Break-even (0 pips)", className: "text-muted-fg" };
   const overallPipsDetailDisplay = overallPipsSummary ?? {
+    label: "—",
+    className: "text-muted-fg",
+  };
+  const overallPnl = calculateOverallPnl(computedPnlNumbers);
+  const formattedOverallPnl = overallPnl === null ? null : formatPnl(overallPnl);
+  const overallPnlSummary =
+    overallPnl === null || formattedOverallPnl === null
+      ? null
+      : overallPnl > 0
+        ? { label: `Overall Profit (${formattedOverallPnl})`, className: "text-[#2E7D32]" }
+        : overallPnl < 0
+          ? { label: `Overall Loss (${formattedOverallPnl})`, className: "text-[#C62828]" }
+          : { label: "Break-even (0.00)", className: "text-muted-fg" };
+  const overallPnlDetailDisplay = overallPnlSummary ?? {
     label: "—",
     className: "text-muted-fg",
   };
@@ -1418,8 +1485,26 @@ export default function RegisteredTradePage() {
                 </span>
                 <div className="flex flex-col gap-4">
                   {riskDetailDisplayConfigs.map(renderTargetDisplay)}
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                      Overall P&L
+                    </span>
+                    <div className="flex w-full items-center justify-center rounded-full border border-border bg-surface px-6 py-4 text-center">
+                      <span className={`text-sm font-semibold ${overallPnlDetailDisplay.className}`}>
+                        {overallPnlDetailDisplay.label}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              {overallPnlSummary && (
+                <div className="mt-6 rounded-2xl border border-border bg-surface px-4 py-4 text-center">
+                  <span className={`text-sm font-semibold ${overallPnlSummary.className}`}>
+                    {overallPnlSummary.label}
+                  </span>
+                </div>
+              )}
 
               {overallPipsSummary && (
                 <div className="mt-6 rounded-2xl border border-border bg-surface px-4 py-4 text-center">

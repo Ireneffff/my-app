@@ -42,6 +42,12 @@ import {
   calculateTakeProfitDistance,
   formatPips,
 } from "@/lib/pips";
+import {
+  calculateOverallPnl,
+  calculatePnl,
+  formatPnl,
+  inferRiskIsPercentage,
+} from "@/lib/pnl";
 
 type SymbolOption = {
   code: string;
@@ -172,13 +178,23 @@ type NumericFieldState = {
 };
 
 function parseNumericInput(raw: string): number | null {
-  const normalized = raw.trim().replace(/,/g, ".");
+  const trimmed = raw.trim();
 
-  if (!normalized) {
+  if (!trimmed) {
     return null;
   }
 
-  const parsed = Number(normalized);
+  const sanitized = trimmed
+    .replace(/[$€£¥]/g, "")
+    .replace(/%/g, "")
+    .replace(/,/g, ".")
+    .replace(/['\s]/g, "");
+
+  if (!sanitized) {
+    return null;
+  }
+
+  const parsed = Number(sanitized);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
@@ -503,6 +519,58 @@ function NewTradePageContent() {
     targetColumnCount,
   ]);
 
+  useEffect(() => {
+    setPnlTargets((previous) => {
+      const normalizedPipsTargets = padMultiValue(
+        pipsTargets,
+        targetColumnCount,
+        () => createNumericFieldState(),
+      );
+      const normalizedLotSizes = padMultiValue(
+        lotSizeTargets,
+        targetColumnCount,
+        () => "",
+      );
+      const normalizedRiskTargets = padMultiValue(
+        riskTargets,
+        targetColumnCount,
+        () => createNumericFieldState(),
+      );
+
+      const computedPnlTargets = normalizedPipsTargets.map((pipsState, index) => {
+        const pipsValue = pipsState.value;
+        const lotSizeValue = parseNumericInput(normalizedLotSizes[index]);
+        const riskState = normalizedRiskTargets[index];
+        const outcome = normalizedTakeProfitOutcomeValues[index];
+        const riskValue = riskState.value;
+        const riskIsPercentage = inferRiskIsPercentage(riskState.raw, true);
+
+        const pnlValue = calculatePnl({
+          pips: pipsValue,
+          lotSize: lotSizeValue,
+          risk: riskValue,
+          outcome,
+          riskIsPercentage,
+        });
+
+        if (pnlValue === null || Number.isNaN(pnlValue)) {
+          return createNumericFieldState();
+        }
+
+        const formattedValue = pnlValue.toFixed(2);
+        return createNumericFieldState(formattedValue);
+      });
+
+      return numericFieldStatesAreEqual(previous, computedPnlTargets) ? previous : computedPnlTargets;
+    });
+  }, [
+    lotSizeTargets,
+    normalizedTakeProfitOutcomeValues,
+    pipsTargets,
+    riskTargets,
+    targetColumnCount,
+  ]);
+
   const handleTakeProfitChange = useCallback(
     (index: number, value: string) => {
       setTakeProfitTargets((prev) => {
@@ -554,17 +622,6 @@ function NewTradePageContent() {
   const handleRiskChange = useCallback(
     (index: number, value: string) => {
       setRiskTargets((prev) => {
-        const next = padMultiValue(prev, targetColumnCount, () => createNumericFieldState());
-        next[index] = createNumericFieldState(value);
-        return next;
-      });
-    },
-    [targetColumnCount],
-  );
-
-  const handlePnlChange = useCallback(
-    (index: number, value: string) => {
-      setPnlTargets((prev) => {
         const next = padMultiValue(prev, targetColumnCount, () => createNumericFieldState());
         next[index] = createNumericFieldState(value);
         return next;
@@ -651,14 +708,13 @@ function NewTradePageContent() {
         {
           label: "P&L",
           idPrefix: "pnl",
-          placeholder: "Insert",
+          placeholder: "Auto",
           type: "number" as const,
           values: pnlTargets.map((target) => target.raw),
-          onChange: handlePnlChange,
+          readOnly: true,
         },
       ],
     [
-      handlePnlChange,
       handleRiskRewardChange,
       handleTakeProfitChange,
       pnlTargets,
@@ -719,6 +775,37 @@ function NewTradePageContent() {
     return { label: "Break-even (0 pips)", className: "text-muted-fg" } as const;
   }, [formattedOverallPips, overallPips]);
   const overallPipsDetailDisplay = overallPipsSummary ?? {
+    label: "—",
+    className: "text-muted-fg",
+  };
+
+  const overallPnl = useMemo(
+    () => calculateOverallPnl(pnlTargets.map((target) => target.value)),
+    [pnlTargets],
+  );
+  const formattedOverallPnl = overallPnl === null ? null : formatPnl(overallPnl);
+  const overallPnlSummary = useMemo(() => {
+    if (overallPnl === null || formattedOverallPnl === null) {
+      return null;
+    }
+
+    if (overallPnl > 0) {
+      return {
+        label: `Overall Profit (${formattedOverallPnl})`,
+        className: "text-[#2E7D32]",
+      } as const;
+    }
+
+    if (overallPnl < 0) {
+      return {
+        label: `Overall Loss (${formattedOverallPnl})`,
+        className: "text-[#C62828]",
+      } as const;
+    }
+
+    return { label: "Break-even (0.00)", className: "text-muted-fg" } as const;
+  }, [formattedOverallPnl, overallPnl]);
+  const overallPnlDetailDisplay = overallPnlSummary ?? {
     label: "—",
     className: "text-muted-fg",
   };
@@ -2875,7 +2962,26 @@ function NewTradePageContent() {
                           </div>
                         );
                       })()}
+
+                      <div className="flex flex-col gap-2">
+                        <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                          Overall P&L
+                        </span>
+                        <div className="flex w-full items-center justify-center rounded-full border border-border bg-surface px-6 py-4 text-center">
+                          <span className={`text-sm font-semibold ${overallPnlDetailDisplay.className}`}>
+                            {overallPnlDetailDisplay.label}
+                          </span>
+                        </div>
+                      </div>
                     </div>
+
+                    {overallPnlSummary && (
+                      <div className="mt-6 rounded-2xl border border-border bg-surface px-4 py-4 text-center">
+                        <span className={`text-sm font-semibold ${overallPnlSummary.className}`}>
+                          {overallPnlSummary.label}
+                        </span>
+                      </div>
+                    )}
 
                     {overallPipsSummary && (
                       <div className="mt-6 rounded-2xl border border-border bg-surface px-4 py-4 text-center">
