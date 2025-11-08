@@ -642,15 +642,6 @@ function NewTradePageContent() {
     [pipsTargets],
   );
   const formattedOverallPips = overallPips === null ? null : formatPips(overallPips);
-  const overallPipsDisplayValue = formattedOverallPips ?? "—";
-  const overallPipsTextClass =
-    overallPips === null
-      ? "text-muted-fg"
-      : overallPips > 0
-        ? "text-[#2E7D32]"
-        : overallPips < 0
-          ? "text-[#C62828]"
-          : "text-muted-fg";
   const overallPipsSummary = useMemo(() => {
     if (overallPips === null) {
       return null;
@@ -672,6 +663,10 @@ function NewTradePageContent() {
 
     return { label: "Break-even (0 pips)", className: "text-muted-fg" } as const;
   }, [formattedOverallPips, overallPips]);
+  const overallPipsDetailDisplay = overallPipsSummary ?? {
+    label: "—",
+    className: "text-muted-fg",
+  };
 
   const lockBodyScroll = useCallback(() => {
     if (typeof document === "undefined") {
@@ -2602,9 +2597,9 @@ function NewTradePageContent() {
                         <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
                           Overall Pips
                         </span>
-                        <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                          <span className={`text-sm font-semibold ${overallPipsTextClass}`}>
-                            {overallPipsDisplayValue}
+                        <div className="flex w-full items-center justify-center rounded-full border border-border bg-surface px-6 py-4 text-center">
+                          <span className={`text-sm font-semibold ${overallPipsDetailDisplay.className}`}>
+                            {overallPipsDetailDisplay.label}
                           </span>
                         </div>
                       </div>
