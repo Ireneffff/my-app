@@ -286,46 +286,44 @@ export default function Home() {
                   <li key={trade.id}>
                     <Link
                       href={`/registered-trades/${trade.id}`}
-                      className="group flex flex-col gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-4 py-3 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)] md:flex-row md:items-center md:gap-4 md:px-5 md:py-4"
+                      className="group flex flex-col gap-2.5 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-4 py-3 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)] md:flex-row md:items-center md:gap-5 md:px-5 md:py-4"
                     >
                       <time
-                        className="order-1 self-end text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg md:order-4 md:ml-auto md:self-auto"
+                        className="order-1 self-end pr-1 text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg md:order-4 md:ml-auto md:self-auto"
                         dateTime={trade.date}
                       >
                         {formattedDate}
                       </time>
-                      <div className="order-2 flex flex-col items-center gap-3 text-center md:order-1 md:flex-1 md:flex-row md:items-center md:gap-4 md:text-left">
-                        <div className="flex w-full flex-col items-center gap-2 md:w-auto md:flex-row md:items-center md:gap-4">
-                          <div className="flex w-full items-center justify-center gap-2 md:w-auto md:justify-start">
-                            <span
-                              className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[color:rgb(var(--accent)/0.12)] text-xs font-semibold uppercase tracking-[0.2em] text-accent md:h-10 md:w-10 md:text-sm md:tracking-[0.24em]"
-                            >
-                              {totalTrades - index}
+                      <div className="order-2 flex w-full flex-col items-center gap-2.5 text-center md:order-1 md:flex-1 md:flex-row md:items-center md:gap-5 md:text-left">
+                        <div className="order-1 flex flex-col items-center gap-1 md:order-2 md:flex-row md:items-center md:gap-3">
+                          <div className="flex items-center gap-2 md:gap-3">
+                            <span className="text-[1.7rem] leading-none md:text-2xl" aria-hidden="true">
+                              {trade.symbolFlag}
                             </span>
-                            {outcomeLabel ? (
-                              <span
-                                className={`md:hidden ${
-                                  trade.tradeOutcome === "profit"
-                                    ? "border-[#A6E8B0]/80 bg-[#E6F9EC]/90 text-[#2E7D32] group-hover:border-[#A6E8B0] group-hover:bg-[#E6F9EC]"
-                                    : "border-[#F5B7B7]/80 bg-[#FCE8E8]/90 text-[#C62828] group-hover:border-[#F5B7B7] group-hover:bg-[#FCE8E8]"
-                                } flex h-7 items-center justify-center rounded-full border px-2 text-[0.58rem] font-semibold uppercase tracking-[0.22em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]`}
-                              >
-                                {outcomeLabel}
+                            <div className="flex min-w-0 flex-col items-center md:items-start">
+                              <span className="truncate text-base font-semibold tracking-[0.14em] text-fg md:text-lg md:tracking-[0.16em]">
+                                {trade.symbolCode}
                               </span>
-                            ) : null}
-                          </div>
-                          <div className="flex w-full flex-col items-center gap-2 md:w-auto md:flex-row md:items-center md:gap-3">
-                            <div className="flex items-center gap-2 md:gap-3">
-                              <span className="text-2xl" aria-hidden="true">
-                                {trade.symbolFlag}
-                              </span>
-                              <div className="flex min-w-0 flex-col items-center md:items-start">
-                                <span className="truncate text-sm font-semibold tracking-[0.18em] text-fg">
-                                  {trade.symbolCode}
-                                </span>
-                              </div>
                             </div>
                           </div>
+                        </div>
+                        <div className="order-2 flex items-center justify-center gap-2 text-[0.58rem] font-semibold uppercase tracking-[0.22em] text-muted-fg md:order-1 md:justify-start">
+                          <span
+                            className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[color:rgb(var(--accent)/0.12)] text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-accent md:h-10 md:w-10 md:text-sm md:tracking-[0.24em]"
+                          >
+                            {totalTrades - index}
+                          </span>
+                          {outcomeLabel ? (
+                            <span
+                              className={`flex h-7 items-center justify-center rounded-full border px-2 text-[0.58rem] font-semibold uppercase tracking-[0.22em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:hidden ${
+                                trade.tradeOutcome === "profit"
+                                  ? "border-[#A6E8B0]/80 bg-[#E6F9EC]/90 text-[#2E7D32] group-hover:border-[#A6E8B0] group-hover:bg-[#E6F9EC]"
+                                  : "border-[#F5B7B7]/80 bg-[#FCE8E8]/90 text-[#C62828] group-hover:border-[#F5B7B7] group-hover:bg-[#FCE8E8]"
+                              }`}
+                            >
+                              {outcomeLabel}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                       {shouldRenderOutcomes ? (
@@ -342,9 +340,11 @@ export default function Home() {
                             </span>
                           ) : null}
                           {takeProfitDescriptions.length > 0 ? (
-                            <div className="flex flex-col items-center text-[0.66rem] font-medium text-muted-fg md:items-start md:text-left">
+                            <div className="flex flex-col items-center gap-1 text-[0.6rem] font-medium text-muted-fg md:items-start md:text-left">
                               {takeProfitDescriptions.map((description) => (
-                                <span key={description}>{description}</span>
+                                <span key={description} className="tracking-[0.08em]">
+                                  {description}
+                                </span>
                               ))}
                             </div>
                           ) : null}
