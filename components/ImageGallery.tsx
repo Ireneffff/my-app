@@ -68,7 +68,7 @@ export default function ImageGallery() {
             <figure
               key={img.id}
               className="snap-start rounded-2xl border border-border bg-bg shadow-xl"
-              style={{ minWidth: 480, maxWidth: 480 }}
+              style={{ minWidth: "min(100%, 20rem)", maxWidth: "min(100%, 20rem)" }}
             >
               {/* immagine */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -91,7 +91,7 @@ function EmptyCard() {
   return (
     <div
       className="grid h-64 place-items-center rounded-2xl border border-dashed border-border text-center text-muted-fg"
-      style={{ minWidth: 480, maxWidth: 480 }}
+      style={{ minWidth: "min(100%, 20rem)", maxWidth: "min(100%, 20rem)" }}
     >
       <div>
         <p className="text-sm">Nessuna immagine</p>

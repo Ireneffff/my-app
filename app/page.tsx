@@ -165,8 +165,8 @@ export default function Home() {
       </header>
 
       <div className="mt-16 flex w-full flex-col items-center gap-12 pb-16">
-        <Card className="w-full max-w-3xl self-center p-8 sm:max-w-4xl sm:p-10">
-          <div className="flex items-center justify-between">
+        <Card className="w-full max-w-3xl self-center p-6 sm:max-w-4xl sm:p-10">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <button
               type="button"
               onClick={() =>
@@ -177,7 +177,9 @@ export default function Home() {
             >
               ‹
             </button>
-            <div className="text-lg font-semibold capitalize text-fg">{monthLabel}</div>
+            <div className="order-3 w-full text-center text-lg font-semibold capitalize text-fg sm:order-none sm:w-auto">
+              {monthLabel}
+            </div>
             <button
               type="button"
               onClick={() =>
@@ -286,7 +288,7 @@ export default function Home() {
                   <li key={trade.id}>
                     <Link
                       href={`/registered-trades/${trade.id}`}
-                      className="group flex items-center gap-4 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-5 py-4 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)]"
+                      className="group flex flex-col gap-4 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-5 py-4 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)] sm:flex-row sm:flex-wrap sm:items-center sm:gap-5"
                     >
                       <span
                         className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[color:rgb(var(--accent)/0.12)] text-sm font-semibold text-accent"
@@ -296,13 +298,13 @@ export default function Home() {
                       <span className="text-2xl" aria-hidden="true">
                         {trade.symbolFlag}
                       </span>
-                      <div className="flex flex-1 flex-col">
+                      <div className="flex flex-1 min-w-0 flex-col">
                         <span className="text-sm font-semibold tracking-[0.18em] text-fg">
                           {trade.symbolCode}
                         </span>
                       </div>
                       {shouldRenderOutcomes ? (
-                        <div className="flex items-center gap-3">
+                        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap sm:gap-3">
                           {outcomeLabel ? (
                             <span
                               className={`flex h-8 items-center rounded-full border px-3 text-[0.65rem] font-semibold uppercase tracking-[0.24em] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
@@ -323,10 +325,10 @@ export default function Home() {
                           ) : null}
                         </div>
                       ) : null}
-                      <time className="text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg" dateTime={trade.date}>
+                      <time className="text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg sm:ml-auto" dateTime={trade.date}>
                         {formattedDate}
                       </time>
-                      <span className="ml-2 text-lg text-muted-fg transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 group-hover:text-fg" aria-hidden="true">
+                      <span className="ml-auto text-lg text-muted-fg transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 group-hover:text-fg sm:ml-2" aria-hidden="true">
                         ↗
                       </span>
                     </Link>

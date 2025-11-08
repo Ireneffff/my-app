@@ -186,7 +186,7 @@ export function TakeProfitOutcomeSelect({
         aria-labelledby={
           ariaLabelledBy ? `${ariaLabelledBy} ${id}` : undefined
         }
-        className="inline-flex h-8 min-w-[120px] cursor-pointer items-center justify-between gap-2 rounded-full border border-gray-300 bg-white/60 px-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 transition-colors duration-200 ease-out hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))]"
+        className="inline-flex h-8 min-w-28 cursor-pointer items-center justify-between gap-2 rounded-full border border-gray-300 bg-white/60 px-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 transition-colors duration-200 ease-out hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))]"
         onClick={handleTriggerClick}
         onKeyDown={handleTriggerKeyDown}
       >
@@ -213,7 +213,7 @@ export function TakeProfitOutcomeSelect({
         ref={menuRef}
         role="listbox"
         aria-labelledby={ariaLabelledBy}
-        className={`absolute right-0 z-30 mt-2 min-w-[150px] rounded-2xl border border-gray-200 bg-white/95 p-1 shadow-[0_12px_30px_rgba(15,23,42,0.12)] backdrop-blur-sm transition-all duration-200 ease-out ${
+        className={`absolute right-0 z-30 mt-2 min-w-40 rounded-2xl border border-gray-200 bg-white/95 p-1 shadow-[0_12px_30px_rgba(15,23,42,0.12)] backdrop-blur-sm transition-all duration-200 ease-out ${
           isOpen
             ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
             : "pointer-events-none -translate-y-2 scale-95 opacity-0"

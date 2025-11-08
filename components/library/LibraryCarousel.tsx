@@ -67,8 +67,8 @@ export function LibraryCarousel({
             const isActive = item.id === activeItemId;
             const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
             const combinedClassName = itemClassName
-              ? `${itemClassName} w-full max-w-[calc(100%-1rem)]`
-              : "w-full max-w-[calc(100%-1rem)]";
+              ? `${itemClassName} w-full`
+              : "w-full";
             const shouldDim = hasItems && !isActive;
             const showReorderControls = Boolean(onMoveItem) && items.length > 1;
             const showRemoveControl = Boolean(onRemoveItem);
@@ -77,7 +77,7 @@ export function LibraryCarousel({
             const canMoveDown = index < items.length - 1;
 
             return (
-              <div key={item.id} className="group relative flex snap-start justify-center">
+              <div key={item.id} className="group relative flex w-full snap-start justify-center px-2 sm:px-3">
                 {showControls ? (
                   <div
                     className="pointer-events-auto absolute right-4 top-1/2 z-40 flex -translate-y-1/2 flex-col items-center gap-2 opacity-100 transition-opacity sm:pointer-events-none sm:opacity-0 sm:group-hover:pointer-events-auto sm:group-hover:opacity-100 sm:group-focus-within:pointer-events-auto sm:group-focus-within:opacity-100"
@@ -150,33 +150,35 @@ export function LibraryCarousel({
             );
           })
         ) : (
-          <div className="mx-auto flex h-[180px] w-full max-w-[calc(100%-1rem)] snap-start items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
+          <div className="mx-auto flex h-[180px] w-full snap-start items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 px-4 text-center text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
             Nessuna card
           </div>
         )}
 
         {onAddItem ? (
-          <LibraryCard
-            key="library-add-card"
-            label="Nuova immagine"
-            aria-label="Aggiungi una nuova card libreria"
-            isActive={false}
-            isDimmed={false}
-            data-library-carousel-item="add"
-            className="mx-auto w-full max-w-[calc(100%-1rem)] snap-start"
-            hideLabel
-            visualWrapperClassName="h-32 w-full overflow-visible bg-transparent"
-            onClick={() => {
-              onAddItem?.();
-            }}
-            visual={
-              <span className="flex h-full w-full items-center justify-center">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_22px_48px_-34px_rgba(15,23,42,0.45)]">
-                  <PlusIcon className="h-5 w-5 text-accent" />
+          <div className="flex w-full snap-start justify-center px-2 sm:px-3">
+            <LibraryCard
+              key="library-add-card"
+              label="Nuova immagine"
+              aria-label="Aggiungi una nuova card libreria"
+              isActive={false}
+              isDimmed={false}
+              data-library-carousel-item="add"
+              className="mx-auto w-full"
+              hideLabel
+              visualWrapperClassName="h-32 w-full overflow-visible bg-transparent"
+              onClick={() => {
+                onAddItem?.();
+              }}
+              visual={
+                <span className="flex h-full w-full items-center justify-center">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_22px_48px_-34px_rgba(15,23,42,0.45)]">
+                    <PlusIcon className="h-5 w-5 text-accent" />
+                  </span>
                 </span>
-              </span>
-            }
-          />
+              }
+            />
+          </div>
         ) : null}
       </div>
     </div>
