@@ -118,6 +118,12 @@ function formatOptionalText(value?: string | number | boolean | null) {
   return trimmed.length > 0 ? trimmed : "—";
 }
 
+type TargetDisplayConfig = {
+  idPrefix: string;
+  label: string;
+  values: Array<string | number | boolean | null>;
+};
+
 function padMultiValue<T>(values: T[], length: number, createFiller: () => T) {
   const next = values.slice(0, length);
 
@@ -871,9 +877,13 @@ export default function RegisteredTradePage() {
   const riskRewardTargets = (trade.riskReward ?? []).map((value) =>
     value ?? "",
   );
-  const riskValue = formatOptionalText(trade.risk);
+  const riskTargets = (trade.risk ?? []).map((value) =>
+    typeof value === "number" && Number.isFinite(value) ? value : null,
+  );
   const pipsValuesRaw = trade.pips ?? [];
-  const lotSizeValue = formatOptionalText(trade.lotSize);
+  const lotSizeTargets = (trade.lotSize ?? []).map((value) =>
+    typeof value === "string" ? value.trim() : value ?? "",
+  );
   const pnlValuesRaw = trade.pnl ?? [];
   const pnlTargets = pnlValuesRaw.map((value) =>
     value !== null && value !== undefined ? value.toString() : "",
@@ -883,6 +893,8 @@ export default function RegisteredTradePage() {
     takeProfitTargets.length,
     takeProfitOutcomeValues.length,
     riskRewardTargets.length,
+    riskTargets.length,
+    lotSizeTargets.length,
     pipsValuesRaw.length,
     pnlValuesRaw.length,
   );
@@ -907,6 +919,8 @@ export default function RegisteredTradePage() {
     value === "profit" ? "Profit" : value === "loss" ? "Loss" : "",
   );
   const normalizedRiskRewardTargets = padMultiValue(riskRewardTargets, targetColumnCount, () => "");
+  const normalizedLotSizeTargets = padMultiValue(lotSizeTargets, targetColumnCount, () => "");
+  const normalizedRiskTargets = padMultiValue(riskTargets, targetColumnCount, () => null);
   const entryPriceNumber =
     typeof trade.entryPrice === "number" && Number.isFinite(trade.entryPrice)
       ? trade.entryPrice
@@ -984,27 +998,20 @@ export default function RegisteredTradePage() {
     },
     { idPrefix: "risk-reward", label: "R/R", values: normalizedRiskRewardTargets },
     { idPrefix: "nr-pips", label: "Nr. Pips", values: normalizedPipsTargets },
-  ] satisfies Array<{
-    idPrefix: string;
-    label: string;
-    values: string[];
-  }>;
-  const pnlDisplayConfig = {
+  ] satisfies TargetDisplayConfig[];
+  const pnlDisplayConfig: TargetDisplayConfig = {
     idPrefix: "pnl",
     label: "P&L",
     values: normalizedPnlTargets,
   };
+  const riskDetailDisplayConfigs: TargetDisplayConfig[] = [
+    { idPrefix: "lot-size", label: "Lot Size", values: normalizedLotSizeTargets },
+    { idPrefix: "risk", label: "Risk", values: normalizedRiskTargets },
+    pnlDisplayConfig,
+  ];
   const shouldShowRemovalBadge = isEditMode && targetColumnCount > 1;
 
-  const renderTargetDisplay = ({
-    idPrefix,
-    label,
-    values,
-  }: {
-    idPrefix: string;
-    label: string;
-    values: string[];
-  }) => (
+  const renderTargetDisplay = ({ idPrefix, label, values }: TargetDisplayConfig) => (
     <div className="flex flex-col gap-2" key={idPrefix}>
       <div
         className={isEditMode ? "grid gap-3 pr-12" : "grid gap-3"}
@@ -1410,21 +1417,7 @@ export default function RegisteredTradePage() {
                   Risk Details
                 </span>
                 <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Lot Size</span>
-                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                      <span className="text-sm font-medium text-fg">{lotSizeValue}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Risk</span>
-                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                      <span className="text-sm font-medium text-fg">{riskValue}</span>
-                    </div>
-                  </div>
-
-                  {renderTargetDisplay(pnlDisplayConfig)}
+                  {riskDetailDisplayConfigs.map(renderTargetDisplay)}
                 </div>
               </div>
 

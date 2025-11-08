@@ -372,11 +372,13 @@ function NewTradePageContent() {
     "" | "Insert" | "true" | "false" | "maybe"
   >("");
   const [riskRewardTargets, setRiskRewardTargets] = useState<string[]>([""]);
-  const [risk, setRisk] = useState<NumericFieldState>(createNumericFieldState());
+  const [riskTargets, setRiskTargets] = useState<NumericFieldState[]>([
+    createNumericFieldState(),
+  ]);
   const [pipsTargets, setPipsTargets] = useState<NumericFieldState[]>([createNumericFieldState()]);
   const [isAddButtonAnimating, setIsAddButtonAnimating] = useState(false);
   const [recentlyAddedColumnIndex, setRecentlyAddedColumnIndex] = useState<number | null>(null);
-  const [lotSize, setLotSize] = useState<string>("");
+  const [lotSizeTargets, setLotSizeTargets] = useState<string[]>([""]);
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() =>
@@ -392,12 +394,16 @@ function NewTradePageContent() {
         riskRewardTargets.length,
         pipsTargets.length,
         pnlTargets.length,
+        riskTargets.length,
+        lotSizeTargets.length,
       ),
     [
       pnlTargets.length,
       pipsTargets.length,
+      riskTargets.length,
       riskRewardTargets.length,
       takeProfitTargets.length,
+      lotSizeTargets.length,
     ],
   );
 
@@ -412,6 +418,8 @@ function NewTradePageContent() {
     );
     setRiskRewardTargets((prev) => padMultiValue(prev, nextCount, () => ""));
     setPipsTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
+    setRiskTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
+    setLotSizeTargets((prev) => padMultiValue(prev, nextCount, () => ""));
     setPnlTargets((prev) => padMultiValue(prev, nextCount, () => createNumericFieldState()));
   }, [targetColumnCount]);
 
@@ -426,6 +434,8 @@ function NewTradePageContent() {
     setTakeProfitOutcomes((prev) => prev.slice(0, nextCount));
     setRiskRewardTargets((prev) => prev.slice(0, nextCount));
     setPipsTargets((prev) => prev.slice(0, nextCount));
+    setRiskTargets((prev) => prev.slice(0, nextCount));
+    setLotSizeTargets((prev) => prev.slice(0, nextCount));
     setPnlTargets((prev) => prev.slice(0, nextCount));
   }, [targetColumnCount]);
 
@@ -524,6 +534,28 @@ function NewTradePageContent() {
       setRiskRewardTargets((prev) => {
         const next = padMultiValue(prev, targetColumnCount, () => "");
         next[index] = value;
+        return next;
+      });
+    },
+    [targetColumnCount],
+  );
+
+  const handleLotSizeChange = useCallback(
+    (index: number, value: string) => {
+      setLotSizeTargets((prev) => {
+        const next = padMultiValue(prev, targetColumnCount, () => "");
+        next[index] = value;
+        return next;
+      });
+    },
+    [targetColumnCount],
+  );
+
+  const handleRiskChange = useCallback(
+    (index: number, value: string) => {
+      setRiskTargets((prev) => {
+        const next = padMultiValue(prev, targetColumnCount, () => createNumericFieldState());
+        next[index] = createNumericFieldState(value);
         return next;
       });
     },
@@ -636,6 +668,29 @@ function NewTradePageContent() {
     ],
   );
   const pnlFieldConfig = targetFieldConfigs[targetFieldConfigs.length - 1];
+
+  const riskDetailFieldConfigs = useMemo(
+    () =>
+      [
+        {
+          label: "Lot Size",
+          idPrefix: "lot-size",
+          placeholder: "0.10",
+          type: "text" as const,
+          values: lotSizeTargets,
+          onChange: handleLotSizeChange,
+        },
+        {
+          label: "Risk",
+          idPrefix: "risk",
+          placeholder: "Insert",
+          type: "number" as const,
+          values: riskTargets.map((target) => target.raw),
+          onChange: handleRiskChange,
+        },
+      ] satisfies TargetFieldConfig[],
+    [handleLotSizeChange, handleRiskChange, lotSizeTargets, riskTargets],
+  );
 
   const overallPips = useMemo(
     () => calculateOverallPips(pipsTargets.map((target) => target.value)),
@@ -1256,6 +1311,12 @@ function NewTradePageContent() {
           value === "profit" || value === "loss" ? value : "",
         );
         const mappedRiskReward = match.riskReward?.length ? match.riskReward : [""];
+        const mappedLotSizeRaw = (match.lotSize ?? []).map((value) => value ?? "");
+        const mappedLotSize =
+          mappedLotSizeRaw.length > 0 ? mappedLotSizeRaw : [""];
+        const mappedRisk = (match.risk ?? []).map((value) =>
+          createNumericFieldStateFromNumber(value ?? null),
+        );
         const mappedPips = (match.pips ?? []).map((value) =>
           createNumericFieldStateFromNumber(value ?? null),
         );
@@ -1267,6 +1328,8 @@ function NewTradePageContent() {
           mappedTakeProfit.length,
           mappedTakeProfitOutcomes.length,
           mappedRiskReward.length,
+          mappedLotSize.length,
+          mappedRisk.length,
           mappedPips.length,
           mappedPnl.length,
         );
@@ -1277,6 +1340,10 @@ function NewTradePageContent() {
           padMultiValue(mappedTakeProfitOutcomes, columnCount, () => ""),
         );
         setRiskRewardTargets(padMultiValue(mappedRiskReward, columnCount, () => ""));
+        setLotSizeTargets(padMultiValue(mappedLotSize, columnCount, () => ""));
+        setRiskTargets(
+          padMultiValue(mappedRisk, columnCount, () => createNumericFieldState()),
+        );
         setPipsTargets(padMultiValue(mappedPips, columnCount, () => createNumericFieldState()));
         setPnlTargets(padMultiValue(mappedPnl, columnCount, () => createNumericFieldState()));
         setPreTradeMentalState(match.preTradeMentalState ?? null);
@@ -1297,8 +1364,6 @@ function NewTradePageContent() {
               ? "false"
               : "",
         );
-        setRisk(createNumericFieldStateFromNumber(match.risk ?? null));
-        setLotSize(match.lotSize ?? "");
 
         if (imageInputRef.current) {
           imageInputRef.current.value = "";
@@ -2612,41 +2677,107 @@ function NewTradePageContent() {
                       <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
                         Risk Details
                       </span>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="flex flex-col gap-2">
-                          <label
-                            htmlFor="lot-size-input"
-                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                          >
-                            Lot Size
-                          </label>
-                          <input
-                            id="lot-size-input"
-                            type="text"
-                            value={lotSize}
-                            onChange={(event) => setLotSize(event.target.value)}
-                            placeholder="0.10"
-                            className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                          />
-                        </div>
+                      {riskDetailFieldConfigs.map((fieldConfig) => {
+                        const normalizedValues = padMultiValue(
+                          fieldConfig.values,
+                          targetColumnCount,
+                          () => "",
+                        );
 
-                        <div className="flex flex-col gap-2">
-                          <label
-                            htmlFor="risk-input"
-                            className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg"
-                          >
-                            Risk
-                          </label>
-                          <input
-                            id="risk-input"
-                            type="number"
-                            value={risk.raw}
-                            onChange={(event) => setRisk(createNumericFieldState(event.target.value))}
-                            placeholder="Insert"
-                            className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg placeholder:text-muted-fg placeholder:opacity-60 focus:outline-none focus:ring-0"
-                          />
-                        </div>
-                      </div>
+                        return (
+                          <div className="flex flex-col gap-2" key={fieldConfig.idPrefix}>
+                            <div
+                              className="grid gap-3 pr-12"
+                              style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
+                            >
+                              {normalizedValues.map((_, columnIndex) => {
+                                const inputId = `${fieldConfig.idPrefix}-input-${columnIndex}`;
+                                const labelId = `${fieldConfig.idPrefix}-label-${columnIndex}`;
+                                const outcomeValue =
+                                  normalizedTakeProfitOutcomeValues[columnIndex] ?? "";
+                                const outcomeStyle = getOutcomeStyle(outcomeValue);
+
+                                return (
+                                  <label
+                                    key={labelId}
+                                    id={labelId}
+                                    htmlFor={inputId}
+                                    className={`text-[11px] font-medium uppercase tracking-[0.24em] transition-colors duration-200 ease-in-out ${outcomeStyle.label}`}
+                                  >
+                                    {`${fieldConfig.label} ${columnIndex + 1}`}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                            <div className="relative">
+                              <div
+                                className="grid gap-3 pr-12"
+                                style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
+                              >
+                                {normalizedValues.map((value, columnIndex) => {
+                                  const inputId = `${fieldConfig.idPrefix}-input-${columnIndex}`;
+                                  const isRemovableColumn =
+                                    targetColumnCount > 1 && columnIndex === targetColumnCount - 1;
+                                  const isNewColumn = recentlyAddedColumnIndex === columnIndex;
+                                  const outcomeValue =
+                                    normalizedTakeProfitOutcomeValues[columnIndex] ?? "";
+                                  const outcomeStyle = getOutcomeStyle(outcomeValue);
+
+                                  return (
+                                    <div
+                                      className={`group relative${
+                                        isNewColumn ? " animate-target-column-enter" : ""
+                                      }`}
+                                      key={inputId}
+                                    >
+                                      <input
+                                        id={inputId}
+                                        type={fieldConfig.type}
+                                        value={value}
+                                        onChange={(event) =>
+                                          fieldConfig.onChange?.(
+                                            columnIndex,
+                                            event.target.value,
+                                          )
+                                        }
+                                        placeholder={fieldConfig.placeholder}
+                                        readOnly={fieldConfig.readOnly ?? false}
+                                        aria-readonly={fieldConfig.readOnly ?? undefined}
+                                        className={`w-full rounded-2xl border px-4 py-3 text-sm font-medium placeholder:opacity-60 focus:outline-none focus:ring-0 transition-colors duration-200 ease-in-out ${outcomeStyle.border} ${outcomeStyle.background} ${outcomeStyle.text} ${outcomeStyle.placeholder}`}
+                                      />
+                                      {isRemovableColumn && (
+                                        <button
+                                          type="button"
+                                          onClick={handleRemoveTargetColumn}
+                                          className="absolute -right-2 -top-2 inline-flex h-6 w-6 transform items-center justify-center rounded-full border border-border bg-[color:rgb(var(--surface))] text-muted-fg shadow-[0_8px_20px_rgba(15,23,42,0.12)] opacity-0 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-110 group-hover:opacity-100 hover:text-fg focus:outline-none focus-visible:scale-110 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--surface))]"
+                                          aria-label={`Rimuovi ultima colonna per ${fieldConfig.label}`}
+                                        >
+                                          <X aria-hidden="true" className="h-3.5 w-3.5" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleAddTargetColumn}
+                                className={`absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[color:rgb(var(--accent))] text-white shadow-[0_12px_28px_rgba(0,122,255,0.35)] transition duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:brightness-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
+                                  isAddButtonAnimating ? "animate-add-button-press" : ""
+                                }`}
+                                aria-label={`Aggiungi colonna per ${fieldConfig.label}`}
+                              >
+                                <Plus
+                                  aria-hidden="true"
+                                  className={`h-4 w-4 ${
+                                    isAddButtonAnimating ? "animate-add-icon-bounce" : ""
+                                  }`}
+                                />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
 
                       {pnlFieldConfig && (() => {
                         const normalizedValues = padMultiValue(
@@ -3000,7 +3131,12 @@ function NewTradePageContent() {
       () => "",
     ).map((value) => (value === "profit" || value === "loss" ? value : null));
     const riskRewardValues = riskRewardTargets.slice();
+    const riskValues = riskTargets.map((target) => target.value);
     const pipsValues = pipsTargets.map((target) => target.value);
+    const lotSizeValues = lotSizeTargets.map((value) => {
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    });
     const pnlValues = pnlTargets.map((target) => target.value);
 
     const payload: TradePayload = {
@@ -3013,9 +3149,9 @@ function NewTradePageContent() {
       closeTime: closeTime ? closeTime.toISOString() : null,
       position: normalizedPosition,
       riskReward: riskRewardValues,
-      risk: risk.value,
+      risk: riskValues,
       pips: pipsValues,
-      lotSize: lotSize.trim() || null,
+      lotSize: lotSizeValues,
       entryPrice: entryPrice.value,
       exitPrice: exitPrice.value,
       stopLoss: stopLoss.value,
@@ -3086,12 +3222,12 @@ function NewTradePageContent() {
     libraryItems,
     openTime,
     pipsTargets,
-    lotSize,
+    lotSizeTargets,
     position,
     preTradeMentalState,
     removedLibraryItems,
     respectedRiskChoice,
-    risk,
+    riskTargets,
     riskRewardTargets,
     router,
     selectedDate,

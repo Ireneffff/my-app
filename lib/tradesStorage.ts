@@ -35,9 +35,9 @@ export type StoredTrade = {
   closeTime: string | null;
   position: "LONG" | "SHORT";
   riskReward: string[];
-  risk: number | null;
+  risk: number[];
   pips: number[];
-  lotSize: string | null;
+  lotSize: string[];
   entryPrice: number | null;
   exitPrice: number | null;
   stopLoss: number | null;
@@ -68,9 +68,9 @@ export type TradePayload = {
   closeTime: string | null;
   position: "LONG" | "SHORT" | null;
   riskReward: string[];
-  risk: number | null;
+  risk: (number | null)[];
   pips: (number | null)[];
-  lotSize: string | null;
+  lotSize: (string | null)[];
   entryPrice: number | null;
   exitPrice: number | null;
   stopLoss: number | null;
@@ -384,10 +384,14 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
     : null;
 
   const riskReward = parseMultiValueField(row?.rr_ratio);
+  const risk = parseNumericMultiValueField(row?.risk_percent);
   const pips = parseNumericMultiValueField(row?.pips);
   const takeProfit = parseNumericMultiValueField(row?.take_profit);
   const takeProfitOutcomes = parseOutcomeMultiValueField(row?.take_profit_outcomes);
   const pnl = parseNumericMultiValueField(row?.p_l);
+  const lotSize = parseMultiValueField(row?.lot_size)
+    .map((value) => normalizeTradeField(value, "string"))
+    .filter((value): value is string => value !== null);
 
   return {
     id: row?.id?.toString() ?? "",
@@ -399,9 +403,9 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
     closeTime,
     position: row?.position === "SHORT" ? "SHORT" : "LONG",
     riskReward,
-    risk: normalizeTradeField(row?.risk_percent, "number"),
+    risk,
     pips,
-    lotSize: normalizeTradeField(row?.lot_size, "string"),
+    lotSize,
     entryPrice: normalizeTradeField(row?.entry_price, "number"),
     exitPrice: normalizeTradeField(row?.exit_price, "number"),
     stopLoss: normalizeTradeField(row?.stop_loss, "number"),
@@ -582,6 +586,20 @@ function buildTradeRecord(payload: TradePayload) {
     normalizedTakeProfitValues.length === 1
       ? normalizedTakeProfitValues[0]
       : null;
+  const normalizedRiskValues = (payload.risk ?? [])
+    .map((value) => normalizeTradeField(value, "number"))
+    .filter((value): value is number => value !== null);
+  const multipleRiskValues =
+    normalizedRiskValues.length > 1 ? JSON.stringify(normalizedRiskValues) : null;
+  const singleRiskValue =
+    normalizedRiskValues.length === 1 ? normalizedRiskValues[0] : null;
+  const normalizedLotSizeValues = (payload.lotSize ?? [])
+    .map((value) => normalizeTradeField(value, "string"))
+    .filter((value): value is string => value !== null);
+  const multipleLotSizeValues =
+    normalizedLotSizeValues.length > 1 ? JSON.stringify(normalizedLotSizeValues) : null;
+  const singleLotSizeValue =
+    normalizedLotSizeValues.length === 1 ? normalizedLotSizeValues[0] : null;
 
   return {
     symbol,
@@ -591,9 +609,9 @@ function buildTradeRecord(payload: TradePayload) {
     close_time: closeTime,
     position: payload.position ?? null,
     rr_ratio: serializeMultiValueField(payload.riskReward ?? []),
-    risk_percent: normalizeTradeField(payload.risk, "number"),
+    risk_percent: multipleRiskValues ?? singleRiskValue,
     pips: serializeNumericMultiValueField(payload.pips ?? []),
-    lot_size: normalizeTradeField(payload.lotSize, "string"),
+    lot_size: multipleLotSizeValues ?? singleLotSizeValue,
     entry_price: normalizeTradeField(payload.entryPrice, "number"),
     exit_price: normalizeTradeField(payload.exitPrice, "number"),
     stop_loss: normalizeTradeField(payload.stopLoss, "number"),
