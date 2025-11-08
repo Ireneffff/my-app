@@ -519,6 +519,16 @@ function NewTradePageContent() {
     targetColumnCount,
   ]);
 
+  const normalizedTakeProfitOutcomeValues = useMemo(
+    () =>
+      padMultiValue<TakeProfitOutcome>(
+        takeProfitOutcomes,
+        targetColumnCount,
+        createTakeProfitOutcome,
+      ),
+    [takeProfitOutcomes, targetColumnCount],
+  );
+
   useEffect(() => {
     setPnlTargets((previous) => {
       const normalizedPipsTargets = padMultiValue(
@@ -630,15 +640,6 @@ function NewTradePageContent() {
     [targetColumnCount],
   );
 
-  const normalizedTakeProfitOutcomeValues = useMemo(
-    () =>
-      padMultiValue<TakeProfitOutcome>(
-        takeProfitOutcomes,
-        targetColumnCount,
-        createTakeProfitOutcome,
-      ),
-    [takeProfitOutcomes, targetColumnCount],
-  );
   const entryPriceNumber = entryPrice.value;
   const stopLossNumber = stopLoss.value;
   const stopLossDistancePips = useMemo(
