@@ -86,7 +86,7 @@ function getStartOfWeek(date: Date) {
 function getWorkWeekDays(referenceDate: Date) {
   const weekStart = getStartOfWeek(referenceDate);
 
-  return Array.from({ length: 5 }, (_, index) => {
+  return Array.from({ length: 6 }, (_, index) => {
     const date = new Date(weekStart);
     date.setDate(weekStart.getDate() + index);
     return date;
@@ -350,7 +350,7 @@ export default function RegisteredTradePage() {
         .toUpperCase();
 
       const pillClasses = [
-        "flex min-w-[62px] flex-col items-center gap-1 rounded-full border border-transparent px-2 py-2 text-xs font-medium transition md:min-w-[88px] md:text-sm",
+        "flex min-w-[48px] flex-col items-center gap-1 rounded-full border border-transparent px-1.5 py-1.5 text-[11px] font-medium transition sm:min-w-[56px] sm:px-2 sm:py-2 md:min-w-[88px] md:text-sm",
       ];
 
       if (isSelected) {
@@ -362,7 +362,7 @@ export default function RegisteredTradePage() {
       }
 
       const dayNumberClasses = [
-        "flex h-10 w-10 items-center justify-center rounded-full text-lg font-medium transition-colors md:h-12 md:w-12 md:text-xl",
+        "flex h-9 w-9 items-center justify-center rounded-full text-base font-medium transition-colors sm:h-10 sm:w-10 sm:text-lg md:h-12 md:w-12 md:text-xl",
       ];
 
       const dayNumberStyle: CSSProperties | undefined = isSelected
@@ -386,7 +386,7 @@ export default function RegisteredTradePage() {
             {dayNumber}
           </span>
           <span
-            className={`text-[10px] tracking-[0.3em] md:text-xs ${
+            className={`text-[10px] tracking-[0.22em] md:text-xs ${
               isSelected ? "text-fg" : "text-muted-fg"
             }`}
           >
@@ -752,7 +752,7 @@ export default function RegisteredTradePage() {
     >
       <div
         ref={previewContainerRef}
-        className="w-full lg:max-w-[960px]"
+        className="w-full lg:max-w-screen-lg"
         onWheel={handlePreviewWheel}
         onTouchStart={handlePreviewTouchStart}
         onTouchMove={handlePreviewTouchMove}
@@ -1190,9 +1190,9 @@ export default function RegisteredTradePage() {
           <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
             <div className="flex flex-col gap-6">
               <div>
-                <div className="mx-auto flex w-full max-w-xl items-center gap-3">
-                  <div className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1">
-                    <div className="flex w-full items-center justify-center gap-2">
+                <div className="mx-auto flex w-full max-w-xl items-center gap-2.5 sm:gap-3">
+                  <div className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1 sm:px-2">
+                    <div className="flex w-full items-center justify-center gap-1.5 sm:gap-2">
                       {currentWeekDays.map((date) => renderWeekDayPill(date))}
                     </div>
                   </div>
@@ -1229,7 +1229,7 @@ export default function RegisteredTradePage() {
                 <div className="flex flex-col items-center gap-3">
                   <span className="block pb-1 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Trade Setup</span>
                     <div className="flex w-full flex-col items-center justify-center gap-6 md:flex-row md:justify-center">
-                      <div className="flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:w-[18rem] lg:w-[20rem]">
+                    <div className="flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:flex-1 md:max-w-xs lg:max-w-sm">
                         <div className="flex w-full items-center justify-center gap-3 text-fg">
                           <span className="text-2xl" aria-hidden="true">
                             {activeSymbol.flag}
@@ -1241,7 +1241,7 @@ export default function RegisteredTradePage() {
                       </div>
 
                       <div
-                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:w-[12.5rem] lg:w-[13.5rem] ${
+                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:flex-1 md:max-w-xs lg:max-w-sm ${
                           trade.tradeOutcome === "profit"
                             ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32]"
                             : trade.tradeOutcome === "loss"
@@ -1265,7 +1265,7 @@ export default function RegisteredTradePage() {
                       </div>
 
                       <div
-                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] md:w-[12.5rem] lg:w-[13.5rem] ${
+                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] md:flex-1 md:max-w-xs lg:max-w-sm ${
                           trade.isPaperTrade
                             ? "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280]"
                             : "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED]"
