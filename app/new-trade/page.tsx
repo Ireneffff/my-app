@@ -243,7 +243,7 @@ type TargetFieldConfig = {
 };
 
 function getWeekDays(weekStart: Date) {
-  return Array.from({ length: 5 }, (_, index) => {
+  return Array.from({ length: 6 }, (_, index) => {
     const date = new Date(weekStart);
     date.setDate(weekStart.getDate() + index);
     return date;
@@ -1101,7 +1101,7 @@ function NewTradePageContent() {
     [],
   );
 
-  const renderWeekDayPill = (date: Date) => {
+  const renderWeekDayPill = (date: Date, options?: { hideOnDesktop?: boolean }) => {
     const isSelected = isSameDay(date, selectedDate);
     const isToday = isSameDay(date, today);
     const dayNumber = date.getDate();
@@ -1117,9 +1117,15 @@ function NewTradePageContent() {
       year: "numeric",
     });
 
+    const hideOnDesktop = options?.hideOnDesktop ?? false;
+
     const buttonClasses = [
-      "flex min-w-[62px] flex-col items-center gap-1 rounded-full border border-transparent px-2 py-2 text-xs font-medium transition md:min-w-[88px] md:text-sm",
+      "flex min-w-[52px] flex-col items-center gap-1.5 rounded-full border border-transparent px-1.5 py-1.5 text-[11px] font-medium transition md:min-w-[88px] md:gap-2 md:px-2 md:py-2 md:text-sm",
     ];
+
+    if (hideOnDesktop) {
+      buttonClasses.push("md:hidden");
+    }
 
     if (isSelected) {
       buttonClasses.push("text-fg");
@@ -1130,7 +1136,7 @@ function NewTradePageContent() {
     }
 
     const dayNumberClasses = [
-      "flex h-10 w-10 items-center justify-center rounded-full text-lg font-medium transition-colors md:h-12 md:w-12 md:text-xl",
+      "flex h-9 w-9 items-center justify-center rounded-full text-base font-medium transition-colors md:h-12 md:w-12 md:text-xl",
     ];
 
     const dayNumberStyle: CSSProperties | undefined = isSelected
@@ -1861,7 +1867,7 @@ function NewTradePageContent() {
       >
         <div
           ref={previewContainerRef}
-          className="w-full lg:max-w-[960px]"
+        className="w-full lg:max-w-screen-lg"
           onWheel={handlePreviewWheel}
           onTouchStart={handlePreviewTouchStart}
           onTouchMove={handlePreviewTouchMove}
@@ -1951,10 +1957,14 @@ function NewTradePageContent() {
                         onPointerCancel={handleWeekPointerCancel}
                         onPointerLeave={handleWeekPointerCancel}
                       >
-                        <div className="flex w-full items-center justify-center gap-2">
-                          {visibleWeekDays.map((date) => renderWeekDayPill(date))}
-                        </div>
-                      </div>
+                    <div className="flex w-full items-center justify-center gap-1.5 md:gap-2">
+                      {visibleWeekDays.map((date, index) =>
+                        renderWeekDayPill(date, {
+                          hideOnDesktop: index === visibleWeekDays.length - 1,
+                        }),
+                      )}
+                    </div>
+                  </div>
 
                       <button
                         type="button"
@@ -2001,7 +2011,7 @@ function NewTradePageContent() {
                             setIsSymbolListOpen((prev) => !prev);
                             setIsOutcomeListOpen(false);
                           }}
-                          className="group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)] md:w-[18rem] lg:w-[20rem]"
+                          className="group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)] md:flex-1 md:max-w-xs lg:max-w-sm"
                           aria-haspopup="listbox"
                           aria-expanded={isSymbolListOpen}
                         >
@@ -2061,7 +2071,7 @@ function NewTradePageContent() {
                             setIsOutcomeListOpen((prev) => !prev);
                             setIsSymbolListOpen(false);
                           }}
-                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:w-[12.5rem] lg:w-[13.5rem] ${
+                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:flex-1 md:max-w-xs lg:max-w-sm ${
                             tradeOutcome === "profit"
                               ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
                               : tradeOutcome === "loss"
@@ -2128,7 +2138,7 @@ function NewTradePageContent() {
                             setIsSymbolListOpen(false);
                             setIsOutcomeListOpen(false);
                           }}
-                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:w-[12.5rem] lg:w-[13.5rem] ${
+                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:flex-1 md:max-w-xs lg:max-w-sm ${
                             isRealTrade
                               ? "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
                               : "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
@@ -2537,7 +2547,7 @@ function NewTradePageContent() {
                         return (
                           <div className="flex flex-col gap-2" key={fieldConfig.idPrefix}>
                             <div
-                              className="grid gap-3 pr-12"
+                              className="flex flex-col gap-2 sm:grid sm:gap-3 sm:pr-12"
                               style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
                             >
                               {normalizedValues.map((_, columnIndex) => {
@@ -2552,7 +2562,7 @@ function NewTradePageContent() {
                                   return (
                                     <div
                                       key={labelId}
-                                      className="flex items-center justify-between gap-3"
+                                      className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-3"
                                     >
                                       <label
                                         id={labelId}
@@ -2588,9 +2598,9 @@ function NewTradePageContent() {
                                 );
                               })}
                             </div>
-                            <div className="relative">
+                            <div className="relative flex flex-col sm:pr-12">
                               <div
-                                className="grid gap-3 pr-12"
+                                className="flex flex-col gap-3 sm:grid sm:gap-3"
                                 style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
                               >
                                 {normalizedValues.map((value, columnIndex) => {
@@ -2641,7 +2651,7 @@ function NewTradePageContent() {
                               <button
                                 type="button"
                                 onClick={handleAddTargetColumn}
-                                className={`absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[color:rgb(var(--accent))] text-white shadow-[0_12px_28px_rgba(0,122,255,0.35)] transition duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:brightness-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
+                                className={`mt-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[color:rgb(var(--accent))] text-white shadow-[0_12px_28px_rgba(0,122,255,0.35)] transition duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:brightness-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] sm:absolute sm:right-0 sm:top-1/2 sm:mt-0 sm:h-8 sm:w-8 sm:-translate-y-1/2 ${
                                   isAddButtonAnimating ? "animate-add-button-press" : ""
                                 }`}
                                 aria-label={`Aggiungi colonna per ${fieldConfig.label}`}
@@ -2682,7 +2692,7 @@ function NewTradePageContent() {
                         return (
                           <div className="flex flex-col gap-2" key={fieldConfig.idPrefix}>
                             <div
-                              className="grid gap-3 pr-12"
+                              className="flex flex-col gap-2 sm:grid sm:gap-3 sm:pr-12"
                               style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
                             >
                               {normalizedValues.map((_, columnIndex) => {
@@ -2704,9 +2714,9 @@ function NewTradePageContent() {
                                 );
                               })}
                             </div>
-                            <div className="relative">
+                            <div className="relative flex flex-col sm:pr-12">
                               <div
-                                className="grid gap-3 pr-12"
+                                className="flex flex-col gap-3 sm:grid sm:gap-3"
                                 style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
                               >
                                 {normalizedValues.map((value, columnIndex) => {
@@ -2757,7 +2767,7 @@ function NewTradePageContent() {
                               <button
                                 type="button"
                                 onClick={handleAddTargetColumn}
-                                className={`absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[color:rgb(var(--accent))] text-white shadow-[0_12px_28px_rgba(0,122,255,0.35)] transition duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:brightness-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
+                                className={`mt-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[color:rgb(var(--accent))] text-white shadow-[0_12px_28px_rgba(0,122,255,0.35)] transition duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:brightness-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] sm:absolute sm:right-0 sm:top-1/2 sm:mt-0 sm:h-8 sm:w-8 sm:-translate-y-1/2 ${
                                   isAddButtonAnimating ? "animate-add-button-press" : ""
                                 }`}
                                 aria-label={`Aggiungi colonna per ${fieldConfig.label}`}
@@ -2784,7 +2794,7 @@ function NewTradePageContent() {
                         return (
                           <div className="flex flex-col gap-2" key={pnlFieldConfig.idPrefix}>
                             <div
-                              className="grid gap-3 pr-12"
+                              className="flex flex-col gap-2 sm:grid sm:gap-3 sm:pr-12"
                               style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
                             >
                               {normalizedValues.map((_, columnIndex) => {
@@ -2802,9 +2812,9 @@ function NewTradePageContent() {
                                 );
                               })}
                             </div>
-                            <div className="relative">
+                            <div className="relative flex flex-col sm:pr-12">
                               <div
-                                className="grid gap-3 pr-12"
+                                className="flex flex-col gap-3 sm:grid sm:gap-3"
                                 style={{ gridTemplateColumns: `repeat(${targetColumnCount}, minmax(0, 1fr))` }}
                               >
                                 {normalizedValues.map((value, columnIndex) => {
@@ -2854,7 +2864,7 @@ function NewTradePageContent() {
                               <button
                                 type="button"
                                 onClick={handleAddTargetColumn}
-                                className={`absolute right-0 top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[color:rgb(var(--accent))] text-white shadow-[0_12px_28px_rgba(0,122,255,0.35)] transition duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:brightness-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${
+                                className={`mt-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[color:rgb(var(--accent))] text-white shadow-[0_12px_28px_rgba(0,122,255,0.35)] transition duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:brightness-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] sm:absolute sm:right-0 sm:top-1/2 sm:mt-0 sm:h-8 sm:w-8 sm:-translate-y-1/2 ${
                                   isAddButtonAnimating ? "animate-add-button-press" : ""
                                 }`}
                                 aria-label={`Aggiungi colonna per ${pnlFieldConfig.label}`}
