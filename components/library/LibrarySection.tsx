@@ -37,6 +37,34 @@ export function LibrarySection({
 }: LibrarySectionProps) {
   const previewWrapperRef = useRef<HTMLDivElement | null>(null);
   const [previewHeight, setPreviewHeight] = useState<number | null>(null);
+  const [shouldSyncHeight, setShouldSyncHeight] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const updateSync = (matches: boolean) => {
+      setShouldSyncHeight(matches);
+    };
+
+    updateSync(mediaQuery.matches);
+
+    const listener = (event: MediaQueryListEvent) => updateSync(event.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", listener);
+      return () => {
+        mediaQuery.removeEventListener("change", listener);
+      };
+    }
+
+    mediaQuery.addListener(listener);
+    return () => {
+      mediaQuery.removeListener(listener);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -114,7 +142,7 @@ export function LibrarySection({
     };
   }, [actions.length, selectedActionId]);
 
-  const carouselHeightStyle = previewHeight
+  const carouselHeightStyle = previewHeight && shouldSyncHeight
     ? {
         height: `${previewHeight}px`,
         maxHeight: `${previewHeight}px`,
@@ -127,7 +155,7 @@ export function LibrarySection({
   const shouldRenderHeader = titleText.length > 0 || subtitleText.length > 0;
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 sm:max-w-6xl sm:space-y-8 lg:max-w-[1440px] xl:max-w-[1760px] 2xl:max-w-[1920px]">
+    <div className="mx-auto w-full max-w-5xl space-y-6 sm:max-w-6xl sm:space-y-8 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-screen-2xl">
       <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
         <div className="flex w-full flex-col gap-8">
           {shouldRenderHeader ? (
@@ -168,7 +196,7 @@ export function LibrarySection({
       </div>
 
       {errorMessage ? (
-        <p className="mx-auto w-full max-w-5xl rounded-2xl bg-red-50 px-4 py-3 text-xs font-medium text-red-600 sm:max-w-6xl lg:max-w-[1440px] xl:max-w-[1760px] 2xl:max-w-[1920px]">
+        <p className="mx-auto w-full max-w-5xl rounded-2xl bg-red-50 px-4 py-3 text-xs font-medium text-red-600 sm:max-w-6xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-screen-2xl">
           {errorMessage}
         </p>
       ) : null}
