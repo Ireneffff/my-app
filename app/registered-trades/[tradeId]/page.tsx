@@ -26,8 +26,8 @@ import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
 import {
   deleteTrade,
+  loadAdjacentTradeId,
   loadTradeById,
-  loadTrades,
   REGISTERED_TRADES_UPDATED_EVENT,
   type StoredLibraryItem,
   type StoredTrade,
@@ -176,8 +176,11 @@ export default function RegisteredTradePage() {
     createFallbackLibraryItem(),
   ]);
   const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>("snapshot");
-  const [orderedTradeIds, setOrderedTradeIds] = useState<string[]>([]);
   const [isTradeContentVisible, setIsTradeContentVisible] = useState(false);
+  const [adjacentTradeIds, setAdjacentTradeIds] = useState<{
+    previous: string | null;
+    next: string | null;
+  }>({ previous: null, next: null });
   const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const previewSwipeStateRef = useRef<{
     x: number;
@@ -313,11 +316,6 @@ export default function RegisteredTradePage() {
     };
   }, [clearScheduledScrollUnlocks, resetBodyScrollLock]);
 
-  const refreshTradeList = useCallback(async () => {
-    const trades = await loadTrades();
-    setOrderedTradeIds(trades.map((item) => item.id));
-  }, []);
-
   const refreshTrade = useCallback(async () => {
     if (!tradeId) {
       setState({ status: "missing", trade: null });
@@ -333,23 +331,53 @@ export default function RegisteredTradePage() {
   useEffect(() => {
     refreshTrade();
   }, [refreshTrade]);
+  const currentTrade = state.trade ?? null;
+  const currentTradeId = currentTrade?.id ?? null;
 
   useEffect(() => {
-    refreshTradeList();
-  }, [refreshTradeList]);
+    let isCancelled = false;
 
-  const currentTradeId = state.trade?.id ?? null;
+    const loadNeighbors = async () => {
+      if (!currentTrade) {
+        if (!isCancelled) {
+          setAdjacentTradeIds({ previous: null, next: null });
+        }
+        return;
+      }
 
-  const currentTradeIndex = useMemo(
-    () => (currentTradeId ? orderedTradeIds.indexOf(currentTradeId) : -1),
-    [orderedTradeIds, currentTradeId],
-  );
-  const previousTradeId =
-    currentTradeIndex !== -1 && currentTradeIndex < orderedTradeIds.length - 1
-      ? orderedTradeIds[currentTradeIndex + 1]
-      : null;
-  const nextTradeId =
-    currentTradeIndex > 0 ? orderedTradeIds[currentTradeIndex - 1] : null;
+      const [previous, next] = await Promise.all([
+        loadAdjacentTradeId(
+          {
+            id: currentTrade.id,
+            openTime: currentTrade.openTime,
+            createdAt: currentTrade.createdAt,
+          },
+          "previous",
+        ),
+        loadAdjacentTradeId(
+          {
+            id: currentTrade.id,
+            openTime: currentTrade.openTime,
+            createdAt: currentTrade.createdAt,
+          },
+          "next",
+        ),
+      ]);
+
+      if (!isCancelled) {
+        setAdjacentTradeIds({ previous, next });
+      }
+    };
+
+    loadNeighbors();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentTrade]);
+
+  const previousTradeId = adjacentTradeIds.previous;
+  const nextTradeId = adjacentTradeIds.next;
 
   const goToTrade = useCallback(
     (targetTradeId: string) => {
@@ -384,7 +412,6 @@ export default function RegisteredTradePage() {
 
     const handleUpdate = () => {
       refreshTrade();
-      refreshTradeList();
     };
 
     window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleUpdate);
@@ -392,7 +419,7 @@ export default function RegisteredTradePage() {
     return () => {
       window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleUpdate);
     };
-  }, [refreshTrade, refreshTradeList]);
+  }, [refreshTrade]);
 
   const selectedDate = useMemo(() => {
     if (state.trade?.date) {
