@@ -290,7 +290,7 @@ export default function Home() {
                     >
                       {trade.isPaperTrade ? (
                         <span
-                          className="pointer-events-none absolute bottom-3 left-4 inline-flex items-center rounded-full bg-[color:rgb(var(--accent)/0.12)] px-2.5 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-accent shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:bottom-auto md:left-auto md:right-5 md:top-4"
+                          className="pointer-events-none absolute bottom-3 left-4 inline-flex items-center rounded-full bg-[color:rgb(var(--accent)/0.12)] px-2.5 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-accent shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:hidden"
                         >
                           Paper trade
                         </span>
@@ -379,15 +379,22 @@ export default function Home() {
                             ) : null}
                           </div>
                         ) : null}
-                        <time
-                          className="ml-auto text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg"
-                          dateTime={trade.date}
-                        >
-                          {formattedDate}
-                        </time>
-                        <span className="ml-2 text-lg text-muted-fg transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 group-hover:text-fg" aria-hidden="true">
-                          ↗
-                        </span>
+                        <div className="ml-auto flex items-center gap-3">
+                          {trade.isPaperTrade ? (
+                            <span className="hidden md:inline-flex items-center rounded-full bg-[color:rgb(var(--accent)/0.12)] px-2.5 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-accent shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
+                              Paper trade
+                            </span>
+                          ) : null}
+                          <time
+                            className="text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg"
+                            dateTime={trade.date}
+                          >
+                            {formattedDate}
+                          </time>
+                          <span className="text-lg text-muted-fg transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 group-hover:text-fg" aria-hidden="true">
+                            ↗
+                          </span>
+                        </div>
                       </div>
                     </Link>
                   </li>
