@@ -13,13 +13,14 @@ import {
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { Circle, CheckCircle, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Circle, CheckCircle, Plus, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
 import {
   deleteTrade,
   loadTradeById,
+  loadTrades,
   REGISTERED_TRADES_UPDATED_EVENT,
   type StoredLibraryItem,
   type StoredTrade,
@@ -168,6 +169,13 @@ export default function RegisteredTradePage() {
     createFallbackLibraryItem(),
   ]);
   const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>("snapshot");
+  const [neighborTrades, setNeighborTrades] = useState<{
+    previous: StoredTrade | null;
+    next: StoredTrade | null;
+  }>(() => ({
+    previous: null,
+    next: null,
+  }));
   const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const previewSwipeStateRef = useRef<{
     x: number;
@@ -179,6 +187,7 @@ export default function RegisteredTradePage() {
     initialOverflow: null,
   });
   const scrollUnlockTimeoutsRef = useRef<Set<number>>(new Set());
+  const isMountedRef = useRef(true);
   const clearScheduledScrollUnlocks = useCallback(() => {
     if (typeof window === "undefined") {
       return;
@@ -192,6 +201,13 @@ export default function RegisteredTradePage() {
 
   const rawTradeId = params.tradeId;
   const tradeId = Array.isArray(rawTradeId) ? rawTradeId[0] : rawTradeId;
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const lockBodyScroll = useCallback(() => {
     if (typeof document === "undefined") {
@@ -299,9 +315,46 @@ export default function RegisteredTradePage() {
     setState({ status: match ? "ready" : "missing", trade: match });
   }, [tradeId]);
 
+  const refreshNeighborTrades = useCallback(async () => {
+    if (!isMountedRef.current) {
+      return;
+    }
+
+    if (!tradeId) {
+      setNeighborTrades({ previous: null, next: null });
+      return;
+    }
+
+    const trades = await loadTrades();
+
+    if (!isMountedRef.current) {
+      return;
+    }
+
+    const currentIndex = trades.findIndex((trade) => trade.id === tradeId);
+
+    if (currentIndex === -1) {
+      setNeighborTrades({ previous: null, next: null });
+      return;
+    }
+
+    setNeighborTrades({
+      previous: trades[currentIndex + 1] ?? null,
+      next: trades[currentIndex - 1] ?? null,
+    });
+  }, [tradeId]);
+
   useEffect(() => {
     refreshTrade();
   }, [refreshTrade]);
+
+  useEffect(() => {
+    if (state.status === "ready") {
+      refreshNeighborTrades();
+    } else {
+      setNeighborTrades({ previous: null, next: null });
+    }
+  }, [state.status, refreshNeighborTrades]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -310,6 +363,7 @@ export default function RegisteredTradePage() {
 
     const handleUpdate = () => {
       refreshTrade();
+      refreshNeighborTrades();
     };
 
     window.addEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleUpdate);
@@ -317,7 +371,7 @@ export default function RegisteredTradePage() {
     return () => {
       window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleUpdate);
     };
-  }, [refreshTrade]);
+  }, [refreshTrade, refreshNeighborTrades]);
 
   const selectedDate = useMemo(() => {
     if (state.trade?.date) {
@@ -808,6 +862,44 @@ export default function RegisteredTradePage() {
     </div>
   );
 
+  const isTradeReady = state.status === "ready";
+
+  const handleNavigateToTrade = useCallback(
+    (target: StoredTrade | null) => {
+      if (!target?.id) {
+        return;
+      }
+
+      router.push(`/registered-trades/${target.id}`);
+    },
+    [router],
+  );
+
+  const renderNavigationButton = (direction: "previous" | "next") => {
+    const isPrevious = direction === "previous";
+    const targetTrade = isPrevious ? neighborTrades.previous : neighborTrades.next;
+    const Icon = isPrevious ? ChevronLeft : ChevronRight;
+    const symbolLabel = targetTrade?.symbolCode?.trim() ?? "";
+    const baseLabel = isPrevious
+      ? "Vai alla registered trade precedente"
+      : "Vai alla registered trade successiva";
+    const ariaLabel = symbolLabel ? `${baseLabel} (${symbolLabel})` : baseLabel;
+
+    return (
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-12 w-12 flex-none rounded-full border border-border bg-[color:rgb(var(--surface)/0.92)] p-0 text-muted-fg backdrop-blur transition hover:text-fg"
+        onClick={() => handleNavigateToTrade(targetTrade)}
+        disabled={!isTradeReady || !targetTrade}
+        aria-label={ariaLabel}
+      >
+        <Icon aria-hidden="true" className="h-5 w-5" />
+      </Button>
+    );
+  };
+
   if (state.status === "loading") {
     return (
       <section className="relative flex min-h-dvh flex-col items-center justify-center bg-bg px-6 py-12 text-fg">
@@ -1111,82 +1203,11 @@ export default function RegisteredTradePage() {
     }
   };
 
-  return (
-    <section
-      className="page-shell page-shell--wide relative flex min-h-dvh flex-col gap-12 pb-20 pt-24 text-fg sm:pt-28"
-      style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
-    >
-      <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-12 w-12 flex-none rounded-full border border-border bg-[color:rgb(var(--surface)/0.92)] p-0 text-lg text-muted-fg backdrop-blur hover:text-fg"
-          onClick={() => {
-            router.push("/");
-          }}
-          aria-label="Close"
-        >
-          <X aria-hidden="true" className="h-5 w-5" />
-        </Button>
-
-        <div className="ml-auto flex items-center gap-2">
-          <Button type="button" variant="secondary" size="sm" className="px-5" onClick={handleEditTrade}>
-            Edit trade
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="border border-transparent text-red-500 transition hover:border-[color:rgba(248,113,113,0.3)] hover:bg-[color:rgba(248,113,113,0.08)] hover:text-red-600"
-            onClick={handleDeleteTrade}
-          >
-            Delete
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex w-full flex-1 flex-col gap-14">
-        <div className="mx-auto w-full max-w-4xl">
-          <header className="section-heading items-start text-left">
-            <p>Trading Journal</p>
-            <h1 className="text-4xl font-semibold tracking-tight text-fg md:text-5xl">
-              Trade details
-            </h1>
-            <p className="text-sm text-muted-fg md:text-base">Registered on {formattedDate}</p>
-          </header>
-        </div>
-
-        <div className="flex w-full flex-col gap-8">
-          <nav className="flex w-full items-center justify-center">
-            <div className="flex items-center gap-4 text-sm font-medium text-muted-fg">
-              {[
-                { label: "Main Data", value: "main" as const },
-                { label: "Library", value: "library" as const },
-              ].map(({ label, value }) => {
-                const isActive = activeTab === value;
-
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    className={`relative rounded-full px-5 py-2 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] ${
-                      isActive
-                        ? "bg-[color:rgb(var(--surface))] text-fg shadow-[0_16px_32px_rgba(15,23,42,0.12)]"
-                        : "text-muted-fg hover:text-fg"
-                    }`}
-                    aria-pressed={isActive}
-                    onClick={() => setActiveTab(value)}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </nav>
-
-          {activeTab === "main" ? (
-            <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 sm:max-w-4xl">
+  const mainTabContent = (
+    <div className="flex w-full items-stretch justify-center gap-3 md:gap-4">
+      {renderNavigationButton("previous")}
+      <div className="flex w-full justify-center">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 sm:max-w-4xl">
           <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
             <div className="flex flex-col gap-6">
               <div>
@@ -1225,70 +1246,70 @@ export default function RegisteredTradePage() {
                 </p>
               </div>
 
-                <div className="mt-10 flex w-full justify-center md:mt-12">
+              <div className="mt-10 flex w-full justify-center md:mt-12">
                 <div className="flex flex-col items-center gap-3">
                   <span className="block pb-1 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Trade Setup</span>
-                    <div className="flex w-full flex-col items-center justify-center gap-6 md:flex-row md:justify-center">
-                    <div className="flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:flex-1 md:max-w-xs lg:max-w-sm">
-                        <div className="flex w-full items-center justify-center gap-3 text-fg">
-                          <span className="text-2xl" aria-hidden="true">
-                            {activeSymbol.flag}
-                          </span>
-                          <span className="text-lg font-semibold tracking-[0.2em] md:text-xl">
-                            {activeSymbol.code}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div
-                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:flex-1 md:max-w-xs lg:max-w-sm ${
-                          trade.tradeOutcome === "profit"
-                            ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32]"
-                            : trade.tradeOutcome === "loss"
-                              ? "border-[#F5B7B7] bg-[#FCE8E8] text-[#C62828]"
-                              : "border-border bg-[color:rgb(var(--surface)/0.9)] text-[color:rgb(var(--muted-fg)/0.7)]"
-                        }`}
-                      >
-                        {tradeOutcomeLabel ? (
-                          <span
-                            className={`text-lg font-semibold tracking-[0.14em] capitalize md:text-xl ${
-                              trade.tradeOutcome === "profit" ? "text-[#2E7D32]" : "text-[#C62828]"
-                            }`}
-                          >
-                            {tradeOutcomeLabel}
-                          </span>
-                        ) : (
-                          <span className="text-xs font-medium uppercase tracking-[0.18em] text-[color:rgb(var(--muted-fg)/0.7)]">
-                            Select outcome
-                          </span>
-                        )}
-                      </div>
-
-                      <div
-                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] md:flex-1 md:max-w-xs lg:max-w-sm ${
-                          trade.isPaperTrade
-                            ? "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280]"
-                            : "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED]"
-                        }`}
-                      >
-                        {trade.isPaperTrade ? (
-                          <Circle
-                            className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                            aria-hidden="true"
-                          />
-                        ) : (
-                          <CheckCircle
-                            className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                            aria-hidden="true"
-                          />
-                        )}
-                        <span className="text-sm font-medium tracking-[0.08em] transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
-                          {trade.isPaperTrade ? "Paper Trade" : "Real Trade"}
+                  <div className="flex w-full flex-col items-center justify-center gap-6 md:flex-row md:justify-center">
+                    <div className="flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:flex-1 md:max-w-sm lg:max-w-md xl:max-w-lg">
+                      <div className="flex w-full items-center justify-center gap-3 text-fg">
+                        <span className="text-2xl" aria-hidden="true">
+                          {activeSymbol.flag}
+                        </span>
+                        <span className="text-lg font-semibold tracking-[0.2em] md:text-xl">
+                          {activeSymbol.code}
                         </span>
                       </div>
                     </div>
+
+                    <div
+                      className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:flex-none md:w-[10.5rem] lg:w-[11.25rem] xl:w-[11.75rem] ${
+                        trade.tradeOutcome === "profit"
+                          ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32]"
+                          : trade.tradeOutcome === "loss"
+                            ? "border-[#F5B7B7] bg-[#FCE8E8] text-[#C62828]"
+                            : "border-border bg-[color:rgb(var(--surface)/0.9)] text-[color:rgb(var(--muted-fg)/0.7)]"
+                      }`}
+                    >
+                      {tradeOutcomeLabel ? (
+                        <span
+                          className={`text-lg font-semibold tracking-[0.14em] capitalize md:text-xl ${
+                            trade.tradeOutcome === "profit" ? "text-[#2E7D32]" : "text-[#C62828]"
+                          }`}
+                        >
+                          {tradeOutcomeLabel}
+                        </span>
+                      ) : (
+                        <span className="text-[0.6rem] font-medium uppercase tracking-[0.18em] text-[color:rgb(var(--muted-fg)/0.7)] md:text-[0.72rem]">
+                          Select outcome
+                        </span>
+                      )}
+                    </div>
+
+                    <div
+                      className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] md:flex-none md:w-[10.5rem] lg:w-[11.25rem] xl:w-[11.75rem] ${
+                        trade.isPaperTrade
+                          ? "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280]"
+                          : "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED]"
+                      }`}
+                    >
+                      {trade.isPaperTrade ? (
+                        <Circle
+                          className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <CheckCircle
+                          className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                          aria-hidden="true"
+                        />
+                      )}
+                      <span className="text-sm font-medium tracking-[0.08em] transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
+                        {trade.isPaperTrade ? "Paper Trade" : "Real Trade"}
+                      </span>
+                    </div>
                   </div>
                 </div>
+              </div>
 
               <div className="flex flex-col">
                 <div className="grid gap-4 md:grid-cols-2">
@@ -1498,18 +1519,105 @@ export default function RegisteredTradePage() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+      {renderNavigationButton("next")}
+    </div>
+  );
+
+  const libraryTabContent = (
+    <div className="flex w-full items-stretch justify-center gap-3 md:gap-4">
+      {renderNavigationButton("previous")}
+      <div className="flex w-full justify-center">
+        <LibrarySection
+          preview={libraryPreview}
+          notes={libraryNotesField}
+          actions={libraryCards}
+          selectedActionId={selectedLibraryItemId}
+          onSelectAction={setSelectedLibraryItemId}
+          onMoveAction={handleMoveLibraryItem}
+          footer={libraryFooter}
+        />
+      </div>
+      {renderNavigationButton("next")}
+    </div>
+  );
+
+  return (
+    <section
+      className="page-shell page-shell--wide relative flex min-h-dvh flex-col gap-12 pb-20 pt-24 text-fg sm:pt-28"
+      style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}
+    >
+      <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-12 w-12 flex-none rounded-full border border-border bg-[color:rgb(var(--surface)/0.92)] p-0 text-lg text-muted-fg backdrop-blur hover:text-fg"
+          onClick={() => {
+            router.push("/");
+          }}
+          aria-label="Close"
+        >
+          <X aria-hidden="true" className="h-5 w-5" />
+        </Button>
+
+        <div className="ml-auto flex items-center gap-2">
+          <Button type="button" variant="secondary" size="sm" className="px-5" onClick={handleEditTrade}>
+            Edit trade
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="border border-transparent text-red-500 transition hover:border-[color:rgba(248,113,113,0.3)] hover:bg-[color:rgba(248,113,113,0.08)] hover:text-red-600"
+            onClick={handleDeleteTrade}
+          >
+            Delete
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex w-full flex-1 flex-col gap-14">
+        <div className="mx-auto w-full max-w-4xl">
+          <header className="section-heading items-start text-left">
+            <p>Trading Journal</p>
+            <h1 className="text-4xl font-semibold tracking-tight text-fg md:text-5xl">
+              Trade details
+            </h1>
+            <p className="text-sm text-muted-fg md:text-base">Registered on {formattedDate}</p>
+          </header>
+        </div>
+
+        <div className="flex w-full flex-col gap-8">
+          <nav className="flex w-full items-center justify-center">
+            <div className="flex items-center gap-4 text-sm font-medium text-muted-fg">
+              {[
+                { label: "Main Data", value: "main" as const },
+                { label: "Library", value: "library" as const },
+              ].map(({ label, value }) => {
+                const isActive = activeTab === value;
+
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`relative rounded-full px-5 py-2 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] ${
+                      isActive
+                        ? "bg-[color:rgb(var(--surface))] text-fg shadow-[0_16px_32px_rgba(15,23,42,0.12)]"
+                        : "text-muted-fg hover:text-fg"
+                    }`}
+                    aria-pressed={isActive}
+                    onClick={() => setActiveTab(value)}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
-          ) : (
-            <LibrarySection
-              preview={libraryPreview}
-              notes={libraryNotesField}
-              actions={libraryCards}
-              selectedActionId={selectedLibraryItemId}
-              onSelectAction={setSelectedLibraryItemId}
-              onMoveAction={handleMoveLibraryItem}
-              footer={libraryFooter}
-            />
-          )}
+          </nav>
+
+          {activeTab === "main" ? mainTabContent : libraryTabContent}
         </div>
       </div>
     </section>
