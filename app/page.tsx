@@ -305,9 +305,16 @@ export default function Home() {
                             <span className="text-[1.6rem] leading-none" aria-hidden="true">
                               {trade.symbolFlag}
                             </span>
-                            <span className="text-base font-semibold tracking-[0.18em] text-fg">
-                              {trade.symbolCode}
-                            </span>
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className="text-base font-semibold tracking-[0.18em] text-fg">
+                                {trade.symbolCode}
+                              </span>
+                              {trade.isPaperTrade ? (
+                                <span className="text-[0.58rem] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                                  Paper trade
+                                </span>
+                              ) : null}
+                            </div>
                           </div>
                           {outcomeLabel ? (
                             <span
@@ -343,9 +350,16 @@ export default function Home() {
                             <span className="text-2xl" aria-hidden="true">
                               {trade.symbolFlag}
                             </span>
-                            <span className="truncate text-lg font-semibold tracking-[0.16em] text-fg">
-                              {trade.symbolCode}
-                            </span>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="truncate text-lg font-semibold tracking-[0.16em] text-fg">
+                                {trade.symbolCode}
+                              </span>
+                              {trade.isPaperTrade ? (
+                                <span className="text-[0.56rem] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                                  Paper trade
+                                </span>
+                              ) : null}
+                            </div>
                           </div>
                         </div>
                         {shouldRenderOutcomes ? (
