@@ -1229,7 +1229,7 @@ export default function RegisteredTradePage() {
                 <div className="flex flex-col items-center gap-3">
                   <span className="block pb-1 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Trade Setup</span>
                     <div className="flex w-full flex-col items-center justify-center gap-6 md:flex-row md:justify-center">
-                    <div className="flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:flex-1 md:max-w-xs lg:max-w-sm">
+                    <div className="flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:flex-1 md:max-w-sm lg:max-w-md xl:max-w-lg">
                         <div className="flex w-full items-center justify-center gap-3 text-fg">
                           <span className="text-2xl" aria-hidden="true">
                             {activeSymbol.flag}
@@ -1241,7 +1241,7 @@ export default function RegisteredTradePage() {
                       </div>
 
                       <div
-                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:flex-none md:w-[11.5rem] lg:w-[12.5rem] xl:w-[13rem] ${
+                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:flex-none md:w-[10.5rem] lg:w-[11.25rem] xl:w-[11.75rem] ${
                           trade.tradeOutcome === "profit"
                             ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32]"
                             : trade.tradeOutcome === "loss"
@@ -1265,7 +1265,7 @@ export default function RegisteredTradePage() {
                       </div>
 
                       <div
-                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] md:flex-none md:w-[11.5rem] lg:w-[12.5rem] xl:w-[13rem] ${
+                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] md:flex-none md:w-[10.5rem] lg:w-[11.25rem] xl:w-[11.75rem] ${
                           trade.isPaperTrade
                             ? "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280]"
                             : "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED]"
