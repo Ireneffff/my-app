@@ -1118,7 +1118,7 @@ function NewTradePageContent() {
     });
 
     const buttonClasses = [
-      "flex min-w-[62px] flex-col items-center gap-1 rounded-full border border-transparent px-2 py-2 text-xs font-medium transition md:min-w-[88px] md:text-sm",
+      "flex min-w-[56px] flex-col items-center gap-1 rounded-full border border-transparent px-1.5 py-2 text-[11px] font-medium transition md:min-w-[88px] md:px-2 md:text-sm",
     ];
 
     if (isSelected) {
@@ -1130,7 +1130,7 @@ function NewTradePageContent() {
     }
 
     const dayNumberClasses = [
-      "flex h-10 w-10 items-center justify-center rounded-full text-lg font-medium transition-colors md:h-12 md:w-12 md:text-xl",
+      "flex h-9 w-9 items-center justify-center rounded-full text-lg font-medium transition-colors md:h-12 md:w-12 md:text-xl",
     ];
 
     const dayNumberStyle: CSSProperties | undefined = isSelected
@@ -1942,7 +1942,7 @@ function NewTradePageContent() {
               <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
                 <div className="flex flex-col gap-6">
                   <div>
-                    <div className="mx-auto flex w-full max-w-xl items-center gap-3">
+                    <div className="mx-auto flex w-full max-w-xl items-center gap-2 md:gap-3">
                       <div
                         className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1"
                         onWheel={handleWeekWheel}
@@ -1951,14 +1951,14 @@ function NewTradePageContent() {
                         onPointerCancel={handleWeekPointerCancel}
                         onPointerLeave={handleWeekPointerCancel}
                       >
-                        <div className="flex w-full items-center justify-center gap-2">
+                        <div className="flex w-full items-center justify-center gap-1.5 md:gap-2">
                           {visibleWeekDays.map((date) => renderWeekDayPill(date))}
                         </div>
                       </div>
 
                       <button
                         type="button"
-                        className={`flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg ${
+                        className={`flex h-10 w-10 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition hover:bg-subtle hover:text-fg md:h-11 md:w-11 ${
                           isCalendarOpen ? "bg-subtle text-fg" : ""
                         }`}
                         onClick={openCalendar}
@@ -1975,7 +1975,7 @@ function NewTradePageContent() {
                           strokeWidth="1.5"
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="h-6 w-6"
+                          className="h-5 w-5 md:h-6 md:w-6"
                         >
                           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                           <line x1="16" y1="2" x2="16" y2="6" />
