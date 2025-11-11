@@ -350,7 +350,7 @@ export default function RegisteredTradePage() {
         .toUpperCase();
 
       const pillClasses = [
-        "flex min-w-[62px] flex-col items-center gap-1 rounded-full border border-transparent px-2 py-2 text-xs font-medium transition md:min-w-[88px] md:text-sm",
+        "flex min-w-[52px] flex-col items-center gap-1 rounded-full border border-transparent px-1.5 py-2 text-[11px] font-medium transition sm:min-w-[62px] sm:px-2 sm:text-xs md:min-w-[88px] md:text-sm",
       ];
 
       if (isSelected) {
@@ -362,7 +362,7 @@ export default function RegisteredTradePage() {
       }
 
       const dayNumberClasses = [
-        "flex h-10 w-10 items-center justify-center rounded-full text-lg font-medium transition-colors md:h-12 md:w-12 md:text-xl",
+        "flex h-9 w-9 items-center justify-center rounded-full text-base font-medium transition-colors sm:h-10 sm:w-10 sm:text-lg md:h-12 md:w-12 md:text-xl",
       ];
 
       const dayNumberStyle: CSSProperties | undefined = isSelected
@@ -386,7 +386,7 @@ export default function RegisteredTradePage() {
             {dayNumber}
           </span>
           <span
-            className={`text-[10px] tracking-[0.3em] md:text-xs ${
+            className={`text-[9px] tracking-[0.18em] sm:text-[10px] sm:tracking-[0.24em] md:text-xs ${
               isSelected ? "text-fg" : "text-muted-fg"
             }`}
           >
@@ -1192,7 +1192,7 @@ export default function RegisteredTradePage() {
               <div>
                 <div className="mx-auto flex w-full max-w-xl items-center gap-3">
                   <div className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1">
-                    <div className="flex w-full items-center justify-center gap-2">
+                    <div className="flex w-full items-center justify-center gap-1.5 sm:gap-2">
                       {currentWeekDays.map((date) => renderWeekDayPill(date))}
                     </div>
                   </div>

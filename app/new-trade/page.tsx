@@ -3385,13 +3385,15 @@ function NewTradePageContent() {
               </div>
             </header>
 
-            <div className="grid grid-cols-7 gap-2 text-center text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+            <div
+              className="grid grid-cols-7 gap-1 text-center text-[10px] font-medium uppercase tracking-[0.12em] text-muted-fg sm:gap-2 sm:text-[11px] sm:tracking-[0.24em]"
+            >
               {weekdayHeadings.map((heading, index) => (
                 <span key={`${heading}-${index}`}>{heading}</span>
               ))}
             </div>
 
-            <div className="mt-2 grid grid-cols-7 gap-2">
+            <div className="mt-2 grid grid-cols-7 gap-1 sm:gap-2">
               {calendarDays.map((date) => {
                 const isCurrentMonth = date.getMonth() === calendarMonth.getMonth();
                 const isSelected = isSameDay(date, selectedDate);
