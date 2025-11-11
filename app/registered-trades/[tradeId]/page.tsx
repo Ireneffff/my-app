@@ -1241,7 +1241,7 @@ export default function RegisteredTradePage() {
                       </div>
 
                       <div
-                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:flex-1 md:max-w-xs lg:max-w-sm ${
+                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:flex-none md:w-[14.5rem] lg:w-[15.5rem] xl:w-[16rem] ${
                           trade.tradeOutcome === "profit"
                             ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32]"
                             : trade.tradeOutcome === "loss"
@@ -1265,7 +1265,7 @@ export default function RegisteredTradePage() {
                       </div>
 
                       <div
-                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] md:flex-1 md:max-w-xs lg:max-w-sm ${
+                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] md:flex-none md:w-[14.5rem] lg:w-[15.5rem] xl:w-[16rem] ${
                           trade.isPaperTrade
                             ? "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280]"
                             : "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED]"
