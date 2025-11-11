@@ -1118,7 +1118,7 @@ function NewTradePageContent() {
     });
 
     const buttonClasses = [
-      "flex min-w-[62px] flex-col items-center gap-1 rounded-full border border-transparent px-2 py-2 text-xs font-medium transition md:min-w-[88px] md:text-sm",
+      "flex flex-1 basis-0 min-w-0 flex-col items-center gap-1 rounded-full border border-transparent px-2 py-2 text-xs font-medium transition md:flex-none md:min-w-[88px] md:text-sm",
     ];
 
     if (isSelected) {
@@ -1951,7 +1951,7 @@ function NewTradePageContent() {
                         onPointerCancel={handleWeekPointerCancel}
                         onPointerLeave={handleWeekPointerCancel}
                       >
-                        <div className="flex w-full items-center justify-center gap-2">
+                        <div className="flex w-full items-center justify-center gap-1 sm:gap-2">
                           {visibleWeekDays.map((date) => renderWeekDayPill(date))}
                         </div>
                       </div>

@@ -61,6 +61,7 @@ function getTradeTimestamp(trade: StoredTrade) {
 export default function Home() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [trades, setTrades] = useState<StoredTrade[]>([]);
+  const [tradeFilter, setTradeFilter] = useState<"all" | "real" | "paper">("all");
 
   const refreshTrades = useCallback(async () => {
     const nextTrades = await loadTrades();
@@ -100,7 +101,19 @@ export default function Home() {
     [trades],
   );
 
-  const totalTrades = orderedTrades.length;
+  const filteredTrades = useMemo(() => {
+    if (tradeFilter === "paper") {
+      return orderedTrades.filter((trade) => trade.isPaperTrade);
+    }
+
+    if (tradeFilter === "real") {
+      return orderedTrades.filter((trade) => !trade.isPaperTrade);
+    }
+
+    return orderedTrades;
+  }, [orderedTrades, tradeFilter]);
+
+  const totalTrades = filteredTrades.length;
 
   const outcomesByDay = useMemo(() => {
     const map = new Map<string, { outcome: "profit" | "loss"; timestamp: number }[]>();
@@ -244,9 +257,49 @@ export default function Home() {
         </Card>
 
         <div className="w-full max-w-3xl self-center text-left sm:max-w-4xl">
-          <h2 className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">
-            Registered Trades
-          </h2>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">
+              Registered Trades
+            </h2>
+            <div className="inline-flex items-center gap-1 self-start rounded-full border border-border bg-[color:rgb(var(--surface)/0.78)] p-1 text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-muted-fg shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+              <button
+                type="button"
+                onClick={() => setTradeFilter("all")}
+                className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  tradeFilter === "all"
+                    ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                    : "text-muted-fg hover:text-fg"
+                }`}
+                aria-pressed={tradeFilter === "all"}
+              >
+                All
+              </button>
+              <button
+                type="button"
+                onClick={() => setTradeFilter("real")}
+                className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  tradeFilter === "real"
+                    ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                    : "text-muted-fg hover:text-fg"
+                }`}
+                aria-pressed={tradeFilter === "real"}
+              >
+                Real trades
+              </button>
+              <button
+                type="button"
+                onClick={() => setTradeFilter("paper")}
+                className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  tradeFilter === "paper"
+                    ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                    : "text-muted-fg hover:text-fg"
+                }`}
+                aria-pressed={tradeFilter === "paper"}
+              >
+                Paper trades
+              </button>
+            </div>
+          </div>
 
           {orderedTrades.length === 0 ? (
             <p
@@ -255,9 +308,16 @@ export default function Home() {
             >
               No trades saved yet. Use the Add trade button to register your first trade.
             </p>
+          ) : filteredTrades.length === 0 ? (
+            <p
+              className="mt-4 rounded-2xl border border-dashed bg-[color:rgb(var(--surface)/0.75)] px-6 py-8 text-center text-sm text-muted-fg backdrop-blur"
+              style={{ borderColor: "color-mix(in srgb, rgba(var(--border)) 60%, transparent)" }}
+            >
+              No trades match the selected filter.
+            </p>
           ) : (
             <ol className="mt-4 space-y-3">
-              {orderedTrades.map((trade, index) => {
+              {filteredTrades.map((trade, index) => {
                 const formattedDate = new Date(trade.date).toLocaleDateString(undefined, {
                   day: "2-digit",
                   month: "2-digit",
@@ -286,8 +346,15 @@ export default function Home() {
                   <li key={trade.id}>
                     <Link
                       href={`/registered-trades/${trade.id}`}
-                      className="group flex flex-col gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-4 py-3 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)] md:flex-row md:items-center md:gap-5 md:px-5 md:py-4"
+                      className="group relative flex flex-col gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-4 py-3 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)] md:flex-row md:items-center md:gap-5 md:px-5 md:py-4"
                     >
+                      {trade.isPaperTrade ? (
+                        <span
+                          className="pointer-events-none absolute bottom-3 left-4 inline-flex items-center rounded-full bg-[color:rgb(var(--accent)/0.12)] px-2.5 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-accent shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:hidden"
+                        >
+                          Paper trade
+                        </span>
+                      ) : null}
                       <div className="flex items-center justify-between md:hidden">
                         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[color:rgb(var(--accent)/0.12)] text-[0.78rem] font-semibold uppercase tracking-[0.24em] text-accent">
                           {totalTrades - index}
@@ -372,15 +439,22 @@ export default function Home() {
                             ) : null}
                           </div>
                         ) : null}
-                        <time
-                          className="ml-auto text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg"
-                          dateTime={trade.date}
-                        >
-                          {formattedDate}
-                        </time>
-                        <span className="ml-2 text-lg text-muted-fg transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 group-hover:text-fg" aria-hidden="true">
-                          ↗
-                        </span>
+                        <div className="ml-auto flex items-center gap-3">
+                          {trade.isPaperTrade ? (
+                            <span className="hidden md:inline-flex items-center rounded-full bg-[color:rgb(var(--accent)/0.12)] px-2.5 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-accent shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
+                              Paper trade
+                            </span>
+                          ) : null}
+                          <time
+                            className="text-sm font-medium text-muted-fg transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-fg"
+                            dateTime={trade.date}
+                          >
+                            {formattedDate}
+                          </time>
+                          <span className="text-lg text-muted-fg transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 group-hover:text-fg" aria-hidden="true">
+                            ↗
+                          </span>
+                        </div>
                       </div>
                     </Link>
                   </li>
