@@ -286,8 +286,15 @@ export default function Home() {
                   <li key={trade.id}>
                     <Link
                       href={`/registered-trades/${trade.id}`}
-                      className="group flex flex-col gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-4 py-3 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)] md:flex-row md:items-center md:gap-5 md:px-5 md:py-4"
+                      className="group relative flex flex-col gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-4 py-3 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)] md:flex-row md:items-center md:gap-5 md:px-5 md:py-4"
                     >
+                      {trade.isPaperTrade ? (
+                        <span
+                          className="pointer-events-none absolute bottom-3 left-4 inline-flex items-center rounded-full bg-[color:rgb(var(--accent)/0.12)] px-2.5 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-accent shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:bottom-auto md:left-auto md:right-5 md:top-4"
+                        >
+                          Paper trade
+                        </span>
+                      ) : null}
                       <div className="flex items-center justify-between md:hidden">
                         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[color:rgb(var(--accent)/0.12)] text-[0.78rem] font-semibold uppercase tracking-[0.24em] text-accent">
                           {totalTrades - index}
