@@ -372,7 +372,7 @@ export default function Home() {
                             <span className="text-[1.6rem] leading-none" aria-hidden="true">
                               {trade.symbolFlag}
                             </span>
-                            <span className="text-[0.78rem] font-medium tracking-[0.24em] text-fg">
+                            <span className="text-[0.78rem] font-semibold tracking-[0.24em] text-fg">
                               {trade.symbolCode}
                             </span>
                           </div>
@@ -410,7 +410,7 @@ export default function Home() {
                             <span className="text-2xl" aria-hidden="true">
                               {trade.symbolFlag}
                             </span>
-                            <span className="truncate text-[0.8rem] font-medium tracking-[0.24em] text-fg md:text-[0.88rem]">
+                            <span className="truncate text-[0.8rem] font-semibold tracking-[0.24em] text-fg md:text-[0.88rem]">
                               {trade.symbolCode}
                             </span>
                           </div>

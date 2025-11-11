@@ -1258,7 +1258,7 @@ export default function RegisteredTradePage() {
                             {tradeOutcomeLabel}
                           </span>
                         ) : (
-                          <span className="text-xs font-medium uppercase tracking-[0.18em] text-[color:rgb(var(--muted-fg)/0.7)]">
+                          <span className="text-[0.6rem] font-medium uppercase tracking-[0.18em] text-[color:rgb(var(--muted-fg)/0.7)] md:text-[0.72rem]">
                             Select outcome
                           </span>
                         )}

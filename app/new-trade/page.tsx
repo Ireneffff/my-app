@@ -2034,7 +2034,7 @@ function NewTradePageContent() {
                             </div>
                           ) : (
                             <div className="flex flex-col items-center justify-center gap-3 text-center text-[color:rgb(var(--muted-fg)/0.6)]">
-                              <div className="flex items-center justify-center gap-2 animate-soft-fade text-xs font-medium tracking-[0.18em] transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-sm">
+                              <div className="flex items-center justify-center gap-2 animate-soft-fade text-[0.6rem] font-medium tracking-[0.18em] transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-[0.72rem]">
                                 <span>Select symbol</span>
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
@@ -2100,7 +2100,7 @@ function NewTradePageContent() {
                             </div>
                           ) : (
                             <div className="flex flex-col items-center justify-center gap-3 text-center text-[color:rgb(var(--muted-fg)/0.6)]">
-                              <div className="flex items-center justify-center gap-2 animate-soft-fade text-xs font-medium tracking-[0.18em] transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-sm">
+                              <div className="flex items-center justify-center gap-2 animate-soft-fade text-[0.6rem] font-medium tracking-[0.18em] transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-[0.72rem]">
                                 <span>Select outcome</span>
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
