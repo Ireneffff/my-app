@@ -1559,33 +1559,31 @@ export default function RegisteredTradePage() {
 
           {activeTab === "main" ? (
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 sm:max-w-4xl">
-              <div className="flex w-full items-stretch justify-center gap-3">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="flex h-12 w-12 flex-none items-center justify-center rounded-full border border-border bg-[color:rgb(var(--surface)/0.9)] p-0 text-muted-fg backdrop-blur hover:text-fg disabled:border-border/60 disabled:text-muted-fg/60 sm:h-14 sm:w-14"
-                  onClick={handleGoToPreviousTrade}
-                  disabled={!canGoToPreviousTrade}
-                >
-                  <ChevronLeft aria-hidden="true" className="h-5 w-5" />
-                  <span className="sr-only">Vai al trade precedente</span>
-                </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="fixed left-4 top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border/80 bg-[color:rgb(var(--surface)/0.92)] p-0 text-muted-fg shadow-[0_8px_24px_rgba(15,23,42,0.08)] backdrop-blur hover:text-fg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:border-border/60 disabled:text-muted-fg/60 sm:left-6 sm:h-11 sm:w-11 md:left-8 md:h-12 md:w-12"
+                onClick={handleGoToPreviousTrade}
+                disabled={!canGoToPreviousTrade}
+              >
+                <ChevronLeft aria-hidden="true" className="h-4 w-4" />
+                <span className="sr-only">Vai al trade precedente</span>
+              </Button>
 
-                {tradeDetailsPanel}
+              {tradeDetailsPanel}
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="flex h-12 w-12 flex-none items-center justify-center rounded-full border border-border bg-[color:rgb(var(--surface)/0.9)] p-0 text-muted-fg backdrop-blur hover:text-fg disabled:border-border/60 disabled:text-muted-fg/60 sm:h-14 sm:w-14"
-                  onClick={handleGoToNextTrade}
-                  disabled={!canGoToNextTrade}
-                >
-                  <ChevronRight aria-hidden="true" className="h-5 w-5" />
-                  <span className="sr-only">Vai al trade successivo</span>
-                </Button>
-              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="fixed right-4 top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border/80 bg-[color:rgb(var(--surface)/0.92)] p-0 text-muted-fg shadow-[0_8px_24px_rgba(15,23,42,0.08)] backdrop-blur hover:text-fg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:border-border/60 disabled:text-muted-fg/60 sm:right-6 sm:h-11 sm:w-11 md:right-8 md:h-12 md:w-12"
+                onClick={handleGoToNextTrade}
+                disabled={!canGoToNextTrade}
+              >
+                <ChevronRight aria-hidden="true" className="h-4 w-4" />
+                <span className="sr-only">Vai al trade successivo</span>
+              </Button>
             </div>
           ) : (
             <LibrarySection
