@@ -2061,7 +2061,7 @@ function NewTradePageContent() {
                             setIsOutcomeListOpen((prev) => !prev);
                             setIsSymbolListOpen(false);
                           }}
-                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:w-[13rem] md:flex-none lg:w-[14rem] xl:w-[14.5rem] ${
+                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:w-[11.5rem] md:flex-none lg:w-[12.5rem] xl:w-[13rem] ${
                             tradeOutcome === "profit"
                               ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
                               : tradeOutcome === "loss"
@@ -2128,7 +2128,7 @@ function NewTradePageContent() {
                             setIsSymbolListOpen(false);
                             setIsOutcomeListOpen(false);
                           }}
-                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:w-[13rem] md:flex-none lg:w-[14rem] xl:w-[14.5rem] ${
+                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:w-[11.5rem] md:flex-none lg:w-[12.5rem] xl:w-[13rem] ${
                             isRealTrade
                               ? "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
                               : "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
