@@ -350,7 +350,7 @@ export default function RegisteredTradePage() {
         .toUpperCase();
 
       const pillClasses = [
-        "flex min-w-[62px] flex-col items-center gap-1 rounded-full border border-transparent px-2 py-2 text-xs font-medium transition md:min-w-[88px] md:text-sm",
+        "flex flex-1 basis-0 min-w-0 flex-col items-center gap-1 rounded-full border border-transparent px-2 py-2 text-xs font-medium transition md:flex-none md:min-w-[88px] md:text-sm",
       ];
 
       if (isSelected) {
@@ -1192,7 +1192,7 @@ export default function RegisteredTradePage() {
               <div>
                 <div className="mx-auto flex w-full max-w-xl items-center gap-3">
                   <div className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1">
-                    <div className="flex w-full items-center justify-center gap-2">
+                    <div className="flex w-full items-center justify-center gap-1 sm:gap-2">
                       {currentWeekDays.map((date) => renderWeekDayPill(date))}
                     </div>
                   </div>
