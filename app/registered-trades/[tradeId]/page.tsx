@@ -1577,17 +1577,15 @@ export default function RegisteredTradePage() {
           {activeTab === "main" ? (
             <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
               <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2 sm:gap-3 md:gap-4">
-                <Button
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="sticky top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[color:rgba(15,23,42,0.16)] bg-[color:rgb(var(--surface))] p-0 text-fg shadow-[0_18px_36px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-[transform,box-shadow,background-color,color] duration-200 ease-out hover:-translate-x-0.5 hover:border-[color:rgba(15,23,42,0.26)] hover:shadow-[0_20px_42px_rgba(15,23,42,0.22)] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:pointer-events-none disabled:opacity-50 justify-self-end -mr-3 md:-mr-6"
+                  className="sticky top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[color:rgba(255,255,255,0.6)] p-0 text-[color:rgb(var(--fg))] shadow-[0_18px_36px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-colors duration-200 ease-out hover:bg-[color:rgba(255,255,255,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:pointer-events-none disabled:opacity-40 justify-self-end -mr-4 md:-mr-8"
                   onClick={handleGoToPreviousTrade}
                   disabled={!canGoToPreviousTrade}
                 >
                   <ChevronLeft aria-hidden="true" className="h-4 w-4" />
                   <span className="sr-only">Vai al trade precedente</span>
-                </Button>
+                </button>
 
                 <div
                   className={`transform transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${
@@ -1599,17 +1597,15 @@ export default function RegisteredTradePage() {
                   {tradeDetailsPanel}
                 </div>
 
-                <Button
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="sticky top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[color:rgba(15,23,42,0.16)] bg-[color:rgb(var(--surface))] p-0 text-fg shadow-[0_18px_36px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-[transform,box-shadow,background-color,color] duration-200 ease-out hover:translate-x-0.5 hover:border-[color:rgba(15,23,42,0.26)] hover:shadow-[0_20px_42px_rgba(15,23,42,0.22)] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:pointer-events-none disabled:opacity-50 justify-self-start -ml-3 md:-ml-6"
+                  className="sticky top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[color:rgba(255,255,255,0.6)] p-0 text-[color:rgb(var(--fg))] shadow-[0_18px_36px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-colors duration-200 ease-out hover:bg-[color:rgba(255,255,255,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:pointer-events-none disabled:opacity-40 justify-self-start -ml-4 md:-ml-8"
                   onClick={handleGoToNextTrade}
                   disabled={!canGoToNextTrade}
                 >
                   <ChevronRight aria-hidden="true" className="h-4 w-4" />
                   <span className="sr-only">Vai al trade successivo</span>
-                </Button>
+                </button>
               </div>
             </div>
           ) : (
