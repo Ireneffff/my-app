@@ -32,6 +32,7 @@ import {
   type StoredLibraryItem,
   type StoredTrade,
 } from "@/lib/tradesStorage";
+import { getLibraryCardTitle } from "@/lib/libraryCardTitles";
 import { calculateDuration } from "@/lib/duration";
 import {
   getTakeProfitOutcomeStyle,
@@ -810,15 +811,16 @@ export default function RegisteredTradePage() {
     () =>
       libraryItems.map((item, index) => {
         const hasImage = Boolean(item.imageData);
+        const title = getLibraryCardTitle(index);
 
         return {
           id: item.id,
-          label: hasImage ? `Anteprima ${index + 1}` : "Nessuna anteprima",
+          label: title,
           visual: hasImage ? (
             <div className="relative h-full w-full">
               <Image
                 src={item.imageData!}
-                alt={`Snapshot libreria ${index + 1}`}
+                alt={`${title} snapshot`}
                 fill
                 sizes="(min-width: 768px) 160px, 200px"
                 className="object-cover"

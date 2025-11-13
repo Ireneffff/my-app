@@ -20,6 +20,7 @@ import { Circle, CheckCircle, Plus, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
+import { getLibraryCardTitle } from "@/lib/libraryCardTitles";
 import { StyledSelect } from "@/components/StyledSelect";
 import { TakeProfitOutcomeSelect } from "@/components/TakeProfitOutcomeSelect";
 import {
@@ -1807,10 +1808,11 @@ function NewTradePageContent() {
       libraryItems.map((item, index) => {
         const hasImage = Boolean(item.imageData);
         const isRecentlyAdded = item.id === recentlyAddedLibraryItemId;
+        const title = getLibraryCardTitle(index);
 
         return {
           id: item.id,
-          label: hasImage ? `Anteprima ${index + 1}` : "Carica",
+          label: title,
           onClick: () => {
             if (!hasImage) {
               openImagePicker();
@@ -1821,7 +1823,7 @@ function NewTradePageContent() {
             <div className="relative h-full w-full">
               <Image
                 src={item.imageData!}
-                alt={`Anteprima libreria ${index + 1}`}
+                alt={`${title} preview`}
                 fill
                 sizes="(min-width: 768px) 160px, 200px"
                 className="object-cover"
