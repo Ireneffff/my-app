@@ -550,7 +550,7 @@ async function fetchLibraryItems(tradeId: string) {
     .from("trade_library")
     .select("id, photo_url, note, created_at")
     .eq("trade_id", normalizedTradeId)
-    .order("created_at", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: true })
     .order("id", { ascending: true });
 
   if (error) {
@@ -783,8 +783,8 @@ export async function loadTrades(): Promise<StoredTrade[]> {
   const { data, error } = await supabase
     .from("registered_trades")
     .select("*")
-    .order("created_at", { ascending: false, nullsFirst: false })
-    .order("open_time", { ascending: false, nullsFirst: false });
+    .order("created_at", { ascending: false })
+    .order("open_time", { ascending: false });
 
   if (error) {
     console.error("Failed to load trades", error);
@@ -819,7 +819,7 @@ function buildNavigationQuery(direction: TradeNavigationDirection, currentId: st
     .from("registered_trades")
     .select("id")
     .neq("id", currentId)
-    .order("open_time", { ascending: direction === "next", nullsFirst: false })
+    .order("open_time", { ascending: direction === "next" })
     .order("created_at", { ascending: direction === "next" })
     .order("id", { ascending: direction === "next" })
     .limit(1);
