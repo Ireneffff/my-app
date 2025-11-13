@@ -13,12 +13,20 @@ import {
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { Circle, CheckCircle, Plus, X } from "lucide-react";
+import {
+  Circle,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  X,
+} from "lucide-react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
 import {
   deleteTrade,
+  loadAdjacentTradeId,
   loadTradeById,
   REGISTERED_TRADES_UPDATED_EVENT,
   type StoredLibraryItem,
@@ -168,6 +176,11 @@ export default function RegisteredTradePage() {
     createFallbackLibraryItem(),
   ]);
   const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>("snapshot");
+  const [isTradeContentVisible, setIsTradeContentVisible] = useState(false);
+  const [adjacentTradeIds, setAdjacentTradeIds] = useState<{
+    previous: string | null;
+    next: string | null;
+  }>({ previous: null, next: null });
   const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const previewSwipeStateRef = useRef<{
     x: number;
@@ -189,6 +202,22 @@ export default function RegisteredTradePage() {
     });
     scrollUnlockTimeoutsRef.current.clear();
   }, []);
+
+  useEffect(() => {
+    if (state.status !== "ready") {
+      return;
+    }
+
+    setIsTradeContentVisible(false);
+
+    const frame = window.requestAnimationFrame(() => {
+      setIsTradeContentVisible(true);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [state.status, state.trade?.id]);
 
   const rawTradeId = params.tradeId;
   const tradeId = Array.isArray(rawTradeId) ? rawTradeId[0] : rawTradeId;
@@ -302,6 +331,79 @@ export default function RegisteredTradePage() {
   useEffect(() => {
     refreshTrade();
   }, [refreshTrade]);
+  const currentTrade = state.trade ?? null;
+  const currentTradeId = currentTrade?.id ?? null;
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadNeighbors = async () => {
+      if (!currentTrade) {
+        if (!isCancelled) {
+          setAdjacentTradeIds({ previous: null, next: null });
+        }
+        return;
+      }
+
+      const [previous, next] = await Promise.all([
+        loadAdjacentTradeId(
+          {
+            id: currentTrade.id,
+            openTime: currentTrade.openTime,
+            createdAt: currentTrade.createdAt,
+          },
+          "previous",
+        ),
+        loadAdjacentTradeId(
+          {
+            id: currentTrade.id,
+            openTime: currentTrade.openTime,
+            createdAt: currentTrade.createdAt,
+          },
+          "next",
+        ),
+      ]);
+
+      if (!isCancelled) {
+        setAdjacentTradeIds({ previous, next });
+      }
+    };
+
+    loadNeighbors();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentTrade]);
+
+  const previousTradeId = adjacentTradeIds.previous;
+  const nextTradeId = adjacentTradeIds.next;
+
+  const goToTrade = useCallback(
+    (targetTradeId: string) => {
+      if (!targetTradeId || targetTradeId === currentTradeId) {
+        return;
+      }
+
+      router.push(`/registered-trades/${targetTradeId}`);
+    },
+    [router, currentTradeId],
+  );
+
+  const handleGoToPreviousTrade = useCallback(() => {
+    if (previousTradeId) {
+      goToTrade(previousTradeId);
+    }
+  }, [goToTrade, previousTradeId]);
+
+  const handleGoToNextTrade = useCallback(() => {
+    if (nextTradeId) {
+      goToTrade(nextTradeId);
+    }
+  }, [goToTrade, nextTradeId]);
+
+  const canGoToPreviousTrade = previousTradeId !== null;
+  const canGoToNextTrade = nextTradeId !== null;
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -1091,6 +1193,320 @@ export default function RegisteredTradePage() {
   const respectedRiskValue = formatOptionalText(trade.respectedRisk);
   const wouldRepeatTradeValue = formatOptionalText(trade.wouldRepeatTrade);
 
+  const tradeDetailsPanel = (
+    <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
+      <div className="flex flex-col gap-6">
+        <div>
+          <div className="mx-auto flex w-full max-w-xl items-center gap-3">
+            <div className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1">
+              <div className="flex w-full items-center justify-center gap-1 sm:gap-2">
+                {currentWeekDays.map((date) => renderWeekDayPill(date))}
+              </div>
+            </div>
+
+            <div
+              className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition"
+              aria-hidden="true"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-6 w-6"
+              >
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+                <circle cx="12" cy="16" r="1.5" />
+              </svg>
+            </div>
+          </div>
+
+          <p className="mt-4 text-center text-sm text-muted-fg md:mt-5 md:text-base">
+            Day of the week: <span className="font-semibold text-fg">{dayOfWeekLabel}</span>
+          </p>
+        </div>
+
+        <div className="mt-10 flex w-full justify-center md:mt-12">
+          <div className="flex flex-col items-center gap-3">
+            <span className="block pb-1 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Trade Setup</span>
+            <div className="flex w-full flex-col items-center justify-center gap-6 md:flex-row md:justify-center">
+              <div className="flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:flex-1 md:max-w-sm lg:max-w-md xl:max-w-lg">
+                <div className="flex w-full items-center justify-center gap-3 text-fg">
+                  <span className="text-2xl" aria-hidden="true">
+                    {activeSymbol.flag}
+                  </span>
+                  <span className="text-lg font-semibold tracking-[0.2em] md:text-xl">
+                    {activeSymbol.code}
+                  </span>
+                </div>
+              </div>
+
+              <div
+                className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:flex-none md:w-[10.5rem] lg:w-[11.25rem] xl:w-[11.75rem] ${
+                  trade.tradeOutcome === "profit"
+                    ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32]"
+                    : trade.tradeOutcome === "loss"
+                      ? "border-[#F5B7B7] bg-[#FCE8E8] text-[#C62828]"
+                      : "border-border bg-[color:rgb(var(--surface)/0.9)] text-[color:rgb(var(--muted-fg)/0.7)]"
+                }`}
+              >
+                {tradeOutcomeLabel ? (
+                  <span
+                    className={`text-lg font-semibold tracking-[0.14em] capitalize md:text-xl ${
+                      trade.tradeOutcome === "profit" ? "text-[#2E7D32]" : "text-[#C62828]"
+                    }`}
+                  >
+                    {tradeOutcomeLabel}
+                  </span>
+                ) : (
+                  <span className="text-[0.6rem] font-medium uppercase tracking-[0.18em] text-[color:rgb(var(--muted-fg)/0.7)] md:text-[0.72rem]">
+                    Select outcome
+                  </span>
+                )}
+              </div>
+
+              <div
+                className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] md:flex-none md:w-[10.5rem] lg:w-[11.25rem] xl:w-[11.75rem] ${
+                  trade.isPaperTrade
+                    ? "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280]"
+                    : "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED]"
+                }`}
+              >
+                {trade.isPaperTrade ? (
+                  <Circle
+                    className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <CheckCircle
+                    className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                    aria-hidden="true"
+                  />
+                )}
+                <span className="text-sm font-medium tracking-[0.08em] transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
+                  {trade.isPaperTrade ? "Paper Trade" : "Real Trade"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Open Time</span>
+              <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
+                    {openTimeDisplay.dateLabel}
+                  </span>
+                  <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
+                    {openTimeDisplay.timeLabel}
+                  </span>
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="ml-auto h-6 w-6 text-muted-fg"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <polyline points="12 7 12 12 15 15" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Close Time</span>
+              <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
+                    {closeTimeDisplay.dateLabel}
+                  </span>
+                  <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
+                    {closeTimeDisplay.timeLabel}
+                  </span>
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="ml-auto h-6 w-6 text-muted-fg"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <polyline points="12 7 12 12 15 15" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          <p className="mt-2 text-center text-sm text-muted-fg md:mt-3 md:text-base">
+            Duration: {durationLabel}
+          </p>
+        </div>
+
+        <div className="mt-6 border-t border-border" />
+
+        <div className="flex flex-col gap-4">
+          <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
+            General Details
+          </span>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Position</span>
+              <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                <span className="text-sm font-medium text-fg">{formatOptionalText(positionLabel)}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Entry Price</span>
+              <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                <span className="text-sm font-medium text-fg">{entryPriceValue}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,16rem)] md:gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                  Stop Loss
+                </span>
+                <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg md:justify-self-end md:text-right">
+                  Nr. Pips (SL)
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,16rem)] md:gap-2 md:items-end">
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                  <span className="text-sm font-medium text-fg">{stopLossValue}</span>
+                </div>
+                <div className="rounded-2xl border border-border bg-surface px-4 py-3 md:justify-self-end">
+                  <span className={`text-sm font-medium ${stopLossPipLabelClassName}`}>
+                    {stopLossPipDisplayValue}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {targetDisplayConfigs.map(renderTargetDisplay)}
+
+            <div className="flex w-full items-center justify-center rounded-2xl border border-border bg-surface px-6 py-4 text-center">
+              <span className={`text-sm font-semibold ${overallPipsDetailDisplay.className}`}>
+                {overallPipsDetailDisplay.label}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="my-6 border-t border-border" />
+
+        <div className="flex flex-col gap-4">
+          <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
+            Risk Details
+          </span>
+          <div className="flex flex-col gap-4">
+            {riskDetailDisplayConfigs.map(renderTargetDisplay)}
+          </div>
+        </div>
+
+        <div className="mt-6 border-t border-border" />
+
+        <div className="flex flex-col gap-4">
+          <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
+            Psychology & Mindset
+          </span>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                Mental state before the trade
+              </span>
+              <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                <span className="text-sm font-medium text-fg">{preTradeMentalStateValue}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                Emotions during the trade
+              </span>
+              <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                <span className="text-sm font-medium text-fg">{emotionsDuringTradeValue}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                Emotions after the trade
+              </span>
+              <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                <span className="text-sm font-medium text-fg">{emotionsAfterTradeValue}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                Confidence level (1–10)
+              </span>
+              <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                <span className="text-sm font-medium text-fg">{confidenceLevelValue}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                Emotional triggers
+              </span>
+              <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                <span className="text-sm font-medium text-fg">{emotionalTriggerValue}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                Ho seguito il mio piano?
+              </span>
+              <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                <span className="text-sm font-medium text-fg">{followedPlanValue}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                Ho rispettato il rischio prefissato?
+              </span>
+              <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                <span className="text-sm font-medium text-fg">{respectedRiskValue}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
+                Rifarei questo trade?
+              </span>
+              <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+                <span className="text-sm font-medium text-fg">{wouldRepeatTradeValue}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const handleEditTrade = () => {
     router.push(`/new-trade?tradeId=${trade.id}`);
   };
@@ -1186,318 +1602,38 @@ export default function RegisteredTradePage() {
           </nav>
 
           {activeTab === "main" ? (
-            <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 sm:max-w-4xl">
-          <div className="w-full surface-panel px-5 py-6 md:px-6 md:py-8">
-            <div className="flex flex-col gap-6">
-              <div>
-                <div className="mx-auto flex w-full max-w-xl items-center gap-3">
-                  <div className="relative flex min-w-0 flex-1 overflow-hidden rounded-full border border-border bg-surface px-1 py-1">
-                    <div className="flex w-full items-center justify-center gap-1 sm:gap-2">
-                      {currentWeekDays.map((date) => renderWeekDayPill(date))}
-                    </div>
-                  </div>
+            <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
+              <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2 sm:gap-3 md:gap-4">
+                <button
+                  type="button"
+                  className="sticky top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 -translate-x-[calc(100%+4rem)] items-center justify-center rounded-full bg-[color:rgba(255,255,255,0.6)] p-0 text-[color:rgb(var(--fg))] shadow-[0_18px_36px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-colors duration-200 ease-out hover:bg-[color:rgba(255,255,255,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:pointer-events-none disabled:opacity-40 justify-self-end"
+                  onClick={handleGoToPreviousTrade}
+                  disabled={!canGoToPreviousTrade}
+                >
+                  <ChevronLeft aria-hidden="true" className="h-4 w-4" />
+                  <span className="sr-only">Vai al trade precedente</span>
+                </button>
 
-                  <div
-                    className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-border text-muted-fg transition"
-                    aria-hidden="true"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-6 w-6"
-                    >
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                      <circle cx="12" cy="16" r="1.5" />
-                    </svg>
-                  </div>
+                <div
+                  className={`transform transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${
+                    isTradeContentVisible
+                      ? "translate-y-0 opacity-100"
+                      : "translate-y-4 opacity-0"
+                  }`}
+                >
+                  {tradeDetailsPanel}
                 </div>
 
-                <p className="mt-4 text-center text-sm text-muted-fg md:mt-5 md:text-base">
-                  Day of the week: <span className="font-semibold text-fg">{dayOfWeekLabel}</span>
-                </p>
+                <button
+                  type="button"
+                  className="sticky top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 translate-x-[calc(100%+4rem)] items-center justify-center rounded-full bg-[color:rgba(255,255,255,0.6)] p-0 text-[color:rgb(var(--fg))] shadow-[0_18px_36px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-colors duration-200 ease-out hover:bg-[color:rgba(255,255,255,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:pointer-events-none disabled:opacity-40 justify-self-start"
+                  onClick={handleGoToNextTrade}
+                  disabled={!canGoToNextTrade}
+                >
+                  <ChevronRight aria-hidden="true" className="h-4 w-4" />
+                  <span className="sr-only">Vai al trade successivo</span>
+                </button>
               </div>
-
-                <div className="mt-10 flex w-full justify-center md:mt-12">
-                <div className="flex flex-col items-center gap-3">
-                  <span className="block pb-1 text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Trade Setup</span>
-                    <div className="flex w-full flex-col items-center justify-center gap-6 md:flex-row md:justify-center">
-                    <div className="flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:flex-1 md:max-w-xs lg:max-w-sm">
-                        <div className="flex w-full items-center justify-center gap-3 text-fg">
-                          <span className="text-2xl" aria-hidden="true">
-                            {activeSymbol.flag}
-                          </span>
-                          <span className="text-lg font-semibold tracking-[0.2em] md:text-xl">
-                            {activeSymbol.code}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div
-                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] md:flex-1 md:max-w-xs lg:max-w-sm ${
-                          trade.tradeOutcome === "profit"
-                            ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32]"
-                            : trade.tradeOutcome === "loss"
-                              ? "border-[#F5B7B7] bg-[#FCE8E8] text-[#C62828]"
-                              : "border-border bg-[color:rgb(var(--surface)/0.9)] text-[color:rgb(var(--muted-fg)/0.7)]"
-                        }`}
-                      >
-                        {tradeOutcomeLabel ? (
-                          <span
-                            className={`text-lg font-semibold tracking-[0.14em] capitalize md:text-xl ${
-                              trade.tradeOutcome === "profit" ? "text-[#2E7D32]" : "text-[#C62828]"
-                            }`}
-                          >
-                            {tradeOutcomeLabel}
-                          </span>
-                        ) : (
-                          <span className="text-xs font-medium uppercase tracking-[0.18em] text-[color:rgb(var(--muted-fg)/0.7)]">
-                            Select outcome
-                          </span>
-                        )}
-                      </div>
-
-                      <div
-                        className={`flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border px-4 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] md:flex-1 md:max-w-xs lg:max-w-sm ${
-                          trade.isPaperTrade
-                            ? "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280]"
-                            : "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED]"
-                        }`}
-                      >
-                        {trade.isPaperTrade ? (
-                          <Circle
-                            className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                            aria-hidden="true"
-                          />
-                        ) : (
-                          <CheckCircle
-                            className="h-5 w-5 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                            aria-hidden="true"
-                          />
-                        )}
-                        <span className="text-sm font-medium tracking-[0.08em] transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
-                          {trade.isPaperTrade ? "Paper Trade" : "Real Trade"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-              <div className="flex flex-col">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="flex flex-col gap-3">
-                    <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Open Time</span>
-                    <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
-                          {openTimeDisplay.dateLabel}
-                        </span>
-                        <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
-                          {openTimeDisplay.timeLabel}
-                        </span>
-                      </div>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="ml-auto h-6 w-6 text-muted-fg"
-                        aria-hidden="true"
-                      >
-                        <circle cx="12" cy="12" r="9" />
-                        <polyline points="12 7 12 12 15 15" />
-                      </svg>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-3">
-                    <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">Close Time</span>
-                    <div className="pointer-events-none relative flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="pill-date rounded-full px-3 py-1 text-sm font-medium md:text-base">
-                          {closeTimeDisplay.dateLabel}
-                        </span>
-                        <span className="pill-time rounded-full px-3 py-1 text-sm font-semibold tracking-[0.08em] md:text-base">
-                          {closeTimeDisplay.timeLabel}
-                        </span>
-                      </div>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="ml-auto h-6 w-6 text-muted-fg"
-                        aria-hidden="true"
-                      >
-                        <circle cx="12" cy="12" r="9" />
-                        <polyline points="12 7 12 12 15 15" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-                <p className="mt-2 text-center text-sm text-muted-fg md:mt-3 md:text-base">
-                  Duration: {durationLabel}
-                </p>
-              </div>
-
-              <div className="mt-6 border-t border-border" />
-
-              <div className="flex flex-col gap-4">
-                <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
-                  General Details
-                </span>
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Position</span>
-                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                      <span className="text-sm font-medium text-fg">{formatOptionalText(positionLabel)}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">Entry Price</span>
-                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                      <span className="text-sm font-medium text-fg">{entryPriceValue}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,16rem)] md:gap-2">
-                      <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                        Stop Loss
-                      </span>
-                      <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg md:justify-self-end md:text-right">
-                        Nr. Pips (SL)
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,16rem)] md:gap-2 md:items-end">
-                      <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                        <span className="text-sm font-medium text-fg">{stopLossValue}</span>
-                      </div>
-                      <div className="rounded-2xl border border-border bg-surface px-4 py-3 md:justify-self-end">
-                        <span className={`text-sm font-medium ${stopLossPipLabelClassName}`}>
-                          {stopLossPipDisplayValue}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {targetDisplayConfigs.map(renderTargetDisplay)}
-
-                  <div className="flex w-full items-center justify-center rounded-2xl border border-border bg-surface px-6 py-4 text-center">
-                    <span className={`text-sm font-semibold ${overallPipsDetailDisplay.className}`}>
-                      {overallPipsDetailDisplay.label}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="my-6 border-t border-border" />
-
-              <div className="flex flex-col gap-4">
-                <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
-                  Risk Details
-                </span>
-                <div className="flex flex-col gap-4">
-                  {riskDetailDisplayConfigs.map(renderTargetDisplay)}
-                </div>
-              </div>
-
-              <div className="mt-6 border-t border-border" />
-
-              <div className="flex flex-col gap-4">
-                <span className="mt-6 mb-3 block text-sm font-semibold uppercase tracking-widest text-muted-fg">
-                  Psychology & Mindset
-                </span>
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Mental state before the trade
-                    </span>
-                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                      <span className="text-sm font-medium text-fg">{preTradeMentalStateValue}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Emotions during the trade
-                    </span>
-                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                      <span className="text-sm font-medium text-fg">{emotionsDuringTradeValue}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Emotions after the trade
-                    </span>
-                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                      <span className="text-sm font-medium text-fg">{emotionsAfterTradeValue}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Confidence level (1–10)
-                    </span>
-                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                      <span className="text-sm font-medium text-fg">{confidenceLevelValue}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Emotional triggers
-                    </span>
-                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                      <span className="text-sm font-medium text-fg">{emotionalTriggerValue}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Ho seguito il mio piano?
-                    </span>
-                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                      <span className="text-sm font-medium text-fg">{followedPlanValue}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Ho rispettato il rischio prefissato?
-                    </span>
-                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                      <span className="text-sm font-medium text-fg">{respectedRiskValue}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-fg">
-                      Rifarei questo trade?
-                    </span>
-                    <div className="rounded-2xl border border-border bg-surface px-4 py-3">
-                      <span className="text-sm font-medium text-fg">{wouldRepeatTradeValue}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
             </div>
           ) : (
             <LibrarySection
