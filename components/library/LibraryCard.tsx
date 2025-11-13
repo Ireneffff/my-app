@@ -46,14 +46,14 @@ export function LibraryCard({
           : ""
       } ${className}`}
     >
-      <div className={resolvedVisualWrapperClassName}>
-        {visual}
-      </div>
       {!hideLabel ? (
         <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg transition-colors group-hover:text-fg">
           {label}
         </span>
       ) : null}
+      <div className={resolvedVisualWrapperClassName}>
+        {visual}
+      </div>
     </button>
   );
 }
