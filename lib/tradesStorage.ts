@@ -1124,7 +1124,7 @@ export async function updateTrade(
   if (removedItems.length > 0) {
     const recordIds = removedItems
       .map((item) => item.recordId)
-      .filter((id): id is string | number => typeof id === "string" || typeof id === "number");
+      .filter((id): id is string => typeof id === "string" && id.length > 0);
 
     if (recordIds.length > 0) {
       const { error: removeError } = await supabase.from("trade_library").delete().in("id", recordIds);
