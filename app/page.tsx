@@ -350,7 +350,7 @@ export default function Home() {
                     >
                       {trade.isPaperTrade ? (
                         <span
-                          className="pointer-events-none absolute bottom-3 left-4 inline-flex items-center rounded-full bg-[color:rgb(var(--accent)/0.12)] px-2.5 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-accent shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:hidden"
+                          className="pointer-events-none absolute bottom-3 left-4 inline-flex items-center rounded-full bg-[color:rgb(var(--accent)/0.12)] px-2.5 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-accent shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:hidden iphone-paper-badge"
                         >
                           Paper trade
                         </span>
