@@ -548,8 +548,10 @@ async function fetchLibraryItems(tradeId: string) {
 
   const { data, error } = await supabase
     .from("trade_library")
-    .select("id, photo_url, note")
-    .eq("trade_id", normalizedTradeId);
+    .select("id, photo_url, note, created_at")
+    .eq("trade_id", normalizedTradeId)
+    .order("created_at", { ascending: true, nullsFirst: false })
+    .order("id", { ascending: true });
 
   if (error) {
     console.error("Failed to load trade library", error);
@@ -564,7 +566,7 @@ async function fetchLibraryItems(tradeId: string) {
       recordId,
       imageData: photoUrl,
       notes: typeof item.note === "string" ? item.note : "",
-      createdAt: null,
+      createdAt: typeof item.created_at === "string" ? item.created_at : null,
       storagePath: extractStoragePathFromUrl(photoUrl),
       persisted: true,
     } satisfies StoredLibraryItem;
@@ -633,6 +635,7 @@ function buildTradeRecord(payload: TradePayload) {
 async function saveLibraryItems(
   tradeId: string,
   items: StoredLibraryItem[],
+  options?: { replaceExisting?: boolean },
 ): Promise<LibraryItemFailure[]> {
   const failures: LibraryItemFailure[] = [];
 
@@ -645,6 +648,37 @@ async function saveLibraryItems(
       stage: "unknown" as const,
       message: "Missing trade id while saving library items",
     }));
+  }
+
+  if (options?.replaceExisting) {
+    try {
+      const { data: existingRows, error: fetchError } = await supabase
+        .from("trade_library")
+        .select("id")
+        .eq("trade_id", normalizedTradeId);
+
+      if (fetchError) {
+        console.error("Failed to load existing library items before replace", fetchError);
+      } else {
+        const recordIds = (existingRows ?? [])
+          .map((row) => row?.id)
+          .filter((value): value is number | string => typeof value === "number" || typeof value === "string");
+
+        if (recordIds.length > 0) {
+          const { error: deleteError } = await supabase
+            .from("trade_library")
+            .delete()
+            .in("id", recordIds);
+
+          if (deleteError) {
+            console.error("Failed to clear previous library items", deleteError);
+          }
+        }
+      }
+    } catch (error) {
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
+      console.error("Unexpected error while clearing previous library items", normalizedError);
+    }
   }
 
   for (const item of items) {
@@ -1077,7 +1111,6 @@ export async function updateTrade(
   }
 
   const tradeId = payload.id;
-  const normalizedTradeId = tradeId.toString();
   const record = buildTradeRecord(payload);
 
   const { error } = await supabase.from("registered_trades").update(record).eq("id", tradeId);
@@ -1089,87 +1122,27 @@ export async function updateTrade(
 
   const removedItems = options?.removedLibraryItems ?? [];
   if (removedItems.length > 0) {
-    const recordIds = removedItems.map((item) => item.recordId);
-    const { error: removeError } = await supabase.from("trade_library").delete().in("id", recordIds);
+    const recordIds = removedItems
+      .map((item) => item.recordId)
+      .filter((id): id is string | number => typeof id === "string" || typeof id === "number");
 
-    if (removeError) {
-      console.error("Failed to delete library entries", removeError);
+    if (recordIds.length > 0) {
+      const { error: removeError } = await supabase.from("trade_library").delete().in("id", recordIds);
+
+      if (removeError) {
+        console.error("Failed to delete library entries", removeError);
+      }
     }
 
     await removeStoragePaths(removedItems.map((item) => item.storagePath));
   }
 
-  for (const item of payload.libraryItems ?? []) {
-    if (item.persisted && item.recordId) {
-      let photoUrl = item.imageData ? item.imageData : null;
-      let storagePath = item.storagePath ?? extractStoragePathFromUrl(photoUrl);
+  const libraryFailures = await saveLibraryItems(tradeId.toString(), payload.libraryItems ?? [], {
+    replaceExisting: true,
+  });
 
-      if (photoUrl && photoUrl.startsWith("data:")) {
-        await removeStoragePaths([item.storagePath]);
-        try {
-          const uploadResult = await uploadImageDataUrl(photoUrl, normalizedTradeId);
-          photoUrl = uploadResult.photoUrl;
-          storagePath = uploadResult.storagePath;
-        } catch (uploadError) {
-          console.error("Failed to refresh library image during update", uploadError);
-          photoUrl = FALLBACK_TRADE_IMAGE_URL;
-          storagePath = null;
-        }
-      }
-
-      const { error: updateError } = await supabase
-        .from("trade_library")
-        .update({
-          photo_url: photoUrl,
-          note: item.notes ?? "",
-        })
-        .eq("id", item.recordId);
-
-      if (updateError) {
-        console.error("Failed to update library item", updateError);
-      } else {
-        item.imageData = photoUrl;
-        item.storagePath = storagePath;
-      }
-    } else {
-      let photoUrl: string | null = null;
-      let storagePath: string | null = null;
-
-      if (item.imageData && item.imageData.startsWith("data:")) {
-        try {
-          const uploadResult = await uploadImageDataUrl(item.imageData, normalizedTradeId);
-          photoUrl = uploadResult.photoUrl;
-          storagePath = uploadResult.storagePath;
-        } catch (uploadError) {
-          console.error("Failed to upload new library image during update", uploadError);
-          photoUrl = FALLBACK_TRADE_IMAGE_URL;
-          storagePath = null;
-        }
-      } else if (item.imageData) {
-        photoUrl = item.imageData;
-        storagePath = item.storagePath ?? extractStoragePathFromUrl(photoUrl);
-      }
-
-      const { data: inserted, error: insertError } = await supabase
-        .from("trade_library")
-        .insert({
-          trade_id: normalizedTradeId,
-          photo_url: photoUrl,
-          note: item.notes ?? "",
-        })
-        .select("id")
-        .single();
-
-      if (insertError) {
-        console.error("Failed to insert library item", insertError);
-      } else {
-        item.recordId = inserted?.id?.toString();
-        item.id = item.recordId ?? item.id;
-        item.persisted = true;
-        item.storagePath = storagePath;
-        item.imageData = photoUrl;
-      }
-    }
+  if (libraryFailures.length > 0) {
+    console.warn("Some library items failed to save during update", libraryFailures);
   }
 
   notifyTradesChanged();

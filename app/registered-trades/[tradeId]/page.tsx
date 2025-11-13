@@ -581,29 +581,6 @@ export default function RegisteredTradePage() {
     });
   }, [libraryItems]);
 
-  const handleMoveLibraryItem = useCallback((itemId: string, direction: "up" | "down") => {
-    setLibraryItems((prev) => {
-      if (prev.length <= 1) {
-        return prev;
-      }
-
-      const currentIndex = prev.findIndex((item) => item.id === itemId);
-      if (currentIndex === -1) {
-        return prev;
-      }
-
-      const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
-      if (targetIndex < 0 || targetIndex >= prev.length) {
-        return prev;
-      }
-
-      const nextItems = prev.slice();
-      const [movedItem] = nextItems.splice(currentIndex, 1);
-      nextItems.splice(targetIndex, 0, movedItem);
-      return nextItems;
-    });
-  }, []);
-
   const selectedLibraryItem = useMemo(
     () =>
       libraryItems.find((item) => item.id === selectedLibraryItemId) ??
@@ -1644,7 +1621,6 @@ export default function RegisteredTradePage() {
               actions={libraryCards}
               selectedActionId={selectedLibraryItemId}
               onSelectAction={setSelectedLibraryItemId}
-              onMoveAction={handleMoveLibraryItem}
               footer={libraryFooter}
             />
           )}
