@@ -350,7 +350,7 @@ export default function Home() {
                     >
                       {trade.isPaperTrade ? (
                         <span
-                          className="pointer-events-none absolute bottom-3 left-4 inline-flex items-center rounded-full bg-[color:rgb(var(--accent)/0.12)] px-2.5 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-accent shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:hidden"
+                          className="pointer-events-none absolute bottom-3 left-4 inline-flex items-center rounded-xl border border-[rgba(108,173,255,0.32)] bg-[rgba(108,173,255,0.16)] px-3 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-[rgba(24,68,142,0.92)] shadow-[0_10px_22px_rgba(15,23,42,0.1)] transition-colors md:hidden"
                         >
                           Paper trade
                         </span>
@@ -372,7 +372,7 @@ export default function Home() {
                             <span className="text-[1.6rem] leading-none" aria-hidden="true">
                               {trade.symbolFlag}
                             </span>
-                            <span className="text-base font-semibold tracking-[0.18em] text-fg">
+                            <span className="text-[0.78rem] font-semibold tracking-[0.24em] text-fg">
                               {trade.symbolCode}
                             </span>
                           </div>
@@ -410,7 +410,7 @@ export default function Home() {
                             <span className="text-2xl" aria-hidden="true">
                               {trade.symbolFlag}
                             </span>
-                            <span className="truncate text-lg font-semibold tracking-[0.16em] text-fg">
+                            <span className="truncate text-[0.8rem] font-semibold tracking-[0.24em] text-fg md:text-[0.88rem]">
                               {trade.symbolCode}
                             </span>
                           </div>
