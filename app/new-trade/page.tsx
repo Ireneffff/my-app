@@ -20,6 +20,7 @@ import { Circle, CheckCircle, Plus, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
+import { getLibraryCardTitle } from "@/lib/libraryCardTitles";
 import { StyledSelect } from "@/components/StyledSelect";
 import { TakeProfitOutcomeSelect } from "@/components/TakeProfitOutcomeSelect";
 import {
@@ -1807,10 +1808,11 @@ function NewTradePageContent() {
       libraryItems.map((item, index) => {
         const hasImage = Boolean(item.imageData);
         const isRecentlyAdded = item.id === recentlyAddedLibraryItemId;
+        const title = getLibraryCardTitle(index);
 
         return {
           id: item.id,
-          label: hasImage ? `Anteprima ${index + 1}` : "Carica",
+          label: title,
           onClick: () => {
             if (!hasImage) {
               openImagePicker();
@@ -1821,7 +1823,7 @@ function NewTradePageContent() {
             <div className="relative h-full w-full">
               <Image
                 src={item.imageData!}
-                alt={`Anteprima libreria ${index + 1}`}
+                alt={`${title} preview`}
                 fill
                 sizes="(min-width: 768px) 160px, 200px"
                 className="object-cover"
@@ -2001,7 +2003,7 @@ function NewTradePageContent() {
                             setIsSymbolListOpen((prev) => !prev);
                             setIsOutcomeListOpen(false);
                           }}
-                          className="group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)] md:flex-1 md:max-w-xs lg:max-w-sm"
+                          className="group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.9)] px-6 text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)] md:flex-1 md:max-w-sm lg:max-w-md xl:max-w-lg"
                           aria-haspopup="listbox"
                           aria-expanded={isSymbolListOpen}
                         >
@@ -2033,8 +2035,8 @@ function NewTradePageContent() {
                               </svg>
                             </div>
                           ) : (
-                            <div className="flex flex-col items-center justify-center gap-3 text-center text-[color:rgb(var(--muted-fg)/0.6)]">
-                              <div className="flex items-center justify-center gap-2 animate-soft-fade text-xs font-medium tracking-[0.18em] transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-sm">
+                            <div className="flex w-full items-center justify-center text-center text-[color:rgb(var(--muted-fg)/0.6)]">
+                              <div className="flex items-center justify-center gap-2 animate-soft-fade text-[0.6rem] font-medium tracking-[0.18em] transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-[0.72rem]">
                                 <span>Select symbol</span>
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
@@ -2061,7 +2063,7 @@ function NewTradePageContent() {
                             setIsOutcomeListOpen((prev) => !prev);
                             setIsSymbolListOpen(false);
                           }}
-                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:flex-1 md:max-w-xs lg:max-w-sm ${
+                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:w-[10.5rem] md:flex-none lg:w-[11.25rem] xl:w-[11.75rem] ${
                             tradeOutcome === "profit"
                               ? "border-[#A6E8B0] bg-[#E6F9EC] text-[#2E7D32] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
                               : tradeOutcome === "loss"
@@ -2100,7 +2102,7 @@ function NewTradePageContent() {
                             </div>
                           ) : (
                             <div className="flex flex-col items-center justify-center gap-3 text-center text-[color:rgb(var(--muted-fg)/0.6)]">
-                              <div className="flex items-center justify-center gap-2 animate-soft-fade text-xs font-medium tracking-[0.18em] transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-sm">
+                              <div className="flex items-center justify-center gap-2 animate-soft-fade text-[0.6rem] font-medium tracking-[0.18em] transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-[0.72rem]">
                                 <span>Select outcome</span>
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
@@ -2128,7 +2130,7 @@ function NewTradePageContent() {
                             setIsSymbolListOpen(false);
                             setIsOutcomeListOpen(false);
                           }}
-                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:flex-1 md:max-w-xs lg:max-w-sm ${
+                          className={`group flex h-32 w-full max-w-full flex-col items-center justify-center gap-3 rounded-2xl border text-center shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] md:w-[10.5rem] md:flex-none lg:w-[11.25rem] xl:w-[11.75rem] ${
                             isRealTrade
                               ? "border-[#A7C8FF] bg-[#E6EEFF] text-[#2F6FED] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
                               : "border-[#D7DDE5] bg-[#F5F7FA] text-[#6B7280] hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(15,23,42,0.14)]"
