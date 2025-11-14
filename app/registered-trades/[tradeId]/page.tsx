@@ -179,6 +179,7 @@ export default function RegisteredTradePage() {
   const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>("snapshot");
   const [isTradeContentVisible, setIsTradeContentVisible] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewAspectRatio, setPreviewAspectRatio] = useState<number | null>(null);
   const [adjacentTradeIds, setAdjacentTradeIds] = useState<{
     previous: string | null;
     next: string | null;
@@ -598,6 +599,7 @@ export default function RegisteredTradePage() {
   useEffect(() => {
     if (!selectedImageData) {
       setIsPreviewModalOpen(false);
+      setPreviewAspectRatio(null);
     }
   }, [selectedImageData]);
 
@@ -909,6 +911,11 @@ export default function RegisteredTradePage() {
               fill
               className="h-full w-full object-contain"
               sizes="100vw"
+              onLoadingComplete={({ naturalWidth, naturalHeight }) => {
+                if (naturalWidth > 0 && naturalHeight > 0) {
+                  setPreviewAspectRatio(naturalWidth / naturalHeight);
+                }
+              }}
               unoptimized
               priority
             />
@@ -926,6 +933,14 @@ export default function RegisteredTradePage() {
     </div>
   );
   const libraryPreview = primaryPreviewContent;
+
+  const modalAspectRatio = useMemo(() => {
+    if (previewAspectRatio && Number.isFinite(previewAspectRatio) && previewAspectRatio > 0) {
+      return `${previewAspectRatio}`;
+    }
+
+    return "3 / 2";
+  }, [previewAspectRatio]);
 
   const libraryNotesField = (
     <div className="flex flex-col gap-2">
@@ -1695,8 +1710,8 @@ export default function RegisteredTradePage() {
           onClick={() => setIsPreviewModalOpen(false)}
         >
           <div
-            className="relative w-full max-w-5xl overflow-hidden rounded-lg bg-[color:rgba(15,23,42,0.35)]"
-            style={{ aspectRatio: "3 / 2" }}
+            className="relative w-full max-w-[min(96vw,1280px)] max-h-[90vh] overflow-hidden rounded-lg bg-[color:rgba(15,23,42,0.35)]"
+            style={{ aspectRatio: modalAspectRatio }}
             onClick={(event) => event.stopPropagation()}
           >
             <button
@@ -1713,7 +1728,12 @@ export default function RegisteredTradePage() {
               alt="Anteprima ingrandita della library"
               fill
               className="h-full w-full object-contain"
-              sizes="100vw"
+              sizes="(max-width: 1280px) 100vw, 1280px"
+              onLoadingComplete={({ naturalWidth, naturalHeight }) => {
+                if (naturalWidth > 0 && naturalHeight > 0) {
+                  setPreviewAspectRatio(naturalWidth / naturalHeight);
+                }
+              }}
               unoptimized
               priority
             />
