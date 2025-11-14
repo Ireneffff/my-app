@@ -177,6 +177,7 @@ export default function RegisteredTradePage() {
   ]);
   const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>("snapshot");
   const [orderedTradeIds, setOrderedTradeIds] = useState<string[]>([]);
+  const [isTradeContentVisible, setIsTradeContentVisible] = useState(false);
   const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const previewSwipeStateRef = useRef<{
     x: number;
@@ -198,6 +199,22 @@ export default function RegisteredTradePage() {
     });
     scrollUnlockTimeoutsRef.current.clear();
   }, []);
+
+  useEffect(() => {
+    if (state.status !== "ready") {
+      return;
+    }
+
+    setIsTradeContentVisible(false);
+
+    const frame = window.requestAnimationFrame(() => {
+      setIsTradeContentVisible(true);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [state.status, state.trade?.id]);
 
   const rawTradeId = params.tradeId;
   const tradeId = Array.isArray(rawTradeId) ? rawTradeId[0] : rawTradeId;
@@ -1558,32 +1575,40 @@ export default function RegisteredTradePage() {
           </nav>
 
           {activeTab === "main" ? (
-            <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 sm:max-w-4xl">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="fixed left-4 top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border/80 bg-[color:rgb(var(--surface)/0.92)] p-0 text-muted-fg shadow-[0_8px_24px_rgba(15,23,42,0.08)] backdrop-blur hover:text-fg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:border-border/60 disabled:text-muted-fg/60 sm:left-6 sm:h-11 sm:w-11 md:left-8 md:h-12 md:w-12"
-                onClick={handleGoToPreviousTrade}
-                disabled={!canGoToPreviousTrade}
-              >
-                <ChevronLeft aria-hidden="true" className="h-4 w-4" />
-                <span className="sr-only">Vai al trade precedente</span>
-              </Button>
+            <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
+              <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2 sm:gap-3 md:gap-4">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="sticky top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border/80 bg-[color:rgb(var(--surface)/0.94)] p-0 text-muted-fg shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur hover:text-fg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:border-border/60 disabled:text-muted-fg/60 justify-self-end -mr-2 sm:h-10 sm:w-10 md:-mr-4"
+                  onClick={handleGoToPreviousTrade}
+                  disabled={!canGoToPreviousTrade}
+                >
+                  <ChevronLeft aria-hidden="true" className="h-3.5 w-3.5" />
+                  <span className="sr-only">Vai al trade precedente</span>
+                </Button>
 
-              {tradeDetailsPanel}
+                <div
+                  className={`transition-opacity duration-300 ease-out ${
+                    isTradeContentVisible ? "opacity-100" : "opacity-0"
+                  }`}
+                >
+                  {tradeDetailsPanel}
+                </div>
 
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="fixed right-4 top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border/80 bg-[color:rgb(var(--surface)/0.92)] p-0 text-muted-fg shadow-[0_8px_24px_rgba(15,23,42,0.08)] backdrop-blur hover:text-fg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:border-border/60 disabled:text-muted-fg/60 sm:right-6 sm:h-11 sm:w-11 md:right-8 md:h-12 md:w-12"
-                onClick={handleGoToNextTrade}
-                disabled={!canGoToNextTrade}
-              >
-                <ChevronRight aria-hidden="true" className="h-4 w-4" />
-                <span className="sr-only">Vai al trade successivo</span>
-              </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="sticky top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border/80 bg-[color:rgb(var(--surface)/0.94)] p-0 text-muted-fg shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur hover:text-fg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:border-border/60 disabled:text-muted-fg/60 justify-self-start -ml-2 sm:h-10 sm:w-10 md:-ml-4"
+                  onClick={handleGoToNextTrade}
+                  disabled={!canGoToNextTrade}
+                >
+                  <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" />
+                  <span className="sr-only">Vai al trade successivo</span>
+                </Button>
+              </div>
             </div>
           ) : (
             <LibrarySection
