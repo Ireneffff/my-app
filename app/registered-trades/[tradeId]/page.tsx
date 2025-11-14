@@ -1712,7 +1712,7 @@ export default function RegisteredTradePage() {
           onClick={() => setIsPreviewModalOpen(false)}
         >
           <div
-            className="relative w-full max-w-[min(96vw,1280px)] max-h-[90vh] overflow-hidden rounded-lg bg-[color:rgba(15,23,42,0.35)]"
+            className="relative w-full max-w-[min(96vw,1280px)] max-h-[90vh] overflow-hidden bg-[color:rgba(15,23,42,0.35)]"
             style={{ aspectRatio: modalAspectRatio }}
             onClick={(event) => event.stopPropagation()}
           >
