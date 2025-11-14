@@ -549,7 +549,8 @@ async function fetchLibraryItems(tradeId: string) {
   const { data, error } = await supabase
     .from("trade_library")
     .select("id, photo_url, note")
-    .eq("trade_id", normalizedTradeId);
+    .eq("trade_id", normalizedTradeId)
+    .order("id", { ascending: true });
 
   if (error) {
     console.error("Failed to load trade library", error);
@@ -633,6 +634,7 @@ function buildTradeRecord(payload: TradePayload) {
 async function saveLibraryItems(
   tradeId: string,
   items: StoredLibraryItem[],
+  options?: { replaceExisting?: boolean },
 ): Promise<LibraryItemFailure[]> {
   const failures: LibraryItemFailure[] = [];
 
@@ -645,6 +647,37 @@ async function saveLibraryItems(
       stage: "unknown" as const,
       message: "Missing trade id while saving library items",
     }));
+  }
+
+  if (options?.replaceExisting) {
+    try {
+      const { data: existingRows, error: fetchError } = await supabase
+        .from("trade_library")
+        .select("id")
+        .eq("trade_id", normalizedTradeId);
+
+      if (fetchError) {
+        console.error("Failed to load existing library items before replace", fetchError);
+      } else {
+        const recordIds = (existingRows ?? [])
+          .map((row) => row?.id)
+          .filter((value): value is number | string => typeof value === "number" || typeof value === "string");
+
+        if (recordIds.length > 0) {
+          const { error: deleteError } = await supabase
+            .from("trade_library")
+            .delete()
+            .in("id", recordIds);
+
+          if (deleteError) {
+            console.error("Failed to clear previous library items", deleteError);
+          }
+        }
+      }
+    } catch (error) {
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
+      console.error("Unexpected error while clearing previous library items", normalizedError);
+    }
   }
 
   for (const item of items) {
@@ -760,6 +793,252 @@ export async function loadTrades(): Promise<StoredTrade[]> {
   return (data ?? []).map((row) => mapTradeRow(row));
 }
 
+type TradeNavigationDirection = "previous" | "next";
+
+type TradeNavigationContext = {
+  id: string;
+  openTime: string | null;
+  createdAt: string | null;
+};
+
+function normalizeTradeId(value: unknown): string | null {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value.toString() : null;
+  }
+
+  return null;
+}
+
+function buildNavigationQuery(direction: TradeNavigationDirection, currentId: string) {
+  return supabase
+    .from("registered_trades")
+    .select("id")
+    .neq("id", currentId)
+    .order("open_time", { ascending: direction === "next", nullsFirst: false })
+    .order("created_at", { ascending: direction === "next" })
+    .order("id", { ascending: direction === "next" })
+    .limit(1);
+}
+
+type NavigationQueryBuilder = ReturnType<typeof buildNavigationQuery>;
+
+async function runNavigationQuery(
+  direction: TradeNavigationDirection,
+  currentId: string,
+  configure: (query: NavigationQueryBuilder) => NavigationQueryBuilder,
+): Promise<string | null> {
+  try {
+    const query = configure(buildNavigationQuery(direction, currentId));
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Failed to load adjacent trade", error);
+      return null;
+    }
+
+    const candidate = data?.[0]?.id;
+    return normalizeTradeId(candidate);
+  } catch (error) {
+    const normalizedError =
+      error instanceof Error ? error : new Error(String(error));
+    console.error("Unexpected error while loading adjacent trade", normalizedError);
+    return null;
+  }
+}
+
+function parseNumericId(value: string) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export async function loadAdjacentTradeId(
+  context: TradeNavigationContext,
+  direction: TradeNavigationDirection,
+): Promise<string | null> {
+  const currentId = context.id?.toString?.();
+
+  if (!currentId) {
+    return null;
+  }
+
+  const numericId = parseNumericId(currentId);
+  const openTime = context.openTime;
+  const createdAt = context.createdAt;
+
+  if (openTime) {
+    const comparisonResult = await runNavigationQuery(direction, currentId, (query) => {
+      if (direction === "next") {
+        return query.gt("open_time", openTime);
+      }
+      return query.lt("open_time", openTime);
+    });
+
+    if (comparisonResult) {
+      return comparisonResult;
+    }
+
+    if (createdAt) {
+      const byCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
+        query = query.eq("open_time", openTime);
+        if (direction === "next") {
+          return query.gt("created_at", createdAt);
+        }
+        return query.lt("created_at", createdAt);
+      });
+
+      if (byCreatedAt) {
+        return byCreatedAt;
+      }
+
+      const byId = await runNavigationQuery(direction, currentId, (query) => {
+        query = query.eq("open_time", openTime).eq("created_at", createdAt);
+
+        if (numericId !== null) {
+          if (direction === "next") {
+            return query.gt("id", numericId);
+          }
+          return query.lt("id", numericId);
+        }
+
+        if (direction === "next") {
+          return query.gt("id", currentId);
+        }
+        return query.lt("id", currentId);
+      });
+
+      if (byId) {
+        return byId;
+      }
+
+      if (direction === "next") {
+        const byNullCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
+          return query.eq("open_time", openTime).is("created_at", null);
+        });
+
+        if (byNullCreatedAt) {
+          return byNullCreatedAt;
+        }
+      }
+    } else {
+      const byNullCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
+        query = query.eq("open_time", openTime).is("created_at", null);
+
+        if (numericId !== null) {
+          if (direction === "next") {
+            return query.gt("id", numericId);
+          }
+          return query.lt("id", numericId);
+        }
+
+        if (direction === "next") {
+          return query.gt("id", currentId);
+        }
+        return query.lt("id", currentId);
+      });
+
+      if (byNullCreatedAt) {
+        return byNullCreatedAt;
+      }
+
+      if (direction === "previous") {
+        const byNonNullCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
+          return query.eq("open_time", openTime).not("created_at", "is", null);
+        });
+
+        if (byNonNullCreatedAt) {
+          return byNonNullCreatedAt;
+        }
+      }
+    }
+  }
+
+  if (createdAt) {
+    const byNullOpenTimeCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
+      query = query.is("open_time", null);
+      if (direction === "next") {
+        return query.gt("created_at", createdAt);
+      }
+      return query.lt("created_at", createdAt);
+    });
+
+    if (byNullOpenTimeCreatedAt) {
+      return byNullOpenTimeCreatedAt;
+    }
+
+    const byNullOpenTimeSameCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
+      query = query.is("open_time", null).eq("created_at", createdAt);
+
+      if (numericId !== null) {
+        if (direction === "next") {
+          return query.gt("id", numericId);
+        }
+        return query.lt("id", numericId);
+      }
+
+      if (direction === "next") {
+        return query.gt("id", currentId);
+      }
+      return query.lt("id", currentId);
+    });
+
+    if (byNullOpenTimeSameCreatedAt) {
+      return byNullOpenTimeSameCreatedAt;
+    }
+
+    if (direction === "next") {
+      const byNullOpenTimeNullCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
+        return query.is("open_time", null).is("created_at", null);
+      });
+
+      if (byNullOpenTimeNullCreatedAt) {
+        return byNullOpenTimeNullCreatedAt;
+      }
+    }
+  } else {
+    const byNullOpenTimeNullCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
+      query = query.is("open_time", null).is("created_at", null);
+
+      if (numericId !== null) {
+        if (direction === "next") {
+          return query.gt("id", numericId);
+        }
+        return query.lt("id", numericId);
+      }
+
+      if (direction === "next") {
+        return query.gt("id", currentId);
+      }
+      return query.lt("id", currentId);
+    });
+
+    if (byNullOpenTimeNullCreatedAt) {
+      return byNullOpenTimeNullCreatedAt;
+    }
+
+    if (direction === "previous") {
+      const byNullOpenTimeWithCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
+        return query.is("open_time", null).not("created_at", "is", null);
+      });
+
+      if (byNullOpenTimeWithCreatedAt) {
+        return byNullOpenTimeWithCreatedAt;
+      }
+    }
+  }
+
+  if (direction === "previous") {
+    return runNavigationQuery(direction, currentId, (query) => {
+      return query.not("open_time", "is", null);
+    });
+  }
+
+  return null;
+}
+
 export async function loadTradeById(tradeId: string): Promise<StoredTrade | null> {
   if (!tradeId) {
     return null;
@@ -831,7 +1110,6 @@ export async function updateTrade(
   }
 
   const tradeId = payload.id;
-  const normalizedTradeId = tradeId.toString();
   const record = buildTradeRecord(payload);
 
   const { error } = await supabase.from("registered_trades").update(record).eq("id", tradeId);
@@ -843,87 +1121,27 @@ export async function updateTrade(
 
   const removedItems = options?.removedLibraryItems ?? [];
   if (removedItems.length > 0) {
-    const recordIds = removedItems.map((item) => item.recordId);
-    const { error: removeError } = await supabase.from("trade_library").delete().in("id", recordIds);
+    const recordIds = removedItems
+      .map((item) => item.recordId)
+      .filter((id): id is string => typeof id === "string" && id.length > 0);
 
-    if (removeError) {
-      console.error("Failed to delete library entries", removeError);
+    if (recordIds.length > 0) {
+      const { error: removeError } = await supabase.from("trade_library").delete().in("id", recordIds);
+
+      if (removeError) {
+        console.error("Failed to delete library entries", removeError);
+      }
     }
 
     await removeStoragePaths(removedItems.map((item) => item.storagePath));
   }
 
-  for (const item of payload.libraryItems ?? []) {
-    if (item.persisted && item.recordId) {
-      let photoUrl = item.imageData ? item.imageData : null;
-      let storagePath = item.storagePath ?? extractStoragePathFromUrl(photoUrl);
+  const libraryFailures = await saveLibraryItems(tradeId.toString(), payload.libraryItems ?? [], {
+    replaceExisting: true,
+  });
 
-      if (photoUrl && photoUrl.startsWith("data:")) {
-        await removeStoragePaths([item.storagePath]);
-        try {
-          const uploadResult = await uploadImageDataUrl(photoUrl, normalizedTradeId);
-          photoUrl = uploadResult.photoUrl;
-          storagePath = uploadResult.storagePath;
-        } catch (uploadError) {
-          console.error("Failed to refresh library image during update", uploadError);
-          photoUrl = FALLBACK_TRADE_IMAGE_URL;
-          storagePath = null;
-        }
-      }
-
-      const { error: updateError } = await supabase
-        .from("trade_library")
-        .update({
-          photo_url: photoUrl,
-          note: item.notes ?? "",
-        })
-        .eq("id", item.recordId);
-
-      if (updateError) {
-        console.error("Failed to update library item", updateError);
-      } else {
-        item.imageData = photoUrl;
-        item.storagePath = storagePath;
-      }
-    } else {
-      let photoUrl: string | null = null;
-      let storagePath: string | null = null;
-
-      if (item.imageData && item.imageData.startsWith("data:")) {
-        try {
-          const uploadResult = await uploadImageDataUrl(item.imageData, normalizedTradeId);
-          photoUrl = uploadResult.photoUrl;
-          storagePath = uploadResult.storagePath;
-        } catch (uploadError) {
-          console.error("Failed to upload new library image during update", uploadError);
-          photoUrl = FALLBACK_TRADE_IMAGE_URL;
-          storagePath = null;
-        }
-      } else if (item.imageData) {
-        photoUrl = item.imageData;
-        storagePath = item.storagePath ?? extractStoragePathFromUrl(photoUrl);
-      }
-
-      const { data: inserted, error: insertError } = await supabase
-        .from("trade_library")
-        .insert({
-          trade_id: normalizedTradeId,
-          photo_url: photoUrl,
-          note: item.notes ?? "",
-        })
-        .select("id")
-        .single();
-
-      if (insertError) {
-        console.error("Failed to insert library item", insertError);
-      } else {
-        item.recordId = inserted?.id?.toString();
-        item.id = item.recordId ?? item.id;
-        item.persisted = true;
-        item.storagePath = storagePath;
-        item.imageData = photoUrl;
-      }
-    }
+  if (libraryFailures.length > 0) {
+    console.warn("Some library items failed to save during update", libraryFailures);
   }
 
   notifyTradesChanged();
