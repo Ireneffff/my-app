@@ -1579,7 +1579,7 @@ export default function RegisteredTradePage() {
               <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2 sm:gap-3 md:gap-4">
                 <button
                   type="button"
-                  className="sticky top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[color:rgba(255,255,255,0.6)] p-0 text-[color:rgb(var(--fg))] shadow-[0_18px_36px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-colors duration-200 ease-out hover:bg-[color:rgba(255,255,255,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:pointer-events-none disabled:opacity-40 justify-self-end -mr-4 md:-mr-8"
+                  className="sticky top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[color:rgba(255,255,255,0.6)] p-0 text-[color:rgb(var(--fg))] shadow-[0_18px_36px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-colors duration-200 ease-out hover:bg-[color:rgba(255,255,255,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:pointer-events-none disabled:opacity-40 justify-self-end -mr-6 sm:-mr-10 lg:-mr-16"
                   onClick={handleGoToPreviousTrade}
                   disabled={!canGoToPreviousTrade}
                 >
@@ -1599,7 +1599,7 @@ export default function RegisteredTradePage() {
 
                 <button
                   type="button"
-                  className="sticky top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[color:rgba(255,255,255,0.6)] p-0 text-[color:rgb(var(--fg))] shadow-[0_18px_36px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-colors duration-200 ease-out hover:bg-[color:rgba(255,255,255,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:pointer-events-none disabled:opacity-40 justify-self-start -ml-4 md:-ml-8"
+                  className="sticky top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[color:rgba(255,255,255,0.6)] p-0 text-[color:rgb(var(--fg))] shadow-[0_18px_36px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-colors duration-200 ease-out hover:bg-[color:rgba(255,255,255,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:pointer-events-none disabled:opacity-40 justify-self-start -ml-6 sm:-ml-10 lg:-ml-16"
                   onClick={handleGoToNextTrade}
                   disabled={!canGoToNextTrade}
                 >
