@@ -118,7 +118,7 @@ export default function Home() {
   const outcomesByDay = useMemo(() => {
     const map = new Map<string, { outcome: "profit" | "loss"; timestamp: number }[]>();
 
-    for (const trade of trades) {
+    for (const trade of filteredTrades) {
       if (!trade.tradeOutcome) {
         continue;
       }
@@ -157,7 +157,7 @@ export default function Home() {
     }
 
     return sorted;
-  }, [trades]);
+  }, [filteredTrades]);
 
   return (
     <section className="page-shell flex min-h-dvh flex-col pb-20 pt-28 text-fg sm:pt-32">

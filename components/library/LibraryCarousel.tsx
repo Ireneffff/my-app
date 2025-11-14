@@ -53,7 +53,7 @@ export function LibraryCarousel({
       return;
     }
 
-    target.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    target.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
   }, [activeItemId, items.length]);
 
   return (
@@ -61,14 +61,18 @@ export function LibraryCarousel({
       ref={containerRef}
       className="flex h-full flex-col"
     >
-      <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto scroll-smooth snap-y snap-mandatory py-3 scroll-py-6">
+      <div
+        className="flex h-full min-h-0 snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden py-3 pl-4 pr-4 scroll-smooth sm:pl-6 sm:pr-6 lg:flex-col lg:gap-4 lg:overflow-x-hidden lg:overflow-y-auto lg:pl-0 lg:pr-0 lg:scroll-py-6 lg:snap-y"
+      >
         {hasItems ? (
           items.map((item, index) => {
             const isActive = item.id === activeItemId;
             const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
+            const baseSizingClasses =
+              "w-[220px] max-w-[220px] sm:w-[252px] sm:max-w-[252px] lg:w-full lg:max-w-[calc(100%-1rem)]";
             const combinedClassName = itemClassName
-              ? `${itemClassName} w-full max-w-[calc(100%-1rem)]`
-              : "w-full max-w-[calc(100%-1rem)]";
+              ? `${itemClassName} ${baseSizingClasses}`
+              : baseSizingClasses;
             const shouldDim = hasItems && !isActive;
             const showReorderControls = Boolean(onMoveItem) && items.length > 1;
             const showRemoveControl = Boolean(onRemoveItem);
@@ -77,7 +81,10 @@ export function LibraryCarousel({
             const canMoveDown = index < items.length - 1;
 
             return (
-              <div key={item.id} className="group relative flex snap-start justify-center">
+              <div
+                key={item.id}
+                className="group relative flex snap-start justify-start lg:justify-center"
+              >
                 {showControls ? (
                   <div
                     className="pointer-events-auto absolute right-4 top-1/2 z-40 flex -translate-y-1/2 flex-col items-center gap-2 opacity-100 transition-opacity sm:pointer-events-none sm:opacity-0 sm:group-hover:pointer-events-auto sm:group-hover:opacity-100 sm:group-focus-within:pointer-events-auto sm:group-focus-within:opacity-100"
@@ -140,7 +147,7 @@ export function LibraryCarousel({
                   isActive={isActive}
                   isDimmed={shouldDim}
                   data-library-carousel-item={item.id}
-                  className={`${combinedClassName} mx-auto`}
+                  className={`${combinedClassName} shrink-0 lg:shrink lg:mx-auto`}
                   onClick={(event) => {
                     onSelectItem?.(item.id);
                     itemOnClick?.(event);
@@ -150,7 +157,7 @@ export function LibraryCarousel({
             );
           })
         ) : (
-          <div className="mx-auto flex h-[180px] w-full max-w-[calc(100%-1rem)] snap-start items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg">
+          <div className="flex h-[180px] w-[220px] max-w-[220px] shrink-0 snap-start items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg sm:w-[252px] sm:max-w-[252px] lg:mx-auto lg:w-full lg:max-w-[calc(100%-1rem)]">
             Nessuna card
           </div>
         )}
@@ -163,7 +170,7 @@ export function LibraryCarousel({
             isActive={false}
             isDimmed={false}
             data-library-carousel-item="add"
-            className="mx-auto w-full max-w-[calc(100%-1rem)] snap-start"
+            className="w-[220px] max-w-[220px] shrink-0 snap-start sm:w-[252px] sm:max-w-[252px] lg:mx-auto lg:w-full lg:max-w-[calc(100%-1rem)]"
             hideLabel
             visualWrapperClassName="h-32 w-full overflow-visible bg-transparent"
             onClick={() => {
