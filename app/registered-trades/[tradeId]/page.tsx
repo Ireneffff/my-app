@@ -1581,17 +1581,19 @@ export default function RegisteredTradePage() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="sticky top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border/80 bg-[color:rgb(var(--surface)/0.94)] p-0 text-muted-fg shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur hover:text-fg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:border-border/60 disabled:text-muted-fg/60 justify-self-end -mr-2 sm:h-10 sm:w-10 md:-mr-4"
+                  className="sticky top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[color:rgba(15,23,42,0.16)] bg-[color:rgb(var(--surface))] p-0 text-fg shadow-[0_18px_36px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-[transform,box-shadow,background-color,color] duration-200 ease-out hover:-translate-x-0.5 hover:border-[color:rgba(15,23,42,0.26)] hover:shadow-[0_20px_42px_rgba(15,23,42,0.22)] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:pointer-events-none disabled:opacity-50 justify-self-end -mr-3 md:-mr-6"
                   onClick={handleGoToPreviousTrade}
                   disabled={!canGoToPreviousTrade}
                 >
-                  <ChevronLeft aria-hidden="true" className="h-3.5 w-3.5" />
+                  <ChevronLeft aria-hidden="true" className="h-4 w-4" />
                   <span className="sr-only">Vai al trade precedente</span>
                 </Button>
 
                 <div
-                  className={`transition-opacity duration-300 ease-out ${
-                    isTradeContentVisible ? "opacity-100" : "opacity-0"
+                  className={`transform transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${
+                    isTradeContentVisible
+                      ? "translate-y-0 opacity-100"
+                      : "translate-y-4 opacity-0"
                   }`}
                 >
                   {tradeDetailsPanel}
@@ -1601,11 +1603,11 @@ export default function RegisteredTradePage() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="sticky top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border/80 bg-[color:rgb(var(--surface)/0.94)] p-0 text-muted-fg shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur hover:text-fg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:border-border/60 disabled:text-muted-fg/60 justify-self-start -ml-2 sm:h-10 sm:w-10 md:-ml-4"
+                  className="sticky top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[color:rgba(15,23,42,0.16)] bg-[color:rgb(var(--surface))] p-0 text-fg shadow-[0_18px_36px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-[transform,box-shadow,background-color,color] duration-200 ease-out hover:translate-x-0.5 hover:border-[color:rgba(15,23,42,0.26)] hover:shadow-[0_20px_42px_rgba(15,23,42,0.22)] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:pointer-events-none disabled:opacity-50 justify-self-start -ml-3 md:-ml-6"
                   onClick={handleGoToNextTrade}
                   disabled={!canGoToNextTrade}
                 >
-                  <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" />
+                  <ChevronRight aria-hidden="true" className="h-4 w-4" />
                   <span className="sr-only">Vai al trade successivo</span>
                 </Button>
               </div>
