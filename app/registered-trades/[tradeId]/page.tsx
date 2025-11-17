@@ -352,7 +352,6 @@ export default function RegisteredTradePage() {
         loadAdjacentTradeId(
           {
             id: currentTrade.id,
-            openTime: currentTrade.openTime,
             createdAt: currentTrade.createdAt,
           },
           "previous",
@@ -360,7 +359,6 @@ export default function RegisteredTradePage() {
         loadAdjacentTradeId(
           {
             id: currentTrade.id,
-            openTime: currentTrade.openTime,
             createdAt: currentTrade.createdAt,
           },
           "next",
