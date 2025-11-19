@@ -890,6 +890,19 @@ function NewTradePageContent() {
 
   const selectedImageData = selectedLibraryItem?.imageData ?? null;
   const selectedLibraryNote = selectedLibraryItem?.notes ?? "";
+  const selectedLibraryTitle = useMemo(() => {
+    if (!selectedLibraryItem) {
+      return "";
+    }
+
+    const normalizedOrderIndex = normalizeOrderIndexValue(selectedLibraryItem.orderIndex);
+    if (normalizedOrderIndex !== null) {
+      return getLibraryCardTitle(normalizedOrderIndex);
+    }
+
+    const fallbackIndex = libraryItems.findIndex((item) => item.id === selectedLibraryItem.id);
+    return getLibraryCardTitle(fallbackIndex === -1 ? 0 : fallbackIndex);
+  }, [libraryItems, selectedLibraryItem]);
 
   const canNavigateLibrary = libraryItems.length > 1;
 
@@ -1900,9 +1913,14 @@ function NewTradePageContent() {
         className="flex w-full flex-col"
         style={{ gap: "0.5cm" }}
       >
+        {selectedLibraryTitle ? (
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg">
+            {selectedLibraryTitle}
+          </p>
+        ) : null}
         <div
           ref={previewContainerRef}
-        className="w-full lg:max-w-screen-lg"
+          className="w-full lg:max-w-screen-lg"
           onWheel={handlePreviewWheel}
           onTouchStart={handlePreviewTouchStart}
           onTouchMove={handlePreviewTouchMove}

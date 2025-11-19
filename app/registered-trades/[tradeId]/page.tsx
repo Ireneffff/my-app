@@ -561,6 +561,19 @@ export default function RegisteredTradePage() {
 
   const selectedImageData = selectedLibraryItem?.imageData ?? null;
   const selectedLibraryNote = selectedLibraryItem?.notes ?? "";
+  const selectedLibraryTitle = useMemo(() => {
+    if (!selectedLibraryItem) {
+      return "";
+    }
+
+    const normalizedIndex = normalizeLibraryOrderIndex(selectedLibraryItem.orderIndex);
+    if (normalizedIndex !== null) {
+      return getLibraryCardTitle(normalizedIndex);
+    }
+
+    const fallbackIndex = libraryItems.findIndex((item) => item.id === selectedLibraryItem.id);
+    return getLibraryCardTitle(fallbackIndex === -1 ? 0 : fallbackIndex);
+  }, [libraryItems, selectedLibraryItem]);
 
   const canNavigateLibrary = libraryItems.length > 1;
 
@@ -839,6 +852,11 @@ export default function RegisteredTradePage() {
       className="flex w-full flex-col"
       style={{ gap: "0.5cm" }}
     >
+      {selectedLibraryTitle ? (
+        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg">
+          {selectedLibraryTitle}
+        </p>
+      ) : null}
       <div
         ref={previewContainerRef}
         className="w-full lg:max-w-screen-lg"
