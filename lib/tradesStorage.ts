@@ -11,6 +11,7 @@ export type StoredLibraryItem = {
   imageData: string | null;
   notes: string;
   createdAt: string | null;
+  orderIndex: number;
   storagePath?: string | null;
   recordId?: string;
   persisted?: boolean;
@@ -548,8 +549,9 @@ async function fetchLibraryItems(tradeId: string) {
 
   const { data, error } = await supabase
     .from("trade_library")
-    .select("id, photo_url, note")
+    .select("id, photo_url, note, order_index")
     .eq("trade_id", normalizedTradeId)
+    .order("order_index", { ascending: true, nullsFirst: true })
     .order("id", { ascending: true });
 
   if (error) {
@@ -560,12 +562,18 @@ async function fetchLibraryItems(tradeId: string) {
   return (data ?? []).map((item) => {
     const photoUrl = typeof item.photo_url === "string" ? item.photo_url : null;
     const recordId = item.id?.toString();
+    const rawOrderIndex =
+      typeof item.order_index === "number" && Number.isFinite(item.order_index)
+        ? Math.max(0, Math.floor(item.order_index))
+        : null;
+
     return {
       id: recordId ?? `library-${Math.random().toString(36).slice(2, 10)}`,
       recordId,
       imageData: photoUrl,
       notes: typeof item.note === "string" ? item.note : "",
       createdAt: null,
+      orderIndex: rawOrderIndex ?? 0,
       storagePath: extractStoragePathFromUrl(photoUrl),
       persisted: true,
     } satisfies StoredLibraryItem;
@@ -680,13 +688,33 @@ async function saveLibraryItems(
     }
   }
 
-  for (const item of items) {
+  const orderedItems = items
+    .slice()
+    .sort((a, b) => {
+      const aIndex =
+        typeof a.orderIndex === "number" && Number.isFinite(a.orderIndex)
+          ? Math.max(0, Math.floor(a.orderIndex))
+          : Number.MAX_SAFE_INTEGER;
+      const bIndex =
+        typeof b.orderIndex === "number" && Number.isFinite(b.orderIndex)
+          ? Math.max(0, Math.floor(b.orderIndex))
+          : Number.MAX_SAFE_INTEGER;
+      if (aIndex === bIndex) {
+        const aId = a.recordId ?? a.id ?? "";
+        const bId = b.recordId ?? b.id ?? "";
+        return aId.localeCompare(bId);
+      }
+      return aIndex - bIndex;
+    });
+
+  for (const [position, item] of orderedItems.entries()) {
     let stage: LibraryItemFailureStage = "unknown";
 
     try {
       let photoUrl: string | null = null;
       let storagePath: string | null = null;
       const hasNote = typeof item.notes === "string" && item.notes.trim().length > 0;
+      const normalizedOrderIndex = position;
 
       if (item.imageData && item.imageData.startsWith("data:")) {
         stage = "upload";
@@ -707,6 +735,7 @@ async function saveLibraryItems(
         trade_id: normalizedTradeId,
         photo_url: photoUrl ?? null,
         note: hasNote ? item.notes.trim() : "",
+        order_index: normalizedOrderIndex,
       });
 
       if (error) {
@@ -745,6 +774,7 @@ async function saveLibraryItems(
             trade_id: normalizedTradeId,
             photo_url: FALLBACK_TRADE_IMAGE_URL,
             note: noteValue,
+            order_index: normalizedOrderIndex,
           });
 
           if (fallbackError) {

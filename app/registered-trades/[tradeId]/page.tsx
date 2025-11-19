@@ -158,7 +158,35 @@ function createFallbackLibraryItem(): StoredLibraryItem {
     notes: "",
     createdAt: null,
     persisted: false,
+    orderIndex: 0,
   } satisfies StoredLibraryItem;
+}
+
+function normalizeLibraryOrderIndex(value?: number | null) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.max(0, Math.floor(value));
+  }
+
+  return null;
+}
+
+function normalizeRegisteredLibraryItems(items: StoredLibraryItem[]) {
+  return items
+    .slice()
+    .sort((a, b) => {
+      const aIndex = normalizeLibraryOrderIndex(a.orderIndex) ?? Number.MAX_SAFE_INTEGER;
+      const bIndex = normalizeLibraryOrderIndex(b.orderIndex) ?? Number.MAX_SAFE_INTEGER;
+
+      if (aIndex === bIndex) {
+        return (a.id ?? "").localeCompare(b.id ?? "");
+      }
+
+      return aIndex - bIndex;
+    })
+    .map((item, index) => ({
+      ...item,
+      orderIndex: index,
+    }));
 }
 
 export default function RegisteredTradePage() {
@@ -550,17 +578,18 @@ export default function RegisteredTradePage() {
     const hydrated = Array.isArray(state.trade.libraryItems)
       ? state.trade.libraryItems
           .filter((item): item is StoredLibraryItem => Boolean(item) && typeof item.id === "string")
-          .map((item) => ({
+          .map((item, index) => ({
             ...item,
             id: item.id,
             imageData: item.imageData ?? null,
             notes: typeof item.notes === "string" ? item.notes : "",
             persisted: item.persisted ?? Boolean(item.recordId ?? item.id),
+            orderIndex: normalizeLibraryOrderIndex(item.orderIndex) ?? index,
           }))
       : [];
 
     if (hydrated.length > 0) {
-      setLibraryItems(hydrated);
+      setLibraryItems(normalizeRegisteredLibraryItems(hydrated));
       return;
     }
 
@@ -825,7 +854,8 @@ export default function RegisteredTradePage() {
     () =>
       libraryItems.map((item, index) => {
         const hasImage = Boolean(item.imageData);
-        const title = getLibraryCardTitle(index);
+        const orderIndex = normalizeLibraryOrderIndex(item.orderIndex) ?? index;
+        const title = getLibraryCardTitle(orderIndex);
 
         return {
           id: item.id,

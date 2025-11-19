@@ -108,14 +108,49 @@ const followedPlanOptions = ["Sì", "No", "Parziale"] as const;
 
 type LibraryItem = StoredLibraryItem;
 
-function createLibraryItem(imageData: string | null = null): LibraryItem {
+function normalizeOrderIndexValue(value?: number | null) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.max(0, Math.floor(value));
+  }
+
+  return null;
+}
+
+function createLibraryItem(imageData: string | null = null, orderIndex = 0): LibraryItem {
   return {
     id: `library-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
     imageData,
     notes: "",
     createdAt: null,
     persisted: false,
+    orderIndex: normalizeOrderIndexValue(orderIndex) ?? 0,
   } satisfies LibraryItem;
+}
+
+function sortLibraryItemsByOrderIndex(items: LibraryItem[]) {
+  return items
+    .slice()
+    .sort((a, b) => {
+      const aIndex = normalizeOrderIndexValue(a.orderIndex) ?? Number.MAX_SAFE_INTEGER;
+      const bIndex = normalizeOrderIndexValue(b.orderIndex) ?? Number.MAX_SAFE_INTEGER;
+
+      if (aIndex === bIndex) {
+        return a.id.localeCompare(b.id);
+      }
+
+      return aIndex - bIndex;
+    });
+}
+
+function reindexLibraryItems(items: LibraryItem[]) {
+  return items.map((item, index) => ({
+    ...item,
+    orderIndex: index,
+  }));
+}
+
+function normalizeLibraryItemsOrder(items: LibraryItem[]) {
+  return reindexLibraryItems(sortLibraryItemsByOrderIndex(items));
 }
 
 function formatDateTimeLocal(date: Date) {
@@ -1287,16 +1322,19 @@ function NewTradePageContent() {
 
         const hydratedLibraryItems: LibraryItem[] =
           Array.isArray(match.libraryItems) && match.libraryItems.length > 0
-            ? match.libraryItems.map((item) => ({
+            ? match.libraryItems.map((item, index) => ({
                 ...item,
                 imageData: item.imageData ?? null,
                 notes: typeof item.notes === "string" ? item.notes : "",
                 persisted: item.persisted ?? Boolean(item.recordId ?? item.id),
+                orderIndex: normalizeOrderIndexValue(item.orderIndex) ?? index,
               }))
             : [createLibraryItem(null)];
 
-        setLibraryItems(hydratedLibraryItems);
-        setSelectedLibraryItemId(hydratedLibraryItems[0]?.id ?? initialLibraryItems[0].id);
+        const normalizedHydratedItems = normalizeLibraryItemsOrder(hydratedLibraryItems);
+
+        setLibraryItems(normalizedHydratedItems);
+        setSelectedLibraryItemId(normalizedHydratedItems[0]?.id ?? initialLibraryItems[0].id);
         setRecentlyAddedLibraryItemId(null);
         setRemovedLibraryItems([]);
         setImageError(null);
@@ -1692,22 +1730,22 @@ function NewTradePageContent() {
 
     setLibraryItems((prev) => {
       if (prev.length === 0) {
-        return [newItem];
+        return reindexLibraryItems([newItem]);
       }
 
       if (!selectedLibraryItemId) {
-        return [...prev, newItem];
+        return reindexLibraryItems([...prev, newItem]);
       }
 
       const targetIndex = prev.findIndex((item) => item.id === selectedLibraryItemId);
 
       if (targetIndex === -1) {
-        return [...prev, newItem];
+        return reindexLibraryItems([...prev, newItem]);
       }
 
       const nextItems = [...prev];
       nextItems.splice(targetIndex + 1, 0, newItem);
-      return nextItems;
+      return reindexLibraryItems(nextItems);
     });
 
     setSelectedLibraryItemId(newItem.id);
@@ -1755,7 +1793,7 @@ function NewTradePageContent() {
         return fallbackId;
       });
 
-      return nextItems;
+      return reindexLibraryItems(nextItems);
     });
 
     setRecentlyAddedLibraryItemId((prev) => (prev === itemId ? null : prev));
@@ -1780,7 +1818,7 @@ function NewTradePageContent() {
       const nextItems = prev.slice();
       const [movedItem] = nextItems.splice(currentIndex, 1);
       nextItems.splice(targetIndex, 0, movedItem);
-      return nextItems;
+      return reindexLibraryItems(nextItems);
     });
   }, []);
 
@@ -1808,7 +1846,8 @@ function NewTradePageContent() {
       libraryItems.map((item, index) => {
         const hasImage = Boolean(item.imageData);
         const isRecentlyAdded = item.id === recentlyAddedLibraryItemId;
-        const title = getLibraryCardTitle(index);
+        const orderIndex = normalizeOrderIndexValue(item.orderIndex) ?? index;
+        const title = getLibraryCardTitle(orderIndex);
 
         return {
           id: item.id,
@@ -3094,21 +3133,24 @@ function NewTradePageContent() {
       return;
     }
 
-    const normalizedLibraryItems = libraryItems
-      .map((item) => ({
-        ...item,
-        imageData: item.imageData ?? null,
-        notes: typeof item.notes === "string" ? item.notes : "",
-      }))
-      .filter((item) => {
-        if (item.persisted && item.recordId) {
-          return true;
-        }
+    const sanitizedLibraryItems: LibraryItem[] = libraryItems.map((item) => ({
+      ...item,
+      imageData: item.imageData ?? null,
+      notes: typeof item.notes === "string" ? item.notes : "",
+      orderIndex: normalizeOrderIndexValue(item.orderIndex) ?? 0,
+    }));
 
-        const hasImage = typeof item.imageData === "string" && item.imageData.length > 0;
-        const hasNotes = item.notes.trim().length > 0;
-        return hasImage || hasNotes;
-      });
+    const filteredLibraryItems = sanitizedLibraryItems.filter((item) => {
+      if (item.persisted && item.recordId) {
+        return true;
+      }
+
+      const hasImage = typeof item.imageData === "string" && item.imageData.length > 0;
+      const hasNotes = item.notes.trim().length > 0;
+      return hasImage || hasNotes;
+    });
+
+    const normalizedLibraryItems = reindexLibraryItems(filteredLibraryItems);
 
     const normalizedPosition: "LONG" | "SHORT" | null =
       position === "SHORT" ? "SHORT" : position === "LONG" ? "LONG" : null;
