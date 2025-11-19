@@ -709,12 +709,12 @@ async function saveLibraryItems(
 
   for (const [position, item] of orderedItems.entries()) {
     let stage: LibraryItemFailureStage = "unknown";
+    const normalizedOrderIndex = position;
 
     try {
       let photoUrl: string | null = null;
       let storagePath: string | null = null;
       const hasNote = typeof item.notes === "string" && item.notes.trim().length > 0;
-      const normalizedOrderIndex = position;
 
       if (item.imageData && item.imageData.startsWith("data:")) {
         stage = "upload";
