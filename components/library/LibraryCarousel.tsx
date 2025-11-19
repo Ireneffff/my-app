@@ -62,7 +62,7 @@ export function LibraryCarousel({
       className="flex h-full flex-col"
     >
       <div
-        className="flex h-full min-h-0 snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden py-3 pl-4 pr-4 scroll-smooth sm:pl-6 sm:pr-6 lg:flex-col lg:gap-4 lg:overflow-x-hidden lg:overflow-y-auto lg:pl-0 lg:pr-0 lg:scroll-py-6 lg:snap-y"
+        className="flex h-full min-h-0 snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden bg-neutral-50 py-3 pl-4 pr-4 scroll-smooth sm:pl-6 sm:pr-6 lg:flex-col lg:gap-4 lg:overflow-x-hidden lg:overflow-y-auto lg:pl-0 lg:pr-0 lg:scroll-py-6 lg:snap-y"
       >
         {hasItems ? (
           items.map((item, index) => {
