@@ -11,6 +11,7 @@ export type StoredLibraryItem = {
   imageData: string | null;
   notes: string;
   createdAt: string | null;
+  orderIndex: number;
   storagePath?: string | null;
   recordId?: string;
   persisted?: boolean;
@@ -548,8 +549,9 @@ async function fetchLibraryItems(tradeId: string) {
 
   const { data, error } = await supabase
     .from("trade_library")
-    .select("id, photo_url, note")
+    .select("id, photo_url, note, order_index")
     .eq("trade_id", normalizedTradeId)
+    .order("order_index", { ascending: true, nullsFirst: true })
     .order("id", { ascending: true });
 
   if (error) {
@@ -560,12 +562,18 @@ async function fetchLibraryItems(tradeId: string) {
   return (data ?? []).map((item) => {
     const photoUrl = typeof item.photo_url === "string" ? item.photo_url : null;
     const recordId = item.id?.toString();
+    const rawOrderIndex =
+      typeof item.order_index === "number" && Number.isFinite(item.order_index)
+        ? Math.max(0, Math.floor(item.order_index))
+        : null;
+
     return {
       id: recordId ?? `library-${Math.random().toString(36).slice(2, 10)}`,
       recordId,
       imageData: photoUrl,
       notes: typeof item.note === "string" ? item.note : "",
       createdAt: null,
+      orderIndex: rawOrderIndex ?? 0,
       storagePath: extractStoragePathFromUrl(photoUrl),
       persisted: true,
     } satisfies StoredLibraryItem;
@@ -680,8 +688,28 @@ async function saveLibraryItems(
     }
   }
 
-  for (const item of items) {
+  const orderedItems = items
+    .slice()
+    .sort((a, b) => {
+      const aIndex =
+        typeof a.orderIndex === "number" && Number.isFinite(a.orderIndex)
+          ? Math.max(0, Math.floor(a.orderIndex))
+          : Number.MAX_SAFE_INTEGER;
+      const bIndex =
+        typeof b.orderIndex === "number" && Number.isFinite(b.orderIndex)
+          ? Math.max(0, Math.floor(b.orderIndex))
+          : Number.MAX_SAFE_INTEGER;
+      if (aIndex === bIndex) {
+        const aId = a.recordId ?? a.id ?? "";
+        const bId = b.recordId ?? b.id ?? "";
+        return aId.localeCompare(bId);
+      }
+      return aIndex - bIndex;
+    });
+
+  for (const [position, item] of orderedItems.entries()) {
     let stage: LibraryItemFailureStage = "unknown";
+    const normalizedOrderIndex = position;
 
     try {
       let photoUrl: string | null = null;
@@ -707,6 +735,7 @@ async function saveLibraryItems(
         trade_id: normalizedTradeId,
         photo_url: photoUrl ?? null,
         note: hasNote ? item.notes.trim() : "",
+        order_index: normalizedOrderIndex,
       });
 
       if (error) {
@@ -745,6 +774,7 @@ async function saveLibraryItems(
             trade_id: normalizedTradeId,
             photo_url: FALLBACK_TRADE_IMAGE_URL,
             note: noteValue,
+            order_index: normalizedOrderIndex,
           });
 
           if (fallbackError) {
@@ -797,7 +827,6 @@ type TradeNavigationDirection = "previous" | "next";
 
 type TradeNavigationContext = {
   id: string;
-  openTime: string | null;
   createdAt: string | null;
 };
 
@@ -813,26 +842,32 @@ function normalizeTradeId(value: unknown): string | null {
   return null;
 }
 
-function buildNavigationQuery(direction: TradeNavigationDirection, currentId: string) {
-  return supabase
-    .from("registered_trades")
-    .select("id")
-    .neq("id", currentId)
-    .order("open_time", { ascending: direction === "next", nullsFirst: false })
-    .order("created_at", { ascending: direction === "next" })
-    .order("id", { ascending: direction === "next" })
-    .limit(1);
-}
-
-type NavigationQueryBuilder = ReturnType<typeof buildNavigationQuery>;
-
-async function runNavigationQuery(
+export async function loadAdjacentTradeId(
+  context: TradeNavigationContext,
   direction: TradeNavigationDirection,
-  currentId: string,
-  configure: (query: NavigationQueryBuilder) => NavigationQueryBuilder,
 ): Promise<string | null> {
+  const currentId = context.id?.toString?.();
+  const createdAt = context.createdAt ?? null;
+
+  if (!currentId || !createdAt) {
+    return null;
+  }
+
   try {
-    const query = configure(buildNavigationQuery(direction, currentId));
+    let query = supabase
+      .from("registered_trades")
+      .select("id")
+      .neq("id", currentId)
+      .order("created_at", { ascending: direction === "next" })
+      .order("id", { ascending: direction === "next" })
+      .limit(1);
+
+    if (direction === "next") {
+      query = query.gt("created_at", createdAt);
+    } else {
+      query = query.lt("created_at", createdAt);
+    }
+
     const { data, error } = await query;
 
     if (error) {
@@ -848,195 +883,6 @@ async function runNavigationQuery(
     console.error("Unexpected error while loading adjacent trade", normalizedError);
     return null;
   }
-}
-
-function parseNumericId(value: string) {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-export async function loadAdjacentTradeId(
-  context: TradeNavigationContext,
-  direction: TradeNavigationDirection,
-): Promise<string | null> {
-  const currentId = context.id?.toString?.();
-
-  if (!currentId) {
-    return null;
-  }
-
-  const numericId = parseNumericId(currentId);
-  const openTime = context.openTime;
-  const createdAt = context.createdAt;
-
-  if (openTime) {
-    const comparisonResult = await runNavigationQuery(direction, currentId, (query) => {
-      if (direction === "next") {
-        return query.gt("open_time", openTime);
-      }
-      return query.lt("open_time", openTime);
-    });
-
-    if (comparisonResult) {
-      return comparisonResult;
-    }
-
-    if (createdAt) {
-      const byCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
-        query = query.eq("open_time", openTime);
-        if (direction === "next") {
-          return query.gt("created_at", createdAt);
-        }
-        return query.lt("created_at", createdAt);
-      });
-
-      if (byCreatedAt) {
-        return byCreatedAt;
-      }
-
-      const byId = await runNavigationQuery(direction, currentId, (query) => {
-        query = query.eq("open_time", openTime).eq("created_at", createdAt);
-
-        if (numericId !== null) {
-          if (direction === "next") {
-            return query.gt("id", numericId);
-          }
-          return query.lt("id", numericId);
-        }
-
-        if (direction === "next") {
-          return query.gt("id", currentId);
-        }
-        return query.lt("id", currentId);
-      });
-
-      if (byId) {
-        return byId;
-      }
-
-      if (direction === "next") {
-        const byNullCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
-          return query.eq("open_time", openTime).is("created_at", null);
-        });
-
-        if (byNullCreatedAt) {
-          return byNullCreatedAt;
-        }
-      }
-    } else {
-      const byNullCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
-        query = query.eq("open_time", openTime).is("created_at", null);
-
-        if (numericId !== null) {
-          if (direction === "next") {
-            return query.gt("id", numericId);
-          }
-          return query.lt("id", numericId);
-        }
-
-        if (direction === "next") {
-          return query.gt("id", currentId);
-        }
-        return query.lt("id", currentId);
-      });
-
-      if (byNullCreatedAt) {
-        return byNullCreatedAt;
-      }
-
-      if (direction === "previous") {
-        const byNonNullCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
-          return query.eq("open_time", openTime).not("created_at", "is", null);
-        });
-
-        if (byNonNullCreatedAt) {
-          return byNonNullCreatedAt;
-        }
-      }
-    }
-  }
-
-  if (createdAt) {
-    const byNullOpenTimeCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
-      query = query.is("open_time", null);
-      if (direction === "next") {
-        return query.gt("created_at", createdAt);
-      }
-      return query.lt("created_at", createdAt);
-    });
-
-    if (byNullOpenTimeCreatedAt) {
-      return byNullOpenTimeCreatedAt;
-    }
-
-    const byNullOpenTimeSameCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
-      query = query.is("open_time", null).eq("created_at", createdAt);
-
-      if (numericId !== null) {
-        if (direction === "next") {
-          return query.gt("id", numericId);
-        }
-        return query.lt("id", numericId);
-      }
-
-      if (direction === "next") {
-        return query.gt("id", currentId);
-      }
-      return query.lt("id", currentId);
-    });
-
-    if (byNullOpenTimeSameCreatedAt) {
-      return byNullOpenTimeSameCreatedAt;
-    }
-
-    if (direction === "next") {
-      const byNullOpenTimeNullCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
-        return query.is("open_time", null).is("created_at", null);
-      });
-
-      if (byNullOpenTimeNullCreatedAt) {
-        return byNullOpenTimeNullCreatedAt;
-      }
-    }
-  } else {
-    const byNullOpenTimeNullCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
-      query = query.is("open_time", null).is("created_at", null);
-
-      if (numericId !== null) {
-        if (direction === "next") {
-          return query.gt("id", numericId);
-        }
-        return query.lt("id", numericId);
-      }
-
-      if (direction === "next") {
-        return query.gt("id", currentId);
-      }
-      return query.lt("id", currentId);
-    });
-
-    if (byNullOpenTimeNullCreatedAt) {
-      return byNullOpenTimeNullCreatedAt;
-    }
-
-    if (direction === "previous") {
-      const byNullOpenTimeWithCreatedAt = await runNavigationQuery(direction, currentId, (query) => {
-        return query.is("open_time", null).not("created_at", "is", null);
-      });
-
-      if (byNullOpenTimeWithCreatedAt) {
-        return byNullOpenTimeWithCreatedAt;
-      }
-    }
-  }
-
-  if (direction === "previous") {
-    return runNavigationQuery(direction, currentId, (query) => {
-      return query.not("open_time", "is", null);
-    });
-  }
-
-  return null;
 }
 
 export async function loadTradeById(tradeId: string): Promise<StoredTrade | null> {
