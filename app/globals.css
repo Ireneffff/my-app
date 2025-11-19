@@ -238,6 +238,68 @@ a {
     box-shadow 260ms var(--easing-standard);
 }
 
+.last-opened-trade-card {
+  animation: last-opened-trade-scale 2.6s var(--easing-standard);
+}
+
+.last-opened-trade-card::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  border: 2px solid rgb(var(--accent) / 0.22);
+  box-shadow:
+    0 0 24px rgb(var(--accent) / 0.45),
+    0 0 0 0 rgb(var(--accent) / 0.3);
+  animation: last-opened-trade-glow 2.6s ease-out;
+}
+
+@keyframes last-opened-trade-scale {
+  0% {
+    transform: scale(0.985);
+  }
+
+  55% {
+    transform: scale(1.01);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes last-opened-trade-glow {
+  0% {
+    opacity: 0;
+    box-shadow:
+      0 0 18px rgb(var(--accent) / 0.3),
+      0 0 0 0 rgb(var(--accent) / 0.22);
+  }
+
+  35% {
+    opacity: 1;
+    box-shadow:
+      0 0 24px rgb(var(--accent) / 0.45),
+      0 0 0 2px rgb(var(--accent) / 0.2);
+  }
+
+  70% {
+    opacity: 0;
+    box-shadow:
+      0 0 0 rgb(var(--accent) / 0),
+      0 0 0 28px rgb(var(--accent) / 0);
+  }
+
+  100% {
+    opacity: 0;
+    box-shadow:
+      0 0 0 rgb(var(--accent) / 0),
+      0 0 0 0 rgb(var(--accent) / 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

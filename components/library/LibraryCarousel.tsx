@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 
 import { LibraryCard, type LibraryCardProps } from "./LibraryCard";
 
@@ -28,8 +28,57 @@ export function LibraryCarousel({
   onMoveItem,
 }: LibraryCarouselProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const positionsRef = useRef<Map<string, DOMRect>>(new Map());
   const hasItems = items.length > 0;
   const activeItemId = selectedId ?? items[0]?.id;
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const previousPositions = positionsRef.current;
+    const currentPositions = new Map<string, DOMRect>();
+    const carouselItems = container.querySelectorAll<HTMLElement>(
+      "[data-library-carousel-item]",
+    );
+
+    carouselItems.forEach((element) => {
+      const itemId = element.dataset.libraryCarouselItem;
+      if (!itemId) {
+        return;
+      }
+
+      const rect = element.getBoundingClientRect();
+      currentPositions.set(itemId, rect);
+
+      const previous = previousPositions.get(itemId);
+      if (!previous) {
+        return;
+      }
+
+      const deltaX = previous.left - rect.left;
+      const deltaY = previous.top - rect.top;
+
+      if (deltaX === 0 && deltaY === 0) {
+        return;
+      }
+
+      element.animate(
+        [
+          { transform: `translate(${deltaX}px, ${deltaY}px)` },
+          { transform: "translate(0, 0)" },
+        ],
+        {
+          duration: 420,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+        },
+      );
+    });
+
+    positionsRef.current = currentPositions;
+  }, [items]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -59,10 +108,10 @@ export function LibraryCarousel({
   return (
     <div
       ref={containerRef}
-      className="flex h-full flex-col"
+      className="flex h-full flex-col rounded-2xl border border-[color:rgb(var(--border-strong))] bg-gradient-to-br from-white to-neutral-50/70 p-3 shadow-[0_28px_60px_-36px_rgba(15,23,42,0.32)] sm:p-4 lg:p-5"
     >
       <div
-        className="flex h-full min-h-0 snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden py-3 pl-4 pr-4 scroll-smooth sm:pl-6 sm:pr-6 lg:flex-col lg:gap-4 lg:overflow-x-hidden lg:overflow-y-auto lg:pl-0 lg:pr-0 lg:scroll-py-6 lg:snap-y"
+        className="flex h-full min-h-0 snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden rounded-xl bg-neutral-100/70 px-3 py-3 scroll-smooth shadow-inner ring-1 ring-[color:rgb(var(--border))] sm:gap-4 sm:px-4 lg:flex-col lg:gap-4 lg:overflow-x-hidden lg:overflow-y-auto lg:scroll-py-6 lg:snap-y"
       >
         {hasItems ? (
           items.map((item, index) => {
@@ -172,7 +221,7 @@ export function LibraryCarousel({
             data-library-carousel-item="add"
             className="w-[220px] max-w-[220px] shrink-0 snap-start sm:w-[252px] sm:max-w-[252px] lg:mx-auto lg:w-full lg:max-w-[calc(100%-1rem)]"
             hideLabel
-            visualWrapperClassName="h-32 w-full overflow-visible bg-transparent"
+            visualWrapperClassName="h-32 w-full overflow-visible bg-transparent ring-0 shadow-none"
             onClick={() => {
               onAddItem?.();
             }}
