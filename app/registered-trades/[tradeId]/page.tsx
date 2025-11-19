@@ -32,6 +32,7 @@ import {
   type StoredLibraryItem,
   type StoredTrade,
 } from "@/lib/tradesStorage";
+import { saveLastOpenedRegisteredTradeId } from "@/lib/lastOpenedTrade";
 import { getLibraryCardTitle } from "@/lib/libraryCardTitles";
 import { calculateDuration } from "@/lib/duration";
 import {
@@ -364,6 +365,14 @@ export default function RegisteredTradePage() {
   }, [refreshTrade]);
   const currentTrade = state.trade ?? null;
   const currentTradeId = currentTrade?.id ?? null;
+
+  useEffect(() => {
+    if (!currentTradeId) {
+      return;
+    }
+
+    saveLastOpenedRegisteredTradeId(currentTradeId);
+  }, [currentTradeId]);
 
   useEffect(() => {
     let isCancelled = false;
