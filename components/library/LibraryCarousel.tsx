@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { LibraryCard, type LibraryCardProps } from "./LibraryCard";
 
@@ -28,6 +28,8 @@ export function LibraryCarousel({
   onMoveItem,
 }: LibraryCarouselProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
+  const reorderTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasItems = items.length > 0;
   const activeItemId = selectedId ?? items[0]?.id;
 
@@ -56,135 +58,156 @@ export function LibraryCarousel({
     target.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
   }, [activeItemId, items.length]);
 
+  useEffect(() => {
+    return () => {
+      if (reorderTimeoutRef.current) {
+        clearTimeout(reorderTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const triggerReorderAnimation = () => {
+    setIsReordering(true);
+    if (reorderTimeoutRef.current) {
+      clearTimeout(reorderTimeoutRef.current);
+    }
+    reorderTimeoutRef.current = setTimeout(() => {
+      setIsReordering(false);
+    }, 420);
+  };
+
   return (
-    <div
-      ref={containerRef}
-      className="flex h-full flex-col"
-    >
-      <div
-        className="flex h-full min-h-0 snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden bg-neutral-50 py-3 pl-4 pr-4 scroll-smooth sm:pl-6 sm:pr-6 lg:flex-col lg:gap-4 lg:overflow-x-hidden lg:overflow-y-auto lg:pl-0 lg:pr-0 lg:scroll-py-6 lg:snap-y"
-      >
-        {hasItems ? (
-          items.map((item, index) => {
-            const isActive = item.id === activeItemId;
-            const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
-            const baseSizingClasses =
-              "w-[220px] max-w-[220px] sm:w-[252px] sm:max-w-[252px] lg:w-full lg:max-w-[calc(100%-1rem)]";
-            const combinedClassName = itemClassName
-              ? `${itemClassName} ${baseSizingClasses}`
-              : baseSizingClasses;
-            const shouldDim = hasItems && !isActive;
-            const showReorderControls = Boolean(onMoveItem) && items.length > 1;
-            const showRemoveControl = Boolean(onRemoveItem);
-            const showControls = showReorderControls || showRemoveControl;
-            const canMoveUp = index > 0;
-            const canMoveDown = index < items.length - 1;
+    <div className="flex h-full flex-col">
+      <div className="relative h-full rounded-3xl border border-white/70 bg-white/80 shadow-[0_24px_70px_-42px_rgba(15,23,42,0.4)] backdrop-blur-sm">
+        <div
+          ref={containerRef}
+          className="flex h-full min-h-0 snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden p-4 scroll-smooth transition-[padding,background-color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:px-6 lg:flex-col lg:gap-4 lg:overflow-x-hidden lg:overflow-y-auto lg:scroll-py-6 lg:snap-y"
+        >
+          {hasItems ? (
+            items.map((item, index) => {
+              const isActive = item.id === activeItemId;
+              const { className: itemClassName, onClick: itemOnClick, ...restItem } = item;
+              const baseSizingClasses =
+                "w-[220px] max-w-[220px] sm:w-[252px] sm:max-w-[252px] lg:w-full lg:max-w-[calc(100%-1rem)]";
+              const combinedClassName = itemClassName
+                ? `${itemClassName} ${baseSizingClasses}`
+                : baseSizingClasses;
+              const shouldDim = hasItems && !isActive;
+              const showReorderControls = Boolean(onMoveItem) && items.length > 1;
+              const showRemoveControl = Boolean(onRemoveItem);
+              const showControls = showReorderControls || showRemoveControl;
+              const canMoveUp = index > 0;
+              const canMoveDown = index < items.length - 1;
 
-            return (
-              <div
-                key={item.id}
-                className="group relative flex snap-start justify-start lg:justify-center"
-              >
-                {showControls ? (
-                  <div
-                    className="pointer-events-auto absolute right-4 top-1/2 z-40 flex -translate-y-1/2 flex-col items-center gap-2 opacity-100 transition-opacity sm:pointer-events-none sm:opacity-0 sm:group-hover:pointer-events-auto sm:group-hover:opacity-100 sm:group-focus-within:pointer-events-auto sm:group-focus-within:opacity-100"
-                  >
-                    {showRemoveControl ? (
-                      <button
-                        type="button"
-                        aria-label={`Rimuovi ${item.label}`}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          onRemoveItem?.(item.id);
-                        }}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/95 text-neutral-500 shadow-[0_22px_48px_-24px_rgba(15,23,42,0.55)] transition-all hover:bg-neutral-100 hover:text-neutral-900 focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgb(var(--accent)/0.24)]"
-                      >
-                        <CloseIcon className="h-4 w-4" />
-                      </button>
-                    ) : null}
-                    {showReorderControls ? (
-                      <>
+              return (
+                <div
+                  key={item.id}
+                  data-reordering={isReordering ? "true" : "false"}
+                  className="group relative flex snap-start justify-start transition-transform duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] lg:justify-center"
+                >
+                  {showControls ? (
+                    <div
+                      className="pointer-events-auto absolute right-4 top-1/2 z-40 flex -translate-y-1/2 flex-col items-center gap-2 opacity-100 transition-opacity sm:pointer-events-none sm:opacity-0 sm:group-hover:pointer-events-auto sm:group-hover:opacity-100 sm:group-focus-within:pointer-events-auto sm:group-focus-within:opacity-100"
+                    >
+                      {showRemoveControl ? (
                         <button
                           type="button"
-                          aria-label={`Sposta in alto ${item.label}`}
-                          disabled={!canMoveUp}
+                          aria-label={`Rimuovi ${item.label}`}
                           onClick={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
-                            if (!canMoveUp) {
-                              return;
-                            }
-                            onMoveItem?.(item.id, "up");
+                            onRemoveItem?.(item.id);
                           }}
-                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-[color:rgb(var(--accent)/0.08)] text-accent shadow-[0_22px_48px_-24px_rgba(15,23,42,0.55)] transition-all hover:bg-[color:rgb(var(--accent)/0.12)] focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgb(var(--accent)/0.32)] disabled:cursor-not-allowed disabled:opacity-40"
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/95 text-neutral-500 shadow-[0_22px_48px_-24px_rgba(15,23,42,0.55)] transition-all hover:bg-neutral-100 hover:text-neutral-900 focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgb(var(--accent)/0.24)]"
                         >
-                          <ArrowUpIcon />
+                          <CloseIcon className="h-4 w-4" />
                         </button>
-                        <button
-                          type="button"
-                          aria-label={`Sposta in basso ${item.label}`}
-                          disabled={!canMoveDown}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            if (!canMoveDown) {
-                              return;
-                            }
-                            onMoveItem?.(item.id, "down");
-                          }}
-                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-[color:rgb(var(--accent)/0.08)] text-accent shadow-[0_22px_48px_-24px_rgba(15,23,42,0.55)] transition-all hover:bg-[color:rgb(var(--accent)/0.12)] focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgb(var(--accent)/0.32)] disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          <ArrowDownIcon />
-                        </button>
-                      </>
-                    ) : null}
-                  </div>
-                ) : null}
+                      ) : null}
+                      {showReorderControls ? (
+                        <>
+                          <button
+                            type="button"
+                            aria-label={`Sposta in alto ${item.label}`}
+                            disabled={!canMoveUp}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              if (!canMoveUp) {
+                                return;
+                              }
+                              triggerReorderAnimation();
+                              onMoveItem?.(item.id, "up");
+                            }}
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-[color:rgb(var(--accent)/0.08)] text-accent shadow-[0_22px_48px_-24px_rgba(15,23,42,0.55)] transition-all hover:bg-[color:rgb(var(--accent)/0.12)] focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgb(var(--accent)/0.32)] disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <ArrowUpIcon />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Sposta in basso ${item.label}`}
+                            disabled={!canMoveDown}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              if (!canMoveDown) {
+                                return;
+                              }
+                              triggerReorderAnimation();
+                              onMoveItem?.(item.id, "down");
+                            }}
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-[color:rgb(var(--accent)/0.08)] text-accent shadow-[0_22px_48px_-24px_rgba(15,23,42,0.55)] transition-all hover:bg-[color:rgb(var(--accent)/0.12)] focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgb(var(--accent)/0.32)] disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <ArrowDownIcon />
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
+                  ) : null}
 
-                <LibraryCard
-                  {...restItem}
-                  isActive={isActive}
-                  isDimmed={shouldDim}
-                  data-library-carousel-item={item.id}
-                  className={`${combinedClassName} shrink-0 lg:shrink lg:mx-auto`}
-                  onClick={(event) => {
-                    onSelectItem?.(item.id);
-                    itemOnClick?.(event);
-                  }}
-                />
-              </div>
-            );
-          })
-        ) : (
-          <div className="flex h-[180px] w-[220px] max-w-[220px] shrink-0 snap-start items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg sm:w-[252px] sm:max-w-[252px] lg:mx-auto lg:w-full lg:max-w-[calc(100%-1rem)]">
-            Nessuna card
-          </div>
-        )}
+                  <LibraryCard
+                    {...restItem}
+                    isActive={isActive}
+                    isDimmed={shouldDim}
+                    data-library-carousel-item={item.id}
+                    className={`${combinedClassName} shrink-0 lg:shrink lg:mx-auto`}
+                    onClick={(event) => {
+                      onSelectItem?.(item.id);
+                      itemOnClick?.(event);
+                    }}
+                  />
+                </div>
+              );
+            })
+          ) : (
+            <div className="flex h-[180px] w-[220px] max-w-[220px] shrink-0 snap-start items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg sm:w-[252px] sm:max-w-[252px] lg:mx-auto lg:w-full lg:max-w-[calc(100%-1rem)]">
+              Nessuna card
+            </div>
+          )}
 
-        {onAddItem ? (
-          <LibraryCard
-            key="library-add-card"
-            label="Nuova immagine"
-            aria-label="Aggiungi una nuova card libreria"
-            isActive={false}
-            isDimmed={false}
-            data-library-carousel-item="add"
-            className="w-[220px] max-w-[220px] shrink-0 snap-start sm:w-[252px] sm:max-w-[252px] lg:mx-auto lg:w-full lg:max-w-[calc(100%-1rem)]"
-            hideLabel
-            visualWrapperClassName="h-32 w-full overflow-visible bg-transparent"
-            onClick={() => {
-              onAddItem?.();
-            }}
-            visual={
-              <span className="flex h-full w-full items-center justify-center">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_22px_48px_-34px_rgba(15,23,42,0.45)]">
-                  <PlusIcon className="h-5 w-5 text-accent" />
+          {onAddItem ? (
+            <LibraryCard
+              key="library-add-card"
+              label="Nuova immagine"
+              aria-label="Aggiungi una nuova card libreria"
+              isActive={false}
+              isDimmed={false}
+              data-library-carousel-item="add"
+              className="w-[220px] max-w-[220px] shrink-0 snap-start sm:w-[252px] sm:max-w-[252px] lg:mx-auto lg:w-full lg:max-w-[calc(100%-1rem)]"
+              hideLabel
+              visualWrapperClassName="h-32 w-full overflow-visible bg-transparent"
+              onClick={() => {
+                onAddItem?.();
+              }}
+              visual={
+                <span className="flex h-full w-full items-center justify-center">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_22px_48px_-34px_rgba(15,23,42,0.45)]">
+                    <PlusIcon className="h-5 w-5 text-accent" />
+                  </span>
                 </span>
-              </span>
-            }
-          />
-        ) : null}
+              }
+            />
+          ) : null}
+        </div>
       </div>
     </div>
   );
