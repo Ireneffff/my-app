@@ -29,6 +29,7 @@ import {
   loadAdjacentTradeId,
   loadTradeById,
   REGISTERED_TRADES_UPDATED_EVENT,
+  LAST_OPENED_TRADE_STORAGE_KEY,
   type StoredLibraryItem,
   type StoredTrade,
 } from "@/lib/tradesStorage";
@@ -364,6 +365,22 @@ export default function RegisteredTradePage() {
   }, [refreshTrade]);
   const currentTrade = state.trade ?? null;
   const currentTradeId = currentTrade?.id ?? null;
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (state.status !== "ready" || !currentTradeId) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(LAST_OPENED_TRADE_STORAGE_KEY, currentTradeId);
+    } catch {
+      // Ignore persistence failures (e.g., storage disabled)
+    }
+  }, [state.status, currentTradeId]);
 
   useEffect(() => {
     let isCancelled = false;

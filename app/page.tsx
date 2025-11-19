@@ -7,6 +7,7 @@ import Card from "@/components/ui/Card";
 import {
   loadTrades,
   REGISTERED_TRADES_UPDATED_EVENT,
+  LAST_OPENED_TRADE_STORAGE_KEY,
   type StoredTrade,
 } from "@/lib/tradesStorage";
 
@@ -62,6 +63,7 @@ export default function Home() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [trades, setTrades] = useState<StoredTrade[]>([]);
   const [tradeFilter, setTradeFilter] = useState<"all" | "real" | "paper">("all");
+  const [highlightedTradeId, setHighlightedTradeId] = useState<string | null>(null);
 
   const refreshTrades = useCallback(async () => {
     const nextTrades = await loadTrades();
@@ -87,6 +89,35 @@ export default function Home() {
       window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleUpdate);
     };
   }, [refreshTrades]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    let highlightTimeout: number | null = null;
+
+    try {
+      const lastOpenedId = window.localStorage.getItem(LAST_OPENED_TRADE_STORAGE_KEY);
+
+      if (lastOpenedId) {
+        setHighlightedTradeId(lastOpenedId);
+        window.localStorage.removeItem(LAST_OPENED_TRADE_STORAGE_KEY);
+
+        highlightTimeout = window.setTimeout(() => {
+          setHighlightedTradeId((current) => (current === lastOpenedId ? null : current));
+        }, 2200);
+      }
+    } catch {
+      // Ignore storage access issues
+    }
+
+    return () => {
+      if (highlightTimeout !== null) {
+        window.clearTimeout(highlightTimeout);
+      }
+    };
+  }, []);
 
   const monthDays = useMemo(() => getCalendarDays(currentDate), [currentDate]);
   const todayKey = new Date().toDateString();
@@ -341,12 +372,18 @@ export default function Home() {
                     })
                     .filter((description): description is string => Boolean(description)) ?? [];
                 const shouldRenderOutcomes = Boolean(outcomeLabel) || takeProfitDescriptions.length > 0;
+                const cardClasses = [
+                  "group relative flex flex-col gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-4 py-3 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)] md:flex-row md:items-center md:gap-5 md:px-5 md:py-4",
+                  highlightedTradeId === trade.id ? "last-opened-trade-card" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ");
 
                 return (
                   <li key={trade.id}>
                     <Link
                       href={`/registered-trades/${trade.id}`}
-                      className="group relative flex flex-col gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-4 py-3 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)] md:flex-row md:items-center md:gap-5 md:px-5 md:py-4"
+                      className={cardClasses}
                     >
                       {trade.isPaperTrade ? (
                         <span

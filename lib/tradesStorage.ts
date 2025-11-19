@@ -97,6 +97,7 @@ export type RemovedLibraryItem = {
 };
 
 export const REGISTERED_TRADES_UPDATED_EVENT = "registered-trades-changed";
+export const LAST_OPENED_TRADE_STORAGE_KEY = "last-opened-trade-id";
 
 const SYMBOL_FLAGS: Record<string, string> = {
   EURUSD: "🇪🇺 🇺🇸",
