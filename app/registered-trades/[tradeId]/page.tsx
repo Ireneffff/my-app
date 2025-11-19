@@ -16,8 +16,6 @@ import {
 import {
   Circle,
   CheckCircle,
-  ChevronLeft,
-  ChevronRight,
   Plus,
   X,
 } from "lucide-react";
@@ -26,9 +24,9 @@ import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
 import {
   deleteTrade,
-  loadAdjacentTradeId,
   loadTradeById,
   REGISTERED_TRADES_UPDATED_EVENT,
+  LAST_OPENED_TRADE_STORAGE_KEY,
   type StoredLibraryItem,
   type StoredTrade,
 } from "@/lib/tradesStorage";
@@ -208,10 +206,6 @@ export default function RegisteredTradePage() {
   const [isTradeContentVisible, setIsTradeContentVisible] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [previewAspectRatio, setPreviewAspectRatio] = useState<number | null>(null);
-  const [adjacentTradeIds, setAdjacentTradeIds] = useState<{
-    previous: string | null;
-    next: string | null;
-  }>({ previous: null, next: null });
   const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const previewSwipeStateRef = useRef<{
     x: number;
@@ -366,73 +360,20 @@ export default function RegisteredTradePage() {
   const currentTradeId = currentTrade?.id ?? null;
 
   useEffect(() => {
-    let isCancelled = false;
-
-    const loadNeighbors = async () => {
-      if (!currentTrade) {
-        if (!isCancelled) {
-          setAdjacentTradeIds({ previous: null, next: null });
-        }
-        return;
-      }
-
-      const [previous, next] = await Promise.all([
-        loadAdjacentTradeId(
-          {
-            id: currentTrade.id,
-            createdAt: currentTrade.createdAt,
-          },
-          "previous",
-        ),
-        loadAdjacentTradeId(
-          {
-            id: currentTrade.id,
-            createdAt: currentTrade.createdAt,
-          },
-          "next",
-        ),
-      ]);
-
-      if (!isCancelled) {
-        setAdjacentTradeIds({ previous, next });
-      }
-    };
-
-    loadNeighbors();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [currentTrade]);
-
-  const previousTradeId = adjacentTradeIds.previous;
-  const nextTradeId = adjacentTradeIds.next;
-
-  const goToTrade = useCallback(
-    (targetTradeId: string) => {
-      if (!targetTradeId || targetTradeId === currentTradeId) {
-        return;
-      }
-
-      router.push(`/registered-trades/${targetTradeId}`);
-    },
-    [router, currentTradeId],
-  );
-
-  const handleGoToPreviousTrade = useCallback(() => {
-    if (previousTradeId) {
-      goToTrade(previousTradeId);
+    if (typeof window === "undefined") {
+      return;
     }
-  }, [goToTrade, previousTradeId]);
 
-  const handleGoToNextTrade = useCallback(() => {
-    if (nextTradeId) {
-      goToTrade(nextTradeId);
+    if (state.status !== "ready" || !currentTradeId) {
+      return;
     }
-  }, [goToTrade, nextTradeId]);
 
-  const canGoToPreviousTrade = previousTradeId !== null;
-  const canGoToNextTrade = nextTradeId !== null;
+    try {
+      window.localStorage.setItem(LAST_OPENED_TRADE_STORAGE_KEY, currentTradeId);
+    } catch {
+      // Ignore persistence failures (e.g., storage disabled)
+    }
+  }, [state.status, currentTradeId]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -617,6 +558,18 @@ export default function RegisteredTradePage() {
       null,
     [libraryItems, selectedLibraryItemId],
   );
+
+  const selectedLibraryTitle = useMemo(() => {
+    if (!selectedLibraryItem) {
+      return "";
+    }
+
+    const normalizedOrderIndex = normalizeLibraryOrderIndex(selectedLibraryItem.orderIndex);
+    const fallbackIndex = libraryItems.findIndex((item) => item.id === selectedLibraryItem.id);
+    const resolvedOrderIndex = normalizedOrderIndex ?? (fallbackIndex === -1 ? 0 : fallbackIndex);
+
+    return getLibraryCardTitle(resolvedOrderIndex);
+  }, [libraryItems, selectedLibraryItem]);
 
   const selectedImageData = selectedLibraryItem?.imageData ?? null;
   const selectedLibraryNote = selectedLibraryItem?.notes ?? "";
@@ -898,6 +851,11 @@ export default function RegisteredTradePage() {
       className="flex w-full flex-col"
       style={{ gap: "0.5cm" }}
     >
+      {selectedLibraryTitle ? (
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg">
+          {selectedLibraryTitle}
+        </p>
+      ) : null}
       <div
         ref={previewContainerRef}
         className="w-full lg:max-w-screen-lg"
@@ -1683,18 +1641,6 @@ export default function RegisteredTradePage() {
 
             {activeTab === "main" ? (
               <div className="relative mx-auto w-full max-w-3xl sm:max-w-4xl">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex justify-end">
-                  <button
-                    type="button"
-                    className="pointer-events-auto sticky top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 -translate-x-[calc(100%+4rem)] items-center justify-center rounded-full bg-[color:rgba(255,255,255,0.6)] p-0 text-[color:rgb(var(--fg))] shadow-[0_18px_36px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-colors duration-200 ease-out hover:bg-[color:rgba(255,255,255,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:pointer-events-none disabled:opacity-40"
-                    onClick={handleGoToPreviousTrade}
-                    disabled={!canGoToPreviousTrade}
-                  >
-                    <ChevronLeft aria-hidden="true" className="h-4 w-4" />
-                    <span className="sr-only">Vai al trade precedente</span>
-                  </button>
-                </div>
-
                 <div
                   className={`transform transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${
                     isTradeContentVisible
@@ -1703,18 +1649,6 @@ export default function RegisteredTradePage() {
                   }`}
                 >
                   {tradeDetailsPanel}
-                </div>
-
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex justify-start">
-                  <button
-                    type="button"
-                    className="pointer-events-auto sticky top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 translate-x-[calc(100%+4rem)] items-center justify-center rounded-full bg-[color:rgba(255,255,255,0.6)] p-0 text-[color:rgb(var(--fg))] shadow-[0_18px_36px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-colors duration-200 ease-out hover:bg-[color:rgba(255,255,255,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:pointer-events-none disabled:opacity-40"
-                    onClick={handleGoToNextTrade}
-                    disabled={!canGoToNextTrade}
-                  >
-                    <ChevronRight aria-hidden="true" className="h-4 w-4" />
-                    <span className="sr-only">Vai al trade successivo</span>
-                  </button>
                 </div>
               </div>
             ) : (
