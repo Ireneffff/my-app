@@ -8,6 +8,7 @@ import {
   loadTrades,
   REGISTERED_TRADES_UPDATED_EVENT,
   LAST_OPENED_TRADE_STORAGE_KEY,
+  LAST_HOME_SCROLL_POSITION_STORAGE_KEY,
   type StoredTrade,
 } from "@/lib/tradesStorage";
 
@@ -64,6 +65,20 @@ export default function Home() {
   const [trades, setTrades] = useState<StoredTrade[]>([]);
   const [tradeFilter, setTradeFilter] = useState<"all" | "real" | "paper">("all");
   const [highlightedTradeId, setHighlightedTradeId] = useState<string | null>(null);
+  const persistScrollPosition = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        LAST_HOME_SCROLL_POSITION_STORAGE_KEY,
+        String(window.scrollY ?? window.pageYOffset ?? 0),
+      );
+    } catch {
+      // Ignore storage failures
+    }
+  }, []);
 
   const refreshTrades = useCallback(async () => {
     const nextTrades = await loadTrades();
@@ -89,6 +104,37 @@ export default function Home() {
       window.removeEventListener(REGISTERED_TRADES_UPDATED_EVENT, handleUpdate);
     };
   }, [refreshTrades]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    let pendingFrame: number | null = null;
+
+    try {
+      const storedValue = window.localStorage.getItem(LAST_HOME_SCROLL_POSITION_STORAGE_KEY);
+
+      if (storedValue) {
+        window.localStorage.removeItem(LAST_HOME_SCROLL_POSITION_STORAGE_KEY);
+        const parsed = Number(storedValue);
+
+        if (Number.isFinite(parsed)) {
+          pendingFrame = window.requestAnimationFrame(() => {
+            window.scrollTo({ top: parsed });
+          });
+        }
+      }
+    } catch {
+      // Ignore storage access issues
+    }
+
+    return () => {
+      if (pendingFrame !== null) {
+        window.cancelAnimationFrame(pendingFrame);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -384,6 +430,7 @@ export default function Home() {
                     <Link
                       href={`/registered-trades/${trade.id}`}
                       className={cardClasses}
+                      onClick={persistScrollPosition}
                     >
                       {trade.isPaperTrade ? (
                         <span
