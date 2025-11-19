@@ -888,6 +888,18 @@ function NewTradePageContent() {
     [libraryItems, selectedLibraryItemId],
   );
 
+  const selectedLibraryTitle = useMemo(() => {
+    if (!selectedLibraryItem) {
+      return "";
+    }
+
+    const normalizedOrderIndex = normalizeOrderIndexValue(selectedLibraryItem.orderIndex);
+    const fallbackIndex = libraryItems.findIndex((item) => item.id === selectedLibraryItem.id);
+    const resolvedOrderIndex = normalizedOrderIndex ?? (fallbackIndex === -1 ? 0 : fallbackIndex);
+
+    return getLibraryCardTitle(resolvedOrderIndex);
+  }, [libraryItems, selectedLibraryItem]);
+
   const selectedImageData = selectedLibraryItem?.imageData ?? null;
   const selectedLibraryNote = selectedLibraryItem?.notes ?? "";
 
@@ -1900,6 +1912,11 @@ function NewTradePageContent() {
         className="flex w-full flex-col"
         style={{ gap: "0.5cm" }}
       >
+        {selectedLibraryTitle ? (
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg">
+            {selectedLibraryTitle}
+          </p>
+        ) : null}
         <div
           ref={previewContainerRef}
         className="w-full lg:max-w-screen-lg"
