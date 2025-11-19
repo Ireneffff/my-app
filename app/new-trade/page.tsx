@@ -1914,9 +1914,9 @@ function NewTradePageContent() {
         style={{ gap: "0.5cm" }}
       >
         {selectedLibraryTitle ? (
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg">
+          <h3 className="text-2xl font-semibold leading-tight text-foreground">
             {selectedLibraryTitle}
-          </p>
+          </h3>
         ) : null}
         <div
           ref={previewContainerRef}
