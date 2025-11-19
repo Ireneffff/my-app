@@ -239,7 +239,7 @@ a {
 }
 
 .last-opened-trade-card {
-  animation: last-opened-trade-scale 1.6s var(--easing-standard);
+  animation: last-opened-trade-scale 2.6s var(--easing-standard);
 }
 
 .last-opened-trade-card::after {
@@ -253,7 +253,7 @@ a {
   box-shadow:
     0 0 24px rgb(var(--accent) / 0.45),
     0 0 0 0 rgb(var(--accent) / 0.3);
-  animation: last-opened-trade-glow 1.6s ease-out;
+  animation: last-opened-trade-glow 2.6s ease-out;
 }
 
 @keyframes last-opened-trade-scale {
