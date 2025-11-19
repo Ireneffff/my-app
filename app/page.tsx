@@ -65,6 +65,8 @@ export default function Home() {
   const [trades, setTrades] = useState<StoredTrade[]>([]);
   const [tradeFilter, setTradeFilter] = useState<"all" | "real" | "paper">("all");
   const [highlightedTradeId, setHighlightedTradeId] = useState<string | null>(null);
+  const [pendingScrollTop, setPendingScrollTop] = useState<number | null>(null);
+  const [hasLoadedTrades, setHasLoadedTrades] = useState(false);
   const persistScrollPosition = useCallback(() => {
     if (typeof window === "undefined") {
       return;
@@ -83,6 +85,7 @@ export default function Home() {
   const refreshTrades = useCallback(async () => {
     const nextTrades = await loadTrades();
     setTrades(nextTrades);
+    setHasLoadedTrades(true);
   }, []);
 
   useEffect(() => {
@@ -110,8 +113,6 @@ export default function Home() {
       return;
     }
 
-    let pendingFrame: number | null = null;
-
     try {
       const storedValue = window.localStorage.getItem(LAST_HOME_SCROLL_POSITION_STORAGE_KEY);
 
@@ -120,21 +121,50 @@ export default function Home() {
         const parsed = Number(storedValue);
 
         if (Number.isFinite(parsed)) {
-          pendingFrame = window.requestAnimationFrame(() => {
-            window.scrollTo({ top: parsed });
-          });
+          setPendingScrollTop(parsed);
         }
       }
     } catch {
       // Ignore storage access issues
     }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (pendingScrollTop === null || !hasLoadedTrades) {
+      return;
+    }
+
+    let frameA: number | null = null;
+    let frameB: number | null = null;
+    let timeout: number | null = null;
+
+    frameA = window.requestAnimationFrame(() => {
+      frameB = window.requestAnimationFrame(() => {
+        timeout = window.setTimeout(() => {
+          window.scrollTo({ top: pendingScrollTop, behavior: "auto" });
+          setPendingScrollTop(null);
+        }, 0);
+      });
+    });
 
     return () => {
-      if (pendingFrame !== null) {
-        window.cancelAnimationFrame(pendingFrame);
+      if (frameA !== null) {
+        window.cancelAnimationFrame(frameA);
+      }
+
+      if (frameB !== null) {
+        window.cancelAnimationFrame(frameB);
+      }
+
+      if (timeout !== null) {
+        window.clearTimeout(timeout);
       }
     };
-  }, []);
+  }, [hasLoadedTrades, pendingScrollTop]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
