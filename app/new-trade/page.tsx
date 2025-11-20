@@ -890,6 +890,19 @@ function NewTradePageContent() {
 
   const selectedImageData = selectedLibraryItem?.imageData ?? null;
   const selectedLibraryNote = selectedLibraryItem?.notes ?? "";
+  const selectedLibraryTitle = useMemo(() => {
+    if (!selectedLibraryItem) {
+      return "";
+    }
+
+    const normalizedOrderIndex = normalizeOrderIndexValue(selectedLibraryItem.orderIndex);
+    if (normalizedOrderIndex !== null) {
+      return getLibraryCardTitle(normalizedOrderIndex);
+    }
+
+    const fallbackIndex = libraryItems.findIndex((item) => item.id === selectedLibraryItem.id);
+    return getLibraryCardTitle(fallbackIndex === -1 ? 0 : fallbackIndex);
+  }, [libraryItems, selectedLibraryItem]);
 
   const canNavigateLibrary = libraryItems.length > 1;
 
@@ -1900,9 +1913,14 @@ function NewTradePageContent() {
         className="flex w-full flex-col"
         style={{ gap: "0.5cm" }}
       >
+        {selectedLibraryTitle ? (
+          <h3 className="text-2xl font-semibold leading-tight text-foreground">
+            {selectedLibraryTitle}
+          </h3>
+        ) : null}
         <div
           ref={previewContainerRef}
-        className="w-full lg:max-w-screen-lg"
+          className="w-full lg:max-w-screen-lg"
           onWheel={handlePreviewWheel}
           onTouchStart={handlePreviewTouchStart}
           onTouchMove={handlePreviewTouchMove}
@@ -1925,7 +1943,7 @@ function NewTradePageContent() {
           >
             <span
               data-library-preview-image
-              className="relative block aspect-[3/2] w-full overflow-hidden rounded-[4px] border-2"
+              className="relative block aspect-[16/9] w-full overflow-hidden rounded-[4px] border-2"
               style={{ borderColor: "color-mix(in srgb, rgba(var(--border-strong)) 60%, transparent)" }}
             >
               {selectedImageData ? (
