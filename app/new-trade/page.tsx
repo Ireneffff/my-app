@@ -416,11 +416,39 @@ function NewTradePageContent() {
   const [recentlyAddedColumnIndex, setRecentlyAddedColumnIndex] = useState<number | null>(null);
   const [lotSizeTargets, setLotSizeTargets] = useState<string[]>([""]);
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
+  const [displayedTab, setDisplayedTab] = useState<"main" | "library">("main");
+  const [isTabFadingOut, setIsTabFadingOut] = useState(false);
+  const tabTransitionTimeoutRef = useRef<number | null>(null);
+  const hasInitializedTabs = useRef(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() =>
     getStartOfMonth(initialSelectedDate),
   );
   const [, startNavigation] = useTransition();
+
+  useEffect(() => {
+    if (!hasInitializedTabs.current) {
+      hasInitializedTabs.current = true;
+      return;
+    }
+
+    if (tabTransitionTimeoutRef.current) {
+      window.clearTimeout(tabTransitionTimeoutRef.current);
+    }
+
+    setIsTabFadingOut(true);
+
+    tabTransitionTimeoutRef.current = window.setTimeout(() => {
+      setDisplayedTab(activeTab);
+      setIsTabFadingOut(false);
+    }, 170);
+
+    return () => {
+      if (tabTransitionTimeoutRef.current) {
+        window.clearTimeout(tabTransitionTimeoutRef.current);
+      }
+    };
+  }, [activeTab]);
 
   const targetColumnCount = useMemo(
     () =>
@@ -890,6 +918,19 @@ function NewTradePageContent() {
 
   const selectedImageData = selectedLibraryItem?.imageData ?? null;
   const selectedLibraryNote = selectedLibraryItem?.notes ?? "";
+  const selectedLibraryTitle = useMemo(() => {
+    if (!selectedLibraryItem) {
+      return "";
+    }
+
+    const normalizedOrderIndex = normalizeOrderIndexValue(selectedLibraryItem.orderIndex);
+    if (normalizedOrderIndex !== null) {
+      return getLibraryCardTitle(normalizedOrderIndex);
+    }
+
+    const fallbackIndex = libraryItems.findIndex((item) => item.id === selectedLibraryItem.id);
+    return getLibraryCardTitle(fallbackIndex === -1 ? 0 : fallbackIndex);
+  }, [libraryItems, selectedLibraryItem]);
 
   const canNavigateLibrary = libraryItems.length > 1;
 
@@ -1900,9 +1941,14 @@ function NewTradePageContent() {
         className="flex w-full flex-col"
         style={{ gap: "0.5cm" }}
       >
+        {selectedLibraryTitle ? (
+          <h3 className="text-2xl font-semibold leading-tight text-foreground">
+            {selectedLibraryTitle}
+          </h3>
+        ) : null}
         <div
           ref={previewContainerRef}
-        className="w-full lg:max-w-screen-lg"
+          className="w-full lg:max-w-screen-lg"
           onWheel={handlePreviewWheel}
           onTouchStart={handlePreviewTouchStart}
           onTouchMove={handlePreviewTouchMove}
@@ -1925,7 +1971,7 @@ function NewTradePageContent() {
           >
             <span
               data-library-preview-image
-              className="relative block aspect-[3/2] w-full overflow-hidden rounded-[4px] border-2"
+              className="relative block aspect-[16/9] w-full overflow-hidden rounded-[4px] border-2"
               style={{ borderColor: "color-mix(in srgb, rgba(var(--border-strong)) 60%, transparent)" }}
             >
               {selectedImageData ? (
@@ -1976,7 +2022,7 @@ function NewTradePageContent() {
   );
 
   const tabContent =
-    activeTab === "main"
+    displayedTab === "main"
       ? (
           <div className="mx-auto w-full max-w-3xl sm:max-w-4xl">
             <div className="flex w-full flex-col gap-8">
@@ -3118,15 +3164,19 @@ function NewTradePageContent() {
           <LibrarySection
             preview={libraryPreview}
             notes={libraryNotesField}
-            actions={libraryCards}
-            selectedActionId={selectedLibraryItemId}
-            onSelectAction={setSelectedLibraryItemId}
-            onAddAction={handleAddLibraryItem}
-            onRemoveAction={handleRemoveLibraryItem}
-            onMoveAction={handleMoveLibraryItem}
-            errorMessage={imageError}
-          />
-        );
+          actions={libraryCards}
+          selectedActionId={selectedLibraryItemId}
+          onSelectAction={setSelectedLibraryItemId}
+          onAddAction={handleAddLibraryItem}
+          onRemoveAction={handleRemoveLibraryItem}
+          onMoveAction={handleMoveLibraryItem}
+          errorMessage={imageError}
+        />
+      );
+
+  const tabPanelClassName = `tab-transition-panel ${
+    isTabFadingOut ? "tab-transition-panel--exiting" : "tab-transition-panel--active"
+  }`;
 
   const handleSaveTrade = useCallback(async () => {
     if (isSaving || isLoadingTrade) {
@@ -3347,7 +3397,7 @@ function NewTradePageContent() {
           </div>
         </div>
 
-        {tabContent}
+        <div className={tabPanelClassName}>{tabContent}</div>
       </div>
       {isCalendarOpen ? (
         <div
