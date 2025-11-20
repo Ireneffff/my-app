@@ -36,7 +36,7 @@ export function LibraryCard({
       disabled={disabled}
       aria-pressed={isActive}
       data-active={isActive ? "true" : "false"}
-      className={`group relative flex min-w-[160px] flex-col items-center gap-3.5 rounded-xl border border-border/70 bg-gradient-to-b from-white via-white to-[rgb(var(--subtle))] px-4 pb-4 pt-4 text-center text-xs font-semibold text-fg shadow-[0_18px_48px_-28px_rgba(15,23,42,0.28)] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:pointer-events-none disabled:opacity-50 sm:min-w-[180px] transform-gpu will-change-transform ${
+      className={`group relative flex min-w-[160px] flex-col items-center gap-3.5 rounded-xl border border-[color:rgb(148_163_184/0.58)] bg-gradient-to-b from-white via-white to-[rgb(var(--subtle))] px-4 pb-4 pt-4 text-center text-xs font-semibold text-fg shadow-[0_18px_48px_-28px_rgba(15,23,42,0.28)] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:pointer-events-none disabled:opacity-50 sm:min-w-[180px] transform-gpu will-change-transform ${
         isActive
           ? "z-30 scale-[1.04] bg-white shadow-[0_24px_64px_-32px_rgba(15,23,42,0.32)]"
           : "hover:-translate-y-0.5 hover:shadow-[0_20px_60px_-36px_rgba(15,23,42,0.26)] hover:brightness-105"
