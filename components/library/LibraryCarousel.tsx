@@ -173,7 +173,7 @@ export function LibraryCarousel({
             );
           })
         ) : (
-          <div className="flex h-[180px] w-[220px] max-w-[220px] shrink-0 snap-start items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg sm:w-[252px] sm:max-w-[252px] lg:mx-auto lg:w-full lg:max-w-[calc(100%-1rem)]">
+          <div className="flex h-[180px] w-[220px] max-w-[220px] shrink-0 snap-start items-center justify-center rounded-xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg sm:w-[252px] sm:max-w-[252px] lg:mx-auto lg:w-full lg:max-w-[calc(100%-1rem)]">
             Nessuna card
           </div>
         )}

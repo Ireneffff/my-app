@@ -1971,7 +1971,7 @@ function NewTradePageContent() {
           >
             <span
               data-library-preview-image
-              className="relative block aspect-[16/9] w-full overflow-hidden rounded-xl border border-[color:rgb(148_163_184/0.58)]"
+              className="relative block aspect-[16/9] w-full overflow-hidden rounded-lg border border-[color:rgb(148_163_184/0.58)]"
             >
               {selectedImageData ? (
                 <Image
