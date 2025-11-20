@@ -16,8 +16,6 @@ import {
 import {
   Circle,
   CheckCircle,
-  ChevronLeft,
-  ChevronRight,
   Plus,
   X,
 } from "lucide-react";
@@ -26,9 +24,9 @@ import { LibrarySection } from "@/components/library/LibrarySection";
 import { type LibraryCarouselItem } from "@/components/library/LibraryCarousel";
 import {
   deleteTrade,
-  loadAdjacentTradeId,
   loadTradeById,
   REGISTERED_TRADES_UPDATED_EVENT,
+  LAST_OPENED_TRADE_STORAGE_KEY,
   type StoredLibraryItem,
   type StoredTrade,
 } from "@/lib/tradesStorage";
@@ -201,6 +199,10 @@ export default function RegisteredTradePage() {
 
   const [state, setState] = useState<TradeState>({ status: "loading", trade: null });
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
+  const [displayedTab, setDisplayedTab] = useState<"main" | "library">("main");
+  const [isTabFadingOut, setIsTabFadingOut] = useState(false);
+  const tabTransitionTimeoutRef = useRef<number | null>(null);
+  const hasInitializedTabs = useRef(false);
   const [libraryItems, setLibraryItems] = useState<StoredLibraryItem[]>(() => [
     createFallbackLibraryItem(),
   ]);
@@ -208,10 +210,6 @@ export default function RegisteredTradePage() {
   const [isTradeContentVisible, setIsTradeContentVisible] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [previewAspectRatio, setPreviewAspectRatio] = useState<number | null>(null);
-  const [adjacentTradeIds, setAdjacentTradeIds] = useState<{
-    previous: string | null;
-    next: string | null;
-  }>({ previous: null, next: null });
   const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const previewSwipeStateRef = useRef<{
     x: number;
@@ -233,6 +231,30 @@ export default function RegisteredTradePage() {
     });
     scrollUnlockTimeoutsRef.current.clear();
   }, []);
+
+  useEffect(() => {
+    if (!hasInitializedTabs.current) {
+      hasInitializedTabs.current = true;
+      return;
+    }
+
+    if (tabTransitionTimeoutRef.current) {
+      window.clearTimeout(tabTransitionTimeoutRef.current);
+    }
+
+    setIsTabFadingOut(true);
+
+    tabTransitionTimeoutRef.current = window.setTimeout(() => {
+      setDisplayedTab(activeTab);
+      setIsTabFadingOut(false);
+    }, 170);
+
+    return () => {
+      if (tabTransitionTimeoutRef.current) {
+        window.clearTimeout(tabTransitionTimeoutRef.current);
+      }
+    };
+  }, [activeTab]);
 
   useEffect(() => {
     if (state.status !== "ready") {
@@ -366,73 +388,20 @@ export default function RegisteredTradePage() {
   const currentTradeId = currentTrade?.id ?? null;
 
   useEffect(() => {
-    let isCancelled = false;
-
-    const loadNeighbors = async () => {
-      if (!currentTrade) {
-        if (!isCancelled) {
-          setAdjacentTradeIds({ previous: null, next: null });
-        }
-        return;
-      }
-
-      const [previous, next] = await Promise.all([
-        loadAdjacentTradeId(
-          {
-            id: currentTrade.id,
-            createdAt: currentTrade.createdAt,
-          },
-          "previous",
-        ),
-        loadAdjacentTradeId(
-          {
-            id: currentTrade.id,
-            createdAt: currentTrade.createdAt,
-          },
-          "next",
-        ),
-      ]);
-
-      if (!isCancelled) {
-        setAdjacentTradeIds({ previous, next });
-      }
-    };
-
-    loadNeighbors();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [currentTrade]);
-
-  const previousTradeId = adjacentTradeIds.previous;
-  const nextTradeId = adjacentTradeIds.next;
-
-  const goToTrade = useCallback(
-    (targetTradeId: string) => {
-      if (!targetTradeId || targetTradeId === currentTradeId) {
-        return;
-      }
-
-      router.push(`/registered-trades/${targetTradeId}`);
-    },
-    [router, currentTradeId],
-  );
-
-  const handleGoToPreviousTrade = useCallback(() => {
-    if (previousTradeId) {
-      goToTrade(previousTradeId);
+    if (typeof window === "undefined") {
+      return;
     }
-  }, [goToTrade, previousTradeId]);
 
-  const handleGoToNextTrade = useCallback(() => {
-    if (nextTradeId) {
-      goToTrade(nextTradeId);
+    if (state.status !== "ready" || !currentTradeId) {
+      return;
     }
-  }, [goToTrade, nextTradeId]);
 
-  const canGoToPreviousTrade = previousTradeId !== null;
-  const canGoToNextTrade = nextTradeId !== null;
+    try {
+      window.localStorage.setItem(LAST_OPENED_TRADE_STORAGE_KEY, currentTradeId);
+    } catch {
+      // Ignore persistence failures (e.g., storage disabled)
+    }
+  }, [state.status, currentTradeId]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -620,6 +589,19 @@ export default function RegisteredTradePage() {
 
   const selectedImageData = selectedLibraryItem?.imageData ?? null;
   const selectedLibraryNote = selectedLibraryItem?.notes ?? "";
+  const selectedLibraryTitle = useMemo(() => {
+    if (!selectedLibraryItem) {
+      return "";
+    }
+
+    const normalizedIndex = normalizeLibraryOrderIndex(selectedLibraryItem.orderIndex);
+    if (normalizedIndex !== null) {
+      return getLibraryCardTitle(normalizedIndex);
+    }
+
+    const fallbackIndex = libraryItems.findIndex((item) => item.id === selectedLibraryItem.id);
+    return getLibraryCardTitle(fallbackIndex === -1 ? 0 : fallbackIndex);
+  }, [libraryItems, selectedLibraryItem]);
 
   const canNavigateLibrary = libraryItems.length > 1;
 
@@ -898,6 +880,11 @@ export default function RegisteredTradePage() {
       className="flex w-full flex-col"
       style={{ gap: "0.5cm" }}
     >
+      {selectedLibraryTitle ? (
+        <h3 className="text-2xl font-semibold leading-tight text-foreground">
+          {selectedLibraryTitle}
+        </h3>
+      ) : null}
       <div
         ref={previewContainerRef}
         className="w-full lg:max-w-screen-lg"
@@ -909,7 +896,7 @@ export default function RegisteredTradePage() {
       >
         <span
           data-library-preview-image
-          className={`relative block aspect-[3/2] w-full overflow-hidden rounded-[4px] border-2 ${
+          className={`relative block aspect-[16/9] w-full overflow-hidden rounded-[4px] border-2 ${
             selectedImageData ? "cursor-zoom-in" : ""
           }`}
           style={{ borderColor: "color-mix(in srgb, rgba(var(--border-strong)) 60%, transparent)" }}
@@ -988,6 +975,10 @@ export default function RegisteredTradePage() {
       />
     </div>
   );
+
+  const tabPanelClassName = `tab-transition-panel ${
+    isTabFadingOut ? "tab-transition-panel--exiting" : "tab-transition-panel--active"
+  }`;
 
   if (state.status === "loading") {
     return (
@@ -1681,52 +1672,30 @@ export default function RegisteredTradePage() {
               </div>
             </nav>
 
-            {activeTab === "main" ? (
-              <div className="relative mx-auto w-full max-w-3xl sm:max-w-4xl">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex justify-end">
-                  <button
-                    type="button"
-                    className="pointer-events-auto sticky top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 -translate-x-[calc(100%+4rem)] items-center justify-center rounded-full bg-[color:rgba(255,255,255,0.6)] p-0 text-[color:rgb(var(--fg))] shadow-[0_18px_36px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-colors duration-200 ease-out hover:bg-[color:rgba(255,255,255,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:pointer-events-none disabled:opacity-40"
-                    onClick={handleGoToPreviousTrade}
-                    disabled={!canGoToPreviousTrade}
+            <div className={tabPanelClassName}>
+              {displayedTab === "main" ? (
+                <div className="relative mx-auto w-full max-w-3xl sm:max-w-4xl">
+                  <div
+                    className={`transform transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${
+                      isTradeContentVisible
+                        ? "translate-y-0 opacity-100"
+                        : "translate-y-4 opacity-0"
+                    }`}
                   >
-                    <ChevronLeft aria-hidden="true" className="h-4 w-4" />
-                    <span className="sr-only">Vai al trade precedente</span>
-                  </button>
+                    {tradeDetailsPanel}
+                  </div>
                 </div>
-
-                <div
-                  className={`transform transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${
-                    isTradeContentVisible
-                      ? "translate-y-0 opacity-100"
-                      : "translate-y-4 opacity-0"
-                  }`}
-                >
-                  {tradeDetailsPanel}
-                </div>
-
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex justify-start">
-                  <button
-                    type="button"
-                    className="pointer-events-auto sticky top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 translate-x-[calc(100%+4rem)] items-center justify-center rounded-full bg-[color:rgba(255,255,255,0.6)] p-0 text-[color:rgb(var(--fg))] shadow-[0_18px_36px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-colors duration-200 ease-out hover:bg-[color:rgba(255,255,255,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:rgba(99,102,241,0.35)] disabled:pointer-events-none disabled:opacity-40"
-                    onClick={handleGoToNextTrade}
-                    disabled={!canGoToNextTrade}
-                  >
-                    <ChevronRight aria-hidden="true" className="h-4 w-4" />
-                    <span className="sr-only">Vai al trade successivo</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <LibrarySection
-                preview={libraryPreview}
-                notes={libraryNotesField}
-                actions={libraryCards}
-                selectedActionId={selectedLibraryItemId}
-                onSelectAction={setSelectedLibraryItemId}
-                footer={libraryFooter}
-              />
-            )}
+              ) : (
+                <LibrarySection
+                  preview={libraryPreview}
+                  notes={libraryNotesField}
+                  actions={libraryCards}
+                  selectedActionId={selectedLibraryItemId}
+                  onSelectAction={setSelectedLibraryItemId}
+                  footer={libraryFooter}
+                />
+              )}
+            </div>
           </div>
         </div>
       </section>

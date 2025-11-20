@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { LibraryCard, type LibraryCardProps } from "./LibraryCard";
 
@@ -28,8 +28,21 @@ export function LibraryCarousel({
   onMoveItem,
 }: LibraryCarouselProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [recentlyMovedId, setRecentlyMovedId] = useState<string | null>(null);
   const hasItems = items.length > 0;
   const activeItemId = selectedId ?? items[0]?.id;
+
+  useEffect(() => {
+    if (!recentlyMovedId) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setRecentlyMovedId(null);
+    }, 520);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [recentlyMovedId]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -59,10 +72,10 @@ export function LibraryCarousel({
   return (
     <div
       ref={containerRef}
-      className="flex h-full flex-col"
+      className="library-carousel flex h-full flex-col"
     >
       <div
-        className="flex h-full min-h-0 snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden py-3 pl-4 pr-4 scroll-smooth sm:pl-6 sm:pr-6 lg:flex-col lg:gap-4 lg:overflow-x-hidden lg:overflow-y-auto lg:pl-0 lg:pr-0 lg:scroll-py-6 lg:snap-y"
+        className="library-carousel-track flex h-full min-h-0 snap-x snap-mandatory gap-3.5 overflow-x-auto overflow-y-hidden py-3 pl-4 pr-4 scroll-smooth sm:pl-6 sm:pr-6 lg:flex-col lg:gap-3.5 lg:overflow-x-hidden lg:overflow-y-auto lg:pl-0 lg:pr-0 lg:scroll-py-6 lg:snap-y"
       >
         {hasItems ? (
           items.map((item, index) => {
@@ -83,7 +96,8 @@ export function LibraryCarousel({
             return (
               <div
                 key={item.id}
-                className="group relative flex snap-start justify-start lg:justify-center"
+                data-reordering={recentlyMovedId === item.id ? "true" : undefined}
+                className="library-carousel-card-wrapper group relative flex snap-start justify-start lg:justify-center"
               >
                 {showControls ? (
                   <div
@@ -115,6 +129,7 @@ export function LibraryCarousel({
                             if (!canMoveUp) {
                               return;
                             }
+                            setRecentlyMovedId(item.id);
                             onMoveItem?.(item.id, "up");
                           }}
                           className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-[color:rgb(var(--accent)/0.08)] text-accent shadow-[0_22px_48px_-24px_rgba(15,23,42,0.55)] transition-all hover:bg-[color:rgb(var(--accent)/0.12)] focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgb(var(--accent)/0.32)] disabled:cursor-not-allowed disabled:opacity-40"
@@ -131,6 +146,7 @@ export function LibraryCarousel({
                             if (!canMoveDown) {
                               return;
                             }
+                            setRecentlyMovedId(item.id);
                             onMoveItem?.(item.id, "down");
                           }}
                           className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-[color:rgb(var(--accent)/0.08)] text-accent shadow-[0_22px_48px_-24px_rgba(15,23,42,0.55)] transition-all hover:bg-[color:rgb(var(--accent)/0.12)] focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:rgb(var(--accent)/0.32)] disabled:cursor-not-allowed disabled:opacity-40"
@@ -147,7 +163,7 @@ export function LibraryCarousel({
                   isActive={isActive}
                   isDimmed={shouldDim}
                   data-library-carousel-item={item.id}
-                  className={`${combinedClassName} shrink-0 lg:shrink lg:mx-auto`}
+                  className={`library-carousel-card ${combinedClassName} shrink-0 lg:mx-auto lg:shrink`}
                   onClick={(event) => {
                     onSelectItem?.(item.id);
                     itemOnClick?.(event);
@@ -157,7 +173,7 @@ export function LibraryCarousel({
             );
           })
         ) : (
-          <div className="flex h-[180px] w-[220px] max-w-[220px] shrink-0 snap-start items-center justify-center rounded-2xl border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg sm:w-[252px] sm:max-w-[252px] lg:mx-auto lg:w-full lg:max-w-[calc(100%-1rem)]">
+          <div className="flex h-[180px] w-[220px] max-w-[220px] shrink-0 snap-start items-center justify-center rounded-lg border border-dashed border-muted/40 bg-white/60 text-xs font-semibold uppercase tracking-[0.2em] text-muted-fg sm:w-[252px] sm:max-w-[252px] lg:mx-auto lg:w-full lg:max-w-[calc(100%-1rem)]">
             Nessuna card
           </div>
         )}
