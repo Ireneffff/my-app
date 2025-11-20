@@ -896,10 +896,9 @@ export default function RegisteredTradePage() {
       >
         <span
           data-library-preview-image
-          className={`relative block aspect-[16/9] w-full overflow-hidden rounded-[4px] border-2 ${
+          className={`relative block aspect-[16/9] w-full overflow-hidden rounded-xl border border-[color:rgb(148_163_184/0.58)] ${
             selectedImageData ? "cursor-zoom-in" : ""
           }`}
-          style={{ borderColor: "color-mix(in srgb, rgba(var(--border-strong)) 60%, transparent)" }}
           role={selectedImageData ? "button" : undefined}
           tabIndex={selectedImageData ? 0 : undefined}
           aria-label={selectedImageData ? "Visualizza immagine della library a schermo intero" : undefined}
