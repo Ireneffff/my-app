@@ -24,10 +24,10 @@ export function LibraryCard({
   ...buttonProps
 }: LibraryCardProps) {
   const baseVisualWrapperClassName =
-    "flex items-center justify-center overflow-hidden transition-colors duration-300";
+    "flex items-center justify-center overflow-hidden rounded-[10px] bg-gradient-to-b from-white via-white to-[#f5f7fb] ring-1 ring-neutral-200/80 transition-all duration-400";
   const resolvedVisualWrapperClassName = visualWrapperClassName
     ? `${baseVisualWrapperClassName} ${visualWrapperClassName}`
-    : `${baseVisualWrapperClassName} h-32 w-full rounded-md bg-white`;
+    : `${baseVisualWrapperClassName} h-32 w-full`;
 
   return (
     <button
@@ -36,18 +36,18 @@ export function LibraryCard({
       disabled={disabled}
       aria-pressed={isActive}
       data-active={isActive ? "true" : "false"}
-      className={`group relative flex min-w-[160px] flex-col items-center gap-4 rounded-lg border border-[#E6E6E6] bg-[#F7F7F7] p-4 text-center text-xs font-semibold text-fg shadow-[0_20px_50px_-35px_rgba(15,23,42,0.25)] transition-all duration-300 ease-out focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:pointer-events-none disabled:opacity-50 sm:min-w-[180px] transform-gpu will-change-transform ${
+      className={`group relative flex min-w-[160px] flex-col items-center gap-3.5 rounded-lg border border-neutral-200 bg-gradient-to-b from-white via-white to-[rgb(var(--subtle))] px-4 pb-4 pt-4 text-center text-xs font-semibold text-fg shadow-[0_18px_48px_-28px_rgba(15,23,42,0.28)] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:pointer-events-none disabled:opacity-50 sm:min-w-[180px] transform-gpu will-change-transform ${
         isActive
-          ? "z-30 scale-[1.05] bg-white shadow-[0_28px_64px_-36px_rgba(15,23,42,0.35)]"
-          : "hover:scale-[1.02]"
+          ? "z-30 scale-[1.04] bg-white shadow-[0_24px_64px_-32px_rgba(15,23,42,0.32)]"
+          : "hover:-translate-y-0.5 hover:shadow-[0_20px_60px_-36px_rgba(15,23,42,0.26)] hover:brightness-105"
       } ${
         isDimmed && !isActive
-          ? "scale-[0.94] opacity-70 filter brightness-95 saturate-75 hover:opacity-95 hover:brightness-100 hover:saturate-100"
+          ? "scale-[0.95] opacity-75 saturate-80 transition-none"
           : ""
       } ${className}`}
     >
       {!hideLabel ? (
-        <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg transition-colors group-hover:text-fg">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg transition-colors duration-300 group-hover:text-fg">
           {label}
         </span>
       ) : null}
