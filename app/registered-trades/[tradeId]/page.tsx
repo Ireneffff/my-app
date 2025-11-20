@@ -199,6 +199,10 @@ export default function RegisteredTradePage() {
 
   const [state, setState] = useState<TradeState>({ status: "loading", trade: null });
   const [activeTab, setActiveTab] = useState<"main" | "library">("main");
+  const [displayedTab, setDisplayedTab] = useState<"main" | "library">("main");
+  const [isTabFadingOut, setIsTabFadingOut] = useState(false);
+  const tabTransitionTimeoutRef = useRef<number | null>(null);
+  const hasInitializedTabs = useRef(false);
   const [libraryItems, setLibraryItems] = useState<StoredLibraryItem[]>(() => [
     createFallbackLibraryItem(),
   ]);
@@ -227,6 +231,30 @@ export default function RegisteredTradePage() {
     });
     scrollUnlockTimeoutsRef.current.clear();
   }, []);
+
+  useEffect(() => {
+    if (!hasInitializedTabs.current) {
+      hasInitializedTabs.current = true;
+      return;
+    }
+
+    if (tabTransitionTimeoutRef.current) {
+      window.clearTimeout(tabTransitionTimeoutRef.current);
+    }
+
+    setIsTabFadingOut(true);
+
+    tabTransitionTimeoutRef.current = window.setTimeout(() => {
+      setDisplayedTab(activeTab);
+      setIsTabFadingOut(false);
+    }, 170);
+
+    return () => {
+      if (tabTransitionTimeoutRef.current) {
+        window.clearTimeout(tabTransitionTimeoutRef.current);
+      }
+    };
+  }, [activeTab]);
 
   useEffect(() => {
     if (state.status !== "ready") {
@@ -948,6 +976,10 @@ export default function RegisteredTradePage() {
     </div>
   );
 
+  const tabPanelClassName = `tab-transition-panel ${
+    isTabFadingOut ? "tab-transition-panel--exiting" : "tab-transition-panel--active"
+  }`;
+
   if (state.status === "loading") {
     return (
       <section className="relative flex min-h-dvh flex-col items-center justify-center bg-bg px-6 py-12 text-fg">
@@ -1640,28 +1672,30 @@ export default function RegisteredTradePage() {
               </div>
             </nav>
 
-            {activeTab === "main" ? (
-              <div className="relative mx-auto w-full max-w-3xl sm:max-w-4xl">
-                <div
-                  className={`transform transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${
-                    isTradeContentVisible
-                      ? "translate-y-0 opacity-100"
-                      : "translate-y-4 opacity-0"
-                  }`}
-                >
-                  {tradeDetailsPanel}
+            <div className={tabPanelClassName}>
+              {displayedTab === "main" ? (
+                <div className="relative mx-auto w-full max-w-3xl sm:max-w-4xl">
+                  <div
+                    className={`transform transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${
+                      isTradeContentVisible
+                        ? "translate-y-0 opacity-100"
+                        : "translate-y-4 opacity-0"
+                    }`}
+                  >
+                    {tradeDetailsPanel}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <LibrarySection
-                preview={libraryPreview}
-                notes={libraryNotesField}
-                actions={libraryCards}
-                selectedActionId={selectedLibraryItemId}
-                onSelectAction={setSelectedLibraryItemId}
-                footer={libraryFooter}
-              />
-            )}
+              ) : (
+                <LibrarySection
+                  preview={libraryPreview}
+                  notes={libraryNotesField}
+                  actions={libraryCards}
+                  selectedActionId={selectedLibraryItemId}
+                  onSelectAction={setSelectedLibraryItemId}
+                  footer={libraryFooter}
+                />
+              )}
+            </div>
           </div>
         </div>
       </section>

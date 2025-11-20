@@ -360,6 +360,30 @@ a {
   }
 }
 
+.tab-transition-panel {
+  width: 100%;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 220ms ease, transform 220ms ease;
+  will-change: opacity, transform;
+}
+
+.tab-transition-panel--exiting {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-transition-panel {
+    transition-duration: 140ms;
+    transform: none;
+  }
+
+  .tab-transition-panel--exiting {
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
