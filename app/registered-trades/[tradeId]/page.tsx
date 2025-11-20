@@ -885,6 +885,23 @@ export default function RegisteredTradePage() {
           {selectedLibraryTitle}
         </h3>
       ) : null}
+      <dl className="grid w-full gap-3 rounded-xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-4 py-3 text-sm sm:grid-cols-2 lg:w-fit lg:grid-cols-3">
+        {[
+          { label: "Data", value: formattedDate },
+          { label: "Giorno", value: dayOfWeekLabel || "—" },
+          { label: "Pair", value: activeSymbol.code || "—" },
+          { label: "Risultato", value: tradeOutcomeLabel ?? "—" },
+          { label: "Paper trade", value: paperTradeLabel },
+        ].map(({ label, value }) => (
+          <div
+            key={label}
+            className="flex flex-col gap-1 rounded-lg bg-[color:rgb(var(--surface)/0.6)] px-3 py-2 text-left"
+          >
+            <dt className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">{label}</dt>
+            <dd className="text-sm font-semibold text-fg">{value}</dd>
+          </div>
+        ))}
+      </dl>
       <div
         ref={previewContainerRef}
         className="w-full lg:max-w-screen-lg"
@@ -896,10 +913,9 @@ export default function RegisteredTradePage() {
       >
         <span
           data-library-preview-image
-          className={`relative block aspect-[16/9] w-full overflow-hidden rounded-[4px] border-2 ${
+          className={`relative block aspect-[16/9] w-full overflow-hidden rounded-sm border border-[color:rgb(148_163_184/0.58)] ${
             selectedImageData ? "cursor-zoom-in" : ""
           }`}
-          style={{ borderColor: "color-mix(in srgb, rgba(var(--border-strong)) 60%, transparent)" }}
           role={selectedImageData ? "button" : undefined}
           tabIndex={selectedImageData ? 0 : undefined}
           aria-label={selectedImageData ? "Visualizza immagine della library a schermo intero" : undefined}
@@ -1018,6 +1034,7 @@ export default function RegisteredTradePage() {
       : trade.tradeOutcome === "loss"
         ? "Loss"
         : null;
+  const paperTradeLabel = trade.isPaperTrade ? "Sì" : "No";
 
   const formattedDate = selectedDate.toLocaleDateString(undefined, {
     day: "2-digit",
