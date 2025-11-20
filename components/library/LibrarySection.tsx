@@ -37,6 +37,7 @@ export function LibrarySection({
 }: LibrarySectionProps) {
   const previewWrapperRef = useRef<HTMLDivElement | null>(null);
   const [previewHeight, setPreviewHeight] = useState<number | null>(null);
+  const [previewOffsetTop, setPreviewOffsetTop] = useState<number | null>(null);
   const [shouldSyncHeight, setShouldSyncHeight] = useState(false);
 
   useEffect(() => {
@@ -74,6 +75,7 @@ export function LibrarySection({
     const wrapper = previewWrapperRef.current;
     if (!wrapper) {
       setPreviewHeight(null);
+      setPreviewOffsetTop(null);
       return;
     }
 
@@ -86,12 +88,19 @@ export function LibrarySection({
       const target = currentTarget ?? findPreviewImage();
       if (!target) {
         setPreviewHeight(null);
+        setPreviewOffsetTop(null);
         return;
       }
 
-      const { height } = target.getBoundingClientRect();
+      const { height, top } = target.getBoundingClientRect();
+      const { top: wrapperTop } = wrapper.getBoundingClientRect();
+      const offsetTop = top - wrapperTop;
+
       setPreviewHeight((previousHeight) =>
         Math.abs((previousHeight ?? 0) - height) < 0.5 ? previousHeight : height,
+      );
+      setPreviewOffsetTop((previousOffset) =>
+        Math.abs((previousOffset ?? 0) - offsetTop) < 0.5 ? previousOffset : offsetTop,
       );
     };
 
@@ -147,6 +156,7 @@ export function LibrarySection({
         height: `${previewHeight}px`,
         maxHeight: `${previewHeight}px`,
         minHeight: `${previewHeight}px`,
+        marginTop: previewOffsetTop !== null ? `${previewOffsetTop}px` : undefined,
       }
     : undefined;
 
