@@ -874,6 +874,14 @@ export default function RegisteredTradePage() {
     </p>
   );
 
+  const librarySummaryItems = [
+    { label: "Data", value: formattedDate },
+    { label: "Giorno", value: dayOfWeekLabel || "—" },
+    { label: "Pair", value: formatOptionalText(activeSymbol.code) },
+    { label: "Risultato", value: tradeOutcomeLabel ?? "—" },
+    { label: "Paper trade", value: formatOptionalText(trade.isPaperTrade) },
+  ];
+
   const primaryPreviewContent = (
     <div
       data-library-preview-stack
@@ -885,6 +893,17 @@ export default function RegisteredTradePage() {
           {selectedLibraryTitle}
         </h3>
       ) : null}
+      <div className="flex flex-wrap gap-3" aria-label="Riepilogo dati trade">
+        {librarySummaryItems.map((item) => (
+          <div
+            key={item.label}
+            className="min-w-[140px] rounded-xl border border-border bg-[color:rgb(var(--surface)/0.65)] px-4 py-3"
+          >
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-fg">{item.label}</p>
+            <p className="mt-1 text-sm font-semibold text-fg">{item.value}</p>
+          </div>
+        ))}
+      </div>
       <div
         ref={previewContainerRef}
         className="w-full lg:max-w-screen-lg"
@@ -896,10 +915,9 @@ export default function RegisteredTradePage() {
       >
         <span
           data-library-preview-image
-          className={`relative block aspect-[16/9] w-full overflow-hidden rounded-[4px] border-2 ${
+          className={`relative block aspect-[16/9] w-full overflow-hidden rounded-sm border border-[color:rgb(148_163_184/0.58)] ${
             selectedImageData ? "cursor-zoom-in" : ""
           }`}
-          style={{ borderColor: "color-mix(in srgb, rgba(var(--border-strong)) 60%, transparent)" }}
           role={selectedImageData ? "button" : undefined}
           tabIndex={selectedImageData ? 0 : undefined}
           aria-label={selectedImageData ? "Visualizza immagine della library a schermo intero" : undefined}
