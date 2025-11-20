@@ -874,80 +874,6 @@ export default function RegisteredTradePage() {
     </p>
   );
 
-  const primaryPreviewContent = (
-    <div
-      data-library-preview-stack
-      className="flex w-full flex-col"
-      style={{ gap: "0.5cm" }}
-    >
-      {selectedLibraryTitle ? (
-        <h3 className="text-2xl font-semibold leading-tight text-foreground">
-          {selectedLibraryTitle}
-        </h3>
-      ) : null}
-      <div
-        ref={previewContainerRef}
-        className="w-full lg:max-w-screen-lg"
-        onWheel={handlePreviewWheel}
-        onTouchStart={handlePreviewTouchStart}
-        onTouchMove={handlePreviewTouchMove}
-        onTouchEnd={handlePreviewTouchEnd}
-        onTouchCancel={handlePreviewTouchCancel}
-      >
-        <span
-          data-library-preview-image
-          className={`relative block aspect-[16/9] w-full overflow-hidden rounded-sm border border-[color:rgb(148_163_184/0.58)] ${
-            selectedImageData ? "cursor-zoom-in" : ""
-          }`}
-          role={selectedImageData ? "button" : undefined}
-          tabIndex={selectedImageData ? 0 : undefined}
-          aria-label={selectedImageData ? "Visualizza immagine della library a schermo intero" : undefined}
-          onClick={() => {
-            if (selectedImageData) {
-              setIsPreviewModalOpen(true);
-            }
-          }}
-          onKeyDown={(event) => {
-            if (!selectedImageData) {
-              return;
-            }
-
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              setIsPreviewModalOpen(true);
-            }
-          }}
-        >
-          {selectedImageData ? (
-            <Image
-              src={selectedImageData}
-              alt="Trade context attachment"
-              fill
-              className="h-full w-full object-contain"
-              sizes="100vw"
-              onLoadingComplete={({ naturalWidth, naturalHeight }) => {
-                if (naturalWidth > 0 && naturalHeight > 0) {
-                  setPreviewAspectRatio(naturalWidth / naturalHeight);
-                }
-              }}
-              unoptimized
-              priority
-            />
-          ) : (
-            <span className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-[color:rgb(var(--surface)/0.94)] to-[color:rgb(var(--surface)/0.78)] text-muted-fg">
-              <EmptyLibraryIcon />
-              <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Nessuna anteprima</span>
-              <span className="max-w-[28ch] text-center text-xs text-muted-fg/80">
-                Aggiungi immagini alle prossime operazioni per costruire un archivio visivo coerente.
-              </span>
-            </span>
-          )}
-        </span>
-      </div>
-    </div>
-  );
-  const libraryPreview = primaryPreviewContent;
-
   const modalAspectRatio = useMemo(() => {
     if (previewAspectRatio && Number.isFinite(previewAspectRatio) && previewAspectRatio > 0) {
       return `${previewAspectRatio}`;
@@ -1023,6 +949,101 @@ export default function RegisteredTradePage() {
     month: "2-digit",
     year: "numeric",
   });
+
+  const pairLabel = [activeSymbol.flag, activeSymbol.code].filter(Boolean).join(" ");
+  const tradeSummaryItems = [
+    { label: "Data", value: formattedDate },
+    { label: "Giorno", value: dayOfWeekLabel || "—" },
+    { label: "Pair", value: pairLabel || "—" },
+    { label: "Risultato", value: tradeOutcomeLabel ?? "—" },
+    { label: "Paper trade", value: trade.isPaperTrade ? "Sì" : "No" },
+  ];
+
+  const primaryPreviewContent = (
+    <div
+      data-library-preview-stack
+      className="flex w-full flex-col"
+      style={{ gap: "0.5cm" }}
+    >
+      {selectedLibraryTitle ? (
+        <h3 className="text-2xl font-semibold leading-tight text-foreground">
+          {selectedLibraryTitle}
+        </h3>
+      ) : null}
+
+      <div className="flex flex-wrap gap-3 rounded-md border border-[color:rgb(148_163_184/0.32)] bg-[color:rgb(var(--surface)/0.72)] px-4 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+        {tradeSummaryItems.map((item) => (
+          <div key={item.label} className="flex min-w-[160px] flex-col gap-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">
+              {item.label}
+            </span>
+            <span className="text-sm font-semibold text-foreground">{item.value}</span>
+          </div>
+        ))}
+      </div>
+
+      <div
+        ref={previewContainerRef}
+        className="w-full lg:max-w-screen-lg"
+        onWheel={handlePreviewWheel}
+        onTouchStart={handlePreviewTouchStart}
+        onTouchMove={handlePreviewTouchMove}
+        onTouchEnd={handlePreviewTouchEnd}
+        onTouchCancel={handlePreviewTouchCancel}
+      >
+        <span
+          data-library-preview-image
+          className={`relative block aspect-[16/9] w-full overflow-hidden rounded-sm border border-[color:rgb(148_163_184/0.58)] ${
+            selectedImageData ? "cursor-zoom-in" : ""
+          }`}
+          role={selectedImageData ? "button" : undefined}
+          tabIndex={selectedImageData ? 0 : undefined}
+          aria-label={selectedImageData ? "Visualizza immagine della library a schermo intero" : undefined}
+          onClick={() => {
+            if (selectedImageData) {
+              setIsPreviewModalOpen(true);
+            }
+          }}
+          onKeyDown={(event) => {
+            if (!selectedImageData) {
+              return;
+            }
+
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              setIsPreviewModalOpen(true);
+            }
+          }}
+        >
+          {selectedImageData ? (
+            <Image
+              src={selectedImageData}
+              alt="Trade context attachment"
+              fill
+              className="h-full w-full object-contain"
+              sizes="100vw"
+              onLoadingComplete={({ naturalWidth, naturalHeight }) => {
+                if (naturalWidth > 0 && naturalHeight > 0) {
+                  setPreviewAspectRatio(naturalWidth / naturalHeight);
+                }
+              }}
+              unoptimized
+              priority
+            />
+          ) : (
+            <span className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-[color:rgb(var(--surface)/0.94)] to-[color:rgb(var(--surface)/0.78)] text-muted-fg">
+              <EmptyLibraryIcon />
+              <span className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-fg">Nessuna anteprima</span>
+              <span className="max-w-[28ch] text-center text-xs text-muted-fg/80">
+                Aggiungi immagini alle prossime operazioni per costruire un archivio visivo coerente.
+              </span>
+            </span>
+          )}
+        </span>
+      </div>
+    </div>
+  );
+  const libraryPreview = primaryPreviewContent;
 
   const openTimeDisplay = getDateTimeDisplay(trade.openTime);
   const closeTimeDisplay = getDateTimeDisplay(trade.closeTime);
