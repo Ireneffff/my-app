@@ -160,6 +160,20 @@ main {
   text-align: center;
 }
 
+/* Specific tweaks for iPhone Safari to restyle the Paper Trade badge on home registered trades */
+@supports (-webkit-touch-callout: none) and (not (hover: hover)) {
+  .iphone-paper-badge {
+    background: linear-gradient(
+      135deg,
+      rgba(126, 172, 255, 0.28) 0%,
+      rgba(186, 214, 255, 0.38) 100%
+    );
+    border: 1px solid rgba(126, 172, 255, 0.42);
+    color: rgba(15, 70, 135, 0.94);
+    box-shadow: 0 14px 28px rgba(35, 90, 160, 0.22);
+  }
+}
+
 .section-heading p {
   color: rgb(var(--muted-fg));
   letter-spacing: 0.08em;
