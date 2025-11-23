@@ -449,7 +449,7 @@ export default function Home() {
                     .filter((description): description is string => Boolean(description)) ?? [];
                 const shouldRenderOutcomes = Boolean(outcomeLabel) || takeProfitDescriptions.length > 0;
                 const cardClasses = [
-                  "group relative flex flex-col gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-4 py-3 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)] md:flex-row md:items-center md:gap-5 md:px-5 md:py-4",
+                  "group relative flex min-h-[9.5rem] flex-col gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-4 py-3 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)] md:min-h-[5.75rem] md:flex-row md:items-center md:gap-5 md:px-5 md:py-4",
                   highlightedTradeId === trade.id ? "last-opened-trade-card" : "",
                 ]
                   .filter(Boolean)

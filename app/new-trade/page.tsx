@@ -932,6 +932,52 @@ function NewTradePageContent() {
     return getLibraryCardTitle(fallbackIndex === -1 ? 0 : fallbackIndex);
   }, [libraryItems, selectedLibraryItem]);
 
+  const librarySummaryItems = useMemo(
+    () => {
+      const tradeDateLabel = selectedDate.toLocaleDateString(undefined, {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+
+      const capitalizedWeekday =
+        dayOfWeekLabel.length > 0
+          ? `${dayOfWeekLabel.charAt(0).toUpperCase()}${dayOfWeekLabel.slice(1)}`
+          : "—";
+
+      const pairLabel = selectedSymbol
+        ? `${selectedSymbol.flag} ${selectedSymbol.code}`
+        : "—";
+
+      const outcomeLabel =
+        tradeOutcome === "profit"
+          ? "Profit"
+          : tradeOutcome === "loss"
+            ? "Loss"
+            : "—";
+
+      const paperTradeLabel = isRealTrade ? "No" : "Sì";
+
+      return [
+        { label: "Data", value: `${tradeDateLabel} • ${capitalizedWeekday}` },
+        { label: "Pair", value: pairLabel },
+        { label: "Risultato", value: outcomeLabel },
+        { label: "Paper trade", value: paperTradeLabel },
+        { label: "Apertura", value: openTimeDisplay.timeLabel },
+        { label: "Chiusura", value: closeTimeDisplay.timeLabel },
+      ];
+    },
+    [
+      closeTimeDisplay.timeLabel,
+      dayOfWeekLabel,
+      isRealTrade,
+      openTimeDisplay.timeLabel,
+      selectedDate,
+      selectedSymbol,
+      tradeOutcome,
+    ],
+  );
+
   const canNavigateLibrary = libraryItems.length > 1;
 
   const goToAdjacentLibraryItem = useCallback(
@@ -1946,6 +1992,18 @@ function NewTradePageContent() {
             {selectedLibraryTitle}
           </h3>
         ) : null}
+        <div className="rounded-xl border border-border/80 bg-[color:rgb(var(--surface)/0.85)] px-4 py-3 text-sm shadow-sm">
+          <div className="grid w-full gap-3 sm:grid-cols-2">
+            {librarySummaryItems.map((item) => (
+              <div key={item.label} className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">
+                  {item.label}
+                </span>
+                <span className="text-sm font-medium text-fg">{item.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
         <div
           ref={previewContainerRef}
           className="w-full lg:max-w-screen-lg"

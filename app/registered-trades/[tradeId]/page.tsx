@@ -508,6 +508,58 @@ export default function RegisteredTradePage() {
       weekday: "long",
     });
   }, [selectedDate]);
+  const librarySummaryItems = useMemo(() => {
+    const trade = state.trade;
+
+    const tradeDateLabel = selectedDate
+      ? selectedDate.toLocaleDateString(undefined, {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        })
+      : "—";
+
+    const capitalizedWeekday = dayOfWeekLabel
+      ? `${dayOfWeekLabel.charAt(0).toUpperCase()}${dayOfWeekLabel.slice(1)}`
+      : "—";
+
+    if (!trade) {
+      return [
+        { label: "Data", value: `${tradeDateLabel} • ${capitalizedWeekday}` },
+        { label: "Pair", value: "—" },
+        { label: "Risultato", value: "—" },
+        { label: "Paper trade", value: "—" },
+        { label: "Apertura", value: "--:--" },
+        { label: "Chiusura", value: "--:--" },
+      ];
+    }
+
+    const activeSymbolSummary =
+      availableSymbols.find((symbol) => symbol.code === trade.symbolCode) ?? {
+        code: trade.symbolCode,
+        flag: trade.symbolFlag,
+      };
+
+    const outcomeLabel =
+      trade.tradeOutcome === "profit"
+        ? "Profit"
+        : trade.tradeOutcome === "loss"
+          ? "Loss"
+          : "—";
+
+    const openTimeDisplay = getDateTimeDisplay(trade.openTime);
+    const closeTimeDisplay = getDateTimeDisplay(trade.closeTime);
+    const paperTradeLabel = trade.isPaperTrade ? "Sì" : "No";
+
+    return [
+      { label: "Data", value: `${tradeDateLabel} • ${capitalizedWeekday}` },
+      { label: "Pair", value: `${activeSymbolSummary.flag} ${activeSymbolSummary.code}` },
+      { label: "Risultato", value: outcomeLabel },
+      { label: "Paper trade", value: paperTradeLabel },
+      { label: "Apertura", value: openTimeDisplay.timeLabel },
+      { label: "Chiusura", value: closeTimeDisplay.timeLabel },
+    ];
+  }, [dayOfWeekLabel, selectedDate, state.trade]);
   const openTimeValue = useMemo(() => {
     const iso = state.trade?.openTime;
     if (!iso) {
@@ -877,19 +929,31 @@ export default function RegisteredTradePage() {
   const primaryPreviewContent = (
     <div
       data-library-preview-stack
-      className="flex w-full flex-col"
-      style={{ gap: "0.5cm" }}
-    >
-      {selectedLibraryTitle ? (
-        <h3 className="text-2xl font-semibold leading-tight text-foreground">
-          {selectedLibraryTitle}
-        </h3>
-      ) : null}
-      <div
-        ref={previewContainerRef}
-        className="w-full lg:max-w-screen-lg"
-        onWheel={handlePreviewWheel}
-        onTouchStart={handlePreviewTouchStart}
+    className="flex w-full flex-col"
+    style={{ gap: "0.5cm" }}
+  >
+    {selectedLibraryTitle ? (
+      <h3 className="text-2xl font-semibold leading-tight text-foreground">
+        {selectedLibraryTitle}
+      </h3>
+    ) : null}
+    <div className="rounded-xl border border-border/80 bg-[color:rgb(var(--surface)/0.85)] px-4 py-3 text-sm shadow-sm">
+      <div className="grid w-full gap-3 sm:grid-cols-2">
+        {librarySummaryItems.map((item) => (
+          <div key={item.label} className="flex flex-col gap-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">
+              {item.label}
+            </span>
+            <span className="text-sm font-medium text-fg">{item.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div
+      ref={previewContainerRef}
+      className="w-full lg:max-w-screen-lg"
+      onWheel={handlePreviewWheel}
+      onTouchStart={handlePreviewTouchStart}
         onTouchMove={handlePreviewTouchMove}
         onTouchEnd={handlePreviewTouchEnd}
         onTouchCancel={handlePreviewTouchCancel}
