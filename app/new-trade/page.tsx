@@ -374,6 +374,7 @@ function NewTradePageContent() {
   const [isRealTrade, setIsRealTrade] = useState(false);
   const initialLibraryItems = useMemo(() => [createLibraryItem(null)], []);
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>(initialLibraryItems);
+  const [libraryNote, setLibraryNote] = useState<string>("");
   const [imageError, setImageError] = useState<string | null>(null);
   const [recentlyAddedLibraryItemId, setRecentlyAddedLibraryItemId] = useState<string | null>(null);
   const [selectedLibraryItemId, setSelectedLibraryItemId] = useState<string>(
@@ -917,7 +918,6 @@ function NewTradePageContent() {
   );
 
   const selectedImageData = selectedLibraryItem?.imageData ?? null;
-  const selectedLibraryNote = selectedLibraryItem?.notes ?? "";
   const selectedLibraryTitle = useMemo(() => {
     if (!selectedLibraryItem) {
       return "";
@@ -1378,6 +1378,11 @@ function NewTradePageContent() {
         setSelectedLibraryItemId(normalizedHydratedItems[0]?.id ?? initialLibraryItems[0].id);
         setRecentlyAddedLibraryItemId(null);
         setRemovedLibraryItems([]);
+        const hydratedLibraryNote =
+          typeof match.libraryNote === "string"
+            ? match.libraryNote
+            : normalizedHydratedItems.find((item) => item.notes?.trim())?.notes ?? "";
+        setLibraryNote(hydratedLibraryNote);
         setImageError(null);
 
         setPosition(match.position === "SHORT" ? "SHORT" : match.position === "LONG" ? "LONG" : null);
@@ -1895,24 +1900,9 @@ function NewTradePageContent() {
     });
   }, []);
 
-  const handleUpdateLibraryNote = useCallback((itemId: string, nextNote: string) => {
-    setLibraryItems((prev) =>
-      prev.map((item) => (item.id === itemId ? { ...item, notes: nextNote } : item)),
-    );
+  const handleSelectedLibraryNoteChange = useCallback((nextNote: string) => {
+    setLibraryNote(nextNote);
   }, []);
-
-  const handleSelectedLibraryNoteChange = useCallback(
-    (nextNote: string) => {
-      const targetId = selectedLibraryItemId ?? libraryItems[0]?.id;
-
-      if (!targetId) {
-        return;
-      }
-
-      handleUpdateLibraryNote(targetId, nextNote);
-    },
-    [handleUpdateLibraryNote, libraryItems, selectedLibraryItemId],
-  );
 
   const libraryCards = useMemo(
     () =>
@@ -2073,7 +2063,7 @@ function NewTradePageContent() {
   const libraryNotesField = (
     <textarea
       id="library-note-editor"
-      value={selectedLibraryNote}
+      value={libraryNote}
       onChange={(event) => {
         handleSelectedLibraryNoteChange(event.target.value);
       }}
@@ -3248,7 +3238,7 @@ function NewTradePageContent() {
     const sanitizedLibraryItems: LibraryItem[] = libraryItems.map((item) => ({
       ...item,
       imageData: item.imageData ?? null,
-      notes: typeof item.notes === "string" ? item.notes : "",
+      notes: "",
       orderIndex: normalizeOrderIndexValue(item.orderIndex) ?? 0,
     }));
 
@@ -3258,8 +3248,7 @@ function NewTradePageContent() {
       }
 
       const hasImage = typeof item.imageData === "string" && item.imageData.length > 0;
-      const hasNotes = item.notes.trim().length > 0;
-      return hasImage || hasNotes;
+      return hasImage;
     });
 
     const normalizedLibraryItems = reindexLibraryItems(filteredLibraryItems);
@@ -3310,6 +3299,7 @@ function NewTradePageContent() {
       respectedRisk: respectedRiskChoice,
       wouldRepeatTrade: wouldRepeatTrade,
       notes: null,
+      libraryNote: libraryNote.trim() || null,
       libraryItems: normalizedLibraryItems,
     };
 
@@ -3362,6 +3352,7 @@ function NewTradePageContent() {
     isLoadingTrade,
     isRealTrade,
     isSaving,
+    libraryNote,
     libraryItems,
     openTime,
     pipsTargets,

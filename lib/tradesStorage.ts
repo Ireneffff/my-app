@@ -54,6 +54,7 @@ export type StoredTrade = {
   respectedRisk: boolean | null;
   wouldRepeatTrade: boolean | null;
   notes: string | null;
+  libraryNote: string | null;
   date: string;
   createdAt: string | null;
   libraryItems: StoredLibraryItem[];
@@ -88,6 +89,7 @@ export type TradePayload = {
   respectedRisk: boolean | null;
   wouldRepeatTrade: boolean | null;
   notes: string | null;
+  libraryNote: string | null;
   libraryItems: StoredLibraryItem[];
 };
 
@@ -424,6 +426,7 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
     respectedRisk: normalizeTradeField(row?.respected_risk, "boolean"),
     wouldRepeatTrade: normalizeTradeField(row?.repeat_trade, "boolean"),
     notes: normalizeTradeField(row?.notes, "string"),
+    libraryNote: null,
     date: dateSource,
     createdAt,
     libraryItems: [],
@@ -580,6 +583,32 @@ async function fetchLibraryItems(tradeId: string) {
       persisted: true,
     } satisfies StoredLibraryItem;
   });
+}
+
+async function fetchLibraryNote(tradeId: string) {
+  if (!tradeId) {
+    throw new Error("tradeId is missing before fetching trade_library_notes");
+  }
+
+  const normalizedTradeId = tradeId.toString().trim();
+
+  if (!normalizedTradeId) {
+    throw new Error("tradeId is empty before fetching trade_library_notes");
+  }
+
+  const { data, error } = await supabase
+    .from("trade_library_notes")
+    .select("note")
+    .eq("trade_id", normalizedTradeId)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to load trade library note", error);
+    return "";
+  }
+
+  return typeof data?.note === "string" ? data.note : "";
 }
 
 function buildTradeRecord(payload: TradePayload) {
@@ -810,6 +839,41 @@ async function saveLibraryItems(
   return failures;
 }
 
+async function saveLibraryNote(tradeId: string, note: string) {
+  if (!tradeId) {
+    return;
+  }
+
+  const normalizedTradeId = tradeId.toString().trim();
+
+  if (!normalizedTradeId) {
+    return;
+  }
+
+  const normalizedNote = typeof note === "string" ? note.trim() : "";
+
+  if (!normalizedNote) {
+    const { error } = await supabase.from("trade_library_notes").delete().eq("trade_id", normalizedTradeId);
+
+    if (error) {
+      console.error("Failed to clear empty library note", error);
+    }
+
+    return;
+  }
+
+  const { error } = await supabase
+    .from("trade_library_notes")
+    .upsert(
+      { trade_id: normalizedTradeId, note: normalizedNote },
+      { onConflict: "trade_id" },
+    );
+
+  if (error) {
+    console.error("Failed to save library note", error);
+  }
+}
+
 export async function loadTrades(): Promise<StoredTrade[]> {
   const { data, error } = await supabase
     .from("registered_trades")
@@ -917,6 +981,16 @@ export async function loadTradeById(tradeId: string): Promise<StoredTrade | null
     console.error("Failed to load trade library", normalizedError);
     trade.libraryItems = [];
   }
+
+  try {
+    const storedNote = await fetchLibraryNote(tradeId);
+    trade.libraryNote = storedNote;
+  } catch (libraryNoteError) {
+    const normalizedError =
+      libraryNoteError instanceof Error ? libraryNoteError : new Error(String(libraryNoteError));
+    console.error("Failed to load trade library note", normalizedError);
+    trade.libraryNote = "";
+  }
   return trade;
 }
 
@@ -945,6 +1019,7 @@ export async function saveTrade(payload: TradePayload): Promise<SaveTradeResult>
   }
 
   const libraryFailures = await saveLibraryItems(tradeId, payload.libraryItems ?? []);
+  await saveLibraryNote(tradeId, payload.libraryNote ?? "");
   notifyTradesChanged();
   return { tradeId, libraryFailures };
 }
@@ -991,6 +1066,8 @@ export async function updateTrade(
   if (libraryFailures.length > 0) {
     console.warn("Some library items failed to save during update", libraryFailures);
   }
+
+  await saveLibraryNote(tradeId.toString(), payload.libraryNote ?? "");
 
   notifyTradesChanged();
 }

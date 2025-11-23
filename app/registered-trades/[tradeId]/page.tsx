@@ -624,7 +624,6 @@ export default function RegisteredTradePage() {
   );
 
   const selectedImageData = selectedLibraryItem?.imageData ?? null;
-  const selectedLibraryNote = selectedLibraryItem?.notes ?? "";
   const selectedLibraryTitle = useMemo(() => {
     if (!selectedLibraryItem) {
       return "";
@@ -1023,28 +1022,24 @@ export default function RegisteredTradePage() {
     return "3 / 2";
   }, [previewAspectRatio]);
 
-  const libraryNotesField = (
-    <div className="flex flex-col gap-2">
-      <label
-        htmlFor="library-note-viewer"
-        className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg"
-      >
-        Note
-      </label>
-      <textarea
-        id="library-note-viewer"
-        value={selectedLibraryNote}
-        readOnly
-        aria-readonly="true"
-        placeholder="Note salvate"
-        className="min-h-[120px] w-full resize-none rounded-none border border-border bg-[color:rgb(var(--accent)/0.06)] px-5 py-4 text-sm font-medium text-fg opacity-80 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
-      />
-    </div>
-  );
-
   const tabPanelClassName = `tab-transition-panel ${
     isTabFadingOut ? "tab-transition-panel--exiting" : "tab-transition-panel--active"
   }`;
+
+  const trade = state.trade;
+
+  const libraryNote = useMemo(() => {
+    if (!trade) {
+      return "";
+    }
+
+    if (typeof trade.libraryNote === "string") {
+      return trade.libraryNote;
+    }
+
+    const firstItemNote = libraryItems.find((item) => item.notes?.trim())?.notes;
+    return firstItemNote ?? "";
+  }, [libraryItems, trade]);
 
   if (state.status === "loading") {
     return (
@@ -1053,8 +1048,6 @@ export default function RegisteredTradePage() {
       </section>
     );
   }
-
-  const trade = state.trade;
 
   if (state.status === "missing" || !trade || !selectedDate) {
     return (
@@ -1077,6 +1070,25 @@ export default function RegisteredTradePage() {
       code: trade.symbolCode,
       flag: trade.symbolFlag,
     };
+
+  const libraryNotesField = (
+    <div className="flex flex-col gap-2">
+      <label
+        htmlFor="library-note-viewer"
+        className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg"
+      >
+        Note
+      </label>
+      <textarea
+        id="library-note-viewer"
+        value={libraryNote}
+        readOnly
+        aria-readonly="true"
+        placeholder="Note salvate"
+        className="min-h-[120px] w-full resize-none rounded-none border border-border bg-[color:rgb(var(--accent)/0.06)] px-5 py-4 text-sm font-medium text-fg opacity-80 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+      />
+    </div>
+  );
 
   const tradeOutcomeLabel =
     trade.tradeOutcome === "profit"
