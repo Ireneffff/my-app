@@ -885,7 +885,9 @@ export default function RegisteredTradePage() {
           {selectedLibraryTitle}
         </h3>
       ) : null}
-      <dl className="grid w-full gap-3 rounded-xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-4 py-3 text-sm sm:grid-cols-2 lg:w-fit lg:grid-cols-3">
+      <dl
+        className="grid w-full gap-3 rounded-3xl border border-[color:rgb(148_163_184/0.45)] bg-gradient-to-br from-[color:rgb(var(--surface))] to-[color:rgb(var(--surface)/0.94)] p-5 text-sm shadow-[0_18px_42px_rgba(15,23,42,0.12)] sm:grid-cols-2 lg:w-fit lg:grid-cols-3"
+      >
         {[
           { label: "Data", value: formattedDate },
           { label: "Giorno", value: dayOfWeekLabel || "—" },
@@ -895,10 +897,11 @@ export default function RegisteredTradePage() {
         ].map(({ label, value }) => (
           <div
             key={label}
-            className="flex flex-col gap-1 rounded-lg bg-[color:rgb(var(--surface)/0.6)] px-3 py-2 text-left"
+            className="group relative overflow-hidden rounded-2xl border border-[color:rgb(148_163_184/0.35)] bg-[color:rgb(var(--surface)/0.78)] px-4 py-3 text-left transition duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-[1px] hover:border-[color:rgb(99_102_241/0.45)] hover:shadow-[0_12px_30px_rgba(59,130,246,0.18)]"
           >
-            <dt className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">{label}</dt>
-            <dd className="text-sm font-semibold text-fg">{value}</dd>
+            <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-[color:rgb(99_102_241/0.65)] opacity-70 transition group-hover:opacity-100" aria-hidden="true" />
+            <dt className="text-[11px] font-semibold uppercase tracking-[0.26em] text-muted-fg">{label}</dt>
+            <dd className="text-base font-semibold text-[color:rgb(var(--fg)/0.94)] sm:text-lg">{value}</dd>
           </div>
         ))}
       </dl>
