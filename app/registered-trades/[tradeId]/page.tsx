@@ -885,7 +885,8 @@ export default function RegisteredTradePage() {
           {selectedLibraryTitle}
         </h3>
       ) : null}
-      <dl className="grid w-full gap-3 rounded-xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-4 py-3 text-sm sm:grid-cols-2 lg:w-fit lg:grid-cols-3">
+      <dl className="relative grid w-full gap-4 overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-[color:rgb(var(--surface))] via-[color:rgb(var(--surface)/0.9)] to-[color:rgb(var(--surface)/0.8)] px-5 py-4 text-sm shadow-[0_16px_40px_rgba(15,23,42,0.12)] backdrop-blur-sm sm:grid-cols-2 lg:w-fit lg:grid-cols-3">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(99,102,241,0.1),transparent_35%),radial-gradient(circle_at_80%_0,rgba(16,185,129,0.12),transparent_32%)]" aria-hidden="true" />
         {[
           { label: "Data", value: formattedDate },
           { label: "Giorno", value: dayOfWeekLabel || "—" },
@@ -895,10 +896,11 @@ export default function RegisteredTradePage() {
         ].map(({ label, value }) => (
           <div
             key={label}
-            className="flex flex-col gap-1 rounded-lg bg-[color:rgb(var(--surface)/0.6)] px-3 py-2 text-left"
+            className="group relative flex flex-col gap-1 rounded-xl border border-border/60 bg-[color:rgb(var(--surface)/0.78)] px-4 py-3 text-left shadow-[0_10px_26px_rgba(15,23,42,0.08)] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-[color:rgb(var(--accent)/0.6)] hover:shadow-[0_18px_34px_rgba(15,23,42,0.12)]"
           >
+            <span className="pointer-events-none absolute right-3 top-3 h-2 w-2 rounded-full bg-[color:rgb(var(--accent))] opacity-0 transition-opacity duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100" aria-hidden="true" />
             <dt className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">{label}</dt>
-            <dd className="text-sm font-semibold text-fg">{value}</dd>
+            <dd className="text-base font-semibold text-fg">{value}</dd>
           </div>
         ))}
       </dl>
