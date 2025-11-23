@@ -1504,6 +1504,38 @@ function NewTradePageContent() {
   const openTimeDisplay = getDateTimeDisplayParts(openTime);
   const closeTimeDisplay = getDateTimeDisplayParts(closeTime);
 
+  const librarySummaryDetails = useMemo(
+    () => ({
+      dateLabel: selectedDate.toLocaleDateString(undefined, {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }),
+      weekdayLabel: dayOfWeekLabel,
+      pairLabel: selectedSymbol
+        ? `${selectedSymbol.flag} ${selectedSymbol.code}`
+        : "—",
+      outcomeLabel:
+        tradeOutcome === "profit"
+          ? "Profit"
+          : tradeOutcome === "loss"
+            ? "Loss"
+            : "—",
+      paperTradeLabel: isRealTrade ? "No" : "Sì",
+      openTime: openTimeDisplay.timeLabel,
+      closeTime: closeTimeDisplay.timeLabel,
+    }),
+    [
+      closeTimeDisplay.timeLabel,
+      dayOfWeekLabel,
+      isRealTrade,
+      openTimeDisplay.timeLabel,
+      selectedDate,
+      selectedSymbol,
+      tradeOutcome,
+    ],
+  );
+
   const handleImageChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
 
@@ -1946,6 +1978,37 @@ function NewTradePageContent() {
             {selectedLibraryTitle}
           </h3>
         ) : null}
+        <div className="w-full rounded-xl border border-border bg-[color:rgb(var(--surface)/0.75)] px-4 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm text-muted-fg sm:grid-cols-3 lg:grid-cols-5">
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">Data</span>
+              <span className="text-sm font-medium text-fg">{librarySummaryDetails.dateLabel}</span>
+              <span className="text-xs text-muted-fg">{librarySummaryDetails.weekdayLabel}</span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">Pair</span>
+              <span className="text-sm font-medium text-fg">{librarySummaryDetails.pairLabel}</span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">Risultato</span>
+              <span className="text-sm font-medium text-fg">{librarySummaryDetails.outcomeLabel}</span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">Paper Trade</span>
+              <span className="text-sm font-medium text-fg">{librarySummaryDetails.paperTradeLabel}</span>
+            </div>
+
+            <div className="flex flex-col gap-1 sm:col-span-2 sm:flex-row sm:items-center sm:gap-2 lg:col-span-1 lg:flex-col lg:items-start">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">Orari</span>
+              <span className="text-sm font-medium text-fg">
+                {librarySummaryDetails.openTime} – {librarySummaryDetails.closeTime}
+              </span>
+            </div>
+          </div>
+        </div>
         <div
           ref={previewContainerRef}
           className="w-full lg:max-w-screen-lg"

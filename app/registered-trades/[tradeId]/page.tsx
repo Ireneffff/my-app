@@ -538,6 +538,42 @@ export default function RegisteredTradePage() {
     return calculateDuration(openTimeValue, closeTimeValue);
   }, [openTimeValue, closeTimeValue]);
 
+  const librarySummaryDetails = useMemo(() => {
+    const openDisplay = getDateTimeDisplay(state.trade?.openTime);
+    const closeDisplay = getDateTimeDisplay(state.trade?.closeTime);
+
+    return {
+      dateLabel: selectedDate
+        ? selectedDate.toLocaleDateString(undefined, {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          })
+        : "—",
+      weekdayLabel: selectedDate
+        ? selectedDate.toLocaleDateString(undefined, { weekday: "long" })
+        : "—",
+      pairLabel:
+        state.trade?.symbolCode && state.trade.symbolFlag
+          ? `${state.trade.symbolFlag} ${state.trade.symbolCode}`
+          : state.trade?.symbolCode ?? "—",
+      outcomeLabel:
+        state.trade?.tradeOutcome === "profit"
+          ? "Profit"
+          : state.trade?.tradeOutcome === "loss"
+            ? "Loss"
+            : "—",
+      paperTradeLabel:
+        typeof state.trade?.isPaperTrade === "boolean"
+          ? state.trade.isPaperTrade
+            ? "Sì"
+            : "No"
+          : "—",
+      openTime: openDisplay.timeLabel,
+      closeTime: closeDisplay.timeLabel,
+    };
+  }, [selectedDate, state.trade]);
+
   useEffect(() => {
     if (!state.trade) {
       setLibraryItems([createFallbackLibraryItem()]);
@@ -885,6 +921,37 @@ export default function RegisteredTradePage() {
           {selectedLibraryTitle}
         </h3>
       ) : null}
+      <div className="w-full rounded-xl border border-border bg-[color:rgb(var(--surface)/0.75)] px-4 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm text-muted-fg sm:grid-cols-3 lg:grid-cols-5">
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">Data</span>
+            <span className="text-sm font-medium text-fg">{librarySummaryDetails.dateLabel}</span>
+            <span className="text-xs text-muted-fg">{librarySummaryDetails.weekdayLabel}</span>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">Pair</span>
+            <span className="text-sm font-medium text-fg">{librarySummaryDetails.pairLabel}</span>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">Risultato</span>
+            <span className="text-sm font-medium text-fg">{librarySummaryDetails.outcomeLabel}</span>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">Paper Trade</span>
+            <span className="text-sm font-medium text-fg">{librarySummaryDetails.paperTradeLabel}</span>
+          </div>
+
+          <div className="flex flex-col gap-1 sm:col-span-2 sm:flex-row sm:items-center sm:gap-2 lg:col-span-1 lg:flex-col lg:items-start">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">Orari</span>
+            <span className="text-sm font-medium text-fg">
+              {librarySummaryDetails.openTime} – {librarySummaryDetails.closeTime}
+            </span>
+          </div>
+        </div>
+      </div>
       <div
         ref={previewContainerRef}
         className="w-full lg:max-w-screen-lg"
