@@ -874,6 +874,23 @@ export default function RegisteredTradePage() {
     </p>
   );
 
+  const outcomeAccent =
+    trade.tradeOutcome === "profit"
+      ? "text-emerald-600"
+      : trade.tradeOutcome === "loss"
+        ? "text-rose-600"
+        : "text-muted-fg";
+
+  const paperTradeAccent = trade.isPaperTrade ? "text-sky-600" : "text-amber-600";
+
+  const summaryItems = [
+    { label: "Data", value: formattedDate },
+    { label: "Giorno", value: dayOfWeekLabel || "—" },
+    { label: "Pair", value: activeSymbol.code || "—" },
+    { label: "Risultato", value: tradeOutcomeLabel ?? "—", accent: outcomeAccent },
+    { label: "Paper trade", value: paperTradeLabel, accent: paperTradeAccent },
+  ];
+
   const primaryPreviewContent = (
     <div
       data-library-preview-stack
@@ -885,20 +902,20 @@ export default function RegisteredTradePage() {
           {selectedLibraryTitle}
         </h3>
       ) : null}
-      <dl className="grid w-full gap-3 rounded-xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-4 py-3 text-sm sm:grid-cols-2 lg:w-fit lg:grid-cols-3">
-        {[
-          { label: "Data", value: formattedDate },
-          { label: "Giorno", value: dayOfWeekLabel || "—" },
-          { label: "Pair", value: activeSymbol.code || "—" },
-          { label: "Risultato", value: tradeOutcomeLabel ?? "—" },
-          { label: "Paper trade", value: paperTradeLabel },
-        ].map(({ label, value }) => (
+      <dl className="grid w-full gap-4 rounded-2xl border border-[color:rgb(var(--border)/0.75)] bg-gradient-to-br from-[color:rgb(var(--surface)/0.98)] via-[color:rgb(var(--surface)/0.95)] to-[color:rgb(var(--surface)/0.92)] p-4 text-sm shadow-[0_18px_40px_rgba(15,23,42,0.08)] sm:grid-cols-2 lg:w-fit lg:grid-cols-3">
+        {summaryItems.map(({ label, value, accent }) => (
           <div
             key={label}
-            className="flex flex-col gap-1 rounded-lg bg-[color:rgb(var(--surface)/0.6)] px-3 py-2 text-left"
+            className="flex flex-col gap-2 rounded-xl border border-[color:rgb(var(--border)/0.55)] bg-[color:rgb(var(--surface)/0.78)]/80 px-4 py-3 text-left shadow-[0_12px_28px_rgba(15,23,42,0.05)] backdrop-blur-sm"
           >
-            <dt className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-fg">{label}</dt>
-            <dd className="text-sm font-semibold text-fg">{value}</dd>
+            <dt className="text-[10px] font-semibold uppercase tracking-[0.28em] text-muted-fg/90">{label}</dt>
+            <dd>
+              <span
+                className={`inline-flex w-full items-center rounded-lg bg-[color:rgb(var(--surface)/0.92)] px-3 py-2 text-base font-semibold text-fg shadow-[0_14px_30px_rgba(15,23,42,0.06)] transition-transform duration-150 hover:-translate-y-[1px] ${accent ?? ""}`}
+              >
+                {value}
+              </span>
+            </dd>
           </div>
         ))}
       </dl>
