@@ -1934,6 +1934,60 @@ function NewTradePageContent() {
     [libraryItems, openImagePicker, recentlyAddedLibraryItemId]
   );
 
+  const summaryDateLabel = selectedDate.toLocaleDateString(undefined, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+  const summaryWeekdayLabel = selectedDate
+    .toLocaleDateString(undefined, { weekday: "long" })
+    .replace(/^./, (char) => char.toUpperCase());
+
+  const summaryPairLabel = `${selectedSymbol?.flag ? `${selectedSymbol.flag} ` : ""}${selectedSymbol?.code ?? "—"}`.trim();
+
+  const summaryOutcomeLabel =
+    tradeOutcome === "profit" ? "Profit" : tradeOutcome === "loss" ? "Loss" : "—";
+
+  const summaryPaperTradeLabel = isRealTrade ? "No" : "Sì";
+  const summaryOpenTimeLabel = getDateTimeDisplayParts(openTime).timeLabel;
+  const summaryCloseTimeLabel = getDateTimeDisplayParts(closeTime).timeLabel;
+
+  const librarySummaryInfo = (
+    <div className="rounded-xl border border-border bg-[color:rgb(var(--surface)/0.7)] px-4 py-3 shadow-sm">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-3">
+        <div className="space-y-1">
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg">Data</dt>
+          <dd className="font-medium text-fg">{summaryDateLabel}</dd>
+        </div>
+        <div className="space-y-1">
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg">Giorno</dt>
+          <dd className="font-medium text-fg">{summaryWeekdayLabel}</dd>
+        </div>
+        <div className="space-y-1">
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg">Pair</dt>
+          <dd className="font-medium text-fg">{summaryPairLabel}</dd>
+        </div>
+        <div className="space-y-1">
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg">Risultato</dt>
+          <dd className="font-medium text-fg">{summaryOutcomeLabel}</dd>
+        </div>
+        <div className="space-y-1">
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg">Paper Trade</dt>
+          <dd className="font-medium text-fg">{summaryPaperTradeLabel}</dd>
+        </div>
+        <div className="space-y-1">
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg">Apertura</dt>
+          <dd className="font-medium text-fg">{summaryOpenTimeLabel}</dd>
+        </div>
+        <div className="space-y-1">
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-fg">Chiusura</dt>
+          <dd className="font-medium text-fg">{summaryCloseTimeLabel}</dd>
+        </div>
+      </dl>
+    </div>
+  );
+
   const primaryPreviewContent = (
     <>
       <div
@@ -1946,6 +2000,7 @@ function NewTradePageContent() {
             {selectedLibraryTitle}
           </h3>
         ) : null}
+        {librarySummaryInfo}
         <div
           ref={previewContainerRef}
           className="w-full lg:max-w-screen-lg"
