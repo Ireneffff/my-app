@@ -508,6 +508,12 @@ export default function RegisteredTradePage() {
       weekday: "long",
     });
   }, [selectedDate]);
+  const formattedDate =
+    selectedDate?.toLocaleDateString(undefined, {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }) ?? "—";
   const openTimeValue = useMemo(() => {
     const iso = state.trade?.openTime;
     if (!iso) {
@@ -1035,12 +1041,6 @@ export default function RegisteredTradePage() {
         ? "Loss"
         : null;
   const paperTradeLabel = trade.isPaperTrade ? "Sì" : "No";
-
-  const formattedDate = selectedDate.toLocaleDateString(undefined, {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
 
   const openTimeDisplay = getDateTimeDisplay(trade.openTime);
   const closeTimeDisplay = getDateTimeDisplay(trade.closeTime);
