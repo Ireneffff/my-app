@@ -3298,7 +3298,7 @@ function NewTradePageContent() {
       followedPlan: followedPlan?.trim() || null,
       respectedRisk: respectedRiskChoice,
       wouldRepeatTrade: wouldRepeatTrade,
-      notes: null,
+      notes: libraryNote.trim() || null,
       libraryNote: libraryNote.trim() || null,
       libraryItems: normalizedLibraryItems,
     };
