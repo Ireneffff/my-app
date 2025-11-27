@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -11,9 +11,11 @@ import {
   LAST_HOME_SCROLL_POSITION_STORAGE_KEY,
   type StoredTrade,
 } from "@/lib/tradesStorage";
-import { getTradeTimestamp } from "@/lib/tradeStats";
+import { calculateProfitFactor, getTradeTimestamp } from "@/lib/tradeStats";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const PROFIT_FACTOR_INITIAL_CAPITAL_STORAGE_KEY = "profit-factor-initial-capital";
+const DEFAULT_INITIAL_CAPITAL = 1000;
 
 function getCalendarDays(activeDate: Date) {
   const year = activeDate.getFullYear();
@@ -50,7 +52,13 @@ export default function Home() {
   const [pendingScrollTop, setPendingScrollTop] = useState<number | null>(null);
   const [hasLoadedTrades, setHasLoadedTrades] = useState(false);
   const [showWinrateInfo, setShowWinrateInfo] = useState(false);
+  const [showProfitSettings, setShowProfitSettings] = useState(false);
+  const [initialCapital, setInitialCapital] = useState(DEFAULT_INITIAL_CAPITAL);
+  const [initialCapitalInput, setInitialCapitalInput] = useState(
+    String(DEFAULT_INITIAL_CAPITAL),
+  );
   const winrateInfoRef = useRef<HTMLDivElement | null>(null);
+  const profitSettingsRef = useRef<HTMLDivElement | null>(null);
   const persistScrollPosition = useCallback(() => {
     if (typeof window === "undefined") {
       return;
@@ -75,6 +83,29 @@ export default function Home() {
   useEffect(() => {
     refreshTrades();
   }, [refreshTrades]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const storedInitialCapital = window.localStorage.getItem(
+        PROFIT_FACTOR_INITIAL_CAPITAL_STORAGE_KEY,
+      );
+
+      if (storedInitialCapital) {
+        const parsed = Number(storedInitialCapital.replace(",", "."));
+
+        if (Number.isFinite(parsed)) {
+          setInitialCapital(parsed);
+          setInitialCapitalInput(String(parsed));
+        }
+      }
+    } catch {
+      // Ignore storage access issues
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -181,11 +212,17 @@ export default function Home() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (winrateInfoRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+
+      if (
+        winrateInfoRef.current?.contains(target) ||
+        profitSettingsRef.current?.contains(target)
+      ) {
         return;
       }
 
       setShowWinrateInfo(false);
+      setShowProfitSettings(false);
     };
 
     window.addEventListener("click", handleClickOutside);
@@ -236,6 +273,28 @@ export default function Home() {
     };
   }, [trades]);
 
+  const profitFactorResult = useMemo(
+    () => calculateProfitFactor(trades, initialCapital),
+    [initialCapital, trades],
+  );
+
+  const profitFactorLabel = Number.isFinite(profitFactorResult.profitFactor)
+    ? profitFactorResult.profitFactor.toLocaleString("it-IT", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    : "∞";
+
+  const profitLabel = profitFactorResult.totalProfit.toLocaleString("it-IT", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  const lossLabel = profitFactorResult.totalLoss.toLocaleString("it-IT", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
   const outcomesByDay = useMemo(() => {
     const map = new Map<string, { outcome: "profit" | "loss"; timestamp: number }[]>();
 
@@ -280,6 +339,32 @@ export default function Home() {
     return sorted;
   }, [filteredTrades]);
 
+  const handleInitialCapitalSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
+      const parsedValue = Number(initialCapitalInput.replace(",", "."));
+      const nextCapital = Number.isFinite(parsedValue) ? parsedValue : 0;
+
+      setInitialCapital(nextCapital);
+      setInitialCapitalInput(String(nextCapital));
+
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.setItem(
+            PROFIT_FACTOR_INITIAL_CAPITAL_STORAGE_KEY,
+            String(nextCapital),
+          );
+        } catch {
+          // Ignore storage failures
+        }
+      }
+
+      setShowProfitSettings(false);
+    },
+    [initialCapitalInput],
+  );
+
   return (
     <section className="page-shell flex min-h-dvh flex-col pb-20 pt-28 text-fg sm:pt-32">
       <header className="section-heading min-h-[54vh] flex-1 items-center justify-center sm:min-h-[60vh]">
@@ -300,33 +385,107 @@ export default function Home() {
 
       <div className="mt-16 flex w-full flex-col items-center gap-12 pb-16">
         <div className="w-full max-w-3xl self-center text-left sm:max-w-4xl">
-          <div className="flex flex-col gap-2 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-6 py-5 shadow-[0_14px_32px_rgba(15,23,42,0.08)]">
-            <div className="flex items-center gap-2 text-base font-semibold text-fg">
-              <span>Operazioni in guadagno</span>
-              <div className="relative" ref={winrateInfoRef}>
-                <button
-                  type="button"
-                  onClick={() => setShowWinrateInfo((current) => !current)}
-                  className="interactive-area grid h-6 w-6 place-items-center rounded-full border border-border bg-[color:rgb(var(--surface)/0.92)] text-[0.7rem] font-semibold text-muted-fg transition-colors hover:text-fg"
-                  aria-label="Informazioni sulla percentuale di trade vincenti"
-                >
-                  i
-                </button>
-                {showWinrateInfo ? (
-                  <div className="absolute left-1/2 top-full z-20 mt-3 w-72 -translate-x-1/2 rounded-2xl bg-[rgb(24,24,27)] px-4 py-3 text-sm font-medium text-white shadow-[0_22px_44px_rgba(15,23,42,0.36)]">
-                    <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-2 border-x-[9px] border-x-transparent border-b-[9px] border-b-[rgb(24,24,27)]" aria-hidden="true" />
-                    La percentuale di trade vincenti, il numero di operazioni vincenti diviso per il numero totale di operazioni chiuse.
-                  </div>
-                ) : null}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-2 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-6 py-5 shadow-[0_14px_32px_rgba(15,23,42,0.08)]">
+              <div className="flex items-center gap-2 text-base font-semibold text-fg">
+                <span>Operazioni in guadagno</span>
+                <div className="relative" ref={winrateInfoRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowWinrateInfo((current) => !current)}
+                    className="interactive-area grid h-6 w-6 place-items-center rounded-full border border-border bg-[color:rgb(var(--surface)/0.92)] text-[0.7rem] font-semibold text-muted-fg transition-colors hover:text-fg"
+                    aria-label="Informazioni sulla percentuale di trade vincenti"
+                  >
+                    i
+                  </button>
+                  {showWinrateInfo ? (
+                    <div className="absolute left-1/2 top-full z-20 mt-3 w-72 -translate-x-1/2 rounded-2xl bg-[rgb(24,24,27)] px-4 py-3 text-sm font-medium text-white shadow-[0_22px_44px_rgba(15,23,42,0.36)]">
+                      <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-2 border-x-[9px] border-x-transparent border-b-[9px] border-b-[rgb(24,24,27)]" aria-hidden="true" />
+                      La percentuale di trade vincenti, il numero di operazioni vincenti diviso per il numero totale di operazioni chiuse.
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              <div className="flex items-baseline gap-3">
+                <span className="text-3xl font-semibold text-fg">
+                  {outcomeStats.percentage.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
+                </span>
+                <span className="text-sm font-medium text-muted-fg">
+                  {outcomeStats.profitable}/{outcomeStats.total}
+                </span>
               </div>
             </div>
-            <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-semibold text-fg">
-                {outcomeStats.percentage.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
-              </span>
-              <span className="text-sm font-medium text-muted-fg">
-                {outcomeStats.profitable}/{outcomeStats.total}
-              </span>
+
+            <div className="flex flex-col gap-2 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-6 py-5 shadow-[0_14px_32px_rgba(15,23,42,0.08)]">
+              <div className="flex items-center gap-2 text-base font-semibold text-fg">
+                <span>Profit Factor</span>
+                <div className="relative" ref={profitSettingsRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInitialCapitalInput(String(initialCapital));
+                      setShowProfitSettings((current) => !current);
+                    }}
+                    className="interactive-area grid h-6 w-6 place-items-center rounded-full border border-border bg-[color:rgb(var(--surface)/0.92)] text-[0.7rem] font-semibold text-muted-fg transition-colors hover:text-fg"
+                    aria-label="Configura il capitale iniziale per il Profit Factor"
+                  >
+                    ⚙
+                  </button>
+                  {showProfitSettings ? (
+                    <div className="absolute right-0 top-full z-20 mt-3 w-72 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.96)] px-4 py-4 text-sm text-fg shadow-[0_22px_44px_rgba(15,23,42,0.18)] backdrop-blur">
+                      <form className="space-y-3" onSubmit={handleInitialCapitalSubmit}>
+                        <div className="flex items-center justify-between text-[0.95rem] font-semibold">
+                          <span>Capitale iniziale</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowProfitSettings(false)}
+                            className="interactive-area text-xs text-muted-fg transition-colors hover:text-fg"
+                            aria-label="Chiudi configurazione Profit Factor"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[0.82rem] font-medium text-muted-fg" htmlFor="initial-capital">
+                            Usa questo capitale come base per il calcolo sequenziale
+                          </label>
+                          <input
+                            id="initial-capital"
+                            type="text"
+                            inputMode="decimal"
+                            value={initialCapitalInput}
+                            onChange={(event) => setInitialCapitalInput(event.target.value)}
+                            className="w-full rounded-xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-3 py-2 text-sm font-semibold text-fg shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition focus:border-accent/60 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                            placeholder="Es. 1000"
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setInitialCapitalInput(String(initialCapital));
+                              setShowProfitSettings(false);
+                            }}
+                          >
+                            Annulla
+                          </Button>
+                          <Button type="submit" size="sm" variant="primary">
+                            Salva
+                          </Button>
+                        </div>
+                      </form>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              <div className="flex items-baseline gap-3">
+                <span className="text-3xl font-semibold text-fg">{profitFactorLabel}</span>
+                <span className="text-sm font-medium text-muted-fg">
+                  Profitti {profitLabel} / Perdite {lossLabel}
+                </span>
+              </div>
             </div>
           </div>
         </div>
