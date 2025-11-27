@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -67,6 +67,8 @@ export default function Home() {
   const [highlightedTradeId, setHighlightedTradeId] = useState<string | null>(null);
   const [pendingScrollTop, setPendingScrollTop] = useState<number | null>(null);
   const [hasLoadedTrades, setHasLoadedTrades] = useState(false);
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const infoBoxRef = useRef<HTMLDivElement | null>(null);
   const persistScrollPosition = useCallback(() => {
     if (typeof window === "undefined") {
       return;
@@ -87,6 +89,24 @@ export default function Home() {
     setTrades(nextTrades);
     setHasLoadedTrades(true);
   }, []);
+
+  useEffect(() => {
+    if (!isInfoOpen) {
+      return undefined;
+    }
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!infoBoxRef.current?.contains(event.target as Node)) {
+        setIsInfoOpen(false);
+      }
+    };
+
+    window.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      window.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isInfoOpen]);
 
   useEffect(() => {
     refreshTrades();
@@ -222,6 +242,22 @@ export default function Home() {
 
   const totalTrades = filteredTrades.length;
 
+  const winningStats = useMemo(() => {
+    const closedTrades = trades.filter((trade) => trade.tradeOutcome);
+    const profitTrades = closedTrades.filter((trade) => trade.tradeOutcome === "profit");
+
+    const totalClosed = closedTrades.length;
+    const totalProfit = profitTrades.length;
+    const percentage = totalClosed > 0 ? (totalProfit / totalClosed) * 100 : 0;
+
+    return { totalClosed, totalProfit, percentage };
+  }, [trades]);
+
+  const winningPercentageLabel = winningStats.percentage.toLocaleString("it-IT", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
   const outcomesByDay = useMemo(() => {
     const map = new Map<string, { outcome: "profit" | "loss"; timestamp: number }[]>();
 
@@ -286,6 +322,37 @@ export default function Home() {
 
       <div className="mt-16 flex w-full flex-col items-center gap-12 pb-16">
         <Card className="w-full max-w-3xl self-center p-8 sm:max-w-4xl sm:p-10">
+          <div className="mb-8 flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-lg font-semibold text-fg">
+              <span>Operazioni in guadagno</span>
+              <div className="relative" ref={infoBoxRef}>
+                <button
+                  type="button"
+                  className="interactive-area grid h-6 w-6 place-items-center rounded-full border border-border bg-[color:rgb(var(--surface)/0.96)] text-[0.78rem] font-semibold text-muted-fg shadow-[0_10px_22px_rgba(15,23,42,0.12)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:text-fg"
+                  aria-label="Apri informazioni percentuale di trade vincenti"
+                  aria-expanded={isInfoOpen}
+                  onClick={() => setIsInfoOpen((open) => !open)}
+                >
+                  i
+                </button>
+                {isInfoOpen ? (
+                  <div className="absolute left-1/2 top-full z-20 mt-3 w-80 -translate-x-1/2 rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgb(26,27,31)] px-4 py-3 text-sm font-medium leading-relaxed text-white shadow-[0_18px_40px_rgba(0,0,0,0.32)]">
+                    <p>La percentuale di trade vincenti, il numero di operazioni vincenti diviso per il numero totale di operazioni chiuse.</p>
+                    <div
+                      className="absolute left-1/2 -top-2 h-2 w-3 -translate-x-1/2 bg-[rgb(26,27,31)] [clip-path:polygon(50%_0,0_100%,100%_100%)]"
+                      aria-hidden="true"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            <div className="flex items-baseline gap-3">
+              <span className="text-4xl font-semibold leading-none tracking-tight text-fg">{winningPercentageLabel}%</span>
+              <span className="text-sm font-medium text-muted-fg">
+                {winningStats.totalProfit}/{winningStats.totalClosed}
+              </span>
+            </div>
+          </div>
           <div className="flex items-center justify-between">
             <button
               type="button"
