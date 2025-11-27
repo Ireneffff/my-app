@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -11,6 +11,10 @@ import {
   LAST_HOME_SCROLL_POSITION_STORAGE_KEY,
   type StoredTrade,
 } from "@/lib/tradesStorage";
+import { calculateProfitFactor, getTradeTimestamp } from "@/lib/tradeStats";
+
+const PROFIT_FACTOR_INITIAL_CAPITAL_STORAGE_KEY = "profit-factor-initial-capital";
+const DEFAULT_INITIAL_CAPITAL = 1000;
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -41,25 +45,6 @@ function getCalendarDays(activeDate: Date) {
   return days;
 }
 
-function getTradeTimestamp(trade: StoredTrade) {
-  const candidates = [trade.date, trade.openTime, trade.closeTime, trade.createdAt];
-
-  for (const candidate of candidates) {
-    if (!candidate) {
-      continue;
-    }
-
-    const parsed = new Date(candidate);
-    const timestamp = parsed.getTime();
-
-    if (!Number.isNaN(timestamp)) {
-      return timestamp;
-    }
-  }
-
-  return 0;
-}
-
 export default function Home() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [trades, setTrades] = useState<StoredTrade[]>([]);
@@ -67,6 +52,12 @@ export default function Home() {
   const [highlightedTradeId, setHighlightedTradeId] = useState<string | null>(null);
   const [pendingScrollTop, setPendingScrollTop] = useState<number | null>(null);
   const [hasLoadedTrades, setHasLoadedTrades] = useState(false);
+  const [showWinrateInfo, setShowWinrateInfo] = useState(false);
+  const [showCapitalSettings, setShowCapitalSettings] = useState(false);
+  const [initialCapital, setInitialCapital] = useState(DEFAULT_INITIAL_CAPITAL);
+  const [capitalInputValue, setCapitalInputValue] = useState(String(DEFAULT_INITIAL_CAPITAL));
+  const winrateInfoRef = useRef<HTMLDivElement | null>(null);
+  const capitalSettingsRef = useRef<HTMLDivElement | null>(null);
   const persistScrollPosition = useCallback(() => {
     if (typeof window === "undefined") {
       return;
@@ -76,6 +67,30 @@ export default function Home() {
       window.localStorage.setItem(
         LAST_HOME_SCROLL_POSITION_STORAGE_KEY,
         String(window.scrollY ?? window.pageYOffset ?? 0),
+      );
+    } catch {
+      // Ignore storage failures
+    }
+  }, []);
+
+  const handleInitialCapitalChange = useCallback((value: string) => {
+    setCapitalInputValue(value);
+    const parsed = Number(value.replace(",", "."));
+
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+
+    setInitialCapital(parsed);
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        PROFIT_FACTOR_INITIAL_CAPITAL_STORAGE_KEY,
+        String(parsed),
       );
     } catch {
       // Ignore storage failures
@@ -171,6 +186,29 @@ export default function Home() {
       return;
     }
 
+    try {
+      const storedInitialCapital = window.localStorage.getItem(
+        PROFIT_FACTOR_INITIAL_CAPITAL_STORAGE_KEY,
+      );
+
+      if (storedInitialCapital) {
+        const parsed = Number(storedInitialCapital.replace(",", "."));
+
+        if (Number.isFinite(parsed)) {
+          setInitialCapital(parsed);
+          setCapitalInputValue(String(parsed));
+        }
+      }
+    } catch {
+      // Ignore storage access issues
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
     let highlightTimeout: number | null = null;
 
     try {
@@ -192,6 +230,27 @@ export default function Home() {
       if (highlightTimeout !== null) {
         window.clearTimeout(highlightTimeout);
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (winrateInfoRef.current?.contains(event.target as Node)) {
+        return;
+      }
+
+      if (capitalSettingsRef.current?.contains(event.target as Node)) {
+        return;
+      }
+
+      setShowWinrateInfo(false);
+      setShowCapitalSettings(false);
+    };
+
+    window.addEventListener("click", handleClickOutside);
+
+    return () => {
+      window.removeEventListener("click", handleClickOutside);
     };
   }, []);
 
@@ -221,6 +280,48 @@ export default function Home() {
   }, [orderedTrades, tradeFilter]);
 
   const totalTrades = filteredTrades.length;
+
+  const outcomeStats = useMemo(() => {
+    const tradesWithOutcome = trades.filter((trade) => Boolean(trade.tradeOutcome));
+    const profitableTrades = tradesWithOutcome.filter((trade) => trade.tradeOutcome === "profit");
+    const percentage = tradesWithOutcome.length
+      ? (profitableTrades.length / tradesWithOutcome.length) * 100
+      : 0;
+
+    return {
+      profitable: profitableTrades.length,
+      total: tradesWithOutcome.length,
+      percentage,
+    };
+  }, [trades]);
+
+  const profitFactorResult = useMemo(
+    () =>
+      calculateProfitFactor(
+        trades,
+        Number.isFinite(initialCapital) ? initialCapital : 0,
+      ),
+    [initialCapital, trades],
+  );
+
+  const profitFactorLabel = Number.isFinite(profitFactorResult.profitFactor)
+    ? profitFactorResult.profitFactor.toLocaleString("it-IT", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    : "∞";
+
+  const profitLossLabel = `${profitFactorResult.totalProfit.toLocaleString("it-IT", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}/${profitFactorResult.totalLoss.toLocaleString("it-IT", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
+  const initialCapitalLabel = Number.isFinite(initialCapital)
+    ? initialCapital.toLocaleString("it-IT", { minimumFractionDigits: 0 })
+    : "0";
 
   const outcomesByDay = useMemo(() => {
     const map = new Map<string, { outcome: "profit" | "loss"; timestamp: number }[]>();
@@ -285,6 +386,94 @@ export default function Home() {
       </header>
 
       <div className="mt-16 flex w-full flex-col items-center gap-12 pb-16">
+        <div className="w-full max-w-3xl self-center text-left sm:max-w-4xl">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-2 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-6 py-5 shadow-[0_14px_32px_rgba(15,23,42,0.08)]">
+              <div className="flex items-center gap-2 text-base font-semibold text-fg">
+                <span>Operazioni in guadagno</span>
+                <div className="relative" ref={winrateInfoRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowWinrateInfo((current) => !current)}
+                    className="interactive-area grid h-6 w-6 place-items-center rounded-full border border-border bg-[color:rgb(var(--surface)/0.92)] text-[0.7rem] font-semibold text-muted-fg transition-colors hover:text-fg"
+                    aria-label="Informazioni sulla percentuale di trade vincenti"
+                  >
+                    i
+                  </button>
+                  {showWinrateInfo ? (
+                    <div className="absolute left-1/2 top-full z-20 mt-3 w-72 -translate-x-1/2 rounded-2xl bg-[rgb(24,24,27)] px-4 py-3 text-sm font-medium text-white shadow-[0_22px_44px_rgba(15,23,42,0.36)]">
+                      <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-2 border-x-[9px] border-x-transparent border-b-[9px] border-b-[rgb(24,24,27)]" aria-hidden="true" />
+                      La percentuale di trade vincenti, il numero di operazioni vincenti diviso per il numero totale di operazioni chiuse.
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              <div className="flex items-baseline gap-3">
+                <span className="text-3xl font-semibold text-fg">
+                  {outcomeStats.percentage.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
+                </span>
+                <span className="text-sm font-medium text-muted-fg">
+                  {outcomeStats.profitable}/{outcomeStats.total}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-6 py-5 shadow-[0_14px_32px_rgba(15,23,42,0.08)]">
+              <div className="flex items-center gap-2 text-base font-semibold text-fg">
+                <span>Profit Factor</span>
+                <div className="relative" ref={capitalSettingsRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowCapitalSettings((current) => !current)}
+                    className="interactive-area grid h-6 w-6 place-items-center rounded-full border border-border bg-[color:rgb(var(--surface)/0.92)] text-[0.7rem] font-semibold text-muted-fg transition-colors hover:text-fg"
+                    aria-label="Configura il capitale iniziale"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      className="h-3.5 w-3.5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path d="M9.999 2.5a1 1 0 0 1 1 1v.614a5.52 5.52 0 0 1 1.567.652l.434-.434a1 1 0 0 1 1.414 0l1.172 1.172a1 1 0 0 1 0 1.414l-.434.434c.284.486.499 1.021.652 1.567h.614a1 1 0 0 1 1 1V13a1 1 0 0 1-1 1h-.614a5.521 5.521 0 0 1-.652 1.567l.434.434a1 1 0 0 1 0 1.414l-1.172 1.172a1 1 0 0 1-1.414 0l-.434-.434a5.52 5.52 0 0 1-1.567.652V18.5a1 1 0 0 1-1 1H10a1 1 0 0 1-1-1v-.614a5.52 5.52 0 0 1-1.567-.652l-.434.434a1 1 0 0 1-1.414 0L4.413 16.496a1 1 0 0 1 0-1.414l.434-.434A5.52 5.52 0 0 1 4.195 13H3.58a1 1 0 0 1-1-1V9.5a1 1 0 0 1 1-1h.614a5.52 5.52 0 0 1 .652-1.567l-.434-.434a1 1 0 0 1 0-1.414l1.172-1.172a1 1 0 0 1 1.414 0l.434.434A5.52 5.52 0 0 1 9 4.114V3.5a1 1 0 0 1 1-1h-.001ZM10 7.25A2.75 2.75 0 1 0 10 12.75 2.75 2.75 0 0 0 10 7.25Z" />
+                    </svg>
+                  </button>
+                  {showCapitalSettings ? (
+                    <div className="absolute right-0 top-full z-20 mt-3 w-72 rounded-2xl bg-[rgb(24,24,27)] px-4 py-3 text-sm font-medium text-white shadow-[0_22px_44px_rgba(15,23,42,0.36)]">
+                      <span className="absolute right-6 top-0 -translate-y-2 border-x-[9px] border-x-transparent border-b-[9px] border-b-[rgb(24,24,27)]" aria-hidden="true" />
+                      <p className="text-[0.78rem] uppercase tracking-[0.18em] text-[rgba(255,255,255,0.68)]">
+                        Capitale iniziale
+                      </p>
+                      <label className="mt-2 block text-base font-semibold text-white">
+                        <span className="sr-only">Capitale iniziale per il Profit Factor</span>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          min={0}
+                          step={100}
+                          value={capitalInputValue}
+                          onChange={(event) => handleInitialCapitalChange(event.target.value)}
+                          className="mt-1 w-full rounded-xl border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.06)] px-3 py-2 text-sm font-medium text-white outline-none transition focus:border-[rgba(255,255,255,0.4)] focus:ring-0"
+                        />
+                      </label>
+                      <p className="mt-2 text-xs text-[rgba(255,255,255,0.7)]">
+                        Usa questo capitale come base; verrà aggiornato automaticamente dopo ogni trade registrata.
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              <div className="flex items-baseline gap-3">
+                <span className="text-3xl font-semibold text-fg">{profitFactorLabel}</span>
+                <span className="text-sm font-medium text-muted-fg">{profitLossLabel}</span>
+              </div>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-fg">
+                Capitale base: {initialCapitalLabel}
+              </p>
+            </div>
+          </div>
+        </div>
+
         <Card className="w-full max-w-3xl self-center p-8 sm:max-w-4xl sm:p-10">
           <div className="flex items-center justify-between">
             <button
