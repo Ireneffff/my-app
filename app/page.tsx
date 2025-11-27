@@ -11,6 +11,7 @@ import {
   LAST_HOME_SCROLL_POSITION_STORAGE_KEY,
   type StoredTrade,
 } from "@/lib/tradesStorage";
+import { getTradeTimestamp } from "@/lib/tradeStats";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -39,25 +40,6 @@ function getCalendarDays(activeDate: Date) {
   }
 
   return days;
-}
-
-function getTradeTimestamp(trade: StoredTrade) {
-  const candidates = [trade.date, trade.openTime, trade.closeTime, trade.createdAt];
-
-  for (const candidate of candidates) {
-    if (!candidate) {
-      continue;
-    }
-
-    const parsed = new Date(candidate);
-    const timestamp = parsed.getTime();
-
-    if (!Number.isNaN(timestamp)) {
-      return timestamp;
-    }
-  }
-
-  return 0;
 }
 
 export default function Home() {
