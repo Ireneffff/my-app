@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -11,6 +11,7 @@ import {
   LAST_HOME_SCROLL_POSITION_STORAGE_KEY,
   type StoredTrade,
 } from "@/lib/tradesStorage";
+import { getTradeTimestamp } from "@/lib/tradeStats";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -41,25 +42,6 @@ function getCalendarDays(activeDate: Date) {
   return days;
 }
 
-function getTradeTimestamp(trade: StoredTrade) {
-  const candidates = [trade.date, trade.openTime, trade.closeTime, trade.createdAt];
-
-  for (const candidate of candidates) {
-    if (!candidate) {
-      continue;
-    }
-
-    const parsed = new Date(candidate);
-    const timestamp = parsed.getTime();
-
-    if (!Number.isNaN(timestamp)) {
-      return timestamp;
-    }
-  }
-
-  return 0;
-}
-
 export default function Home() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [trades, setTrades] = useState<StoredTrade[]>([]);
@@ -67,6 +49,8 @@ export default function Home() {
   const [highlightedTradeId, setHighlightedTradeId] = useState<string | null>(null);
   const [pendingScrollTop, setPendingScrollTop] = useState<number | null>(null);
   const [hasLoadedTrades, setHasLoadedTrades] = useState(false);
+  const [showWinrateInfo, setShowWinrateInfo] = useState(false);
+  const winrateInfoRef = useRef<HTMLDivElement | null>(null);
   const persistScrollPosition = useCallback(() => {
     if (typeof window === "undefined") {
       return;
@@ -195,6 +179,22 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (winrateInfoRef.current?.contains(event.target as Node)) {
+        return;
+      }
+
+      setShowWinrateInfo(false);
+    };
+
+    window.addEventListener("click", handleClickOutside);
+
+    return () => {
+      window.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
+
   const monthDays = useMemo(() => getCalendarDays(currentDate), [currentDate]);
   const todayKey = new Date().toDateString();
   const activeMonth = currentDate.getMonth();
@@ -221,6 +221,20 @@ export default function Home() {
   }, [orderedTrades, tradeFilter]);
 
   const totalTrades = filteredTrades.length;
+
+  const outcomeStats = useMemo(() => {
+    const tradesWithOutcome = trades.filter((trade) => Boolean(trade.tradeOutcome));
+    const profitableTrades = tradesWithOutcome.filter((trade) => trade.tradeOutcome === "profit");
+    const percentage = tradesWithOutcome.length
+      ? (profitableTrades.length / tradesWithOutcome.length) * 100
+      : 0;
+
+    return {
+      profitable: profitableTrades.length,
+      total: tradesWithOutcome.length,
+      percentage,
+    };
+  }, [trades]);
 
   const outcomesByDay = useMemo(() => {
     const map = new Map<string, { outcome: "profit" | "loss"; timestamp: number }[]>();
@@ -285,6 +299,38 @@ export default function Home() {
       </header>
 
       <div className="mt-16 flex w-full flex-col items-center gap-12 pb-16">
+        <div className="w-full max-w-3xl self-center text-left sm:max-w-4xl">
+          <div className="flex flex-col gap-2 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-6 py-5 shadow-[0_14px_32px_rgba(15,23,42,0.08)]">
+            <div className="flex items-center gap-2 text-base font-semibold text-fg">
+              <span>Operazioni in guadagno</span>
+              <div className="relative" ref={winrateInfoRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowWinrateInfo((current) => !current)}
+                  className="interactive-area grid h-6 w-6 place-items-center rounded-full border border-border bg-[color:rgb(var(--surface)/0.92)] text-[0.7rem] font-semibold text-muted-fg transition-colors hover:text-fg"
+                  aria-label="Informazioni sulla percentuale di trade vincenti"
+                >
+                  i
+                </button>
+                {showWinrateInfo ? (
+                  <div className="absolute left-1/2 top-full z-20 mt-3 w-72 -translate-x-1/2 rounded-2xl bg-[rgb(24,24,27)] px-4 py-3 text-sm font-medium text-white shadow-[0_22px_44px_rgba(15,23,42,0.36)]">
+                    <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-2 border-x-[9px] border-x-transparent border-b-[9px] border-b-[rgb(24,24,27)]" aria-hidden="true" />
+                    La percentuale di trade vincenti, il numero di operazioni vincenti diviso per il numero totale di operazioni chiuse.
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            <div className="flex items-baseline gap-3">
+              <span className="text-3xl font-semibold text-fg">
+                {outcomeStats.percentage.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
+              </span>
+              <span className="text-sm font-medium text-muted-fg">
+                {outcomeStats.profitable}/{outcomeStats.total}
+              </span>
+            </div>
+          </div>
+        </div>
+
         <Card className="w-full max-w-3xl self-center p-8 sm:max-w-4xl sm:p-10">
           <div className="flex items-center justify-between">
             <button
