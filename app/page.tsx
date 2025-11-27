@@ -1,7 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import Link from "next/link";
+import { Settings } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import {
@@ -11,8 +19,11 @@ import {
   LAST_HOME_SCROLL_POSITION_STORAGE_KEY,
   type StoredTrade,
 } from "@/lib/tradesStorage";
+import { calculateProfitFactor, getTradeTimestamp } from "@/lib/tradeStats";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const PROFIT_FACTOR_INITIAL_CAPITAL_STORAGE_KEY = "profit-factor-initial-capital";
+const DEFAULT_INITIAL_CAPITAL = 1000;
 
 function getCalendarDays(activeDate: Date) {
   const year = activeDate.getFullYear();
@@ -41,25 +52,6 @@ function getCalendarDays(activeDate: Date) {
   return days;
 }
 
-function getTradeTimestamp(trade: StoredTrade) {
-  const candidates = [trade.date, trade.openTime, trade.closeTime, trade.createdAt];
-
-  for (const candidate of candidates) {
-    if (!candidate) {
-      continue;
-    }
-
-    const parsed = new Date(candidate);
-    const timestamp = parsed.getTime();
-
-    if (!Number.isNaN(timestamp)) {
-      return timestamp;
-    }
-  }
-
-  return 0;
-}
-
 export default function Home() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [trades, setTrades] = useState<StoredTrade[]>([]);
@@ -67,6 +59,12 @@ export default function Home() {
   const [highlightedTradeId, setHighlightedTradeId] = useState<string | null>(null);
   const [pendingScrollTop, setPendingScrollTop] = useState<number | null>(null);
   const [hasLoadedTrades, setHasLoadedTrades] = useState(false);
+  const [showWinrateInfo, setShowWinrateInfo] = useState(false);
+  const [showProfitSettings, setShowProfitSettings] = useState(false);
+  const [initialCapital, setInitialCapital] = useState(DEFAULT_INITIAL_CAPITAL);
+  const [capitalInput, setCapitalInput] = useState(String(DEFAULT_INITIAL_CAPITAL));
+  const winrateInfoRef = useRef<HTMLDivElement | null>(null);
+  const profitSettingsRef = useRef<HTMLDivElement | null>(null);
   const persistScrollPosition = useCallback(() => {
     if (typeof window === "undefined") {
       return;
@@ -91,6 +89,32 @@ export default function Home() {
   useEffect(() => {
     refreshTrades();
   }, [refreshTrades]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const storedValue = window.localStorage.getItem(
+        PROFIT_FACTOR_INITIAL_CAPITAL_STORAGE_KEY,
+      );
+
+      if (storedValue) {
+        const parsed = Number(storedValue.replace(/,/g, "."));
+
+        if (Number.isFinite(parsed)) {
+          setInitialCapital(parsed);
+          setCapitalInput(String(parsed));
+          return;
+        }
+      }
+    } catch {
+      // Ignore storage issues
+    }
+
+    setCapitalInput(String(DEFAULT_INITIAL_CAPITAL));
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -195,6 +219,24 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (winrateInfoRef.current?.contains(target) || profitSettingsRef.current?.contains(target)) {
+        return;
+      }
+
+      setShowWinrateInfo(false);
+      setShowProfitSettings(false);
+    };
+
+    window.addEventListener("click", handleClickOutside);
+
+    return () => {
+      window.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
+
   const monthDays = useMemo(() => getCalendarDays(currentDate), [currentDate]);
   const todayKey = new Date().toDateString();
   const activeMonth = currentDate.getMonth();
@@ -221,6 +263,69 @@ export default function Home() {
   }, [orderedTrades, tradeFilter]);
 
   const totalTrades = filteredTrades.length;
+
+  const outcomeStats = useMemo(() => {
+    const tradesWithOutcome = trades.filter((trade) => Boolean(trade.tradeOutcome));
+    const profitableTrades = tradesWithOutcome.filter((trade) => trade.tradeOutcome === "profit");
+    const percentage = tradesWithOutcome.length
+      ? (profitableTrades.length / tradesWithOutcome.length) * 100
+      : 0;
+
+    return {
+      profitable: profitableTrades.length,
+      total: tradesWithOutcome.length,
+      percentage,
+    };
+  }, [trades]);
+
+  const profitFactorStats = useMemo(
+    () => calculateProfitFactor(trades, initialCapital),
+    [initialCapital, trades],
+  );
+
+  const formattedProfitFactor = useMemo(() => {
+    if (profitFactorStats.profitFactor === Number.POSITIVE_INFINITY) {
+      return "∞";
+    }
+
+    if (!Number.isFinite(profitFactorStats.profitFactor)) {
+      return "0,00";
+    }
+
+    return profitFactorStats.profitFactor.toLocaleString("it-IT", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }, [profitFactorStats.profitFactor]);
+
+  const handleProfitSettingsSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const normalized = capitalInput.trim().replace(/,/g, ".");
+      const parsed = Number(normalized);
+
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        setCapitalInput(String(initialCapital));
+        setShowProfitSettings(false);
+        return;
+      }
+
+      setInitialCapital(parsed);
+      setCapitalInput(String(parsed));
+
+      try {
+        window.localStorage.setItem(
+          PROFIT_FACTOR_INITIAL_CAPITAL_STORAGE_KEY,
+          String(parsed),
+        );
+      } catch {
+        // Ignore storage failures
+      }
+
+      setShowProfitSettings(false);
+    },
+    [capitalInput, initialCapital],
+  );
 
   const outcomesByDay = useMemo(() => {
     const map = new Map<string, { outcome: "profit" | "loss"; timestamp: number }[]>();
@@ -285,6 +390,108 @@ export default function Home() {
       </header>
 
       <div className="mt-16 flex w-full flex-col items-center gap-12 pb-16">
+        <div className="w-full max-w-3xl self-center text-left sm:max-w-4xl">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-6 py-5 shadow-[0_14px_32px_rgba(15,23,42,0.08)]">
+              <div className="flex items-center gap-2 text-base font-semibold text-fg">
+                <span>Operazioni in guadagno</span>
+                <div className="relative" ref={winrateInfoRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowWinrateInfo((current) => !current)}
+                    className="interactive-area grid h-6 w-6 place-items-center rounded-full border border-border bg-[color:rgb(var(--surface)/0.92)] text-[0.7rem] font-semibold text-muted-fg transition-colors hover:text-fg"
+                    aria-label="Informazioni sulla percentuale di trade vincenti"
+                  >
+                    i
+                  </button>
+                  {showWinrateInfo ? (
+                    <div className="absolute left-1/2 top-full z-20 mt-3 w-72 -translate-x-1/2 rounded-2xl bg-[rgb(24,24,27)] px-4 py-3 text-sm font-medium text-white shadow-[0_22px_44px_rgba(15,23,42,0.36)]">
+                      <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-2 border-x-[9px] border-x-transparent border-b-[9px] border-b-[rgb(24,24,27)]" aria-hidden="true" />
+                      La percentuale di trade vincenti, il numero di operazioni vincenti diviso per il numero totale di operazioni chiuse.
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              <div className="flex items-baseline gap-3">
+                <span className="text-3xl font-semibold text-fg">
+                  {outcomeStats.percentage.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
+                </span>
+                <span className="text-sm font-medium text-muted-fg">
+                  {outcomeStats.profitable}/{outcomeStats.total}
+                </span>
+              </div>
+            </div>
+
+            <div className="relative flex flex-col gap-2 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-6 py-5 shadow-[0_14px_32px_rgba(15,23,42,0.08)]">
+              <div className="flex items-center gap-2 text-base font-semibold text-fg">
+                <span>Profit Factor</span>
+                <div className="relative" ref={profitSettingsRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCapitalInput(String(initialCapital));
+                      setShowProfitSettings((current) => !current);
+                    }}
+                    className="interactive-area grid h-8 w-8 place-items-center rounded-full border border-border bg-[color:rgb(var(--surface)/0.92)] text-muted-fg transition-colors hover:text-fg"
+                    aria-label="Imposta il capitale iniziale per il Profit Factor"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </button>
+                  {showProfitSettings ? (
+                    <div className="absolute right-0 top-full z-20 mt-3 w-80 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.98)] p-4 shadow-[0_22px_44px_rgba(15,23,42,0.36)]">
+                      <form className="flex flex-col gap-3" onSubmit={handleProfitSettingsSubmit}>
+                        <label className="flex flex-col gap-2 text-sm font-semibold text-fg">
+                          Capitale iniziale
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            step="0.01"
+                            min="0"
+                            value={capitalInput}
+                            onChange={(event) => setCapitalInput(event.target.value)}
+                            className="w-full rounded-xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-3 py-2 text-base font-semibold text-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition focus:border-accent"
+                          />
+                        </label>
+                        <div className="flex justify-end gap-2 text-sm font-semibold">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowProfitSettings(false);
+                              setCapitalInput(String(initialCapital));
+                            }}
+                            className="interactive-area rounded-full border border-border px-3 py-1 text-muted-fg transition-colors hover:text-fg"
+                          >
+                            Annulla
+                          </button>
+                          <Button type="submit" size="sm" variant="primary">
+                            Salva
+                          </Button>
+                        </div>
+                      </form>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-baseline gap-3">
+                  <span className="text-3xl font-semibold text-fg">{formattedProfitFactor}</span>
+                  <span className="text-sm font-medium text-muted-fg">PF</span>
+                </div>
+                <div className="text-sm font-medium text-muted-fg">
+                  Profitti {profitFactorStats.totalProfit.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / Perdite
+                  {" "}
+                  {profitFactorStats.totalLoss.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-fg">
+                  Capitale iniziale {initialCapital.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {" "}
+                  · Finale {profitFactorStats.finalCapital.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <Card className="w-full max-w-3xl self-center p-8 sm:max-w-4xl sm:p-10">
           <div className="flex items-center justify-between">
             <button
