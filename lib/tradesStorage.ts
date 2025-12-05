@@ -30,6 +30,8 @@ export type StoredTrade = {
   id: string;
   symbolCode: string;
   symbolFlag: string;
+  isArchived: boolean;
+  archivedAt: string | null;
   isPaperTrade: boolean;
   tradeOutcome: "profit" | "loss" | null;
   openTime: string | null;
@@ -63,6 +65,7 @@ export type StoredTrade = {
 export type TradePayload = {
   id?: string;
   symbolCode: string;
+  isArchived: boolean | null;
   isPaperTrade: boolean | null;
   tradeOutcome: "profit" | "loss" | null;
   date: string;
@@ -377,6 +380,7 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
   const openTime = parseDateValue(row?.open_time);
   const closeTime = parseDateValue(row?.close_time);
   const createdAt = parseDateValue(row?.created_at);
+  const archivedAt = parseDateValue(row?.archived_at);
 
   const dateSource = openTime ?? createdAt ?? new Date().toISOString();
   const tradeOutcomeRaw = normalizeTradeField(row?.trade_outcome, "string");
@@ -402,6 +406,8 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
     id: row?.id?.toString() ?? "",
     symbolCode,
     symbolFlag: getSymbolFlag(symbolCode),
+    isArchived: Boolean(row?.is_archived ?? false),
+    archivedAt,
     isPaperTrade: Boolean(row?.is_paper_trade ?? false),
     tradeOutcome,
     openTime,
@@ -589,6 +595,10 @@ function buildTradeRecord(payload: TradePayload) {
   const openTime = payload.openTime ?? payload.date;
   const closeTime = payload.closeTime ?? null;
   const symbol = normalizeTradeField(payload.symbolCode, "string") ?? "";
+  const isArchived = normalizeTradeField(payload.isArchived, "boolean") ?? false;
+  const archivedAt = isArchived
+    ? parseDateValue(payload.closeTime ?? payload.date ?? payload.openTime)
+    : null;
   const normalizedTakeProfitValues = (payload.takeProfit ?? [])
     .map((value) => normalizeTradeField(value, "number"))
     .filter((value): value is number => value !== null);
@@ -617,6 +627,8 @@ function buildTradeRecord(payload: TradePayload) {
 
   return {
     symbol,
+    is_archived: isArchived,
+    archived_at: archivedAt,
     is_paper_trade: normalizeTradeField(payload.isPaperTrade, "boolean"),
     trade_outcome: payload.tradeOutcome ?? null,
     open_time: openTime,
@@ -817,6 +829,7 @@ export async function loadTrades(): Promise<StoredTrade[]> {
   const { data, error } = await supabase
     .from("registered_trades")
     .select("*")
+    .order("is_archived", { ascending: true })
     .order("created_at", { ascending: false, nullsFirst: false })
     .order("open_time", { ascending: false, nullsFirst: false });
 
@@ -1028,4 +1041,83 @@ export async function deleteTrade(tradeId: string) {
   }
 
   notifyTradesChanged();
+}
+
+export async function updateTradeArchiveState(tradeId: string, isArchived: boolean) {
+  const normalizedTradeId = tradeId?.toString?.().trim();
+
+  if (!normalizedTradeId) {
+    throw new Error("Trade id is required to update archive state");
+  }
+
+  const archivedAt = isArchived ? new Date().toISOString() : null;
+
+  const { error } = await supabase
+    .from("registered_trades")
+    .update({ is_archived: isArchived, archived_at: archivedAt })
+    .eq("id", normalizedTradeId);
+
+  if (error) {
+    console.error("Failed to update archive state", error);
+    throw error;
+  }
+
+  notifyTradesChanged();
+}
+
+function cloneLibraryItems(items: StoredLibraryItem[]) {
+  const timestamp = Date.now();
+
+  return items.map((item, index) => ({
+    ...item,
+    id: `${item.id ?? "library"}-copy-${timestamp}-${index}`,
+    recordId: undefined,
+    persisted: false,
+  }));
+}
+
+export async function duplicateTrade(tradeId: string): Promise<SaveTradeResult | null> {
+  if (!tradeId) {
+    return null;
+  }
+
+  const originalTrade = await loadTradeById(tradeId);
+
+  if (!originalTrade) {
+    return null;
+  }
+
+  const payload: TradePayload = {
+    symbolCode: originalTrade.symbolCode,
+    isArchived: false,
+    isPaperTrade: originalTrade.isPaperTrade,
+    tradeOutcome: originalTrade.tradeOutcome,
+    date: originalTrade.date,
+    openTime: originalTrade.openTime,
+    closeTime: originalTrade.closeTime,
+    position: originalTrade.position,
+    riskReward: originalTrade.riskReward,
+    risk: originalTrade.risk,
+    pips: originalTrade.pips,
+    lotSize: originalTrade.lotSize,
+    entryPrice: originalTrade.entryPrice,
+    exitPrice: originalTrade.exitPrice,
+    stopLoss: originalTrade.stopLoss,
+    takeProfit: originalTrade.takeProfit,
+    takeProfitOutcomes: originalTrade.takeProfitOutcomes,
+    pnl: originalTrade.pnl,
+    preTradeMentalState: originalTrade.preTradeMentalState,
+    emotionsDuringTrade: originalTrade.emotionsDuringTrade,
+    emotionsAfterTrade: originalTrade.emotionsAfterTrade,
+    confidenceLevel: originalTrade.confidenceLevel,
+    emotionalTrigger: originalTrade.emotionalTrigger,
+    followedPlan: originalTrade.followedPlan,
+    respectedRisk: originalTrade.respectedRisk,
+    wouldRepeatTrade: originalTrade.wouldRepeatTrade,
+    notes: originalTrade.notes,
+    libraryNote: originalTrade.libraryNote,
+    libraryItems: cloneLibraryItems(originalTrade.libraryItems ?? []),
+  };
+
+  return saveTrade(payload);
 }

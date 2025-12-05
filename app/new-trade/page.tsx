@@ -372,6 +372,7 @@ function NewTradePageContent() {
   const [tradeOutcome, setTradeOutcome] = useState<TradeOutcome | null>(null);
   const [isOutcomeListOpen, setIsOutcomeListOpen] = useState(false);
   const [isRealTrade, setIsRealTrade] = useState(false);
+  const [isArchived, setIsArchived] = useState(false);
   const initialLibraryItems = useMemo(() => [createLibraryItem(null)], []);
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>(initialLibraryItems);
   const [libraryNote, setLibraryNote] = useState<string>("");
@@ -1337,6 +1338,7 @@ function NewTradePageContent() {
 
         setSelectedSymbol(matchedSymbol);
         setIsRealTrade(!match.isPaperTrade);
+        setIsArchived(Boolean(match.isArchived));
         setTradeOutcome(match.tradeOutcome ?? null);
 
         const parsedDate = new Date(match.date);
@@ -3274,6 +3276,7 @@ function NewTradePageContent() {
     const payload: TradePayload = {
       id: editingTradeId ?? undefined,
       symbolCode: selectedSymbol?.code ?? "",
+      isArchived,
       isPaperTrade: !isRealTrade,
       tradeOutcome,
       date: selectedDate.toISOString(),
@@ -3348,6 +3351,7 @@ function NewTradePageContent() {
     entryPrice,
     exitPrice,
     followedPlan,
+    isArchived,
     isEditing,
     isLoadingTrade,
     isRealTrade,

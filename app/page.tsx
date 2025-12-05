@@ -6,9 +6,11 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import {
   loadTrades,
+  duplicateTrade,
   REGISTERED_TRADES_UPDATED_EVENT,
   LAST_OPENED_TRADE_STORAGE_KEY,
   LAST_HOME_SCROLL_POSITION_STORAGE_KEY,
+  updateTradeArchiveState,
   type StoredTrade,
 } from "@/lib/tradesStorage";
 import { calculateProfitFactor, getTradeTimestamp } from "@/lib/tradeStats";
@@ -48,7 +50,11 @@ export default function Home() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [trades, setTrades] = useState<StoredTrade[]>([]);
   const [tradeFilter, setTradeFilter] = useState<"all" | "real" | "paper">("all");
+  const [archiveFilter, setArchiveFilter] = useState<"active" | "archived" | "all">("active");
   const [highlightedTradeId, setHighlightedTradeId] = useState<string | null>(null);
+  const [archivingTradeId, setArchivingTradeId] = useState<string | null>(null);
+  const [duplicatingTradeId, setDuplicatingTradeId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [pendingScrollTop, setPendingScrollTop] = useState<number | null>(null);
   const [hasLoadedTrades, setHasLoadedTrades] = useState(false);
   const [showWinrateInfo, setShowWinrateInfo] = useState(false);
@@ -246,16 +252,24 @@ export default function Home() {
   );
 
   const filteredTrades = useMemo(() => {
+    let visibleTrades = orderedTrades;
+
     if (tradeFilter === "paper") {
-      return orderedTrades.filter((trade) => trade.isPaperTrade);
+      visibleTrades = visibleTrades.filter((trade) => trade.isPaperTrade);
     }
 
     if (tradeFilter === "real") {
-      return orderedTrades.filter((trade) => !trade.isPaperTrade);
+      visibleTrades = visibleTrades.filter((trade) => !trade.isPaperTrade);
     }
 
-    return orderedTrades;
-  }, [orderedTrades, tradeFilter]);
+    if (archiveFilter === "archived") {
+      visibleTrades = visibleTrades.filter((trade) => trade.isArchived);
+    } else if (archiveFilter === "active") {
+      visibleTrades = visibleTrades.filter((trade) => !trade.isArchived);
+    }
+
+    return visibleTrades;
+  }, [archiveFilter, orderedTrades, tradeFilter]);
 
   const totalTrades = filteredTrades.length;
 
@@ -363,6 +377,52 @@ export default function Home() {
       setShowProfitSettings(false);
     },
     [initialCapitalInput],
+  );
+
+  const handleArchiveToggle = useCallback(
+    async (trade: StoredTrade) => {
+      setArchivingTradeId(trade.id);
+      setActionError(null);
+
+      try {
+        await updateTradeArchiveState(trade.id, !trade.isArchived);
+        await refreshTrades();
+      } catch (error) {
+        console.error("Failed to update archive state", error);
+        setActionError("Non è stato possibile aggiornare lo stato dell'operazione. Riprova.");
+      } finally {
+        setArchivingTradeId(null);
+      }
+    },
+    [refreshTrades],
+  );
+
+  const handleDuplicateTrade = useCallback(
+    async (tradeId: string) => {
+      setDuplicatingTradeId(tradeId);
+      setActionError(null);
+
+      try {
+        const result = await duplicateTrade(tradeId);
+
+        if (result?.tradeId) {
+          setHighlightedTradeId(result.tradeId);
+          window.setTimeout(() => {
+            setHighlightedTradeId((current) => (current === result.tradeId ? null : current));
+          }, 2200);
+          await refreshTrades();
+          return;
+        }
+
+        setActionError("Non è stato possibile trovare questa operazione da duplicare.");
+      } catch (error) {
+        console.error("Failed to duplicate trade", error);
+        setActionError("Non è stato possibile duplicare l'operazione. Riprova.");
+      } finally {
+        setDuplicatingTradeId(null);
+      }
+    },
+    [refreshTrades],
   );
 
   return (
@@ -573,45 +633,90 @@ export default function Home() {
             <h2 className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">
               Registered Trades
             </h2>
-            <div className="inline-flex items-center gap-1 self-start rounded-full border border-border bg-[color:rgb(var(--surface)/0.78)] p-1 text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-muted-fg shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-              <button
-                type="button"
-                onClick={() => setTradeFilter("all")}
-                className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                  tradeFilter === "all"
-                    ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
-                    : "text-muted-fg hover:text-fg"
-                }`}
-                aria-pressed={tradeFilter === "all"}
-              >
-                All
-              </button>
-              <button
-                type="button"
-                onClick={() => setTradeFilter("real")}
-                className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                  tradeFilter === "real"
-                    ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
-                    : "text-muted-fg hover:text-fg"
-                }`}
-                aria-pressed={tradeFilter === "real"}
-              >
-                Real trades
-              </button>
-              <button
-                type="button"
-                onClick={() => setTradeFilter("paper")}
-                className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                  tradeFilter === "paper"
-                    ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
-                    : "text-muted-fg hover:text-fg"
-                }`}
-                aria-pressed={tradeFilter === "paper"}
-              >
-                Paper trades
-              </button>
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              <div className="inline-flex items-center gap-1 self-start rounded-full border border-border bg-[color:rgb(var(--surface)/0.78)] p-1 text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-muted-fg shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+                <button
+                  type="button"
+                  onClick={() => setTradeFilter("all")}
+                  className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    tradeFilter === "all"
+                      ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                      : "text-muted-fg hover:text-fg"
+                  }`}
+                  aria-pressed={tradeFilter === "all"}
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTradeFilter("real")}
+                  className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    tradeFilter === "real"
+                      ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                      : "text-muted-fg hover:text-fg"
+                  }`}
+                  aria-pressed={tradeFilter === "real"}
+                >
+                  Real trades
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTradeFilter("paper")}
+                  className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    tradeFilter === "paper"
+                      ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                      : "text-muted-fg hover:text-fg"
+                  }`}
+                  aria-pressed={tradeFilter === "paper"}
+                >
+                  Paper trades
+                </button>
+              </div>
+
+              <div className="inline-flex items-center gap-1 self-start rounded-full border border-border bg-[color:rgb(var(--surface)/0.78)] p-1 text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-muted-fg shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+                <button
+                  type="button"
+                  onClick={() => setArchiveFilter("active")}
+                  className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    archiveFilter === "active"
+                      ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                      : "text-muted-fg hover:text-fg"
+                  }`}
+                  aria-pressed={archiveFilter === "active"}
+                >
+                  Attive
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setArchiveFilter("archived")}
+                  className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    archiveFilter === "archived"
+                      ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                      : "text-muted-fg hover:text-fg"
+                  }`}
+                  aria-pressed={archiveFilter === "archived"}
+                >
+                  Archiviate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setArchiveFilter("all")}
+                  className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    archiveFilter === "all"
+                      ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                      : "text-muted-fg hover:text-fg"
+                  }`}
+                  aria-pressed={archiveFilter === "all"}
+                >
+                  Tutte
+                </button>
+              </div>
             </div>
           </div>
+
+          {actionError ? (
+            <p className="mt-1 text-sm font-semibold text-[#e24a4a]">{actionError}</p>
+          ) : null}
 
           {orderedTrades.length === 0 ? (
             <p
@@ -656,9 +761,18 @@ export default function Home() {
                 const cardClasses = [
                   "group relative flex min-h-[9.5rem] flex-col gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-4 py-3 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)] md:min-h-[5.75rem] md:flex-row md:items-center md:gap-5 md:px-5 md:py-4",
                   highlightedTradeId === trade.id ? "last-opened-trade-card" : "",
+                  trade.isArchived ? "opacity-80" : "",
                 ]
                   .filter(Boolean)
                   .join(" ");
+                const isArchiving = archivingTradeId === trade.id;
+                const isDuplicating = duplicatingTradeId === trade.id;
+                const archiveButtonLabel = isArchiving
+                  ? "..."
+                  : trade.isArchived
+                    ? "Ripristina"
+                    : "Archivia";
+                const duplicateButtonLabel = isDuplicating ? "Duplico..." : "Duplica";
 
                 return (
                   <li key={trade.id}>
@@ -667,6 +781,39 @@ export default function Home() {
                       className={cardClasses}
                       onClick={persistScrollPosition}
                     >
+                      <div className="absolute right-3 top-3 z-10 flex items-center gap-2 md:right-4 md:top-4">
+                        {trade.isArchived ? (
+                          <span className="inline-flex items-center rounded-full border border-border bg-[color:rgb(var(--surface)/0.85)] px-3 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-muted-fg shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+                            Archivio
+                          </span>
+                        ) : null}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="px-3 text-[0.7rem]"
+                          disabled={isArchiving || isDuplicating}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            void handleArchiveToggle(trade);
+                          }}
+                        >
+                          {archiveButtonLabel}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="px-3 text-[0.7rem]"
+                          disabled={isArchiving || isDuplicating}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            void handleDuplicateTrade(trade.id);
+                          }}
+                        >
+                          {duplicateButtonLabel}
+                        </Button>
+                      </div>
                       {trade.isPaperTrade ? (
                         <span
                           className="pointer-events-none absolute bottom-3 left-4 inline-flex items-center rounded-xl border border-[rgba(108,173,255,0.32)] bg-[rgba(108,173,255,0.16)] px-3 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-[rgba(24,68,142,0.92)] shadow-[0_10px_22px_rgba(15,23,42,0.1)] transition-colors md:hidden"
