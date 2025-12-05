@@ -9,6 +9,9 @@ import {
   REGISTERED_TRADES_UPDATED_EVENT,
   LAST_OPENED_TRADE_STORAGE_KEY,
   LAST_HOME_SCROLL_POSITION_STORAGE_KEY,
+  archiveTrade,
+  restoreTrade,
+  duplicateTrade,
   type StoredTrade,
 } from "@/lib/tradesStorage";
 import { calculateProfitFactor, getTradeTimestamp } from "@/lib/tradeStats";
@@ -48,6 +51,9 @@ export default function Home() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [trades, setTrades] = useState<StoredTrade[]>([]);
   const [tradeFilter, setTradeFilter] = useState<"all" | "real" | "paper">("all");
+  const [tradeArchiveFilter, setTradeArchiveFilter] = useState<"active" | "archived">(
+    "active",
+  );
   const [highlightedTradeId, setHighlightedTradeId] = useState<string | null>(null);
   const [pendingScrollTop, setPendingScrollTop] = useState<number | null>(null);
   const [hasLoadedTrades, setHasLoadedTrades] = useState(false);
@@ -57,6 +63,9 @@ export default function Home() {
   const [initialCapitalInput, setInitialCapitalInput] = useState(
     String(DEFAULT_INITIAL_CAPITAL),
   );
+  const [archivingTradeId, setArchivingTradeId] = useState<string | null>(null);
+  const [restoringTradeId, setRestoringTradeId] = useState<string | null>(null);
+  const [duplicatingTradeId, setDuplicatingTradeId] = useState<string | null>(null);
   const winrateInfoRef = useRef<HTMLDivElement | null>(null);
   const profitSettingsRef = useRef<HTMLDivElement | null>(null);
   const persistScrollPosition = useCallback(() => {
@@ -240,27 +249,52 @@ export default function Home() {
     month: "long",
     year: "numeric",
   });
+  const filterTradesByType = useCallback(
+    (list: StoredTrade[]) => {
+      if (tradeFilter === "paper") {
+        return list.filter((trade) => trade.isPaperTrade);
+      }
+
+      if (tradeFilter === "real") {
+        return list.filter((trade) => !trade.isPaperTrade);
+      }
+
+      return list;
+    },
+    [tradeFilter],
+  );
   const orderedTrades = useMemo(
     () => [...trades].sort((a, b) => getTradeTimestamp(b) - getTradeTimestamp(a)),
     [trades],
   );
+  const activeTrades = useMemo(
+    () => orderedTrades.filter((trade) => !trade.archivedAt),
+    [orderedTrades],
+  );
+  const archivedTrades = useMemo(
+    () => orderedTrades.filter((trade) => Boolean(trade.archivedAt)),
+    [orderedTrades],
+  );
+  const activeFilteredTrades = useMemo(
+    () => filterTradesByType(activeTrades),
+    [activeTrades, filterTradesByType],
+  );
+  const archivedFilteredTrades = useMemo(
+    () => filterTradesByType(archivedTrades),
+    [archivedTrades, filterTradesByType],
+  );
 
-  const filteredTrades = useMemo(() => {
-    if (tradeFilter === "paper") {
-      return orderedTrades.filter((trade) => trade.isPaperTrade);
-    }
-
-    if (tradeFilter === "real") {
-      return orderedTrades.filter((trade) => !trade.isPaperTrade);
-    }
-
-    return orderedTrades;
-  }, [orderedTrades, tradeFilter]);
+  const filteredTrades =
+    tradeArchiveFilter === "archived" ? archivedFilteredTrades : activeFilteredTrades;
 
   const totalTrades = filteredTrades.length;
+  const isArchiveView = tradeArchiveFilter === "archived";
+  const hasTradesInView = isArchiveView
+    ? archivedTrades.length > 0
+    : activeTrades.length > 0;
 
   const outcomeStats = useMemo(() => {
-    const tradesWithOutcome = trades.filter((trade) => Boolean(trade.tradeOutcome));
+    const tradesWithOutcome = activeTrades.filter((trade) => Boolean(trade.tradeOutcome));
     const profitableTrades = tradesWithOutcome.filter((trade) => trade.tradeOutcome === "profit");
     const percentage = tradesWithOutcome.length
       ? (profitableTrades.length / tradesWithOutcome.length) * 100
@@ -271,11 +305,11 @@ export default function Home() {
       total: tradesWithOutcome.length,
       percentage,
     };
-  }, [trades]);
+  }, [activeTrades]);
 
   const profitFactorResult = useMemo(
-    () => calculateProfitFactor(trades, initialCapital),
-    [initialCapital, trades],
+    () => calculateProfitFactor(activeTrades, initialCapital),
+    [activeTrades, initialCapital],
   );
 
   const profitFactorLabel = Number.isFinite(profitFactorResult.profitFactor)
@@ -298,7 +332,7 @@ export default function Home() {
   const outcomesByDay = useMemo(() => {
     const map = new Map<string, { outcome: "profit" | "loss"; timestamp: number }[]>();
 
-    for (const trade of filteredTrades) {
+    for (const trade of activeFilteredTrades) {
       if (!trade.tradeOutcome) {
         continue;
       }
@@ -337,7 +371,7 @@ export default function Home() {
     }
 
     return sorted;
-  }, [filteredTrades]);
+  }, [activeFilteredTrades]);
 
   const handleInitialCapitalSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
@@ -363,6 +397,62 @@ export default function Home() {
       setShowProfitSettings(false);
     },
     [initialCapitalInput],
+  );
+
+  const handleArchiveTrade = useCallback(
+    async (tradeId: string) => {
+      setArchivingTradeId(tradeId);
+
+      try {
+        await archiveTrade(tradeId);
+        await refreshTrades();
+      } catch (error) {
+        const normalizedError = error instanceof Error ? error : new Error(String(error));
+        console.error("Failed to archive trade", normalizedError);
+      } finally {
+        setArchivingTradeId(null);
+      }
+    },
+    [refreshTrades],
+  );
+
+  const handleRestoreTrade = useCallback(
+    async (tradeId: string) => {
+      setRestoringTradeId(tradeId);
+
+      try {
+        await restoreTrade(tradeId);
+        await refreshTrades();
+      } catch (error) {
+        const normalizedError = error instanceof Error ? error : new Error(String(error));
+        console.error("Failed to restore trade", normalizedError);
+      } finally {
+        setRestoringTradeId(null);
+      }
+    },
+    [refreshTrades],
+  );
+
+  const handleDuplicateTrade = useCallback(
+    async (tradeId: string) => {
+      setDuplicatingTradeId(tradeId);
+
+      try {
+        const duplicatedId = await duplicateTrade(tradeId);
+
+        if (duplicatedId) {
+          setTradeArchiveFilter("active");
+          setHighlightedTradeId(duplicatedId);
+          await refreshTrades();
+        }
+      } catch (error) {
+        const normalizedError = error instanceof Error ? error : new Error(String(error));
+        console.error("Failed to duplicate trade", normalizedError);
+      } finally {
+        setDuplicatingTradeId(null);
+      }
+    },
+    [refreshTrades],
   );
 
   return (
@@ -570,9 +660,37 @@ export default function Home() {
 
         <div className="w-full max-w-3xl self-center text-left sm:max-w-4xl">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">
-              Registered Trades
-            </h2>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h2 className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">
+                Registered Trades
+              </h2>
+              <div className="inline-flex items-center gap-1 self-start rounded-full border border-border bg-[color:rgb(var(--surface)/0.78)] p-1 text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-muted-fg shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+                <button
+                  type="button"
+                  onClick={() => setTradeArchiveFilter("active")}
+                  className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    tradeArchiveFilter === "active"
+                      ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                      : "text-muted-fg hover:text-fg"
+                  }`}
+                  aria-pressed={tradeArchiveFilter === "active"}
+                >
+                  Attive
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTradeArchiveFilter("archived")}
+                  className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    tradeArchiveFilter === "archived"
+                      ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                      : "text-muted-fg hover:text-fg"
+                  }`}
+                  aria-pressed={tradeArchiveFilter === "archived"}
+                >
+                  Archiviate
+                </button>
+              </div>
+            </div>
             <div className="inline-flex items-center gap-1 self-start rounded-full border border-border bg-[color:rgb(var(--surface)/0.78)] p-1 text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-muted-fg shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
               <button
                 type="button"
@@ -613,19 +731,21 @@ export default function Home() {
             </div>
           </div>
 
-          {orderedTrades.length === 0 ? (
+          {!hasTradesInView ? (
             <p
               className="mt-4 rounded-2xl border border-dashed bg-[color:rgb(var(--surface)/0.75)] px-6 py-8 text-center text-sm text-muted-fg backdrop-blur"
               style={{ borderColor: "color-mix(in srgb, rgba(var(--border)) 60%, transparent)" }}
             >
-              No trades saved yet. Use the Add trade button to register your first trade.
+              {isArchiveView
+                ? "Non hai ancora archiviato nessuna operazione."
+                : "No trades saved yet. Use the Add trade button to register your first trade."}
             </p>
           ) : filteredTrades.length === 0 ? (
             <p
               className="mt-4 rounded-2xl border border-dashed bg-[color:rgb(var(--surface)/0.75)] px-6 py-8 text-center text-sm text-muted-fg backdrop-blur"
               style={{ borderColor: "color-mix(in srgb, rgba(var(--border)) 60%, transparent)" }}
             >
-              No trades match the selected filter.
+              Nessuna operazione corrisponde ai filtri selezionati.
             </p>
           ) : (
             <ol className="mt-4 space-y-3">
@@ -653,6 +773,11 @@ export default function Home() {
                     })
                     .filter((description): description is string => Boolean(description)) ?? [];
                 const shouldRenderOutcomes = Boolean(outcomeLabel) || takeProfitDescriptions.length > 0;
+                const isArchiving = archivingTradeId === trade.id;
+                const isRestoring = restoringTradeId === trade.id;
+                const isDuplicating = duplicatingTradeId === trade.id;
+                const archiveLabel = isArchiveView ? "Ripristina" : "Archivia";
+                const archiveAction = isArchiveView ? handleRestoreTrade : handleArchiveTrade;
                 const cardClasses = [
                   "group relative flex min-h-[9.5rem] flex-col gap-3 rounded-2xl border border-border bg-[color:rgb(var(--surface)/0.92)] px-4 py-3 shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_26px_46px_rgba(15,23,42,0.16)] md:min-h-[5.75rem] md:flex-row md:items-center md:gap-5 md:px-5 md:py-4",
                   highlightedTradeId === trade.id ? "last-opened-trade-card" : "",
@@ -667,6 +792,36 @@ export default function Home() {
                       className={cardClasses}
                       onClick={persistScrollPosition}
                     >
+                      <div className="absolute right-3 top-3 flex flex-wrap justify-end gap-2 md:gap-2.5">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="!px-3 !py-1.5 text-[0.72rem]"
+                          disabled={isDuplicating}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            handleDuplicateTrade(trade.id);
+                          }}
+                        >
+                          {isDuplicating ? "Duplicazione..." : "Duplica"}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="!px-3 !py-1.5 text-[0.72rem]"
+                          disabled={isArchiving || isRestoring}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            archiveAction(trade.id);
+                          }}
+                        >
+                          {isArchiving || isRestoring ? "In corso..." : archiveLabel}
+                        </Button>
+                      </div>
                       {trade.isPaperTrade ? (
                         <span
                           className="pointer-events-none absolute bottom-3 left-4 inline-flex items-center rounded-xl border border-[rgba(108,173,255,0.32)] bg-[rgba(108,173,255,0.16)] px-3 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-[rgba(24,68,142,0.92)] shadow-[0_10px_22px_rgba(15,23,42,0.1)] transition-colors md:hidden"

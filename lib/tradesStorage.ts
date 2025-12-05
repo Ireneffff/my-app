@@ -31,6 +31,7 @@ export type StoredTrade = {
   symbolCode: string;
   symbolFlag: string;
   isPaperTrade: boolean;
+  archivedAt: string | null;
   tradeOutcome: "profit" | "loss" | null;
   openTime: string | null;
   closeTime: string | null;
@@ -64,6 +65,7 @@ export type TradePayload = {
   id?: string;
   symbolCode: string;
   isPaperTrade: boolean | null;
+  archivedAt?: string | null;
   tradeOutcome: "profit" | "loss" | null;
   date: string;
   openTime: string | null;
@@ -377,6 +379,7 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
   const openTime = parseDateValue(row?.open_time);
   const closeTime = parseDateValue(row?.close_time);
   const createdAt = parseDateValue(row?.created_at);
+  const archivedAt = parseDateValue(row?.archived_at);
 
   const dateSource = openTime ?? createdAt ?? new Date().toISOString();
   const tradeOutcomeRaw = normalizeTradeField(row?.trade_outcome, "string");
@@ -403,6 +406,7 @@ function mapTradeRow(row: Record<string, unknown>): StoredTrade {
     symbolCode,
     symbolFlag: getSymbolFlag(symbolCode),
     isPaperTrade: Boolean(row?.is_paper_trade ?? false),
+    archivedAt,
     tradeOutcome,
     openTime,
     closeTime,
@@ -618,6 +622,7 @@ function buildTradeRecord(payload: TradePayload) {
   return {
     symbol,
     is_paper_trade: normalizeTradeField(payload.isPaperTrade, "boolean"),
+    archived_at: parseDateValue(payload.archivedAt),
     trade_outcome: payload.tradeOutcome ?? null,
     open_time: openTime,
     close_time: closeTime,
@@ -1028,4 +1033,89 @@ export async function deleteTrade(tradeId: string) {
   }
 
   notifyTradesChanged();
+}
+
+async function setTradeArchiveState(tradeId: string, archivedAt: string | null) {
+  if (!tradeId) {
+    throw new Error("Cannot update archive status without a trade id");
+  }
+
+  try {
+    const { error } = await supabase
+      .from("registered_trades")
+      .update({ archived_at: archivedAt })
+      .eq("id", tradeId);
+
+    if (error) {
+      throw error;
+    }
+
+    notifyTradesChanged();
+    return archivedAt;
+  } catch (error) {
+    const normalizedError = error instanceof Error ? error : new Error(String(error));
+    console.error("Failed to update archive state", normalizedError);
+    throw normalizedError;
+  }
+}
+
+export async function archiveTrade(tradeId: string) {
+  return setTradeArchiveState(tradeId, new Date().toISOString());
+}
+
+export async function restoreTrade(tradeId: string) {
+  return setTradeArchiveState(tradeId, null);
+}
+
+export async function duplicateTrade(tradeId: string): Promise<string | null> {
+  if (!tradeId) {
+    return null;
+  }
+
+  const sourceTrade = await loadTradeById(tradeId);
+
+  if (!sourceTrade) {
+    return null;
+  }
+
+  const payload: TradePayload = {
+    symbolCode: sourceTrade.symbolCode,
+    isPaperTrade: sourceTrade.isPaperTrade,
+    archivedAt: null,
+    tradeOutcome: sourceTrade.tradeOutcome,
+    date: sourceTrade.date,
+    openTime: sourceTrade.openTime,
+    closeTime: sourceTrade.closeTime,
+    position: sourceTrade.position,
+    riskReward: sourceTrade.riskReward,
+    risk: sourceTrade.risk,
+    pips: sourceTrade.pips,
+    lotSize: sourceTrade.lotSize,
+    entryPrice: sourceTrade.entryPrice,
+    exitPrice: sourceTrade.exitPrice,
+    stopLoss: sourceTrade.stopLoss,
+    takeProfit: sourceTrade.takeProfit,
+    takeProfitOutcomes: sourceTrade.takeProfitOutcomes,
+    pnl: sourceTrade.pnl,
+    preTradeMentalState: sourceTrade.preTradeMentalState,
+    emotionsDuringTrade: sourceTrade.emotionsDuringTrade,
+    emotionsAfterTrade: sourceTrade.emotionsAfterTrade,
+    confidenceLevel: sourceTrade.confidenceLevel,
+    emotionalTrigger: sourceTrade.emotionalTrigger,
+    followedPlan: sourceTrade.followedPlan,
+    respectedRisk: sourceTrade.respectedRisk,
+    wouldRepeatTrade: sourceTrade.wouldRepeatTrade,
+    notes: sourceTrade.notes,
+    libraryNote: sourceTrade.libraryNote,
+    libraryItems: sourceTrade.libraryItems ?? [],
+  } satisfies TradePayload;
+
+  try {
+    const result = await saveTrade(payload);
+    return result.tradeId;
+  } catch (error) {
+    const normalizedError = error instanceof Error ? error : new Error(String(error));
+    console.error("Failed to duplicate trade", normalizedError);
+    return null;
+  }
 }
