@@ -1,6 +1,14 @@
 "use client";
 
-import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type FormEvent,
+  type MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -9,6 +17,8 @@ import {
   REGISTERED_TRADES_UPDATED_EVENT,
   LAST_OPENED_TRADE_STORAGE_KEY,
   LAST_HOME_SCROLL_POSITION_STORAGE_KEY,
+  archiveTrade,
+  duplicateTrade,
   type StoredTrade,
 } from "@/lib/tradesStorage";
 import { calculateProfitFactor, getTradeTimestamp } from "@/lib/tradeStats";
@@ -48,11 +58,14 @@ export default function Home() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [trades, setTrades] = useState<StoredTrade[]>([]);
   const [tradeFilter, setTradeFilter] = useState<"all" | "real" | "paper">("all");
+  const [includeArchived, setIncludeArchived] = useState(false);
   const [highlightedTradeId, setHighlightedTradeId] = useState<string | null>(null);
   const [pendingScrollTop, setPendingScrollTop] = useState<number | null>(null);
   const [hasLoadedTrades, setHasLoadedTrades] = useState(false);
   const [showWinrateInfo, setShowWinrateInfo] = useState(false);
   const [showProfitSettings, setShowProfitSettings] = useState(false);
+  const [archivingTradeId, setArchivingTradeId] = useState<string | null>(null);
+  const [duplicatingTradeId, setDuplicatingTradeId] = useState<string | null>(null);
   const [initialCapital, setInitialCapital] = useState(DEFAULT_INITIAL_CAPITAL);
   const [initialCapitalInput, setInitialCapitalInput] = useState(
     String(DEFAULT_INITIAL_CAPITAL),
@@ -246,16 +259,20 @@ export default function Home() {
   );
 
   const filteredTrades = useMemo(() => {
+    const archivedFilter = includeArchived
+      ? orderedTrades
+      : orderedTrades.filter((trade) => !trade.isArchived);
+
     if (tradeFilter === "paper") {
-      return orderedTrades.filter((trade) => trade.isPaperTrade);
+      return archivedFilter.filter((trade) => trade.isPaperTrade);
     }
 
     if (tradeFilter === "real") {
-      return orderedTrades.filter((trade) => !trade.isPaperTrade);
+      return archivedFilter.filter((trade) => !trade.isPaperTrade);
     }
 
-    return orderedTrades;
-  }, [orderedTrades, tradeFilter]);
+    return archivedFilter;
+  }, [includeArchived, orderedTrades, tradeFilter]);
 
   const totalTrades = filteredTrades.length;
 
@@ -363,6 +380,55 @@ export default function Home() {
       setShowProfitSettings(false);
     },
     [initialCapitalInput],
+  );
+
+  const handleArchiveTrade = useCallback(
+    async (event: MouseEvent<HTMLButtonElement>, tradeId: string) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      try {
+        setArchivingTradeId(tradeId);
+        await archiveTrade(tradeId);
+        await refreshTrades();
+      } catch (error) {
+        const normalizedError =
+          error instanceof Error ? error.message : "Archiviazione non riuscita";
+        console.error("Failed to archive trade", error);
+        window.alert(normalizedError);
+      } finally {
+        setArchivingTradeId((current) => (current === tradeId ? null : current));
+      }
+    },
+    [refreshTrades],
+  );
+
+  const handleDuplicateTrade = useCallback(
+    async (event: MouseEvent<HTMLButtonElement>, tradeId: string) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      try {
+        setDuplicatingTradeId(tradeId);
+        const newTradeId = await duplicateTrade(tradeId);
+        await refreshTrades();
+
+        if (newTradeId) {
+          setHighlightedTradeId(newTradeId);
+          window.setTimeout(() => {
+            setHighlightedTradeId((current) => (current === newTradeId ? null : current));
+          }, 2200);
+        }
+      } catch (error) {
+        const normalizedError =
+          error instanceof Error ? error.message : "Duplicazione non riuscita";
+        console.error("Failed to duplicate trade", error);
+        window.alert(normalizedError);
+      } finally {
+        setDuplicatingTradeId((current) => (current === tradeId ? null : current));
+      }
+    },
+    [refreshTrades],
   );
 
   return (
@@ -573,43 +639,57 @@ export default function Home() {
             <h2 className="text-xs font-medium uppercase tracking-[0.28em] text-muted-fg">
               Registered Trades
             </h2>
-            <div className="inline-flex items-center gap-1 self-start rounded-full border border-border bg-[color:rgb(var(--surface)/0.78)] p-1 text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-muted-fg shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-              <button
-                type="button"
-                onClick={() => setTradeFilter("all")}
-                className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                  tradeFilter === "all"
-                    ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
-                    : "text-muted-fg hover:text-fg"
-                }`}
-                aria-pressed={tradeFilter === "all"}
-              >
-                All
-              </button>
-              <button
-                type="button"
-                onClick={() => setTradeFilter("real")}
-                className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                  tradeFilter === "real"
-                    ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
-                    : "text-muted-fg hover:text-fg"
-                }`}
-                aria-pressed={tradeFilter === "real"}
-              >
-                Real trades
-              </button>
-              <button
-                type="button"
-                onClick={() => setTradeFilter("paper")}
-                className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                  tradeFilter === "paper"
-                    ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
-                    : "text-muted-fg hover:text-fg"
-                }`}
-                aria-pressed={tradeFilter === "paper"}
-              >
-                Paper trades
-              </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-1 self-start rounded-full border border-border bg-[color:rgb(var(--surface)/0.78)] p-1 text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-muted-fg shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+                <button
+                  type="button"
+                  onClick={() => setTradeFilter("all")}
+                  className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    tradeFilter === "all"
+                      ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                      : "text-muted-fg hover:text-fg"
+                  }`}
+                  aria-pressed={tradeFilter === "all"}
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTradeFilter("real")}
+                  className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    tradeFilter === "real"
+                      ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                      : "text-muted-fg hover:text-fg"
+                  }`}
+                  aria-pressed={tradeFilter === "real"}
+                >
+                  Real trades
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTradeFilter("paper")}
+                  className={`rounded-full px-3 py-1 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    tradeFilter === "paper"
+                      ? "bg-[color:rgb(var(--accent)/0.14)] text-accent shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                      : "text-muted-fg hover:text-fg"
+                  }`}
+                  aria-pressed={tradeFilter === "paper"}
+                >
+                  Paper trades
+                </button>
+              </div>
+              <label className="inline-flex items-center gap-2 rounded-full border border-border bg-[color:rgb(var(--surface)/0.78)] px-3 py-2 text-[0.64rem] font-semibold uppercase tracking-[0.18em] text-muted-fg shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+                <input
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={includeArchived}
+                  onChange={() => setIncludeArchived((current) => !current)}
+                />
+                <span className="flex h-4 w-7 items-center rounded-full bg-[color:rgb(var(--border)/0.7)] p-0.5 transition peer-checked:bg-[color:rgb(var(--accent)/0.36)]">
+                  <span className="h-3 w-3 rounded-full bg-[color:rgb(var(--surface)/1)] shadow-[0_4px_8px_rgba(15,23,42,0.16)] transition peer-checked:translate-x-3" />
+                </span>
+                <span className="whitespace-nowrap">Show archived</span>
+              </label>
             </div>
           </div>
 
@@ -667,6 +747,11 @@ export default function Home() {
                       className={cardClasses}
                       onClick={persistScrollPosition}
                     >
+                      {trade.isArchived ? (
+                        <span className="pointer-events-none absolute left-4 top-3 inline-flex items-center gap-1 rounded-full border border-[rgba(148,163,184,0.32)] bg-[rgba(148,163,184,0.16)] px-3 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-[rgba(71,85,105,0.9)] shadow-[0_10px_22px_rgba(15,23,42,0.1)]">
+                          Archived
+                        </span>
+                      ) : null}
                       {trade.isPaperTrade ? (
                         <span
                           className="pointer-events-none absolute bottom-3 left-4 inline-flex items-center rounded-xl border border-[rgba(108,173,255,0.32)] bg-[rgba(108,173,255,0.16)] px-3 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-[rgba(24,68,142,0.92)] shadow-[0_10px_22px_rgba(15,23,42,0.1)] transition-colors md:hidden"
@@ -773,6 +858,33 @@ export default function Home() {
                           <span className="text-lg text-muted-fg transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 group-hover:text-fg" aria-hidden="true">
                             ↗
                           </span>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2 md:ml-auto md:mt-0">
+                        {trade.isArchived ? (
+                          <span className="inline-flex items-center rounded-full border border-[rgba(148,163,184,0.36)] bg-[rgba(148,163,184,0.14)] px-3 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.22em] text-[rgba(71,85,105,0.9)] shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
+                            Archived trade
+                          </span>
+                        ) : null}
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(event) => handleArchiveTrade(event, trade.id)}
+                            disabled={archivingTradeId === trade.id || trade.isArchived}
+                            className="px-3"
+                          >
+                            {archivingTradeId === trade.id ? "Archiving…" : "Archive"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={(event) => handleDuplicateTrade(event, trade.id)}
+                            disabled={duplicatingTradeId === trade.id}
+                            className="px-3"
+                          >
+                            {duplicatingTradeId === trade.id ? "Duplicating…" : "Duplicate"}
+                          </Button>
                         </div>
                       </div>
                     </Link>
